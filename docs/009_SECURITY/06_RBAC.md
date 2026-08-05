@@ -1,0 +1,514 @@
+# 06_RBAC
+
+Version: 1.0
+Status: Draft
+Document Type: Security Architecture
+Priority: Critical
+
+---
+
+# Purpose
+
+This document defines the Role-Based Access Control (RBAC) Architecture of Life Community OS.
+
+RBAC simplifies permission management by grouping reusable Permissions into Roles.
+
+Roles belong to the Security Platform.
+
+Business Domains consume Roles.
+
+---
+
+# Question this document answers
+
+> How are Permissions organized and assigned across the platform?
+
+---
+
+# Scope
+
+This document defines:
+
+- RBAC architecture;
+- Role model;
+- Role lifecycle;
+- Role assignment;
+- Role governance.
+
+It does not define:
+
+- Authentication;
+- Authorization;
+- Permission definitions;
+- Infrastructure.
+
+---
+
+# Definition
+
+Role-Based Access Control (RBAC) groups multiple Permissions into reusable Roles.
+
+Roles simplify administration.
+
+Permissions remain the security foundation.
+
+---
+
+# Objectives
+
+RBAC exists to:
+
+- simplify permission management;
+- reduce administrative complexity;
+- improve consistency;
+- centralize security;
+- support scalable authorization.
+
+---
+
+# RBAC Philosophy
+
+Permissions define actions.
+
+Roles organize Permissions.
+
+Authorization evaluates effective Permissions.
+
+Business Domains consume Roles.
+
+---
+
+# Security-First RBAC
+
+Execution order remains:
+
+Identity
+
+↓
+
+Authentication
+
+↓
+
+Authorization
+
+↓
+
+Permissions
+
+↓
+
+RBAC
+
+↓
+
+Policies
+
+↓
+
+Business Logic
+
+RBAC never replaces Permissions.
+
+RBAC manages them.
+
+---
+
+# RBAC Architecture
+
+```text
+Identity
+        │
+Authentication
+        │
+Authorization
+        │
+Roles
+        │
+Permissions
+        │
+Policies
+        │
+Business Logic
+```
+
+Roles remain organizational.
+
+Permissions remain authoritative.
+
+---
+
+# Role Model
+
+A Role is a reusable collection of Permissions.
+
+Examples include:
+
+Platform Administrator
+
+Tenant Administrator
+
+Business Owner
+
+Manager
+
+Employee
+
+Moderator
+
+Member
+
+Guest
+
+Service Account
+
+Automation Worker
+
+AI Agent
+
+Future Roles
+
+Roles remain reusable.
+
+---
+
+# Platform Roles
+
+Examples include:
+
+Platform Administrator
+
+Platform Support
+
+Platform Auditor
+
+Platform Operator
+
+Platform Developer
+
+Platform roles belong to the Core Platform.
+
+---
+
+# Tenant Roles
+
+Examples include:
+
+Tenant Owner
+
+Tenant Administrator
+
+Tenant Manager
+
+Tenant Employee
+
+Tenant Member
+
+Tenant roles remain isolated.
+
+---
+
+# Business Roles
+
+Examples include:
+
+Restaurant Manager
+
+Receptionist
+
+Waiter
+
+Kitchen Staff
+
+Golf Manager
+
+Coach
+
+Event Organizer
+
+Business roles belong to individual domains.
+
+---
+
+# System Roles
+
+Examples include:
+
+Background Worker
+
+Automation Worker
+
+AI Agent
+
+API Consumer
+
+Integration Service
+
+System roles authenticate differently from human users.
+
+---
+
+# Role Assignment
+
+Roles may be assigned to:
+
+- Users;
+- Services;
+- Devices;
+- AI Agents;
+- Automations.
+
+Assignments remain explicit.
+
+---
+
+# Multiple Roles
+
+An Identity may have multiple Roles.
+
+Effective Permissions are the union of all assigned Roles, unless restricted by Security Policies.
+
+---
+
+# Role Scope
+
+Roles may exist at:
+
+Platform
+
+↓
+
+Tenant
+
+↓
+
+Organization
+
+↓
+
+Business
+
+↓
+
+Resource
+
+Each scope remains isolated.
+
+---
+
+# Role Lifecycle
+
+Typical lifecycle:
+
+Defined
+
+↓
+
+Approved
+
+↓
+
+Available
+
+↓
+
+Assigned
+
+↓
+
+Updated
+
+↓
+
+Deprecated
+
+↓
+
+Archived
+
+Role lifecycle remains observable.
+
+---
+
+# Least Privilege
+
+Roles should grant only the Permissions required for operational responsibilities.
+
+Roles should never become unnecessarily broad.
+
+---
+
+# Separation of Duties
+
+Sensitive responsibilities should remain separated.
+
+Examples include:
+
+Payment Approval
+
+↓
+
+Accounting Review
+
+↓
+
+Financial Audit
+
+Critical operations should avoid excessive concentration of privileges.
+
+---
+
+# Temporary Roles
+
+The platform may support temporary Role assignments.
+
+Examples include:
+
+Temporary Administrator
+
+Event Moderator
+
+Support Engineer
+
+Temporary Roles automatically expire.
+
+---
+
+# Role Security
+
+Roles respect:
+
+- tenant isolation;
+- authorization;
+- least privilege;
+- ownership;
+- platform policies.
+
+Roles never bypass Security.
+
+---
+
+# Role Observability
+
+Role events should record:
+
+- assignment;
+- revocation;
+- updates;
+- expiration;
+- effective permissions;
+- identity.
+
+Role history remains traceable.
+
+---
+
+# Product Rules
+
+Roles belong to the Security Platform.
+
+Roles organize Permissions.
+
+Permissions remain atomic.
+
+Authorization evaluates effective Permissions.
+
+Business Domains never implement RBAC.
+
+RBAC remains deterministic.
+
+---
+
+# Relationship With Permissions
+
+Permissions define actions.
+
+Roles group Permissions.
+
+Permissions remain the security foundation.
+
+---
+
+# Relationship With Authorization
+
+Authorization evaluates effective Permissions generated by assigned Roles.
+
+---
+
+# Relationship With Policies
+
+Policies may restrict Role effectiveness.
+
+Roles never override Security Policies.
+
+---
+
+# Relationship With Automation
+
+Automation executes using assigned system Roles.
+
+Automation never bypasses RBAC.
+
+---
+
+# Relationship With Artificial Intelligence
+
+AI Agents execute using explicit Roles.
+
+Artificial Intelligence never assigns Roles.
+
+---
+
+# Governance
+
+Future RBAC capabilities should preserve:
+
+- centralized management;
+- deterministic behaviour;
+- tenant isolation;
+- least privilege;
+- Security-First philosophy.
+
+Major RBAC changes require ADR documentation.
+
+---
+
+# Future Evolution
+
+Future versions may introduce:
+
+- hierarchical roles;
+- delegated administration;
+- dynamic role assignment;
+- contextual roles;
+- policy-driven roles.
+
+These capabilities should preserve architectural simplicity.
+
+---
+
+# Success Criteria
+
+RBAC is successful when:
+
+- Roles simplify administration;
+- Permissions remain atomic;
+- Authorization remains deterministic;
+- tenant isolation remains preserved;
+- security scales without redesign.
+
+---
+
+# Conclusion
+
+RBAC simplifies permission management by grouping reusable Permissions into Roles.
+
+Permissions remain the foundation.
+
+Authorization evaluates effective Permissions.
+
+Security remains centralized.
+
+---
+
+*"Permissions define authority. Roles organize authority."*
