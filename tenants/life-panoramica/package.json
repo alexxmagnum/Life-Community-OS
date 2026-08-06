@@ -1,8 +1,8 @@
 {
-  "name": "@life-community-os/ui",
+  "name": "@life-community-os/tenant-life-panoramica",
   "version": "0.0.0",
   "private": true,
-  "description": "Shared multi-tenant UI components for Life Community OS",
+  "description": "Life Panoramica tenant theme, features, and reference content (white-label pack)",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -11,19 +11,11 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
   "dependencies": {
     "@life-community-os/design-tokens": "workspace:*"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
     "typescript": "^5.8.2"
   }
 }

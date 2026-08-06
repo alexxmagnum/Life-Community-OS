@@ -1,3 +1,74 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Fallbacks before TenantProvider hydrates — Life Panoramica defaults */
+  --color-surface-app: #f6f3ee;
+  --color-surface-elevated: #ffffff;
+  --color-surface-muted: #ece7e0;
+  --color-text-primary: #1a1f1c;
+  --color-text-secondary: #5a635d;
+  --color-text-tertiary: #8a928c;
+  --color-text-inverse: #ffffff;
+  --color-border-subtle: #e2ddd6;
+  --color-border-strong: #c9c2b8;
+  --color-action-primary: #1f4a3c;
+  --color-action-primary-hover: #183a30;
+  --color-action-primary-subtle: #e7f0ec;
+  --color-action-secondary: #5c6b63;
+  --color-action-accent: #c47a3a;
+  --color-action-accent-subtle: #f8efe6;
+  --color-action-destructive: #b42318;
+  --color-feedback-success: #2f6f4e;
+  --color-feedback-success-subtle: #e6f4ec;
+  --color-feedback-warning: #b8860b;
+  --color-feedback-warning-subtle: #fbf3dc;
+  --color-feedback-danger: #b42318;
+  --color-feedback-danger-subtle: #f8e8e6;
+  --color-feedback-info: #3d6b7a;
+  --color-feedback-info-subtle: #e8f1f4;
+  --color-accent-community: #c47a3a;
+  --color-accent-official: #1f4a3c;
+  --color-hero-scrim: rgba(20, 28, 24, 0.42);
+  --color-sea: #3d6b7a;
+  --color-sea-subtle: #e8f1f4;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --shadow-elev-1: 0 1px 2px rgba(26, 31, 28, 0.06),
+    0 4px 16px rgba(26, 31, 28, 0.04);
+  --shadow-elev-2: 0 8px 28px rgba(26, 31, 28, 0.12),
+    0 2px 8px rgba(26, 31, 28, 0.06);
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --motion-easing: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  body {
+    background: var(--color-surface-app);
+    color: var(--color-text-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

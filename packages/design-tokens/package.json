@@ -1,0 +1,18 @@
+{
+  "name": "@life-community-os/design-tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Platform design tokens for Life Community OS (multi-tenant UI foundation)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

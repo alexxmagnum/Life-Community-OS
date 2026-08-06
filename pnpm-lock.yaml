@@ -16,6 +16,12 @@ importers:
       '@life-community-os/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@life-community-os/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
+      '@life-community-os/tenant-life-panoramica':
+        specifier: workspace:*
+        version: link:../../tenants/life-panoramica
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -97,6 +103,15 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/design-tokens:
+    devDependencies:
+      '@life-community-os/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/types:
     devDependencies:
       '@life-community-os/config':
@@ -108,9 +123,9 @@ importers:
 
   packages/ui:
     dependencies:
-      react-dom:
-        specifier: ^19.0.0
-        version: 19.2.8(react@19.2.8)
+      '@life-community-os/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
     devDependencies:
       '@life-community-os/config':
         specifier: workspace:*
@@ -118,9 +133,28 @@ importers:
       '@types/react':
         specifier: ^19.0.10
         version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19.0.4
+        version: 19.2.4(@types/react@19.2.18)
       react:
         specifier: ^19.0.0
         version: 19.2.8
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.8(react@19.2.8)
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  tenants/life-panoramica:
+    dependencies:
+      '@life-community-os/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
+    devDependencies:
+      '@life-community-os/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       typescript:
         specifier: ^5.8.2
         version: 5.9.3

@@ -2,7 +2,7 @@
   "name": "@life-community-os/web",
   "version": "0.0.0",
   "private": true,
-  "description": "Life Community OS web application (Foundation Phase)",
+  "description": "Life Panoramica consumer web application (Life Community OS platform)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,6 +13,8 @@
   "dependencies": {
     "@life-community-os/auth": "workspace:*",
     "@life-community-os/database": "workspace:*",
+    "@life-community-os/design-tokens": "workspace:*",
+    "@life-community-os/tenant-life-panoramica": "workspace:*",
     "@life-community-os/types": "workspace:*",
     "@life-community-os/ui": "workspace:*",
     "next": "^15.2.0",
