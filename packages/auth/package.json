@@ -1,0 +1,18 @@
+{
+  "name": "@life-community-os/auth",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Authentication foundation for Life Community OS (no auth flows yet)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

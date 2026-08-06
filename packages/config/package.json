@@ -1,0 +1,14 @@
+{
+  "name": "@life-community-os/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared TypeScript and tooling configuration for Life Community OS",
+  "exports": {
+    "./typescript/*": "./typescript/*",
+    "./tailwind/*": "./tailwind/*"
+  },
+  "files": [
+    "typescript",
+    "tailwind"
+  ]
+}

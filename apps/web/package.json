@@ -1,0 +1,34 @@
+{
+  "name": "@life-community-os/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Life Community OS web application (Foundation Phase)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@life-community-os/auth": "workspace:*",
+    "@life-community-os/database": "workspace:*",
+    "@life-community-os/types": "workspace:*",
+    "@life-community-os/ui": "workspace:*",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.22.0",
+    "eslint-config-next": "^15.2.0",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2"
+  }
+}

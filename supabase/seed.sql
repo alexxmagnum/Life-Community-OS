@@ -1,0 +1,2 @@
+-- Life Community OS — seed placeholder
+-- No seed data in Foundation Phase initialization.

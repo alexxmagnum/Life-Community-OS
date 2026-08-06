@@ -1,0 +1,44 @@
+# Life Community OS — Supabase local configuration placeholder
+#
+# This file is a foundation scaffold. Fill values when initializing
+# local Supabase (`supabase start`) and document decisions via ADR.
+#
+# Architecture note: Supabase/PostgreSQL are replaceable infrastructure.
+# Business Behaviour must never depend on provider-specific features.
+
+project_id = "life-community-os"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000"]
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
