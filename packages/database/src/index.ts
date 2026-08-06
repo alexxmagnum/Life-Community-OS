@@ -42,3 +42,18 @@ export {
   mapIdentityRow,
   mapMembershipRow,
 } from "./mappers";
+
+export {
+  UnresolvedTenantContextError,
+  TenantContextMismatchError,
+  requireTenantContext,
+  assertTenantOwnership,
+  requireTerritoryScope,
+  toTenantScopeFilter,
+  asTenantScopedOperation,
+  resolveTenantContextFromCarrier,
+  requireTenantExecution,
+  requirePlatformExecution,
+  type TenantScopedOperation,
+  type TenantScopeFilter,
+} from "./tenant-context";

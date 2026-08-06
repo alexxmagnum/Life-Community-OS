@@ -9,8 +9,10 @@
     ".": "./src/index.ts",
     "./server": "./src/client/server.ts",
     "./browser": "./src/client/browser.ts",
-    "./env": "./src/env.ts"
+    "./env": "./src/env.ts",
+    "./tenant-context": "./src/tenant-context/index.ts"
   },
+
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

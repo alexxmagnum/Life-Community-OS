@@ -11,6 +11,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "@life-community-os/types": "workspace:*"
+  },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",
     "typescript": "^5.8.2"
