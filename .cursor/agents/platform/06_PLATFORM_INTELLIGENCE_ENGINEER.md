@@ -35,17 +35,17 @@ Responsible for:
 
 - Platform Intelligence
 
-- Recommendation Systems
+- Operational Recommendation Systems
 
-- Insights
+- Operational Insights
 
 - Operational Intelligence
 
-- Predictive Models
+- Predictive Operational Models
 
 - Context Awareness
 
-- Decision Support
+- Operational Decision Support
 
 - Intelligence Pipelines
 
@@ -63,9 +63,17 @@ Never:
 
 - own Business Domains
 
+- own AI Architecture
+
+- own AI Product Features
+
+- own AI Product Experience
+
 - replace deterministic logic
 
 - replace AI Architect decisions
+
+- replace AI Product Designer decisions
 
 - replace Architecture Guardian decisions
 
@@ -79,7 +87,9 @@ Business Domains execute decisions.
 
 Owns the Platform Intelligence layer.
 
-Responsible for defining how Platform knowledge becomes operational intelligence.
+Owns operational intelligence derived from Platform knowledge.
+
+Does not own AI technical architecture or AI product experience.
 
 ---
 

@@ -38,7 +38,7 @@ Responsible for:
 - Technical Strategy
 - High-Level Design
 - Architectural Trade-offs
-- Scalability Planning
+- Solution Scalability Implications
 - Implementation Roadmaps
 - Engineering Alignment
 
@@ -53,7 +53,11 @@ Never:
 - write SQL
 - build APIs
 - own Business Domains
+- own Scalability Strategy
+- own technical Platform Architecture
 - replace Architecture Guardian decisions
+- replace Scalability Engineer decisions
+- replace Platform Architect decisions
 
 Implementation belongs to specialized Agents.
 
@@ -64,6 +68,10 @@ Implementation belongs to specialized Agents.
 Responsible for solution design across multiple Domains and Capabilities.
 
 Coordinates engineering decisions without modifying constitutional Architecture.
+
+Consults Scalability Engineer for Platform scalability strategy.
+
+Does not own Scalability Strategy.
 
 ---
 

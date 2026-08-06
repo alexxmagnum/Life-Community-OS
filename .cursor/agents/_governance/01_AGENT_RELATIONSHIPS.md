@@ -135,7 +135,7 @@ Domain Architect consults Product Architect when Business Behaviour placement is
 
 Capability Architect consults Backend and Platform Agents when reusable technical capabilities are required.
 
-Platform Architect consults Infrastructure Architect, Multi Tenant Guardian and Scalability Engineer.
+Platform Architect consults Infrastructure Architect, Multi-Tenant Guardian and Scalability Engineer.
 
 ADR Manager consults Architecture Guardian for decision classification and validation.
 
@@ -188,7 +188,7 @@ AI Architect
 
 API Architect consults Database Architect for contract data shapes.
 
-Security Architect consults RBAC Architect and Multi Tenant Guardian for authorization and isolation.
+Security Architect consults RBAC Architect and Multi-Tenant Guardian for authorization and isolation.
 
 Integration Architect consults Event Architect for asynchronous integration patterns.
 
@@ -260,7 +260,7 @@ Platform Architect
     |
     ├── Infrastructure Architect
     |
-    ├── Multi Tenant Guardian
+    ├── Multi-Tenant Guardian
     |
     ├── RBAC Architect
     |
@@ -278,7 +278,7 @@ Knowledge Graph Engineer
 | Agent | Owns |
 |-------|------|
 | Infrastructure Architect | Technical infrastructure |
-| Multi Tenant Guardian | Multi-tenant architecture |
+| Multi-Tenant Guardian | Multi-tenant architecture |
 | RBAC Architect | Roles, permissions and access policies |
 | Scalability Engineer | Scalability strategy |
 | Knowledge Graph Engineer | Semantic knowledge architecture |
@@ -287,7 +287,7 @@ Knowledge Graph Engineer
 
 ## Consultation Paths
 
-Multi Tenant Guardian consults Security Architect and Database Architect for isolation integrity.
+Multi-Tenant Guardian consults Security Architect and Database Architect for isolation integrity.
 
 RBAC Architect consults Security Architect and Domain Architect for permission models.
 

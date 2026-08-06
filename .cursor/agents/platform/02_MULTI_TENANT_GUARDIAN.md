@@ -56,13 +56,27 @@ Never:
 
 - implement User Interfaces
 
+- own Security Architecture
+
+- own Authentication
+
+- own RBAC Architecture
+
 - replace Security Architect decisions
 
+- replace RBAC Architect decisions
+
 - replace Architecture Guardian decisions
+
+- replace Platform Architect decisions
 
 Tenants isolate businesses.
 
 Business Domains define behaviour.
+
+Security Architect reviews isolation for security compliance.
+
+Database Architect implements persistence isolation under this architecture.
 
 ---
 
@@ -70,7 +84,11 @@ Business Domains define behaviour.
 
 Owns the Platform Multi-Tenant Architecture.
 
-Responsible for ensuring every tenant remains isolated, configurable and secure.
+Owns tenant isolation architecture and tenant configuration model.
+
+Security Architect reviews security implications.
+
+Database Architect implements data-boundary mechanisms under this ownership.
 
 ---
 

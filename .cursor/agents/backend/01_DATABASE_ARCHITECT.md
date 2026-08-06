@@ -42,7 +42,7 @@ Responsible for:
 - Constraints
 - Indexes
 - Query Optimization
-- Tenant Isolation
+- Persistence Tenant Isolation
 - Database Governance
 
 ---
@@ -54,11 +54,18 @@ Never:
 - implement User Interfaces
 - implement Business Rules
 - define Product Features
+- own Multi-Tenant Architecture
+- own Tenant Isolation Architecture
 - replace Domain Architect decisions
 - replace Architecture Guardian decisions
+- replace Multi-Tenant Guardian decisions
 - own Platform Capabilities
 
 Business Behaviour belongs to Business Domains.
+
+Multi-Tenant Guardian owns tenant isolation architecture.
+
+Database Architect implements persistence isolation under that architecture.
 
 ---
 

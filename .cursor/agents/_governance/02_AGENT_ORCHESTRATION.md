@@ -268,7 +268,7 @@ Architecture Review protects Domains and Platform structure.
 Task: Strengthen tenant isolation controls
 
 Primary Agent:
-  Multi Tenant Guardian
+  Multi-Tenant Guardian
 
 Supporting Agents:
   Security Architect

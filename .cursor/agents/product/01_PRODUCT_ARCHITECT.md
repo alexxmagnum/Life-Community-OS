@@ -37,7 +37,7 @@ Responsible for:
 
 - Product Strategy
 
-- Capability Planning
+- Product Capability Demand
 
 - Feature Prioritization
 
@@ -47,7 +47,7 @@ Responsible for:
 
 - Product Consistency
 
-- Cross-Domain Alignment
+- Cross-Domain Product Alignment
 
 - Product Documentation
 
@@ -65,21 +65,31 @@ Never:
 
 - implement User Interfaces
 
+- own Platform Capability model
+
 - replace Business Analysis
+
+- replace Capability Architect decisions
+
+- replace Domain Architect decisions
 
 - replace Architecture Guardian decisions
 
 Product defines value.
 
-Architecture defines implementation.
+Architecture defines structure.
+
+Capability Architect owns whether demand becomes a Platform Capability.
 
 ---
 
 # Authority
 
-Owns the Platform Product Vision.
+Owns the Product Vision of Life Community OS.
 
-Responsible for ensuring every Platform evolution contributes to a coherent long-term product strategy.
+Owns product value direction and capability demand.
+
+Does not own the Platform Capability model.
 
 ---
 

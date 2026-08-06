@@ -106,7 +106,7 @@ Frontend
 
 Platform
 ├── Infrastructure Architect
-├── Multi Tenant Guardian
+├── Multi-Tenant Guardian
 ├── RBAC Architect
 ├── Scalability Engineer
 ├── Knowledge Graph Engineer
@@ -327,7 +327,7 @@ Purpose: Own overall technical platform architecture.
 
 Primary Responsibility: Infrastructure coherence, multi-tenancy, integrations and platform-wide technical evolution.
 
-Secondary Collaboration: Infrastructure Architect, Multi Tenant Guardian, Scalability Engineer.
+Secondary Collaboration: Infrastructure Architect, Multi-Tenant Guardian, Scalability Engineer.
 
 ---
 
@@ -365,7 +365,7 @@ Purpose: Own Platform Security Architecture.
 
 Primary Responsibility: Authentication, authorization, data protection, auditing and secure-by-design enforcement.
 
-Secondary Collaboration: RBAC Architect, Multi Tenant Guardian, API Architect, Architecture Guardian.
+Secondary Collaboration: RBAC Architect, Multi-Tenant Guardian, API Architect, Architecture Guardian.
 
 ---
 
@@ -517,7 +517,7 @@ Secondary Collaboration: Platform Architect, Scalability Engineer, Security Arch
 
 ---
 
-## Multi Tenant Guardian
+## Multi-Tenant Guardian
 
 Path: `platform/02_MULTI_TENANT_GUARDIAN.md`
 
@@ -537,7 +537,7 @@ Purpose: Own authorization model.
 
 Primary Responsibility: Roles, permissions, access policies and least-privilege governance.
 
-Secondary Collaboration: Security Architect, Multi Tenant Guardian, API Architect, Domain Architect.
+Secondary Collaboration: Security Architect, Multi-Tenant Guardian, API Architect, Domain Architect.
 
 ---
 

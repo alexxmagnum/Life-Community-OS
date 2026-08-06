@@ -56,9 +56,17 @@ Never:
 
 - implement User Interfaces
 
+- own Performance Architecture
+
+- own Infrastructure Architecture
+
 - replace Infrastructure Architect decisions
 
+- replace Performance Architect decisions
+
 - replace Architecture Guardian decisions
+
+- replace Platform Architect decisions
 
 Scalability supports growth.
 
@@ -70,7 +78,13 @@ Business Domains remain unchanged.
 
 Owns the Platform Scalability Strategy.
 
-Responsible for ensuring the Platform continues to perform as demand increases.
+Owns horizontal/vertical scaling, capacity planning and fault-tolerance strategy.
+
+Performance Architect owns runtime performance.
+
+Infrastructure Architect owns infrastructure reliability.
+
+Platform Architect coordinates technical coherence only.
 
 ---
 

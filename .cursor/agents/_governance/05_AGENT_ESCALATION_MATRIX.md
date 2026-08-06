@@ -68,11 +68,15 @@ Category Leads coordinate unresolved conflicts within a category.
 | Category | Category Lead |
 |----------|---------------|
 | Architecture | Architecture Guardian |
-| Backend | Solution Architect for cross-backend design; Architecture Guardian for architectural authority |
-| Frontend | Design System Guardian for visual system; UX Architect for experience conflicts; Architecture Guardian for structural conflicts |
+| Backend | Solution Architect |
+| Frontend | Design System Guardian |
 | Platform | Platform Architect |
 | Product | Product Architect |
-| Quality | Code Reviewer for engineering quality; Release Manager for release conflicts |
+| Quality | Code Reviewer |
+
+Specialized Frontend experience conflicts escalate from Design System Guardian to UX Architect when the conflict is journey-owned, then to Architecture Guardian when structural.
+
+Specialized Quality release conflicts escalate from Code Reviewer to Release Manager when the conflict is release-owned, then to Architecture Guardian when structural.
 
 When Category Lead and owning specialist are the same Agent, escalate directly to Architecture Guardian or Human as appropriate.
 
@@ -104,7 +108,7 @@ Use for:
 ```
 Database Architect
 ↓
-Backend Lead / Solution Architect
+Solution Architect
 ↓
 Architecture Guardian
 ↓
@@ -159,7 +163,7 @@ Use for:
 - data protection conflicts;
 - insecure-by-convenience proposals.
 
-RBAC and tenancy conflicts must include RBAC Architect and Multi Tenant Guardian before or during escalation.
+RBAC and tenancy conflicts must include RBAC Architect and Multi-Tenant Guardian before or during escalation.
 
 ---
 

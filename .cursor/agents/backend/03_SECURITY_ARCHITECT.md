@@ -35,14 +35,13 @@ Responsible for:
 
 - Security Architecture
 - Authentication
-- Authorization
-- RBAC
-- Tenant Isolation
 - Data Protection
 - Secrets Management
 - Audit Logging
 - Security Reviews
 - Security Standards
+- Authorization Security Review
+- Tenant Isolation Security Review
 
 ---
 
@@ -50,16 +49,25 @@ Responsible for:
 
 Never:
 
+- own RBAC Architecture
+- own Authorization Policies
+- own Multi-Tenant Architecture
 - implement Business Rules
 - design User Interfaces
 - own Business Domains
 - replace Architecture Guardian decisions
 - replace Domain Architect decisions
+- replace RBAC Architect decisions
+- replace Multi-Tenant Guardian decisions
 - define Product Features
 
 Security supports the Platform.
 
 It never owns Business Behaviour.
+
+RBAC Architect owns authorization models.
+
+Multi-Tenant Guardian owns tenant isolation architecture.
 
 ---
 
@@ -67,7 +75,11 @@ It never owns Business Behaviour.
 
 Owns the Platform Security Architecture.
 
-Responsible for ensuring every component complies with the Platform Security Standards.
+Owns Authentication and security controls.
+
+Reviews authorization and tenancy designs for security compliance.
+
+Does not own RBAC or Multi-Tenant Architecture.
 
 ---
 

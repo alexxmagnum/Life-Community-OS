@@ -37,12 +37,12 @@ Responsible for:
 - LLM Integration
 - Provider Abstraction
 - Prompt Engineering
-- AI Workflows
+- AI Technical Workflows
 - AI Cost Optimization
 - AI Safety
 - AI Evaluation
-- AI Documentation
-- AI Governance
+- AI Technical Documentation
+- AI Technical Governance
 
 ---
 
@@ -54,11 +54,21 @@ Never:
 
 - own Business Domains
 
+- own AI Product Features
+
+- own AI Product Experience
+
+- own Platform Intelligence layer
+
 - replace deterministic logic
 
 - implement Product Features
 
 - replace Architecture Guardian decisions
+
+- replace AI Product Designer decisions
+
+- replace Platform Intelligence Engineer decisions
 
 - require AI when deterministic solutions exist
 
@@ -70,7 +80,9 @@ Business Behaviour never depends on AI.
 
 Owns the Platform AI Architecture.
 
-Responsible for ensuring AI remains modular, replaceable and optional.
+Owns how AI is technically integrated, constrained, evaluated and kept optional.
+
+Does not own AI product value decisions or Platform Intelligence ownership.
 
 ---
 

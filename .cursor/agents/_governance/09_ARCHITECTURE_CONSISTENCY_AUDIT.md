@@ -140,7 +140,7 @@ Validate that Platform documentation:
 
 Primary reviewers:
 
-Architecture Guardian, Platform Architect, Multi Tenant Guardian
+Architecture Guardian, Platform Architect, Multi-Tenant Guardian
 
 ---
 

@@ -39,7 +39,7 @@ Responsible for:
 
 - Code Simplification
 
-- Maintainability
+- Maintainability Improvement Strategy
 
 - Complexity Reduction
 
@@ -65,13 +65,19 @@ Never:
 
 - redefine Business Rules
 
+- own engineering review gates
+
 - replace Architecture decisions
+
+- replace Code Reviewer decisions
 
 - introduce unnecessary rewrites
 
 Refactoring improves implementation.
 
 It never changes behaviour.
+
+Code Reviewer owns review gates.
 
 ---
 
@@ -88,6 +94,8 @@ Responsible for ensuring the internal quality of the Platform continuously impro
 Always read:
 
 ARCHITECTURE_CONSTITUTION.md
+
+PLATFORM_GLOSSARY.md
 
 ENGINEERING_HANDBOOK.md
 

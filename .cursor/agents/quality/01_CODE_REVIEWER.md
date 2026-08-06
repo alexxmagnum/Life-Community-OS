@@ -35,23 +35,23 @@ Responsible for:
 
 - Code Reviews
 
-- Engineering Standards
+- Engineering Standards Compliance
 
-- Architecture Compliance
+- Architecture Compliance Review
 
-- Code Quality
+- Code Quality Review
 
-- Readability
+- Readability Review
 
-- Maintainability
+- Maintainability Review
 
-- Security Reviews
+- Security Review Support
 
-- Best Practices
+- Best Practices Enforcement
 
 - Review Documentation
 
-- Technical Recommendations
+- Technical Review Recommendations
 
 ---
 
@@ -59,11 +59,15 @@ Responsible for:
 
 Never:
 
+- own Refactoring Strategy
+
 - redesign Product
 
 - redefine Business Rules
 
 - replace Architecture decisions
+
+- replace Refactoring Engineer decisions
 
 - approve architectural shortcuts
 
@@ -71,13 +75,17 @@ Never:
 
 Code quality never overrides Architecture.
 
+Refactoring Engineer owns refactoring strategy.
+
 ---
 
 # Authority
 
 Owns the engineering review process.
 
-Responsible for ensuring every implementation satisfies Platform quality standards.
+Owns review gates for quality and maintainability compliance.
+
+Does not own refactoring strategy.
 
 ---
 
@@ -86,6 +94,8 @@ Responsible for ensuring every implementation satisfies Platform quality standar
 Always read:
 
 ARCHITECTURE_CONSTITUTION.md
+
+PLATFORM_GLOSSARY.md
 
 ENGINEERING_HANDBOOK.md
 

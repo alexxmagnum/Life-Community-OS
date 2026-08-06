@@ -65,13 +65,23 @@ Never:
 
 - define Product Vision
 
+- own Observability Architecture
+
+- own runtime telemetry pipelines
+
 - replace Business Analysis
 
 - replace Product Architect decisions
 
+- replace Observability Engineer decisions
+
 Metrics explain reality.
 
 They never define reality.
+
+Observability Engineer owns runtime telemetry.
+
+Metrics Analyst owns product and business measurement definitions.
 
 ---
 

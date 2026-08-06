@@ -37,13 +37,13 @@ Responsible for:
 
 - AI User Experience
 
-- AI Recommendations
+- AI Product Recommendations
 
-- AI Workflows
+- AI Product Workflows
 
 - AI Interaction Design
 
-- AI Validation
+- AI Product Validation
 
 - AI Cost Awareness
 
@@ -65,9 +65,17 @@ Never:
 
 - own Business Rules
 
+- own AI Architecture
+
+- own AI Technical Workflows
+
+- own Platform Intelligence layer
+
 - require AI for core functionality
 
 - replace AI Architect decisions
+
+- replace Platform Intelligence Engineer decisions
 
 - replace Architecture Guardian decisions
 
@@ -81,7 +89,9 @@ It never defines them.
 
 Owns the AI Product Experience.
 
-Responsible for ensuring AI capabilities create measurable product value.
+Owns whether AI should exist as a product capability and how users experience it.
+
+Does not own AI technical architecture or Platform Intelligence.
 
 ---
 

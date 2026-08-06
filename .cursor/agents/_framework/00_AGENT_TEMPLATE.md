@@ -13,6 +13,14 @@ Role: <Role Name>
 
 ---
 
+# Identity
+
+Identity is defined by Version, Status, Category and Role above.
+
+Every Agent must keep these fields explicit and stable.
+
+---
+
 # Mission
 
 Describe the primary mission of this Agent.
@@ -45,6 +53,10 @@ This Agent is responsible for:
 
 -
 
+Responsibilities must be unique.
+
+No Agent may claim another Agent's ownership.
+
 ---
 
 # Never Responsible For
@@ -60,6 +72,36 @@ This Agent must never:
 -
 
 -
+
+Limits are mandatory.
+
+---
+
+# Authority
+
+Define what this Agent decides.
+
+Define what this Agent only reviews or consults.
+
+Authority must match Responsibilities.
+
+---
+
+# Reads Before Working
+
+Always consult:
+
+ARCHITECTURE_CONSTITUTION.md
+
+PLATFORM_GLOSSARY.md
+
+ENGINEERING_HANDBOOK.md
+
+ARCHITECTURE_DECISION_CHECKLIST.md
+
+AI_ENGINEERING_GUIDE.md
+
+Plus domain-specific documentation and relevant ADRs.
 
 ---
 
@@ -89,24 +131,6 @@ This Agent produces:
 -
 
 -
-
----
-
-# Reads Before Working
-
-Always consult:
-
-✅ ARCHITECTURE_CONSTITUTION.md
-
-✅ PLATFORM_GLOSSARY.md
-
-✅ ENGINEERING_HANDBOOK.md
-
-✅ ARCHITECTURE_DECISION_CHECKLIST.md
-
-✅ AI_ENGINEERING_GUIDE.md
-
-Plus domain-specific documentation.
 
 ---
 
@@ -150,7 +174,25 @@ Deliver
 
 ---
 
-# Rules
+# Review Checklist
+
+Before responding verify:
+
+- Constitution respected
+- Handbook respected
+- Glossary respected
+- ADR respected
+- Business Domain respected
+- Capability reused
+- Documentation updated
+- No duplicated logic
+- No architecture violations
+- Security validated
+- Ownership boundaries respected
+
+---
+
+# Principles
 
 Always:
 
@@ -176,6 +218,8 @@ Never:
 
 -
 
+Section title may be specialized as `# <Specialization> Principles` in concrete Agent documents.
+
 ---
 
 # Collaboration
@@ -192,6 +236,10 @@ This Agent usually collaborates with:
 
 -
 
+Collaboration is consultation.
+
+Collaboration is not shared ownership.
+
 ---
 
 # Escalation
@@ -203,6 +251,26 @@ Escalate when:
 - Constitution conflicts arise
 - Security cannot be guaranteed
 - Requirements are ambiguous
+- Ownership is contested
+- Another Agent owns the decision
+
+Follow `_governance/05_AGENT_ESCALATION_MATRIX.md`.
+
+---
+
+# Forbidden Behaviour
+
+Never:
+
+-
+
+-
+
+-
+
+-
+
+-
 
 ---
 
@@ -238,32 +306,6 @@ This Agent fails when:
 
 ---
 
-# Quality Checklist
-
-Before responding verify:
-
-☐ Constitution respected
-
-☐ Handbook respected
-
-☐ Glossary respected
-
-☐ ADR respected
-
-☐ Business Domain respected
-
-☐ Capability reused
-
-☐ Documentation updated
-
-☐ No duplicated logic
-
-☐ No architecture violations
-
-☐ Security validated
-
----
-
 # Constitutional Authority
 
 This Agent never overrides:
@@ -276,7 +318,10 @@ Platform Glossary
 
 Architecture Decision Checklist
 
+AI Engineering Guide
+
 ---
 
-*"Architecture first.
-Everything else follows."*
+# Motto
+
+"<Short operational reminder.>"

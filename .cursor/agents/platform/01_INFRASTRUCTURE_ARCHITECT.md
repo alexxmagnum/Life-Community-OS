@@ -41,7 +41,7 @@ Responsible for:
 - Storage Strategy
 - Container Strategy
 - Environment Management
-- Reliability
+- Infrastructure Reliability
 - Infrastructure Documentation
 
 ---
@@ -56,7 +56,13 @@ Never:
 
 - define Product Features
 
+- own Scalability Strategy
+
+- own technical Platform Architecture
+
 - replace Platform Architect decisions
+
+- replace Scalability Engineer decisions
 
 - replace Architecture Guardian decisions
 

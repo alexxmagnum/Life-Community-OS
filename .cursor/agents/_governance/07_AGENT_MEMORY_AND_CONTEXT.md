@@ -61,13 +61,21 @@ Governs how work is executed.
 
 ## 3. PLATFORM_GLOSSARY.md
 
-Defines official vocabulary.
+Defines official vocabulary for Agents and engineering work.
 
 One concept.
 
 One name.
 
 One meaning.
+
+`PLATFORM_GLOSSARY.md` is the Agent OS vocabulary authority.
+
+`docs/000_FOUNDATIONS/02_GLOSSARY.md` belongs to Foundations documentation and must remain aligned with `PLATFORM_GLOSSARY.md`.
+
+When terminology conflicts, Agents follow `PLATFORM_GLOSSARY.md` and escalate the documentation conflict.
+
+Agents must not maintain a third glossary.
 
 ## 4. ADR documents
 

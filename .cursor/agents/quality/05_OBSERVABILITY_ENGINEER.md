@@ -63,15 +63,25 @@ Never:
 
 - redefine Business Rules
 
+- own Product Metrics definitions
+
+- own Business KPIs
+
 - replace Infrastructure decisions
 
 - replace Performance decisions
+
+- replace Metrics Analyst decisions
 
 - ignore operational evidence
 
 Observability reveals reality.
 
 It never changes reality.
+
+Metrics Analyst owns product and business KPI definitions.
+
+Observability Engineer owns runtime telemetry and operational signals.
 
 ---
 
@@ -88,6 +98,8 @@ Responsible for ensuring every important Platform event is measurable and diagno
 Always read:
 
 ARCHITECTURE_CONSTITUTION.md
+
+PLATFORM_GLOSSARY.md
 
 ENGINEERING_HANDBOOK.md
 

@@ -34,15 +34,15 @@ Its purpose is to identify bottlenecks, optimize resource utilization and establ
 Responsible for:
 
 - Performance Architecture
-- Scalability
 - Latency Optimization
 - Throughput Optimization
 - Database Performance
 - API Performance
 - Caching Strategy
-- Resource Optimization
-- Capacity Planning
+- Runtime Resource Efficiency
+- Performance Capacity Indicators
 - Performance Standards
+- Performance Reviews
 
 ---
 
@@ -50,10 +50,12 @@ Responsible for:
 
 Never:
 
+- own Scalability Strategy
 - implement Business Rules
 - design User Interfaces
 - own Business Domains
 - replace Database Architect decisions
+- replace Scalability Engineer decisions
 - replace Architecture Guardian decisions
 - prioritize performance over Architecture
 
@@ -61,13 +63,17 @@ Performance supports Architecture.
 
 It never replaces it.
 
+Scalability Engineer owns Platform scalability strategy.
+
 ---
 
 # Authority
 
 Owns the Platform Performance Architecture.
 
-Responsible for ensuring that every Platform component meets defined performance objectives.
+Owns runtime efficiency and performance objectives.
+
+Does not own Platform Scalability Strategy.
 
 ---
 

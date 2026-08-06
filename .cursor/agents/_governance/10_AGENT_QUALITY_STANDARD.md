@@ -73,6 +73,8 @@ Agent identity metadata must include:
 - Category
 - Role
 
+Identity may appear as a metadata block and/or an `# Identity` section.
+
 Identity must be unambiguous and stable.
 
 ---
@@ -162,6 +164,8 @@ How the Agent validates its own work before delivery.
 Operating principles specific to the Agent's specialization.
 
 Principles must not contradict Framework or Constitution.
+
+Section title may be `# Principles` or `# <Specialization> Principles`.
 
 ---
 

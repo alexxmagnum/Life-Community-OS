@@ -111,7 +111,7 @@ Support when needed: Architecture Guardian, Solution Architect, Documentation En
 
 Primary Agent: Platform Architect
 
-Support when needed: Infrastructure Architect, Multi Tenant Guardian, Scalability Engineer
+Support when needed: Infrastructure Architect, Multi-Tenant Guardian, Scalability Engineer
 
 ---
 
@@ -135,7 +135,7 @@ Support when needed: Database Architect, Security Architect, Event Architect, UI
 
 Primary Agent: Security Architect
 
-Support when needed: RBAC Architect, Multi Tenant Guardian, Architecture Guardian
+Support when needed: RBAC Architect, Multi-Tenant Guardian, Architecture Guardian
 
 ---
 
@@ -237,7 +237,7 @@ Support when needed: Platform Architect, Scalability Engineer, Security Architec
 
 ## Multi-tenancy questions
 
-Primary Agent: Multi Tenant Guardian
+Primary Agent: Multi-Tenant Guardian
 
 Support when needed: Security Architect, Database Architect, RBAC Architect, Platform Architect
 
@@ -247,7 +247,7 @@ Support when needed: Security Architect, Database Architect, RBAC Architect, Pla
 
 Primary Agent: RBAC Architect
 
-Support when needed: Security Architect, Multi Tenant Guardian, Domain Architect
+Support when needed: Security Architect, Multi-Tenant Guardian, Domain Architect
 
 ---
 
