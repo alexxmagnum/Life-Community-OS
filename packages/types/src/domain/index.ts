@@ -1,7 +1,9 @@
-export type { DomainId, Tenant } from "./tenant";
+export type { DomainId, IsoDateTimeString } from "./ids";
+export type { Tenant, TenantStatus } from "./tenant";
 export type { Territory } from "./territory";
 export type { Person } from "./person";
-export type { Membership } from "./membership";
+export type { Identity } from "./identity";
+export type { Membership, MembershipStatus } from "./membership";
 export type { Entity } from "./entity";
 export type { Place } from "./place";
 export type { Resource } from "./resource";
