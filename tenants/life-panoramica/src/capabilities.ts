@@ -4,8 +4,10 @@
  * UI must call hasCapability(); never invent grants inside components.
  */
 export const CAPABILITIES = {
+  experienceView: "community.experience.view",
   experienceCreate: "community.experience.create",
   experienceJoin: "community.experience.join",
+  experienceManage: "community.experience.manage",
   contentPostCreate: "community.content.post.create",
   proposalCreate: "community.proposal.create",
   incidentCreate: "incidents.request.create",
@@ -26,22 +28,29 @@ export type DemoRole =
   | "administrator";
 
 const memberCaps: CapabilityKey[] = [
+  CAPABILITIES.experienceView,
   CAPABILITIES.experienceJoin,
   CAPABILITIES.contentPostCreate,
   CAPABILITIES.incidentCreate,
   CAPABILITIES.reservationCreate,
   CAPABILITIES.recommendationCreate,
-  CAPABILITIES.experienceCreate,
   CAPABILITIES.proposalCreate,
   CAPABILITIES.groupCreate,
 ];
 
 const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
   member: memberCaps,
-  group_manager: [...memberCaps, CAPABILITIES.manageEnter],
+  group_manager: [
+    ...memberCaps,
+    CAPABILITIES.experienceCreate,
+    CAPABILITIES.experienceManage,
+    CAPABILITIES.manageEnter,
+  ],
   moderator: [...memberCaps, CAPABILITIES.manageEnter],
   administrator: [
     ...memberCaps,
+    CAPABILITIES.experienceCreate,
+    CAPABILITIES.experienceManage,
     CAPABILITIES.announcementPublishOfficial,
     CAPABILITIES.manageEnter,
   ],

@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  experiences,
+  formatExperienceWhen,
+  listDiscoverableExperiences,
   places,
   recommendations,
   services,
+  spotsLeft,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   DiscoveryCard,
@@ -14,20 +16,31 @@ import {
   ExperienceCard,
   RecommendationCard,
   ResourceCard,
+  cn,
 } from "@life-community-os/ui";
-import { useTenant } from "@/providers/TenantProvider";
-import { cn } from "@life-community-os/ui";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
 type Segment = "experiences" | "services" | "places";
 
 export function DiscoverScreen() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled } = useTenant();
-  const initial = (searchParams.get("segment") as Segment | null) ?? "experiences";
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { getViewerState } = useExperienceParticipation();
+  const initial =
+    (searchParams.get("segment") as Segment | null) ?? "experiences";
   const [segment, setSegment] = useState<Segment>(
     initial === "places" || initial === "services" ? initial : "experiences",
   );
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    const s = searchParams.get("segment") as Segment | null;
+    if (s === "places" || s === "services" || s === "experiences") {
+      setSegment(s);
+    }
+  }, [searchParams]);
 
   const segments = useMemo(() => {
     const list: { id: Segment; label: string }[] = [];
@@ -56,6 +69,16 @@ export function DiscoverScreen() {
     );
   }
 
+  const experienceItems = listDiscoverableExperiences().filter((e) => {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      e.title.toLowerCase().includes(q) ||
+      e.location.toLowerCase().includes(q) ||
+      e.areaLabel.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-5">
       <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -77,7 +100,10 @@ export function DiscoverScreen() {
           <button
             key={s.id}
             type="button"
-            onClick={() => setSegment(s.id)}
+            onClick={() => {
+              setSegment(s.id);
+              router.replace(`/discover?segment=${s.id}`);
+            }}
             className={cn(
               "min-h-[40px] shrink-0 rounded-full px-4 text-[14px] font-semibold",
               active === s.id
@@ -90,38 +116,51 @@ export function DiscoverScreen() {
         ))}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto text-[13px]">
-        {["Area", "This week", "Outdoors"].map((chip) => (
-          <span
-            key={chip}
-            className="rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3 py-2 font-semibold text-[var(--color-text-secondary)]"
-          >
-            {chip}
-          </span>
-        ))}
-      </div>
-
       {active === "experiences" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {experiences
-            .filter((e) =>
-              query
-                ? e.title.toLowerCase().includes(query.toLowerCase())
-                : true,
-            )
-            .map((exp) => (
-              <ExperienceCard
-                key={exp.id}
-                title={exp.title}
-                when={exp.when}
-                where={exp.where}
-                meta={exp.meta}
-                imageUrl={exp.imageUrl}
-                ctaLabel={exp.cta}
-                onCta={() => undefined}
-              />
-            ))}
-        </div>
+        !hasCapability(CAPABILITIES.experienceView) ? (
+          <EmptyState
+            title="You don’t have access"
+            description="Experiences aren’t available for your account."
+          />
+        ) : experienceItems.length === 0 ? (
+          <EmptyState
+            title="No experiences match"
+            description="Try another search."
+            actionLabel="Clear"
+            onAction={() => setQuery("")}
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {experienceItems.map((exp) => {
+              const viewer = getViewerState(exp);
+              const remaining = spotsLeft(exp);
+              const href = `/experiences/${exp.id}`;
+              return (
+                <ExperienceCard
+                  key={exp.id}
+                  title={exp.title}
+                  when={formatExperienceWhen(exp.startsAt)}
+                  where={exp.location}
+                  meta={`${exp.participantCount} going · ${remaining} left`}
+                  imageUrl={exp.imageUrl}
+                  organizerName={exp.organizer.name}
+                  statusLabel={
+                    viewer === "joined"
+                      ? "You’re going"
+                      : viewer === "full"
+                        ? "Full"
+                        : remaining <= 3
+                          ? `${remaining} spots left`
+                          : "Open"
+                  }
+                  ctaLabel={viewer === "joined" ? "View" : "View & join"}
+                  onClick={() => router.push(href)}
+                  onCta={() => router.push(href)}
+                />
+              );
+            })}
+          </div>
+        )
       ) : null}
 
       {active === "services" ? (

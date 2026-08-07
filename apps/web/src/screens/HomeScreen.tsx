@@ -3,8 +3,9 @@
 import {
   announcement,
   currentMember,
-  experiences,
-  pulseItems,
+  formatExperienceTime,
+  formatExperienceWhen,
+  listDiscoverableExperiences,
   recommendations,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -16,6 +17,7 @@ import {
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
 import { useTenant } from "@/providers/TenantProvider";
+import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
 function greeting() {
   const hour = new Date().getHours();
@@ -26,8 +28,30 @@ function greeting() {
 
 export function HomeScreen() {
   const { theme, isFeatureEnabled } = useTenant();
+  const { joinedExperiences } = useExperienceParticipation();
   const router = useRouter();
   const hello = `${greeting()}, ${currentMember.displayName}`;
+  const featured = listDiscoverableExperiences().slice(0, 2);
+
+  const pulse = [
+    ...joinedExperiences.slice(0, 2).map((exp) => ({
+      id: exp.id,
+      time: formatExperienceTime(exp.startsAt),
+      title: exp.title,
+      place: exp.location,
+      href: `/experiences/${exp.id}`,
+    })),
+    ...featured
+      .filter((e) => !joinedExperiences.some((j) => j.id === e.id))
+      .slice(0, 3)
+      .map((exp) => ({
+        id: exp.id,
+        time: formatExperienceTime(exp.startsAt),
+        title: exp.title,
+        place: exp.areaLabel,
+        href: `/experiences/${exp.id}`,
+      })),
+  ].slice(0, 4);
 
   return (
     <div className="space-y-8">
@@ -58,7 +82,10 @@ export function HomeScreen() {
         />
         <div
           className="absolute inset-0 flex flex-col justify-end p-5 md:p-8"
-          style={{ background: `linear-gradient(transparent 30%, var(--color-hero-scrim))` }}
+          style={{
+            background:
+              "linear-gradient(transparent 30%, var(--color-hero-scrim))",
+          }}
         >
           <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-inverse)]/90">
             {theme.logoText}
@@ -67,7 +94,9 @@ export function HomeScreen() {
             {hello}
           </h1>
           <p className="mt-2 text-[16px] text-[var(--color-text-inverse)]/90">
-            3 things near you this week
+            {joinedExperiences.length > 0
+              ? `${joinedExperiences.length} upcoming for you`
+              : "Discover something nearby this week"}
           </p>
         </div>
       </section>
@@ -99,12 +128,12 @@ export function HomeScreen() {
       <section>
         <SectionHeader title="Happening now" />
         <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
-          {pulseItems.map((item) => (
+          {pulse.map((item) => (
             <button
               key={item.id}
               type="button"
               className="min-w-[148px] rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)]"
-              onClick={() => router.push("/calendar")}
+              onClick={() => router.push(item.href)}
             >
               <p className="text-[13px] font-semibold text-[var(--color-action-primary)]">
                 {item.time}
@@ -139,23 +168,25 @@ export function HomeScreen() {
             <button
               type="button"
               className="text-[14px] font-semibold text-[var(--color-action-primary)]"
-              onClick={() => router.push("/discover")}
+              onClick={() => router.push("/discover?segment=experiences")}
             >
               See more
             </button>
           }
         />
         {isFeatureEnabled("experiences")
-          ? experiences.slice(0, 2).map((exp) => (
+          ? featured.map((exp) => (
               <ExperienceCard
                 key={exp.id}
                 title={exp.title}
-                when={exp.when}
-                where={exp.where}
-                meta={exp.meta}
+                when={formatExperienceWhen(exp.startsAt)}
+                where={exp.location}
+                meta={`${exp.participantCount} going`}
                 imageUrl={exp.imageUrl}
-                ctaLabel={exp.cta}
-                onCta={() => undefined}
+                organizerName={exp.organizer.name}
+                ctaLabel="View & join"
+                onClick={() => router.push(`/experiences/${exp.id}`)}
+                onCta={() => router.push(`/experiences/${exp.id}`)}
               />
             ))
           : null}

@@ -7,6 +7,8 @@ export type ExperienceCardProps = {
   where: string;
   meta?: string;
   imageUrl: string;
+  organizerName?: string;
+  statusLabel?: string;
   ctaLabel?: string;
   onCta?: () => void;
   onClick?: () => void;
@@ -19,7 +21,9 @@ export function ExperienceCard({
   where,
   meta,
   imageUrl,
-  ctaLabel = "Register",
+  organizerName,
+  statusLabel,
+  ctaLabel = "View",
   onCta,
   onClick,
   className,
@@ -37,13 +41,18 @@ export function ExperienceCard({
         onClick={onClick}
         aria-label={title}
       >
-        <div className="aspect-[16/10] overflow-hidden bg-[var(--color-surface-muted)]">
+        <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-surface-muted)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imageUrl}
             alt=""
             className="h-full w-full object-cover"
           />
+          {statusLabel ? (
+            <span className="absolute left-3 top-3 rounded-full bg-[var(--color-surface-elevated)]/95 px-3 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+              {statusLabel}
+            </span>
+          ) : null}
         </div>
         <div className="p-4">
           <h3 className="text-[18px] font-semibold leading-6 text-[var(--color-text-primary)]">
@@ -51,8 +60,14 @@ export function ExperienceCard({
           </h3>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
             {when} · {where}
-            {meta ? ` · ${meta}` : ""}
           </p>
+          {(meta || organizerName) && (
+            <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+              {[organizerName ? `Hosted by ${organizerName}` : null, meta]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
         </div>
       </button>
       {onCta ? (

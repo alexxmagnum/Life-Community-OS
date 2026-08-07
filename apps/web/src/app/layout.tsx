@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 
 import { TenantProvider } from "@/providers/TenantProvider";
+import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
 
 import "./globals.css";
 
@@ -31,7 +32,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans antialiased">
-        <TenantProvider>{children}</TenantProvider>
+        <TenantProvider>
+          <ExperienceParticipationProvider>
+            {children}
+          </ExperienceParticipationProvider>
+        </TenantProvider>
       </body>
     </html>
   );

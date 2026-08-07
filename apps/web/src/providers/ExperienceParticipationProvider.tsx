@@ -1,0 +1,199 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  deriveViewerState,
+  getExperienceById,
+  listDiscoverableExperiences,
+  type Experience,
+  type ExperienceViewerState,
+} from "@life-community-os/tenant-life-panoramica";
+
+const STORAGE_KEY = "lcos:experience-participations";
+
+export type ParticipationRecord = {
+  experienceId: string;
+  state: "registered" | "waitlisted";
+  joinedAt: string;
+  reminders: boolean;
+};
+
+type ParticipationMap = Record<string, ParticipationRecord>;
+
+type ExperienceParticipationContextValue = {
+  records: ParticipationMap;
+  getParticipation: (
+    experienceId: string,
+  ) => ParticipationRecord | undefined;
+  getViewerState: (experience: Experience) => ExperienceViewerState;
+  join: (
+    experienceId: string,
+    options?: { reminders?: boolean; waitlist?: boolean },
+  ) => ParticipationRecord | null;
+  leave: (experienceId: string) => void;
+  setReminders: (experienceId: string, reminders: boolean) => void;
+  joinedExperiences: Experience[];
+};
+
+const ExperienceParticipationContext =
+  createContext<ExperienceParticipationContextValue | null>(null);
+
+function readStorage(): ParticipationMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as ParticipationMap;
+  } catch {
+    return {};
+  }
+}
+
+function writeStorage(map: ParticipationMap) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+
+export function ExperienceParticipationProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [records, setRecords] = useState<ParticipationMap>({});
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setRecords(readStorage());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStorage(records);
+  }, [records, hydrated]);
+
+  const getParticipation = useCallback(
+    (experienceId: string) => records[experienceId],
+    [records],
+  );
+
+  const getViewerState = useCallback(
+    (experience: Experience): ExperienceViewerState => {
+      const p = records[experience.id];
+      return deriveViewerState(
+        experience,
+        p?.state === "registered"
+          ? "registered"
+          : p?.state === "waitlisted"
+            ? "waitlisted"
+            : "none",
+      );
+    },
+    [records],
+  );
+
+  const join = useCallback(
+    (
+      experienceId: string,
+      options?: { reminders?: boolean; waitlist?: boolean },
+    ) => {
+      const experience = getExperienceById(experienceId);
+      if (!experience) return null;
+      const record: ParticipationRecord = {
+        experienceId,
+        state: options?.waitlist ? "waitlisted" : "registered",
+        joinedAt: new Date().toISOString(),
+        reminders: options?.reminders ?? true,
+      };
+      setRecords((prev) => ({ ...prev, [experienceId]: record }));
+      return record;
+    },
+    [],
+  );
+
+  const leave = useCallback((experienceId: string) => {
+    setRecords((prev) => {
+      const next = { ...prev };
+      delete next[experienceId];
+      return next;
+    });
+  }, []);
+
+  const setReminders = useCallback(
+    (experienceId: string, reminders: boolean) => {
+      setRecords((prev) => {
+        const existing = prev[experienceId];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [experienceId]: { ...existing, reminders },
+        };
+      });
+    },
+    [],
+  );
+
+  const joinedExperiences = useMemo(() => {
+    return listDiscoverableExperiences()
+      .concat(
+        // include cancelled/expired if user had joined — look up by id
+        Object.keys(records)
+          .map((id) => getExperienceById(id))
+          .filter((e): e is Experience => Boolean(e)),
+      )
+      .filter(
+        (e, index, arr) =>
+          records[e.id]?.state === "registered" &&
+          arr.findIndex((x) => x.id === e.id) === index,
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+      );
+  }, [records]);
+
+  const value = useMemo(
+    () => ({
+      records,
+      getParticipation,
+      getViewerState,
+      join,
+      leave,
+      setReminders,
+      joinedExperiences,
+    }),
+    [
+      records,
+      getParticipation,
+      getViewerState,
+      join,
+      leave,
+      setReminders,
+      joinedExperiences,
+    ],
+  );
+
+  return (
+    <ExperienceParticipationContext.Provider value={value}>
+      {children}
+    </ExperienceParticipationContext.Provider>
+  );
+}
+
+export function useExperienceParticipation() {
+  const ctx = useContext(ExperienceParticipationContext);
+  if (!ctx) {
+    throw new Error(
+      "useExperienceParticipation must be used within ExperienceParticipationProvider",
+    );
+  }
+  return ctx;
+}

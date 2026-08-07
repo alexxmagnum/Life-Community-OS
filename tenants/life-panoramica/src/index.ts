@@ -4,6 +4,7 @@ export {
   type TenantFeatureFlags,
 } from "./features";
 export * from "./content";
+export * from "./experiences";
 export {
   CAPABILITIES,
   capabilitiesForRole,
