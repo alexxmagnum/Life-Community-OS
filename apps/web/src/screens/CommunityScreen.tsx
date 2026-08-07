@@ -169,7 +169,7 @@ export function CommunityScreen() {
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Comunidad"
-        subtitle="Quién está aquí y qué está pasando entre vecinos."
+        subtitle="Pregunta, comparte y decide con tus vecinos."
       />
 
       <FilterChipRow
@@ -187,7 +187,7 @@ export function CommunityScreen() {
           empty={
             <EmptyState
               title="Todavía no hay conversaciones"
-              description="Sé la primera persona en compartir algo útil - adiós al caos del chat."
+              description="Pregunta algo útil o comparte una actualización: aquí vive la conversación del barrio."
             />
           }
         >

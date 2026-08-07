@@ -14,7 +14,7 @@ export type AreaId =
 
 export const areas: { id: AreaId; label: string }[] = [
   { id: "all", label: "Toda la comunidad" },
-  { id: "aldea-golf", label: "Zona norte" },
+  { id: "aldea-golf", label: "Aldea Golf" },
   { id: "detinsa", label: "Centro" },
   { id: "pinar", label: "El pinar" },
   { id: "valle-golf", label: "Los pinos" },
@@ -24,7 +24,8 @@ export const currentMember = {
   displayName: "Marta",
   fullName: "Marta Ruiz",
   membershipLabel: "Miembro · Life Panoramica",
-  areaLabel: "Life Panoramica",
+  /** Current microzone — resident belonging context */
+  areaLabel: "Aldea Golf",
   interests: ["Caminar", "Pádel"],
   avatarUrl:
     "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80",

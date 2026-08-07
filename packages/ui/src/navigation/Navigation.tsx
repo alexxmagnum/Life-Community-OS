@@ -45,9 +45,22 @@ export function BottomNavigation({
           const active = item.id === activeId;
           return (
             <li key={item.id} className="flex-1">
-              <button
-                type="button"
-                onClick={() => onNavigate(item)}
+              <a
+                href={item.href}
+                onClick={(e) => {
+                  if (
+                    e.defaultPrevented ||
+                    e.button !== 0 ||
+                    e.metaKey ||
+                    e.altKey ||
+                    e.ctrlKey ||
+                    e.shiftKey
+                  ) {
+                    return;
+                  }
+                  e.preventDefault();
+                  onNavigate(item);
+                }}
                 className={cn(
                   "flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[12px] font-semibold",
                   active
@@ -60,7 +73,7 @@ export function BottomNavigation({
                   {item.icon}
                 </span>
                 {item.label}
-              </button>
+              </a>
             </li>
           );
         })}
@@ -102,10 +115,23 @@ export function DesktopNavigation({
         {items.map((item) => {
           const active = item.id === activeId;
           return (
-            <button
+            <a
               key={item.id}
-              type="button"
-              onClick={() => onNavigate(item)}
+              href={item.href}
+              onClick={(e) => {
+                if (
+                  e.defaultPrevented ||
+                  e.button !== 0 ||
+                  e.metaKey ||
+                  e.altKey ||
+                  e.ctrlKey ||
+                  e.shiftKey
+                ) {
+                  return;
+                }
+                e.preventDefault();
+                onNavigate(item);
+              }}
               className={cn(
                 "flex min-h-[48px] items-center gap-3 rounded-[var(--radius-md)] px-3 text-[16px] font-semibold transition-colors",
                 active
@@ -116,10 +142,9 @@ export function DesktopNavigation({
             >
               <span aria-hidden>{item.icon}</span>
               {item.label}
-            </button>
+            </a>
           );
-        })}
-      </nav>
+        })}      </nav>
       {onCreate ? (
         <button
           type="button"

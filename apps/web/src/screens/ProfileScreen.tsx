@@ -40,7 +40,11 @@ export function ProfileScreen() {
       <ProfileCard
         name={currentMember.fullName}
         membershipLabel={currentMember.membershipLabel}
-        areaLabel={theme.logoText}
+        areaLabel={
+          currentMember.areaLabel ||
+          theme.identity?.defaultAreaName ||
+          theme.logoText
+        }
         interests={currentMember.interests}
         avatarUrl={currentMember.avatarUrl}
         onEdit={() => undefined}

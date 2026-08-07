@@ -9,6 +9,12 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   shortName: "Panoramica",
   logoText: "Life Panoramica",
   tagline: "Tu comunidad, viva",
+  identity: {
+    territoryName: "Panorámica Golf",
+    defaultAreaName: "Aldea Golf",
+    homeCallout: "Tu comunidad hoy",
+    pulseTitleTemplate: "Hoy en {territory}",
+  },
   colors: {
     brandPrimary: "#1F4A3C",
     brandPrimaryHover: "#183A30",
@@ -40,7 +46,6 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   imagery: {
     splash:
       "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=1600&q=80",
-    homeHero:
-      "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&w=1600&q=80",
+    homeHero: "/tenants/life-panoramica/home-hero.jpg",
   },
 };

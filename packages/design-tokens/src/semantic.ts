@@ -37,6 +37,23 @@ export type TenantBrandTokens = {
   shortName?: string;
   logoText: string;
   tagline?: string;
+  /**
+   * Place belonging for Home and local context.
+   * Platform UI receives these as props — never hardcode tenant names.
+   */
+  identity?: {
+    /** Territory / place name shown as Home hero eyebrow */
+    territoryName: string;
+    /** Default area / microzone when member context is unset */
+    defaultAreaName: string;
+    /** Hero context line under greeting (e.g. “Tu comunidad hoy”) */
+    homeCallout?: string;
+    /**
+     * Community pulse section title.
+     * Supports `{territory}` placeholder — never hardcode tenant names in UI.
+     */
+    pulseTitleTemplate?: string;
+  };
   colors: {
     brandPrimary: string;
     brandPrimaryHover: string;

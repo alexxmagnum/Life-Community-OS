@@ -9,6 +9,8 @@ export type TenantFeatureFlags = {
   recommendations: boolean;
   /** Local Entity / Local Discovery ecosystem (ADR-017 / ADR-032). */
   localLife: boolean;
+  /** Community Life Pulse aggregation on Home (TECH-011). */
+  communityPulse: boolean;
   groups: boolean;
   decide: boolean;
   interactions: boolean;
@@ -24,6 +26,7 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   resources: true,
   recommendations: true,
   localLife: true,
+  communityPulse: true,
   groups: true,
   decide: true,
   interactions: true,

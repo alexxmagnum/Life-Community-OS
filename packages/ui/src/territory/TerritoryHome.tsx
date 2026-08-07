@@ -4,10 +4,12 @@ import { cn } from "../lib/cn";
 
 /** Edge-to-edge territory opening — brand identity lives on photography. */
 export type TerritoryHeroProps = {
+  /** Territory / place identity — shown as uppercase eyebrow above greeting */
   territoryName: string;
   greeting: string;
   /** One living line under the greeting (e.g. “Esta tarde hay actividad”). */
   callout?: string;
+  /** Resident microzone / area — chip context, not a nav root */
   areaLabel: string;
   weatherLabel?: string;
   imageUrl: string;
@@ -76,14 +78,17 @@ export function TerritoryHero({
           }}
         />
         <div className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-28">
-          <p className="text-[14px] font-semibold tracking-[0.06em] text-[var(--color-text-inverse)]/90">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-inverse)]/85">
             {territoryName}
           </p>
-          <h1 className="mt-2 max-w-[16ch] font-[family-name:var(--font-display)] text-[40px] font-semibold leading-[1.05] text-[var(--color-text-inverse)]">
+          <p className="mt-1.5 text-[15px] font-medium tracking-wide text-[var(--color-text-inverse)]/80">
+            {areaLabel}
+          </p>
+          <h1 className="mt-3.5 max-w-[16ch] font-[family-name:var(--font-display)] text-[40px] font-semibold leading-[1.05] text-[var(--color-text-inverse)]">
             {greeting}
           </h1>
           {callout ? (
-            <p className="mt-3 max-w-[22ch] text-[17px] font-medium leading-6 text-[var(--color-text-inverse)]/90">
+            <p className="mt-3 max-w-[24ch] text-[16px] font-medium leading-6 text-[var(--color-text-inverse)]/88">
               {callout}
             </p>
           ) : null}
@@ -105,22 +110,27 @@ export type QuickActionBarProps = {
   className?: string;
 };
 
-/** Three equal invitations to act — not a module launcher. */
+/** Three equal invitations to contribute — not a module launcher. */
 export function QuickActionBar({ items, className }: QuickActionBarProps) {
   if (items.length === 0) return null;
   return (
-    <div className={cn("grid grid-cols-3 gap-2.5", className)}>
+    <div className={cn("grid grid-cols-3 gap-2", className)}>
       {items.slice(0, 3).map((item) => (
         <button
           key={item.id}
           type="button"
           onClick={item.onClick}
-          className="flex min-h-[56px] flex-col items-center justify-center gap-1.5 rounded-[var(--radius-lg)] bg-[var(--color-action-primary-subtle)] px-2 py-3.5 text-[var(--color-action-primary)] transition-transform active:scale-[0.98]"
+          className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] px-2 py-3.5 text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
         >
-          <span className="text-[20px] leading-none" aria-hidden>
+          <span
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[15px] font-semibold text-[var(--color-action-primary)]"
+            aria-hidden
+          >
             {item.icon}
           </span>
-          <span className="text-[13px] font-semibold leading-4">{item.label}</span>
+          <span className="text-[13px] font-semibold leading-4 text-center">
+            {item.label}
+          </span>
         </button>
       ))}
     </div>
@@ -134,10 +144,12 @@ export type CommunityPulseMomentProps = {
   emptyLabel?: string;
   onEmptyAction?: () => void;
   emptyActionLabel?: string;
+  /** stack = narrative moments; rail = soft time pills */
+  layout?: "stack" | "rail";
   className?: string;
 };
 
-/** Living community moment — narrative first, then soft agenda pills. */
+/** Living community moment — narrative first, then soft agenda. */
 export function CommunityPulseMoment({
   title,
   livingLine,
@@ -145,23 +157,28 @@ export function CommunityPulseMoment({
   emptyLabel,
   onEmptyAction,
   emptyActionLabel = "Descubrir",
+  layout = "stack",
   className,
 }: CommunityPulseMomentProps) {
   const hasChildren = Boolean(children);
   return (
     <section className={cn("space-y-5", className)}>
       <div>
-        <h2 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
+        <h2 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8 text-[var(--color-text-primary)]">
           {title}
         </h2>
-        <p className="mt-2 text-[17px] leading-6 text-[var(--color-text-secondary)]">
+        <p className="mt-2 text-[16px] leading-6 text-[var(--color-text-secondary)]">
           {livingLine}
         </p>
       </div>
       {hasChildren ? (
-        <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {children}
-        </div>
+        layout === "rail" ? (
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+            {children}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">{children}</div>
+        )
       ) : (
         <div className="rounded-[var(--radius-xl)] bg-[var(--color-surface-muted)]/70 px-5 py-8 text-center">
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
@@ -179,6 +196,86 @@ export function CommunityPulseMoment({
         </div>
       )}
     </section>
+  );
+}
+
+export type CommunityActivityCardProps = {
+  headline: string;
+  context?: string;
+  imageUrl?: string;
+  personName?: string;
+  personAvatarUrl?: string;
+  live?: boolean;
+  onClick?: () => void;
+  className?: string;
+};
+
+/**
+ * One life moment in the pulse — people and context, not a database row.
+ * Presentational; source domain stays in platform types / tenant builders.
+ */
+export function CommunityActivityCard({
+  headline,
+  context,
+  imageUrl,
+  personName,
+  personAvatarUrl,
+  live,
+  onClick,
+  className,
+}: CommunityActivityCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full gap-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-3 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]",
+        className,
+      )}
+    >
+      {imageUrl ? (
+        <div className="relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          {live ? (
+            <span
+              className="absolute left-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--color-action-accent)] ring-2 ring-[var(--color-surface-elevated)]"
+              aria-label="En breve"
+            />
+          ) : null}
+        </div>
+      ) : personAvatarUrl || personName ? (
+        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-action-primary-subtle)]">
+          {personAvatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={personAvatarUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-[18px] font-semibold text-[var(--color-action-primary)]">
+              {personName?.slice(0, 1)}
+            </span>
+          )}
+        </div>
+      ) : null}
+      <span className="min-w-0 flex-1 py-0.5">
+        {live ? (
+          <span className="mb-1 inline-block text-[12px] font-semibold text-[var(--color-action-accent)]">
+            Ahora
+          </span>
+        ) : null}
+        <span className="block text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
+          {headline}
+        </span>
+        {context ? (
+          <span className="mt-1 block line-clamp-2 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+            {context}
+          </span>
+        ) : null}
+      </span>
+    </button>
   );
 }
 

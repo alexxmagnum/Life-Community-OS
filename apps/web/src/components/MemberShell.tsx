@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AppShell,
@@ -63,6 +63,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
     () => buildNav({ marketplace: isFeatureEnabled("marketplace") }),
     [isFeatureEnabled],
   );
+
+  useEffect(() => {
+    for (const item of navItems) {
+      router.prefetch(item.href);
+    }
+  }, [navItems, router]);
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];

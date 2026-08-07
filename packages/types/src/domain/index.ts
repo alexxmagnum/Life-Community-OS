@@ -20,3 +20,12 @@ export {
   listTrustedHelpEntities,
   filterLocalRecommendations,
 } from "./local-entity";
+export type {
+  CommunityActivity,
+  CommunityActivitySource,
+  CommunityPulseOptions,
+} from "./community-activity";
+export {
+  selectCommunityPulse,
+  summarizeCommunityPulse,
+} from "./community-activity";

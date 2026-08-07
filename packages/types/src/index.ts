@@ -8,3 +8,9 @@ export {
   listTrustedHelpEntities,
   filterLocalRecommendations,
 } from "./domain/local-entity";
+
+/** Runtime helpers for Community Life Pulse (platform capability). */
+export {
+  selectCommunityPulse,
+  summarizeCommunityPulse,
+} from "./domain/community-activity";

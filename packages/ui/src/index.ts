@@ -76,6 +76,7 @@ export {
   TerritoryHero,
   CommunityPulseCard,
   CommunityPulseMoment,
+  CommunityActivityCard,
   CommunityStory,
   ParticipationInvitationCard,
   OfficialNoticeCard,

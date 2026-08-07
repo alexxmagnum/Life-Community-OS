@@ -3,27 +3,30 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
+  buildCommunityPulse,
+  communityPulseLivingLine,
   currentMember,
   formatContentWhen,
-  formatExperienceTime,
-  listDiscoverableExperiences,
+  listNearYou,
+  listNeighbourRecommendations,
   listOfficialContent,
   listPublishedCommunityContent,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  CommunityPulseCard,
+  CommunityActivityCard,
   CommunityPulseMoment,
   CommunityStory,
   ContentBlock,
-  ExploreLink,
+  HomeSection,
+  LocalLifeRail,
+  LocalPlaceCard,
+  NeighbourTipCard,
   OfficialNoticeCard,
-  ParticipationInvitationCard,
+  QuickActionBar,
   TerritoryHero,
 } from "@life-community-os/ui";
-import { useTenant } from "@/providers/TenantProvider";
-import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
-import { useReservations } from "@/providers/ReservationProvider";
 
 function greetingFor(name: string) {
   const hour = new Date().getHours();
@@ -32,20 +35,64 @@ function greetingFor(name: string) {
   return `Buenas noches, ${name}`;
 }
 
-function isLiveSoon(startsAt: string) {
-  const diff = new Date(startsAt).getTime() - Date.now();
-  return diff > 0 && diff < 2 * 60 * 60 * 1000;
+function resolveCopyTemplate(template: string, territoryName: string) {
+  return template.replaceAll("{territory}", territoryName);
 }
 
 export function HomeScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled } = useTenant();
-  const { joinedExperiences } = useExperienceParticipation();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { feedItems } = useCommunityInteractions();
-  const { upcoming: upcomingReservations } = useReservations();
 
   const greeting = greetingFor(currentMember.displayName);
-  const communityName = theme.logoText;
+  const territoryName =
+    theme.identity?.territoryName ?? theme.logoText;
+  const areaLabel =
+    currentMember.areaLabel ||
+    theme.identity?.defaultAreaName ||
+    theme.logoText;
+  const homeCallout =
+    theme.identity?.homeCallout ?? "Tu comunidad hoy";
+  const pulseTitle = resolveCopyTemplate(
+    theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
+    territoryName,
+  );
+
+  const canPulse =
+    isFeatureEnabled("communityPulse") &&
+    hasCapability(CAPABILITIES.pulseView);
+
+  const canLocal =
+    isFeatureEnabled("localLife") &&
+    hasCapability(CAPABILITIES.localView);
+
+  const pulse = useMemo(() => {
+    if (!canPulse) return [];
+    return buildCommunityPulse({
+      limit: 4,
+      features: {
+        experiences: isFeatureEnabled("experiences"),
+        marketplace: isFeatureEnabled("marketplace"),
+        recommendations: isFeatureEnabled("recommendations"),
+        localLife: isFeatureEnabled("localLife"),
+        feed: isFeatureEnabled("feed"),
+        resources: isFeatureEnabled("resources"),
+        groups: isFeatureEnabled("groups"),
+      },
+    });
+  }, [canPulse, isFeatureEnabled]);
+
+  const livingLine = communityPulseLivingLine(pulse);
+
+  const nearYou = useMemo(() => {
+    if (!canLocal) return [];
+    return listNearYou().slice(0, 4);
+  }, [canLocal]);
+
+  const neighbourTip = useMemo(() => {
+    if (!canLocal || !isFeatureEnabled("recommendations")) return null;
+    return listNeighbourRecommendations()[0] ?? null;
+  }, [canLocal, isFeatureEnabled]);
 
   const official = useMemo(() => {
     const all = listOfficialContent();
@@ -58,136 +105,137 @@ export function HomeScreen() {
     );
   }, [feedItems]);
 
-  const pulseItems = useMemo(() => {
-    type Pulse = {
+  const recentLife = official ?? neighbourStory;
+
+  const contributeItems = useMemo(() => {
+    const items: {
       id: string;
-      time: string;
-      title: string;
-      meta: string;
-      live?: boolean;
-      href: string;
-    };
-    const items: Pulse[] = [];
+      label: string;
+      icon: string;
+      onClick: () => void;
+    }[] = [];
 
-    for (const exp of joinedExperiences.slice(0, 1)) {
-      items.push({
-        id: `joined-${exp.id}`,
-        time: formatExperienceTime(exp.startsAt),
-        title: exp.title,
-        meta: exp.location,
-        live: isLiveSoon(exp.startsAt),
-        href: `/experiences/${exp.id}`,
-      });
-    }
-    for (const r of upcomingReservations.slice(0, 1)) {
-      items.push({
-        id: `res-${r.id}`,
-        time: r.start,
-        title: r.resourceName,
-        meta: r.location,
-        href: `/resources/${r.resourceId}`,
-      });
-    }
-    for (const exp of listDiscoverableExperiences().slice(0, 3)) {
-      if (items.some((i) => i.href === `/experiences/${exp.id}`)) continue;
-      items.push({
-        id: `exp-${exp.id}`,
-        time: formatExperienceTime(exp.startsAt),
-        title: exp.title,
-        meta: exp.location,
-        live: isLiveSoon(exp.startsAt),
-        href: `/experiences/${exp.id}`,
-      });
-    }
-    return items.slice(0, 3);
-  }, [joinedExperiences, upcomingReservations]);
-
-  const participatingCount = listDiscoverableExperiences().reduce(
-    (sum, e) => sum + e.participantCount,
-    0,
-  );
-
-  const livingLine =
-    pulseItems.length === 0
-      ? "Hoy está tranquilo en la comunidad"
-      : participatingCount > 0
-        ? `${participatingCount} vecinos participan ahora`
-        : "Hay vida cerca de ti";
-
-  const invitation = useMemo(() => {
     if (isFeatureEnabled("experiences")) {
-      return {
-        title: "Participa hoy",
-        description: "Únete a un plan con vecinos cerca de ti.",
-        ctaLabel: "Ver planes",
-        href: "/discover",
-      };
+      items.push({
+        id: "join",
+        label: "Participar",
+        icon: "＋",
+        onClick: () => router.push("/discover"),
+      });
+    }
+    if (isFeatureEnabled("recommendations") || canLocal) {
+      items.push({
+        id: "recommend",
+        label: "Recomendar",
+        icon: "★",
+        onClick: () => router.push("/discover"),
+      });
     }
     if (isFeatureEnabled("marketplace")) {
-      return {
-        title: "Mira el mercado",
-        description: "Lo que tus vecinos ofrecen o necesitan.",
-        ctaLabel: "Abrir mercado",
-        href: "/marketplace",
-      };
+      items.push({
+        id: "share",
+        label: "Compartir",
+        icon: "↔",
+        onClick: () => router.push("/marketplace"),
+      });
     }
-    return {
-      title: "Explora la comunidad",
-      description: "Descubre qué está pasando cerca.",
-      ctaLabel: "Descubrir",
-      href: "/discover",
-    };
-  }, [isFeatureEnabled]);
 
-  const recentLife = official ?? neighbourStory;
+    return items.slice(0, 3);
+  }, [canLocal, isFeatureEnabled, router]);
 
   return (
     <div className="-mx-4 -mt-3 md:-mx-8 md:-mt-8">
       <TerritoryHero
-        territoryName={communityName}
+        territoryName={territoryName}
         greeting={greeting}
-        callout="¿Qué está pasando ahora?"
-        areaLabel={communityName}
+        callout={homeCallout}
+        areaLabel={areaLabel}
         weatherLabel="Soleado · 24°"
         imageUrl={theme.imagery.homeHero}
         notificationCount={3}
         onNotifications={() => router.push("/me")}
       />
 
-      <ContentBlock className="space-y-10 pt-8">
-        <CommunityPulseMoment
-          title="Ahora en la comunidad"
-          livingLine={livingLine}
-          emptyLabel="Nada programado — descubre algo cerca."
-          emptyActionLabel="Descubrir"
-          onEmptyAction={() => router.push("/discover")}
-        >
-          {pulseItems.length > 0
-            ? pulseItems.map((item) => (
-                <CommunityPulseCard
-                  key={item.id}
-                  time={item.time}
-                  title={item.title}
-                  meta={item.meta}
-                  live={item.live}
-                  onClick={() => router.push(item.href)}
-                />
-              ))
-            : null}
-        </CommunityPulseMoment>
+      <ContentBlock className="space-y-11 pt-7 pb-4">
+        {contributeItems.length > 0 ? (
+          <section className="space-y-3">
+            <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+              Tú también formas parte.
+            </p>
+            <QuickActionBar items={contributeItems} />
+          </section>
+        ) : null}
 
-        <ParticipationInvitationCard
-          title={invitation.title}
-          description={invitation.description}
-          ctaLabel={invitation.ctaLabel}
-          onClick={() => router.push(invitation.href)}
-        />
+        {canPulse ? (
+          <CommunityPulseMoment
+            title={pulseTitle}
+            livingLine={livingLine}
+            layout="stack"
+            emptyLabel="Hoy está tranquilo por aquí."
+            emptyActionLabel="Descubrir cerca"
+            onEmptyAction={() => router.push("/discover")}
+          >
+            {pulse.length > 0
+              ? pulse.map((item) => (
+                  <CommunityActivityCard
+                    key={item.id}
+                    headline={item.headline}
+                    context={item.context}
+                    imageUrl={item.imageUrl}
+                    personName={item.personName}
+                    personAvatarUrl={item.personAvatarUrl}
+                    live={item.live}
+                    onClick={
+                      item.href
+                        ? () => router.push(item.href!)
+                        : undefined
+                    }
+                  />
+                ))
+              : null}
+          </CommunityPulseMoment>
+        ) : null}
+
+        {canLocal && (nearYou.length > 0 || neighbourTip) ? (
+          <HomeSection
+            title="Vida cerca"
+            subtitle="Lo que tus vecinos usan y recomiendan."
+            actionLabel="Ver más"
+            onAction={() => router.push("/discover")}
+          >
+            {nearYou.length > 0 ? (
+              <LocalLifeRail>
+                {nearYou.map((place) => (
+                  <LocalPlaceCard
+                    key={place.id}
+                    name={place.name}
+                    categoryLabel={place.categoryLabel}
+                    areaLabel={place.areaLabel}
+                    blurb={place.story}
+                    imageUrl={place.imageUrl}
+                    recommendedBy={place.recommendedBy}
+                    verified={place.verified}
+                    trustNote={place.trustNote}
+                    onClick={() => router.push("/discover")}
+                  />
+                ))}
+              </LocalLifeRail>
+            ) : null}
+            {neighbourTip ? (
+              <NeighbourTipCard
+                quote={neighbourTip.body}
+                author={neighbourTip.authorName}
+                relatedLabel={neighbourTip.relatedLabel}
+                imageUrl={neighbourTip.imageUrl}
+                onClick={() => router.push("/discover")}
+                className={nearYou.length > 0 ? "mt-4" : undefined}
+              />
+            ) : null}
+          </HomeSection>
+        ) : null}
 
         {isFeatureEnabled("feed") && recentLife ? (
-          <section className="space-y-4">
-            <h2 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8 text-[var(--color-text-primary)]">
-              Vida reciente
-            </h2>
+          <HomeSection title="Vale la pena saber">
             {official && recentLife.id === official.id ? (
               <OfficialNoticeCard
                 title={official.title}
@@ -213,36 +261,8 @@ export function HomeScreen() {
                 }
               />
             ) : null}
-          </section>
+          </HomeSection>
         ) : null}
-
-        <section className="space-y-3 border-t border-[var(--color-border-subtle)] pt-8">
-          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
-            Seguir explorando
-          </h2>
-          <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
-            Tu comunidad sigue aquí cuando quieras.
-          </p>
-          <div className="flex flex-col gap-2 pt-2">
-            <ExploreLink
-              label="Comunidad"
-              hint="Quién está aquí y qué se habla"
-              onClick={() => router.push("/community")}
-            />
-            <ExploreLink
-              label="Descubrir"
-              hint="Vida cerca de ti"
-              onClick={() => router.push("/discover")}
-            />
-            {isFeatureEnabled("marketplace") ? (
-              <ExploreLink
-                label="Mercado"
-                hint="Ofrecer, buscar o compartir"
-                onClick={() => router.push("/marketplace")}
-              />
-            ) : null}
-          </div>
-        </section>
       </ContentBlock>
     </div>
   );
