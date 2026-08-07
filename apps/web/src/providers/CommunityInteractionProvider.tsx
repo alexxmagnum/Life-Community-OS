@@ -1,0 +1,302 @@
+"use client";
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import {
+  contentTypeLabel,
+  getCommunityContentById,
+  listPublishedCommunityContent,
+  type CommunityAuthor,
+  type CommunityComment,
+  type CommunityContent,
+  type CommunityContentType,
+  type PublishingStatus,
+  type ReactionKind,
+} from "@life-community-os/tenant-life-panoramica";
+import { currentMember } from "@life-community-os/tenant-life-panoramica";
+
+const STORAGE_KEY = "lcos:community-interactions";
+
+type LocalOverrides = {
+  /** User-created published posts */
+  created: CommunityContent[];
+  reactions: Record<string, ReactionKind | null>;
+  /** Extra comments keyed by content id */
+  comments: Record<string, CommunityComment[]>;
+  savedIds: string[];
+  reportedIds: string[];
+};
+
+const emptyOverrides = (): LocalOverrides => ({
+  created: [],
+  reactions: {},
+  comments: {},
+  savedIds: [],
+  reportedIds: [],
+});
+
+type CommunityInteractionContextValue = {
+  feedItems: CommunityContent[];
+  getContent: (id: string) => CommunityContent | undefined;
+  getMyReaction: (contentId: string) => ReactionKind | null;
+  isSaved: (contentId: string) => boolean;
+  isReported: (contentId: string) => boolean;
+  toggleReaction: (contentId: string, kind: ReactionKind) => void;
+  addComment: (contentId: string, body: string) => void;
+  toggleSave: (contentId: string) => void;
+  reportContent: (contentId: string) => void;
+  createPublication: (input: {
+    title: string;
+    body: string;
+    type?: Extract<CommunityContentType, "member_update" | "discussion">;
+    areaLabel?: string;
+  }) => CommunityContent | null;
+};
+
+const CommunityInteractionContext =
+  createContext<CommunityInteractionContextValue | null>(null);
+
+function readStorage(): LocalOverrides {
+  if (typeof window === "undefined") return emptyOverrides();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return emptyOverrides();
+    return { ...emptyOverrides(), ...(JSON.parse(raw) as LocalOverrides) };
+  } catch {
+    return emptyOverrides();
+  }
+}
+
+function writeStorage(data: LocalOverrides) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function mergeContent(
+  base: CommunityContent,
+  overrides: LocalOverrides,
+): CommunityContent {
+  const extraComments = overrides.comments[base.id] ?? [];
+  const myReaction = overrides.reactions[base.id];
+  const reactionCounts = { ...base.reactionCounts };
+  if (myReaction) {
+    reactionCounts[myReaction] = (reactionCounts[myReaction] ?? 0) + 1;
+  }
+  return {
+    ...base,
+    comments: [...base.comments, ...extraComments],
+    commentCount: base.commentCount + extraComments.length,
+    reactionCounts,
+  };
+}
+
+export function CommunityInteractionProvider({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setOverrides(readStorage());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStorage(overrides);
+  }, [overrides, hydrated]);
+
+  const getContent = useCallback(
+    (id: string) => {
+      const created = overrides.created.find((c) => c.id === id);
+      if (created) return mergeContent(created, overrides);
+      const base = getCommunityContentById(id);
+      if (!base) return undefined;
+      return mergeContent(base, overrides);
+    },
+    [overrides],
+  );
+
+  const feedItems = useMemo(() => {
+    const publishedCreated = overrides.created.filter(
+      (c) => c.status === "published",
+    );
+    const catalog = listPublishedCommunityContent().map((c) =>
+      mergeContent(c, overrides),
+    );
+    return [...publishedCreated.map((c) => mergeContent(c, overrides)), ...catalog].sort(
+      (a, b) =>
+        new Date(b.publishedAt ?? b.createdAt).getTime() -
+        new Date(a.publishedAt ?? a.createdAt).getTime(),
+    );
+  }, [overrides]);
+
+  const getMyReaction = useCallback(
+    (contentId: string) => overrides.reactions[contentId] ?? null,
+    [overrides.reactions],
+  );
+
+  const isSaved = useCallback(
+    (contentId: string) => overrides.savedIds.includes(contentId),
+    [overrides.savedIds],
+  );
+
+  const isReported = useCallback(
+    (contentId: string) => overrides.reportedIds.includes(contentId),
+    [overrides.reportedIds],
+  );
+
+  const toggleReaction = useCallback((contentId: string, kind: ReactionKind) => {
+    setOverrides((prev) => {
+      const current = prev.reactions[contentId] ?? null;
+      const next = current === kind ? null : kind;
+      return {
+        ...prev,
+        reactions: { ...prev.reactions, [contentId]: next },
+      };
+    });
+  }, []);
+
+  const addComment = useCallback((contentId: string, body: string) => {
+    const trimmed = body.trim();
+    if (!trimmed) return;
+    const author: CommunityAuthor = {
+      id: "self",
+      name: currentMember.displayName,
+      avatarUrl: currentMember.avatarUrl,
+    };
+    const mentionNames = Array.from(
+      trimmed.matchAll(/@([A-Za-zÀ-ÿ]+)/g),
+      (m) => m[1]!,
+    );
+    const comment: CommunityComment = {
+      id: `local-c-${Date.now()}`,
+      author,
+      body: trimmed,
+      createdAt: new Date().toISOString(),
+      mentionNames: mentionNames.length ? mentionNames : undefined,
+    };
+    setOverrides((prev) => ({
+      ...prev,
+      comments: {
+        ...prev.comments,
+        [contentId]: [...(prev.comments[contentId] ?? []), comment],
+      },
+    }));
+  }, []);
+
+  const toggleSave = useCallback((contentId: string) => {
+    setOverrides((prev) => {
+      const has = prev.savedIds.includes(contentId);
+      return {
+        ...prev,
+        savedIds: has
+          ? prev.savedIds.filter((id) => id !== contentId)
+          : [...prev.savedIds, contentId],
+      };
+    });
+  }, []);
+
+  const reportContent = useCallback((contentId: string) => {
+    setOverrides((prev) => ({
+      ...prev,
+      reportedIds: prev.reportedIds.includes(contentId)
+        ? prev.reportedIds
+        : [...prev.reportedIds, contentId],
+    }));
+  }, []);
+
+  const createPublication = useCallback(
+    (input: {
+      title: string;
+      body: string;
+      type?: Extract<CommunityContentType, "member_update" | "discussion">;
+      areaLabel?: string;
+    }) => {
+      const title = input.title.trim();
+      const body = input.body.trim();
+      if (!title || !body) return null;
+      const now = new Date().toISOString();
+      const status: PublishingStatus = "published";
+      const item: CommunityContent = {
+        id: `cc-local-${Date.now()}`,
+        type: input.type ?? "member_update",
+        title,
+        body,
+        status,
+        isOfficial: false,
+        author: {
+          id: "self",
+          name: currentMember.fullName,
+          avatarUrl: currentMember.avatarUrl,
+        },
+        areaLabel: input.areaLabel ?? currentMember.areaLabel,
+        createdAt: now,
+        publishedAt: now,
+        commentCount: 0,
+        reactionCounts: { acknowledge: 0, support: 0 },
+        comments: [],
+      };
+      setOverrides((prev) => ({
+        ...prev,
+        created: [item, ...prev.created],
+      }));
+      return item;
+    },
+    [],
+  );
+
+  const value = useMemo(
+    () => ({
+      feedItems,
+      getContent,
+      getMyReaction,
+      isSaved,
+      isReported,
+      toggleReaction,
+      addComment,
+      toggleSave,
+      reportContent,
+      createPublication,
+    }),
+    [
+      feedItems,
+      getContent,
+      getMyReaction,
+      isSaved,
+      isReported,
+      toggleReaction,
+      addComment,
+      toggleSave,
+      reportContent,
+      createPublication,
+    ],
+  );
+
+  return (
+    <CommunityInteractionContext.Provider value={value}>
+      {children}
+    </CommunityInteractionContext.Provider>
+  );
+}
+
+export function useCommunityInteractions() {
+  const ctx = useContext(CommunityInteractionContext);
+  if (!ctx) {
+    throw new Error(
+      "useCommunityInteractions must be used within CommunityInteractionProvider",
+    );
+  }
+  return ctx;
+}
+
+export { contentTypeLabel };

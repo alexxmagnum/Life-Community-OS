@@ -4,6 +4,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 
 import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
+import { CommunityInteractionProvider } from "@/providers/CommunityInteractionProvider";
 
 import "./globals.css";
 
@@ -34,7 +35,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen font-sans antialiased">
         <TenantProvider>
           <ExperienceParticipationProvider>
-            {children}
+            <CommunityInteractionProvider>
+              {children}
+            </CommunityInteractionProvider>
           </ExperienceParticipationProvider>
         </TenantProvider>
       </body>

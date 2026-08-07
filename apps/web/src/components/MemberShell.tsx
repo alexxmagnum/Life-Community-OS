@@ -4,12 +4,14 @@ import { useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AppShell,
+  CreatePostSheet,
   CreateSheet,
   type CreateAction,
   type NavItem,
   type NavItemId,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
 const navItems: NavItem[] = [
   { id: "home", label: "Home", href: "/", icon: "⌂" },
@@ -24,6 +26,7 @@ function activeFromPath(pathname: string): NavItemId {
   if (pathname.startsWith("/calendar")) return "calendar";
   if (pathname.startsWith("/community")) return "community";
   if (pathname.startsWith("/me")) return "me";
+  if (pathname.startsWith("/experiences")) return "discover";
   return "home";
 }
 
@@ -31,7 +34,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { theme, hasCapability, isFeatureEnabled } = useTenant();
+  const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -57,14 +62,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
     if (
       isFeatureEnabled("feed") &&
-      hasCapability(CAPABILITIES.contentPostCreate)
+      hasCapability(CAPABILITIES.contentCreate)
     ) {
       actions.push({
         id: "post",
         title: "Share an update",
         description: "Post for neighbours",
         icon: "✎",
-        onSelect: () => showToast("Post composer coming next"),
+        onSelect: () => setPostOpen(true),
       });
     }
 
@@ -149,6 +154,17 @@ export function MemberShell({ children }: { children: ReactNode }) {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         actions={createActions}
+      />
+      <CreatePostSheet
+        open={postOpen}
+        onClose={() => setPostOpen(false)}
+        onSubmit={(input) => {
+          const created = createPublication(input);
+          if (created) {
+            showToast("Published to Community");
+            router.push(`/community/content/${created.id}`);
+          }
+        }}
       />
       {toast ? (
         <div

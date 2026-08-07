@@ -1,29 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  feedPosts,
+  contentTypeLabel,
+  formatContentWhen,
+  formatExperienceWhen,
+  getExperienceById,
   groups,
-  proposals,
+  listDiscoverableExperiences,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  AnnouncementCard,
-  CommunityCard,
+  CommentPreview,
+  CommunityFeed,
+  CommunityPostCard,
   EmptyState,
+  ExperienceCard,
   GroupCard,
+  ReactionBar,
+  cn,
 } from "@life-community-os/ui";
-import { cn } from "@life-community-os/ui";
-import { useTenant } from "@/providers/TenantProvider";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
-type Chip = "feed" | "groups" | "talk" | "decide";
+type Chip = "feed" | "groups" | "talk" | "decide" | "experiences";
+
+function decisionLabel(status?: string) {
+  if (status === "closing_soon") return "Closing soon";
+  if (status === "closed") return "Closed";
+  if (status === "open") return "Open";
+  return undefined;
+}
 
 export function CommunityScreen() {
-  const { isFeatureEnabled } = useTenant();
+  const router = useRouter();
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    feedItems,
+    getMyReaction,
+    isSaved,
+    isReported,
+    toggleReaction,
+    toggleSave,
+    reportContent,
+  } = useCommunityInteractions();
   const [chip, setChip] = useState<Chip>("feed");
 
   const chips = (
     [
       { id: "feed" as const, label: "Feed", enabled: isFeatureEnabled("feed") },
+      {
+        id: "experiences" as const,
+        label: "Experiences",
+        enabled: isFeatureEnabled("experiences"),
+      },
       {
         id: "groups" as const,
         label: "Groups",
@@ -44,6 +74,27 @@ export function CommunityScreen() {
 
   const active = chips.some((c) => c.id === chip) ? chip : chips[0]?.id;
 
+  const canView = hasCapability(CAPABILITIES.contentView);
+  const canReact = hasCapability(CAPABILITIES.interactionReact);
+  const canComment = hasCapability(CAPABILITIES.interactionComment);
+  const canSave = hasCapability(CAPABILITIES.interactionSave);
+  const canReport = hasCapability(CAPABILITIES.interactionReport);
+
+  const discussions = useMemo(
+    () =>
+      feedItems.filter(
+        (c) => c.type === "discussion" || c.type === "member_update",
+      ),
+    [feedItems],
+  );
+
+  const proposals = useMemo(
+    () => feedItems.filter((c) => c.type === "proposal"),
+    [feedItems],
+  );
+
+  const experiences = listDiscoverableExperiences().slice(0, 4);
+
   if (!active) {
     return (
       <EmptyState
@@ -53,11 +104,25 @@ export function CommunityScreen() {
     );
   }
 
+  if (!canView && active === "feed") {
+    return (
+      <EmptyState
+        title="You don’t have access"
+        description="Community content isn’t available for your account."
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
-      <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-        Community
-      </h1>
+      <div>
+        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
+          Community
+        </h1>
+        <p className="mt-1 text-[16px] text-[var(--color-text-secondary)]">
+          Official updates, neighbour contributions, and useful discussions.
+        </p>
+      </div>
 
       <div className="sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto bg-[var(--color-surface-app)]/95 px-4 py-2 backdrop-blur">
         {chips.map((c) => (
@@ -78,27 +143,94 @@ export function CommunityScreen() {
       </div>
 
       {active === "feed" ? (
-        <div className="space-y-4">
-          {feedPosts.map((post) =>
-            post.kind === "official" ? (
-              <AnnouncementCard
-                key={post.id}
-                title={post.title}
-                preview={post.body}
-                area={post.meta}
+        <CommunityFeed
+          empty={
+            <EmptyState
+              title="Nothing here yet"
+              description="Be the first to share something useful."
+            />
+          }
+        >
+          {feedItems.map((item) => {
+            const preview = item.comments[0];
+            const linked = item.linkedExperienceId
+              ? getExperienceById(item.linkedExperienceId)
+              : undefined;
+            return (
+              <CommunityPostCard
+                key={item.id}
+                title={item.title}
+                body={item.body}
+                typeLabel={contentTypeLabel(item.type)}
+                official={item.isOfficial}
+                authorName={item.author.name}
+                authorAvatarUrl={item.author.avatarUrl}
+                meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
+                areaLabel={item.areaLabel}
+                imageUrl={item.imageUrl}
+                decisionStatus={decisionLabel(item.decisionStatus)}
+                experienceLinkLabel={linked?.title}
+                onOpen={() => router.push(`/community/content/${item.id}`)}
+                commentPreview={
+                  preview ? (
+                    <CommentPreview
+                      authorName={preview.author.name}
+                      body={preview.body}
+                      avatarUrl={preview.author.avatarUrl}
+                      meta={formatContentWhen(preview.createdAt)}
+                    />
+                  ) : null
+                }
+                reactionBar={
+                  <ReactionBar
+                    acknowledgeCount={item.reactionCounts.acknowledge}
+                    supportCount={item.reactionCounts.support}
+                    myReaction={getMyReaction(item.id)}
+                    commentCount={item.commentCount}
+                    saved={isSaved(item.id)}
+                    reported={isReported(item.id)}
+                    canReact={canReact}
+                    canComment={canComment}
+                    canSave={canSave}
+                    onAcknowledge={() =>
+                      toggleReaction(item.id, "acknowledge")
+                    }
+                    onSupport={() => toggleReaction(item.id, "support")}
+                    onComment={() =>
+                      router.push(`/community/content/${item.id}`)
+                    }
+                    onSave={() => toggleSave(item.id)}
+                    onReport={
+                      canReport
+                        ? () => {
+                            reportContent(item.id);
+                          }
+                        : undefined
+                    }
+                  />
+                }
               />
-            ) : (
-              <CommunityCard
-                key={post.id}
-                author={post.author}
-                title={post.title}
-                body={post.body}
-                meta={post.meta}
-                reactions={post.reactions}
-                comments={post.comments}
-              />
-            ),
-          )}
+            );
+          })}
+        </CommunityFeed>
+      ) : null}
+
+      {active === "experiences" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {experiences.map((exp) => (
+            <ExperienceCard
+              key={exp.id}
+              title={exp.title}
+              when={formatExperienceWhen(exp.startsAt)}
+              where={exp.location}
+              meta={`${exp.participantCount} going`}
+              imageUrl={exp.imageUrl}
+              organizerName={exp.organizer.name}
+              ctaLabel="View"
+              onClick={() => router.push(`/experiences/${exp.id}`)}
+              onCta={() => router.push(`/experiences/${exp.id}`)}
+            />
+          ))}
         </div>
       ) : null}
 
@@ -116,44 +248,86 @@ export function CommunityScreen() {
       ) : null}
 
       {active === "talk" ? (
-        <div className="space-y-3">
-          <CommunityCard
-            author="Neighbour circle"
-            title="Evening walk toward Detinsa"
-            body="Last reply: “See you at the path entrance.”"
-            meta="Open discussion"
-            comments={6}
-          />
-          <CommunityCard
-            title="Pool hours for August"
-            body="Thread for questions before the decision closes."
-            meta="Linked to Decide"
-            comments={11}
-          />
-        </div>
+        <CommunityFeed
+          empty={
+            <EmptyState
+              title="No open discussions"
+              description="Start a useful conversation from Create."
+            />
+          }
+        >
+          {discussions.map((item) => (
+            <CommunityPostCard
+              key={item.id}
+              title={item.title}
+              body={item.body}
+              typeLabel={contentTypeLabel(item.type)}
+              authorName={item.author.name}
+              authorAvatarUrl={item.author.avatarUrl}
+              meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
+              areaLabel={item.areaLabel}
+              onOpen={() => router.push(`/community/content/${item.id}`)}
+              reactionBar={
+                <ReactionBar
+                  acknowledgeCount={item.reactionCounts.acknowledge}
+                  supportCount={item.reactionCounts.support}
+                  myReaction={getMyReaction(item.id)}
+                  commentCount={item.commentCount}
+                  canReact={canReact}
+                  canComment={canComment}
+                  canSave={false}
+                  onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
+                  onSupport={() => toggleReaction(item.id, "support")}
+                  onComment={() =>
+                    router.push(`/community/content/${item.id}`)
+                  }
+                />
+              }
+            />
+          ))}
+        </CommunityFeed>
       ) : null}
 
       {active === "decide" ? (
-        <div className="space-y-3">
-          {proposals.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className="w-full rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 text-left shadow-[var(--shadow-elev-1)]"
-            >
-              <span className="inline-flex rounded-full bg-[var(--color-feedback-warning-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-feedback-warning)]">
-                {p.status}
-              </span>
-              <h3 className="mt-2 text-[18px] font-semibold">{p.title}</h3>
-              <p className="mt-1 text-[14px] text-[var(--color-text-secondary)]">
-                {p.meta}
-              </p>
-              <span className="mt-4 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--color-action-primary)]">
-                Participate →
-              </span>
-            </button>
+        <CommunityFeed
+          empty={
+            <EmptyState
+              title="No open decisions"
+              description="Proposals will appear here when available."
+            />
+          }
+        >
+          {proposals.map((item) => (
+            <CommunityPostCard
+              key={item.id}
+              title={item.title}
+              body={item.body}
+              typeLabel="Proposal"
+              authorName={item.author.name}
+              authorAvatarUrl={item.author.avatarUrl}
+              meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
+              decisionStatus={decisionLabel(item.decisionStatus)}
+              onOpen={() => router.push(`/community/content/${item.id}`)}
+              reactionBar={
+                <ReactionBar
+                  acknowledgeCount={item.reactionCounts.acknowledge}
+                  supportCount={item.reactionCounts.support}
+                  myReaction={getMyReaction(item.id)}
+                  commentCount={item.commentCount}
+                  canReact={canReact}
+                  canComment={canComment}
+                  canSave={canSave}
+                  onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
+                  onSupport={() => toggleReaction(item.id, "support")}
+                  onComment={() =>
+                    router.push(`/community/content/${item.id}`)
+                  }
+                  onSave={() => toggleSave(item.id)}
+                />
+              }
+            />
           ))}
-        </div>
+        </CommunityFeed>
       ) : null}
     </div>
   );

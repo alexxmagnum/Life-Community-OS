@@ -1,5 +1,5 @@
 /**
- * Capability keys aligned with product mapping (doc 07).
+ * Capability keys aligned with product mapping (doc 07) + TECH-003.
  * Foundation stub — real AuthZ remains Platform RBAC (ADR-012).
  * UI must call hasCapability(); never invent grants inside components.
  */
@@ -8,7 +8,15 @@ export const CAPABILITIES = {
   experienceCreate: "community.experience.create",
   experienceJoin: "community.experience.join",
   experienceManage: "community.experience.manage",
-  contentPostCreate: "community.content.post.create",
+  /** ADR-026 / TECH-003 */
+  contentView: "community.content.view",
+  contentCreate: "community.content.create",
+  /** @deprecated Prefer contentCreate — kept for older Create Sheet wiring */
+  contentPostCreate: "community.content.create",
+  interactionComment: "community.interaction.comment",
+  interactionReact: "community.interaction.react",
+  interactionReport: "community.interaction.report",
+  interactionSave: "community.interaction.save",
   proposalCreate: "community.proposal.create",
   incidentCreate: "incidents.request.create",
   reservationCreate: "community.reservation.create",
@@ -30,7 +38,12 @@ export type DemoRole =
 const memberCaps: CapabilityKey[] = [
   CAPABILITIES.experienceView,
   CAPABILITIES.experienceJoin,
-  CAPABILITIES.contentPostCreate,
+  CAPABILITIES.contentView,
+  CAPABILITIES.contentCreate,
+  CAPABILITIES.interactionComment,
+  CAPABILITIES.interactionReact,
+  CAPABILITIES.interactionReport,
+  CAPABILITIES.interactionSave,
   CAPABILITIES.incidentCreate,
   CAPABILITIES.reservationCreate,
   CAPABILITIES.recommendationCreate,

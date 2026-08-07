@@ -1,0 +1,221 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  contentTypeLabel,
+  formatContentWhen,
+  getExperienceById,
+} from "@life-community-os/tenant-life-panoramica";
+import {
+  AuthorCard,
+  Button,
+  CommentPreview,
+  EmptyState,
+  ReactionBar,
+} from "@life-community-os/ui";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
+
+export function CommunityContentDetailScreen({
+  contentId,
+}: {
+  contentId: string;
+}) {
+  const router = useRouter();
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    getContent,
+    getMyReaction,
+    isSaved,
+    isReported,
+    toggleReaction,
+    toggleSave,
+    reportContent,
+    addComment,
+  } = useCommunityInteractions();
+  const [draft, setDraft] = useState("");
+
+  if (!isFeatureEnabled("feed") && !isFeatureEnabled("interactions")) {
+    return (
+      <EmptyState
+        title="Community isn’t available"
+        actionLabel="Back home"
+        onAction={() => router.push("/")}
+      />
+    );
+  }
+
+  if (!hasCapability(CAPABILITIES.contentView)) {
+    return (
+      <EmptyState
+        title="You don’t have access"
+        description="This content isn’t available for your account."
+      />
+    );
+  }
+
+  const content = getContent(contentId);
+
+  if (!content || content.status === "archived") {
+    return (
+      <EmptyState
+        title="Content not found"
+        description="It may have been removed or isn’t published yet."
+        actionLabel="Back to Community"
+        onAction={() => router.push("/community")}
+      />
+    );
+  }
+
+  if (content.status === "pending_review") {
+    return (
+      <EmptyState
+        title="Waiting for review"
+        description="This update isn’t visible to everyone yet."
+        actionLabel="Back to Community"
+        onAction={() => router.push("/community")}
+      />
+    );
+  }
+
+  if (content.status !== "published" && content.status !== "expired") {
+    return (
+      <EmptyState
+        title="Not available"
+        actionLabel="Back to Community"
+        onAction={() => router.push("/community")}
+      />
+    );
+  }
+
+  const linked = content.linkedExperienceId
+    ? getExperienceById(content.linkedExperienceId)
+    : undefined;
+
+  const canReact = hasCapability(CAPABILITIES.interactionReact);
+  const canComment = hasCapability(CAPABILITIES.interactionComment);
+  const canSave = hasCapability(CAPABILITIES.interactionSave);
+  const canReport = hasCapability(CAPABILITIES.interactionReport);
+
+  const submitComment = () => {
+    if (!canComment) return;
+    addComment(content.id, draft);
+    setDraft("");
+  };
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-6 pb-10">
+      <button
+        type="button"
+        onClick={() => router.push("/community")}
+        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
+      >
+        ← Community
+      </button>
+
+      <article className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
+        {content.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={content.imageUrl}
+            alt=""
+            className="aspect-[16/9] w-full object-cover"
+          />
+        ) : null}
+        <div className="space-y-4 p-5">
+          <AuthorCard
+            name={content.author.name}
+            avatarUrl={content.author.avatarUrl}
+            official={content.isOfficial}
+            meta={[
+              contentTypeLabel(content.type),
+              formatContentWhen(content.publishedAt ?? content.createdAt),
+              content.areaLabel,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          />
+          <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8">
+            {content.title}
+          </h1>
+          <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
+            {content.body}
+          </p>
+          {linked ? (
+            <button
+              type="button"
+              onClick={() => router.push(`/experiences/${linked.id}`)}
+              className="w-full rounded-[var(--radius-md)] bg-[var(--color-action-primary-subtle)] px-4 py-3 text-left text-[15px] font-semibold text-[var(--color-action-primary)]"
+            >
+              Related experience · {linked.title}
+            </button>
+          ) : null}
+          <ReactionBar
+            acknowledgeCount={content.reactionCounts.acknowledge}
+            supportCount={content.reactionCounts.support}
+            myReaction={getMyReaction(content.id)}
+            commentCount={content.commentCount}
+            saved={isSaved(content.id)}
+            reported={isReported(content.id)}
+            canReact={canReact}
+            canComment={canComment}
+            canSave={canSave}
+            onAcknowledge={() => toggleReaction(content.id, "acknowledge")}
+            onSupport={() => toggleReaction(content.id, "support")}
+            onComment={() => undefined}
+            onSave={() => toggleSave(content.id)}
+            onReport={
+              canReport ? () => reportContent(content.id) : undefined
+            }
+          />
+        </div>
+      </article>
+
+      <section className="space-y-4">
+        <h2 className="text-[18px] font-semibold">Conversation</h2>
+        {content.comments.length === 0 ? (
+          <p className="text-[15px] text-[var(--color-text-secondary)]">
+            Start a useful conversation — keep it local and kind.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {content.comments.map((c) => (
+              <CommentPreview
+                key={c.id}
+                authorName={c.author.name}
+                body={c.body}
+                avatarUrl={c.author.avatarUrl}
+                meta={formatContentWhen(c.createdAt)}
+              />
+            ))}
+          </div>
+        )}
+
+        {canComment ? (
+          <div className="space-y-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+            <label className="block">
+              <span className="mb-1 block text-[13px] font-semibold">
+                Add a comment
+              </span>
+              <textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={3}
+                placeholder="Reply or mention with @Name…"
+                className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] p-3 text-[16px] leading-6 outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
+              />
+            </label>
+            <Button
+              fullWidth
+              disabled={draft.trim().length < 2}
+              onClick={submitComment}
+            >
+              Post comment
+            </Button>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
