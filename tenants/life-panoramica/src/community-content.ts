@@ -73,8 +73,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-official-lighting",
     type: "announcement",
-    title: "Pathway lighting update",
-    body: "Phase 2 is complete around Aldea Golf paths. Thank you for your patience during the works.",
+    title: "Actualización de iluminación en caminos",
+    body: "La fase 2 ya está lista en los caminos de Aldea Golf. Gracias por la paciencia durante las obras.",
     status: "published",
     isOfficial: true,
     author: {
@@ -90,13 +90,13 @@ export const communityContentCatalog: CommunityContent[] = [
       {
         id: "c1",
         author: { id: "p-elena", name: "Elena" },
-        body: "Looks much safer at night — thank you.",
+        body: "Se ve mucho más seguro por la noche — gracias.",
         createdAt: hoursAgo(3),
       },
       {
         id: "c2",
         author: { id: "p-jordi", name: "Jordi" },
-        body: "Will Pinar be next?",
+        body: "¿Será Pinar el siguiente?",
         createdAt: hoursAgo(2),
         replyToId: "c1",
       },
@@ -105,8 +105,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-water",
     type: "announcement",
-    title: "Water maintenance Saturday",
-    body: "Works from 10:00–14:00 in Aldea Golf. Please store a little water for the morning.",
+    title: "Mantenimiento de agua el sábado",
+    body: "Obras de 10:00 a 14:00 en Aldea Golf. Guarda un poco de agua para la mañana.",
     status: "published",
     isOfficial: true,
     author: { id: "org-community", name: "Life Panoramica" },
@@ -122,8 +122,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-walk-invite",
     type: "discussion",
-    title: "Anyone for an evening walk?",
-    body: "Toward Detinsa around 19:00 — join if you’d like. Easy pace, all welcome.",
+    title: "¿Alguien para un paseo al atardecer?",
+    body: "Hacia Detinsa sobre las 19:00 — únete si te apetece. Ritmo suave, bienvenidos todos.",
     status: "published",
     isOfficial: false,
     author: {
@@ -142,7 +142,7 @@ export const communityContentCatalog: CommunityContent[] = [
       {
         id: "c3",
         author: { id: "p-marta", name: "Marta" },
-        body: "I’m in — see you at the path entrance.",
+        body: "Me apunto — nos vemos en la entrada del camino.",
         createdAt: hoursAgo(6),
         mentionNames: ["Ana"],
       },
@@ -151,8 +151,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-pool-hours",
     type: "discussion",
-    title: "Pool hours for August",
-    body: "Thread for questions before the community decision closes. Keep it useful and kind.",
+    title: "Horario de la piscina en agosto",
+    body: "Hilo para dudas antes de cerrar la decisión de la comunidad. Útil y con respeto.",
     status: "published",
     isOfficial: false,
     author: {
@@ -161,7 +161,7 @@ export const communityContentCatalog: CommunityContent[] = [
       avatarUrl:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
     },
-    areaLabel: "All Panoramica",
+    areaLabel: "Toda Panoramica",
     createdAt: daysAgo(2),
     publishedAt: daysAgo(2),
     commentCount: 11,
@@ -171,15 +171,15 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-proposal-pool",
     type: "proposal",
-    title: "Extend pool summer hours",
-    body: "Proposal to keep the pool open until 21:00 on weekdays through August. Share your view in Decide.",
+    title: "Ampliar el horario de verano de la piscina",
+    body: "Propuesta de abrir la piscina hasta las 21:00 entre semana en agosto. Comparte tu opinión en Decidir.",
     status: "published",
     isOfficial: false,
     author: {
       id: "p-clara",
       name: "Clara",
     },
-    areaLabel: "All Panoramica",
+    areaLabel: "Toda Panoramica",
     createdAt: daysAgo(3),
     publishedAt: daysAgo(3),
     commentCount: 8,
@@ -190,8 +190,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-news-gardens",
     type: "news",
-    title: "Spring garden tips from neighbours",
-    body: "A short roundup of watering and plant care ideas shared in the Walking circle — practical, local, no sales pitch.",
+    title: "Consejos de jardín de los vecinos",
+    body: "Resumen breve de riego y cuidado de plantas del círculo de paseos — práctico, local, sin publicidad.",
     status: "published",
     isOfficial: false,
     author: {
@@ -210,8 +210,8 @@ export const communityContentCatalog: CommunityContent[] = [
   {
     id: "cc-pending",
     type: "member_update",
-    title: "Found keys near Court 2",
-    body: "Left with the community office — ask for Marta if they’re yours.",
+    title: "Llaves encontradas cerca de la pista 2",
+    body: "Las dejé en la oficina de la comunidad — pregunta por Marta si son tuyas.",
     status: "pending_review",
     isOfficial: false,
     author: { id: "p-tom", name: "Tom" },
@@ -256,12 +256,12 @@ export function listOfficialContent(): CommunityContent[] {
 export function formatContentWhen(iso: string): string {
   const d = new Date(iso);
   const diffH = Math.round((Date.now() - d.getTime()) / (1000 * 60 * 60));
-  if (diffH < 1) return "Just now";
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 1) return "Ahora mismo";
+  if (diffH < 24) return `Hace ${diffH} h`;
   const diffD = Math.round(diffH / 24);
-  if (diffD === 1) return "Yesterday";
-  if (diffD < 7) return `${diffD}d ago`;
-  return new Intl.DateTimeFormat("en-GB", {
+  if (diffD === 1) return "Ayer";
+  if (diffD < 7) return `Hace ${diffD} d`;
+  return new Intl.DateTimeFormat("es-ES", {
     day: "numeric",
     month: "short",
   }).format(d);

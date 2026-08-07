@@ -16,7 +16,7 @@ export function CreatePostSheet({
   open,
   onClose,
   onSubmit,
-  title = "Share an update",
+  title = "Comparte una actualización",
 }: CreatePostSheetProps) {
   const [postTitle, setPostTitle] = useState("");
   const [body, setBody] = useState("");
@@ -38,7 +38,7 @@ export function CreatePostSheet({
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
-        aria-label="Close"
+        aria-label="Cerrar"
         onClick={onClose}
       />
       <div
@@ -54,36 +54,36 @@ export function CreatePostSheet({
           {title}
         </h2>
         <p className="mt-1 text-[14px] text-[var(--color-text-secondary)]">
-          Useful, local, neighbourly — not a social network post.
+          Útil, local y de vecinos — no es una red social.
         </p>
         <label className="mt-4 block">
-          <span className="mb-1 block text-[13px] font-semibold">Title</span>
+          <span className="mb-1 block text-[13px] font-semibold">Título</span>
           <input
             value={postTitle}
             onChange={(e) => setPostTitle(e.target.value)}
-            placeholder="What’s this about?"
+            placeholder="¿De qué se trata?"
             className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] px-3 text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
           />
         </label>
         <label className="mt-3 block">
-          <span className="mb-1 block text-[13px] font-semibold">Details</span>
+          <span className="mb-1 block text-[13px] font-semibold">Detalle</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={4}
-            placeholder="Share something useful for neighbours…"
+            placeholder="Comparte algo útil para tus vecinos…"
             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] p-3 text-[16px] leading-6 outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
           />
         </label>
         <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
-          Tip: mention someone with @Name (UI only for now).
+          Consejo: menciona a alguien con @Nombre (solo interfaz por ahora).
         </p>
         <div className="mt-5 flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={onClose}>
-            Cancel
+            Cancelar
           </Button>
           <Button className="flex-1" disabled={!canSubmit} onClick={submit}>
-            Publish
+            Publicar
           </Button>
         </div>
       </div>

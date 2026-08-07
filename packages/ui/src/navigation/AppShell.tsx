@@ -54,7 +54,7 @@ export function AppShell({
             type="button"
             onClick={onCreate}
             className="fixed bottom-[76px] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-2xl text-[var(--color-text-inverse)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95 md:hidden"
-            aria-label="Create"
+            aria-label="Participar"
           >
             +
           </button>

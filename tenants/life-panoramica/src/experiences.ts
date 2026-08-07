@@ -82,21 +82,21 @@ const startFull = upcoming(5, 17, 0);
 export const experienceCatalog: Experience[] = [
   {
     id: "exp-sunset-walk",
-    title: "Sunset Mediterranean Walk",
+    title: "Paseo mediterráneo al atardecer",
     description:
-      "A gentle evening walk along the pines as the light softens. Meet neighbours, breathe, and enjoy the path together — no rush, just place and people.",
+      "Un paseo suave entre pinos mientras baja la luz. Conoce vecinos, respira y disfruta del camino — sin prisas, solo lugar y gente.",
     imageUrl:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
     startsAt: startSunset,
     endsAt: endOf(startSunset, 1.5),
-    location: "Pine path entrance",
+    location: "Entrada del camino de pinos",
     areaLabel: "Valle Golf",
     organizer: {
       id: "org-ana",
       name: "Ana López",
       avatarUrl:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-      roleLabel: "Organizer",
+      roleLabel: "Organizadora",
     },
     capacity: 20,
     participantCount: 12,
@@ -125,21 +125,21 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-sunrise-pines",
-    title: "Sunrise walk along the pines",
+    title: "Paseo al amanecer entre pinos",
     description:
-      "Early light, quiet paths, and a short loop through Valle Golf. Perfect if you like mornings and easy conversation.",
+      "Luz temprana, caminos tranquilos y un circuito corto por Valle Golf. Ideal si te gustan las mañanas y la conversación fácil.",
     imageUrl:
       "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=1400&q=80",
     startsAt: startWalk,
     endsAt: endOf(startWalk, 1),
-    location: "Valle Golf trailhead",
+    location: "Inicio del sendero · Valle Golf",
     areaLabel: "Valle Golf",
     organizer: {
       id: "org-marta",
       name: "Marta Ruiz",
       avatarUrl:
         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80",
-      roleLabel: "Organizer",
+      roleLabel: "Organizadora",
     },
     capacity: 16,
     participantCount: 9,
@@ -160,21 +160,21 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-stretch",
-    title: "Mediterranean stretch class",
+    title: "Estiramientos mediterráneos",
     description:
-      "Open-air stretch on the terrace. Soft movement, all levels welcome. Bring a mat if you have one.",
+      "Estiramiento al aire libre en la terraza. Movimiento suave, todos los niveles. Trae esterilla si tienes.",
     imageUrl:
       "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=80",
     startsAt: startStretch,
     endsAt: endOf(startStretch, 1),
-    location: "Hacienda terrace",
+    location: "Terraza · Hacienda",
     areaLabel: "Hacienda",
     organizer: {
       id: "org-ines",
       name: "Inés Vidal",
       avatarUrl:
         "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
-      roleLabel: "Host",
+      roleLabel: "Anfitriona",
     },
     capacity: 12,
     participantCount: 8,
@@ -187,19 +187,19 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-coffee",
-    title: "Neighbour coffee morning",
+    title: "Café de vecinos",
     description:
-      "Coffee, introductions, and a calm start to the day in Aldea Golf. Drop by — no agenda, just community.",
+      "Café, presentaciones y un comienzo tranquilo del día en Aldea Golf. Pasa — sin agenda, solo comunidad.",
     imageUrl:
       "https://images.unsplash.com/photo-1511632765481-a929fcf8e8f4?auto=format&fit=crop&w=1400&q=80",
     startsAt: startCoffee,
     endsAt: endOf(startCoffee, 1.5),
-    location: "Community terrace",
+    location: "Terraza comunitaria",
     areaLabel: "Aldea Golf",
     organizer: {
       id: "org-community",
       name: "Life Panoramica",
-      roleLabel: "Community",
+      roleLabel: "Comunidad",
     },
     capacity: 30,
     participantCount: 14,
@@ -213,19 +213,19 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-padel-social",
-    title: "Social padel evening",
+    title: "Pádel social al atardecer",
     description:
-      "Mixed levels, rotating pairs, friendly play. Courts booked for the group — just bring yourself.",
+      "Niveles mixtos, parejas rotativas, juego amable. Pistas reservadas para el grupo — solo ven.",
     imageUrl:
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1400&q=80",
     startsAt: startFull,
     endsAt: endOf(startFull, 2),
-    location: "Padel Court 1–2",
+    location: "Pistas de pádel 1–2",
     areaLabel: "Aldea Golf",
     organizer: {
       id: "org-padel",
-      name: "Padel mornings",
-      roleLabel: "Group",
+      name: "Pádel mañanas",
+      roleLabel: "Grupo",
     },
     capacity: 8,
     participantCount: 8,
@@ -240,20 +240,20 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-cancelled-bbq",
-    title: "Terrace BBQ (postponed)",
+    title: "BBQ en la terraza (aplazado)",
     description:
-      "This gathering has been cancelled due to weather. We’ll announce a new date soon.",
+      "Este encuentro se ha cancelado por el tiempo. Anunciaremos una nueva fecha pronto.",
     imageUrl:
       "https://images.unsplash.com/photo-1555939596-19271ee170b3?auto=format&fit=crop&w=1400&q=80",
     startsAt: upcoming(6, 19, 0),
-    location: "Aldea Golf terrace",
+    location: "Terraza · Aldea Golf",
     areaLabel: "Aldea Golf",
     organizer: {
       id: "org-ana",
       name: "Ana López",
       avatarUrl:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-      roleLabel: "Organizer",
+      roleLabel: "Organizadora",
     },
     capacity: 40,
     participantCount: 0,
@@ -263,18 +263,18 @@ export const experienceCatalog: Experience[] = [
   },
   {
     id: "exp-past-yoga",
-    title: "Morning yoga on the lawn",
-    description: "A past session — kept for catalog completeness.",
+    title: "Yoga matinal en el césped",
+    description: "Sesión pasada — se mantiene para completar el catálogo.",
     imageUrl:
       "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
     startsAt: startExpired,
     endsAt: endOf(startExpired, 1),
-    location: "Central lawn",
+    location: "Césped central",
     areaLabel: "Pinar",
     organizer: {
       id: "org-ines",
       name: "Inés Vidal",
-      roleLabel: "Host",
+      roleLabel: "Anfitriona",
     },
     capacity: 15,
     participantCount: 11,
@@ -299,7 +299,7 @@ export function listDiscoverableExperiences(): Experience[] {
 
 export function formatExperienceWhen(startsAt: string): string {
   const d = new Date(startsAt);
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("es-ES", {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -317,18 +317,18 @@ export function formatExperienceDay(startsAt: string): string {
   const diff = Math.round(
     (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
   );
-  const weekday = new Intl.DateTimeFormat("en-GB", {
+  const weekday = new Intl.DateTimeFormat("es-ES", {
     weekday: "long",
     day: "numeric",
     month: "short",
   }).format(d);
-  if (diff === 0) return `Today · ${weekday}`;
-  if (diff === 1) return `Tomorrow · ${weekday}`;
+  if (diff === 0) return `Hoy · ${weekday}`;
+  if (diff === 1) return `Mañana · ${weekday}`;
   return weekday;
 }
 
 export function formatExperienceTime(startsAt: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(startsAt));

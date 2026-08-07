@@ -316,7 +316,7 @@ export function RecommendationCard({
       ) : null}
       <div>
         <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
-          Neighbour tip
+          Consejo de vecinos
         </p>
         <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-primary)]">
           “{quote}”

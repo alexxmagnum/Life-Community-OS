@@ -14,11 +14,11 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
 const navItems: NavItem[] = [
-  { id: "home", label: "Home", href: "/", icon: "⌂" },
-  { id: "discover", label: "Discover", href: "/discover", icon: "◎" },
-  { id: "calendar", label: "Calendar", href: "/calendar", icon: "▦" },
-  { id: "community", label: "Community", href: "/community", icon: "◌" },
-  { id: "me", label: "Me", href: "/me", icon: "☺" },
+  { id: "home", label: "Inicio", href: "/", icon: "⌂" },
+  { id: "discover", label: "Descubrir", href: "/discover", icon: "◎" },
+  { id: "calendar", label: "Agenda", href: "/calendar", icon: "▦" },
+  { id: "community", label: "Comunidad", href: "/community", icon: "◌" },
+  { id: "me", label: "Yo", href: "/me", icon: "☺" },
 ];
 
 function activeFromPath(pathname: string): NavItemId {
@@ -55,10 +55,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "experience",
-        title: "Create experience",
-        description: "Host a walk, class, or meetup",
+        title: "Crear actividad",
+        description: "Organiza un paseo, clase o encuentro",
         icon: "✦",
-        onSelect: () => showToast("Experience composer coming next"),
+        onSelect: () => showToast("El compositor de actividades llega pronto"),
       });
     }
 
@@ -68,8 +68,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "post",
-        title: "Share an update",
-        description: "Post for neighbours",
+        title: "Compartir una actualización",
+        description: "Publica para tus vecinos",
         icon: "✎",
         onSelect: () => setPostOpen(true),
       });
@@ -81,8 +81,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "report",
-        title: "Report a problem",
-        description: "Take a photo and tell us",
+        title: "Avisar de un problema",
+        description: "Haz una foto y cuéntanos",
         icon: "📷",
         onSelect: () => router.push("/report"),
       });
@@ -94,10 +94,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "proposal",
-        title: "Start a proposal",
-        description: "Ask the community to decide",
+        title: "Abrir una propuesta",
+        description: "Pide a la comunidad que decida",
         icon: "◈",
-        onSelect: () => showToast("Proposal composer coming next"),
+        onSelect: () => showToast("El compositor de propuestas llega pronto"),
       });
     }
 
@@ -107,8 +107,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "reserve",
-        title: "Reserve a place",
-        description: "Courts, rooms, shared spaces",
+        title: "Reservar un espacio",
+        description: "Pistas, salas y zonas compartidas",
         icon: "▣",
         onSelect: () => router.push("/resources"),
       });
@@ -120,10 +120,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "tip",
-        title: "Recommend something",
-        description: "Tip neighbours locally",
+        title: "Recomendar algo",
+        description: "Un consejo local para vecinos",
         icon: "★",
-        onSelect: () => showToast("Recommendation composer coming next"),
+        onSelect: () => showToast("El compositor de recomendaciones llega pronto"),
       });
     }
 
@@ -133,10 +133,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "official",
-        title: "Official notice",
-        description: "Community announcement",
+        title: "Aviso oficial",
+        description: "Comunicado de la comunidad",
         icon: "⚑",
-        onSelect: () => showToast("Official publish coming next"),
+        onSelect: () => showToast("La publicación oficial llega pronto"),
       });
     }
 
@@ -166,7 +166,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         onSubmit={(input) => {
           const created = createPublication(input);
           if (created) {
-            showToast("Published to Community");
+            showToast("Publicado en Comunidad");
             router.push(`/community/content/${created.id}`);
           }
         }}

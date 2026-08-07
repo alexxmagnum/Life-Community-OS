@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     default: "Life Panoramica",
     template: "%s · Life Panoramica",
   },
-  description: "Your community, alive.",
+  description: "Tu comunidad, viva.",
   applicationName: "Life Panoramica",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable}`}>
+    <html lang="es" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans antialiased">
         <TenantProvider>
           <ExperienceParticipationProvider>

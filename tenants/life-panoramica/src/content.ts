@@ -23,9 +23,9 @@ export const areas: { id: AreaId; label: string }[] = [
 export const currentMember = {
   displayName: "Marta",
   fullName: "Marta Ruiz",
-  membershipLabel: "Member · Life Panoramica",
+  membershipLabel: "Miembro · Life Panoramica",
   areaLabel: "Aldea Golf",
-  interests: ["Walking", "Padel"],
+  interests: ["Caminar", "Pádel"],
   avatarUrl:
     "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80",
 };
@@ -56,9 +56,9 @@ export const pulseItems = [
 
 export const announcement = {
   id: "a1",
-  title: "Water maintenance Saturday",
+  title: "Mantenimiento de agua el sábado",
   preview:
-    "Works from 10:00–14:00 in Aldea Golf. Thank you for your patience.",
+    "Obras de 10:00 a 14:00 en Aldea Golf. Gracias por tu paciencia.",
   area: "Aldea Golf",
   imageUrl:
     "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80",
@@ -100,7 +100,7 @@ export const experiences = [
 export const recommendations = [
   {
     id: "r1",
-    quote: "Best same-day keys — ask for Costa Locksmith.",
+    quote: "Las mejores llaves el mismo día — pregunta por Cerrajero Costa.",
     author: "Elena",
     imageUrl:
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80",

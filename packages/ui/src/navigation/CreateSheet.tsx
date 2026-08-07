@@ -23,7 +23,7 @@ export function CreateSheet({
   open,
   onClose,
   actions,
-  title = "Create",
+  title = "Participar",
 }: CreateSheetProps) {
   if (!open) return null;
 
@@ -32,7 +32,7 @@ export function CreateSheet({
       <button
         type="button"
         className="absolute inset-0 bg-black/40"
-        aria-label="Close"
+        aria-label="Cerrar"
         onClick={onClose}
       />
       <div
