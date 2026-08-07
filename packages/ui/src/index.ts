@@ -87,6 +87,8 @@ export {
 export {
   MarketplaceItemCard,
   LocalPlaceCard,
+  LocalLifeRail,
+  NeighbourTipCard,
   ActivityCard,
   CommunityLifeSection,
 } from "./community/CommunityLife";

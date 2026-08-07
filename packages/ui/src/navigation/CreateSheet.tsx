@@ -23,7 +23,7 @@ export function CreateSheet({
   open,
   onClose,
   actions,
-  title = "Participar",
+  title = "¿Qué aportas?",
 }: CreateSheetProps) {
   if (!open) return null;
 

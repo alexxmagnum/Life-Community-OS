@@ -97,29 +97,19 @@ export const experiences = [
   },
 ];
 
-export const recommendations = [
-  {
-    id: "r1",
-    quote: "Las mejores llaves el mismo día — pregunta por Cerrajero Costa.",
-    author: "Elena",
-    imageUrl:
-      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80",
-  },
-];
-
 export const services = [
   {
     id: "s1",
-    name: "Panoramica Garden Care",
-    category: "Outdoors",
+    name: "Jardinería Panoramica",
+    category: "Exterior",
     verified: true,
     imageUrl:
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "s2",
-    name: "Costa Locksmith",
-    category: "Home help",
+    name: "Cerrajero Costa",
+    category: "Hogar",
     verified: true,
     imageUrl:
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",

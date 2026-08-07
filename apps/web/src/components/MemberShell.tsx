@@ -150,6 +150,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
     if (
       isFeatureEnabled("recommendations") &&
+      isFeatureEnabled("localLife") &&
       hasCapability(CAPABILITIES.recommendationCreate)
     ) {
       actions.push({

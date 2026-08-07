@@ -88,6 +88,7 @@ export type LocalPlaceCardProps = {
   imageUrl: string;
   recommendedBy?: string;
   verified?: boolean;
+  trustNote?: string;
   onClick?: () => void;
   className?: string;
 };
@@ -100,6 +101,7 @@ export function LocalPlaceCard({
   imageUrl,
   recommendedBy,
   verified,
+  trustNote,
   onClick,
   className,
 }: LocalPlaceCardProps) {
@@ -108,7 +110,7 @@ export function LocalPlaceCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "min-w-[78vw] max-w-[280px] shrink-0 overflow-hidden rounded-[var(--radius-xl)] text-left sm:min-w-[240px]",
+        "w-[min(78vw,280px)] shrink-0 overflow-hidden rounded-[var(--radius-xl)] text-left",
         className,
       )}
     >
@@ -131,15 +133,88 @@ export function LocalPlaceCard({
           </span>
           <span className="mt-1 text-[13px] text-[var(--color-text-inverse)]/85">
             {areaLabel}
-            {recommendedBy ? ` · ${recommendedBy}` : ""}
+            {recommendedBy ? ` · Recomendado por ${recommendedBy}` : ""}
           </span>
           {blurb ? (
             <span className="mt-2 line-clamp-2 text-[13px] leading-5 text-[var(--color-text-inverse)]/75">
               {blurb}
             </span>
           ) : null}
+          {trustNote ? (
+            <span className="mt-2 text-[12px] font-medium text-[var(--color-text-inverse)]/90">
+              {trustNote}
+            </span>
+          ) : null}
         </div>
       </div>
+    </button>
+  );
+}
+
+export type LocalLifeRailProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+/** Horizontal story rail — scrolls inside, never overflows the page. */
+export function LocalLifeRail({ children, className }: LocalLifeRailProps) {
+  return (
+    <div
+      className={cn(
+        "-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none]",
+        className,
+      )}
+    >
+      <div className="flex w-max gap-3">{children}</div>
+    </div>
+  );
+}
+
+export type NeighbourTipCardProps = {
+  quote: string;
+  author: string;
+  relatedLabel?: string;
+  imageUrl?: string;
+  onClick?: () => void;
+  className?: string;
+};
+
+/** Trust story from a neighbour — not a star-rating review widget. */
+export function NeighbourTipCard({
+  quote,
+  author,
+  relatedLabel,
+  imageUrl,
+  onClick,
+  className,
+}: NeighbourTipCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full gap-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-4 text-left shadow-[var(--shadow-elev-1)]",
+        className,
+      )}
+    >
+      {imageUrl ? (
+        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        </div>
+      ) : null}
+      <span className="min-w-0">
+        <span className="block text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
+          Vecino
+        </span>
+        <span className="mt-1 block text-[16px] leading-6 text-[var(--color-text-primary)]">
+          &ldquo;{quote}&rdquo;
+        </span>
+        <span className="mt-2 block text-[13px] text-[var(--color-text-secondary)]">
+          {author}
+          {relatedLabel ? ` · ${relatedLabel}` : ""}
+        </span>
+      </span>
     </button>
   );
 }
@@ -162,7 +237,7 @@ export function ActivityCard({
   where,
   peopleLabel,
   imageUrl,
-  ctaLabel = "Participar",
+  ctaLabel = "Apuntarme",
   onClick,
   onCta,
   className,
@@ -228,8 +303,8 @@ export function CommunityLifeSection({
   return (
     <section className={cn("space-y-4", className)}>
       <div className="flex items-end justify-between gap-3">
-        <div>
-          <h2 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8">
+        <div className="min-w-0">
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-7 text-[var(--color-text-primary)]">
             {title}
           </h2>
           {subtitle ? (
@@ -252,3 +327,4 @@ export function CommunityLifeSection({
     </section>
   );
 }
+

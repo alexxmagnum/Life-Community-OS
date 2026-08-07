@@ -1,6 +1,7 @@
 import type { DomainId } from "./ids";
 
-/** Future domain placeholder — not in Foundation identity migration. */
+/** Future domain placeholder — amenity/bookable place. Prefer LocalEntity for local life discovery. */
 export interface Place {
   id: DomainId;
 }
+

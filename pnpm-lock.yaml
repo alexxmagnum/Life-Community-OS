@@ -151,6 +151,9 @@ importers:
       '@life-community-os/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@life-community-os/types':
+        specifier: workspace:*
+        version: link:../../packages/types
     devDependencies:
       '@life-community-os/config':
         specifier: workspace:*

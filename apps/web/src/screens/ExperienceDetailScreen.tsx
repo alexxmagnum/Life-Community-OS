@@ -49,7 +49,7 @@ export function ExperienceDetailScreen({
         title="Actividad no encontrada"
         description="Puede haberse eliminado o el enlace no es válido."
         actionLabel="Ver actividades"
-        onAction={() => router.push("/discover?intent=hacer")}
+        onAction={() => router.push("/discover")}
       />
     );
   }

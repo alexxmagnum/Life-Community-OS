@@ -85,7 +85,7 @@ export function DesktopNavigation({
   activeId,
   onNavigate,
   onCreate,
-  createLabel = "Participar",
+  createLabel = "Añadir",
   className,
 }: DesktopNavigationProps) {
   return (

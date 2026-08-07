@@ -319,7 +319,7 @@ export function RecommendationCard({
           Consejo de vecinos
         </p>
         <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-primary)]">
-          “{quote}”
+          &ldquo;{quote}&rdquo;
         </p>
         <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
           {author}

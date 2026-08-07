@@ -24,7 +24,7 @@ import { useCommunityInteractions } from "@/providers/CommunityInteractionProvid
 
 /**
  * Comunidad answers: "Who is here and what are people doing?"
- * Plans/activities live in Descubrir → Hacer — not here.
+ * Plans appear as community life in Descubrir — not as a Comunidad module.
  */
 type Chip = "conversaciones" | "grupos" | "propuestas";
 
@@ -187,7 +187,7 @@ export function CommunityScreen() {
           empty={
             <EmptyState
               title="Todavía no hay conversaciones"
-              description="Sé la primera persona en compartir algo útil — adiós al caos del chat."
+              description="Sé la primera persona en compartir algo útil - adiós al caos del chat."
             />
           }
         >

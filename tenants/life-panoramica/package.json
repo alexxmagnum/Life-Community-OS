@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@life-community-os/design-tokens": "workspace:*"
+    "@life-community-os/design-tokens": "workspace:*",
+    "@life-community-os/types": "workspace:*"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",

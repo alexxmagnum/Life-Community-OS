@@ -47,7 +47,7 @@ export function ExperienceRegistrationScreen({
       <EmptyState
         title="Actividad no encontrada"
         actionLabel="Ver actividades"
-        onAction={() => router.push("/discover?intent=hacer")}
+        onAction={() => router.push("/discover")}
       />
     );
   }
@@ -79,7 +79,7 @@ export function ExperienceRegistrationScreen({
             : "Esta actividad ha finalizado"
         }
         actionLabel="Buscar otra cosa"
-        onAction={() => router.push("/discover?intent=hacer")}
+        onAction={() => router.push("/discover")}
       />
     );
   }

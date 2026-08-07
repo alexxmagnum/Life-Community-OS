@@ -24,6 +24,8 @@ export const CAPABILITIES = {
   proposalCreate: "community.proposal.create",
   incidentCreate: "incidents.request.create",
   recommendationCreate: "community.recommendation.create",
+  /** Local Entity discovery — view local life ecosystem (ADR-017 / ADR-032). */
+  localView: "community.local.view",
   announcementPublishOfficial: "community.announcement.publish_official",
   groupCreate: "community.group.create",
   marketplaceView: "community.marketplace.view",
@@ -52,6 +54,7 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.resourceReserve,
   CAPABILITIES.incidentCreate,
   CAPABILITIES.recommendationCreate,
+  CAPABILITIES.localView,
   CAPABILITIES.proposalCreate,
   CAPABILITIES.groupCreate,
   CAPABILITIES.marketplaceView,

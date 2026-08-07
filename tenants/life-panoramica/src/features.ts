@@ -7,6 +7,8 @@ export type TenantFeatureFlags = {
   services: boolean;
   resources: boolean;
   recommendations: boolean;
+  /** Local Entity / Local Discovery ecosystem (ADR-017 / ADR-032). */
+  localLife: boolean;
   groups: boolean;
   decide: boolean;
   interactions: boolean;
@@ -21,6 +23,7 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   services: true,
   resources: true,
   recommendations: true,
+  localLife: true,
   groups: true,
   decide: true,
   interactions: true,

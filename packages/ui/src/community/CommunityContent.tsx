@@ -254,7 +254,7 @@ export function CommunityPostCard({
         </p>
         {experienceLinkLabel ? (
           <p className="mt-2 text-[14px] font-semibold text-[var(--color-action-primary)]">
-            Related experience · {experienceLinkLabel}
+            Actividad · {experienceLinkLabel}
           </p>
         ) : null}
       </button>

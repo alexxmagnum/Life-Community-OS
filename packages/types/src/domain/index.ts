@@ -8,3 +8,15 @@ export type { Entity } from "./entity";
 export type { Place } from "./place";
 export type { Resource } from "./resource";
 export type { Experience } from "./experience";
+export type {
+  LocalEntity,
+  LocalEntityKind,
+  LocalRecommendation,
+  LocalDiscoveryFilter,
+} from "./local-entity";
+export {
+  filterLocalEntities,
+  listEntitiesNearYou,
+  listTrustedHelpEntities,
+  filterLocalRecommendations,
+} from "./local-entity";

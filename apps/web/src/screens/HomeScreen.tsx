@@ -120,7 +120,7 @@ export function HomeScreen() {
         title: "Participa hoy",
         description: "Únete a un plan con vecinos cerca de ti.",
         ctaLabel: "Ver planes",
-        href: "/discover?intent=hacer",
+        href: "/discover",
       };
     }
     if (isFeatureEnabled("marketplace")) {
@@ -231,7 +231,7 @@ export function HomeScreen() {
             />
             <ExploreLink
               label="Descubrir"
-              hint="Hacer · Ir · Encontrar"
+              hint="Vida cerca de ti"
               onClick={() => router.push("/discover")}
             />
             {isFeatureEnabled("marketplace") ? (

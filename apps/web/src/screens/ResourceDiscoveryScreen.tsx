@@ -49,7 +49,7 @@ export function ResourceDiscoveryScreen() {
     );
   }
 
-  if (loading) return <LoadingState label="Cargando lugares…" />;
+  if (loading) return <LoadingState label="Cargando lugares..." />;
 
   return (
     <MobileScreen>
@@ -62,7 +62,7 @@ export function ResourceDiscoveryScreen() {
       <ScreenSearch
         value={query}
         onChange={setQuery}
-        placeholder="Buscar pistas, salas, terrazas…"
+        placeholder="Buscar pistas, salas, terrazas..."
         label="Buscar lugares"
       />
 
