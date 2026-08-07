@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatExperienceWhen,
   listDiscoverableExperiences,
-  places,
+  listResources,
   recommendations,
   services,
   spotsLeft,
@@ -15,7 +15,7 @@ import {
   EmptyState,
   ExperienceCard,
   RecommendationCard,
-  ResourceCard,
+  ResourceDiscoveryCard,
   cn,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -197,18 +197,49 @@ export function DiscoverScreen() {
       ) : null}
 
       {active === "places" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {places.map((place) => (
-            <ResourceCard
-              key={place.id}
-              name={place.name}
-              availability={place.availability}
-              area={place.area}
-              imageUrl={place.imageUrl}
-              onReserve={() => undefined}
-            />
-          ))}
-        </div>
+        !hasCapability(CAPABILITIES.resourceView) ? (
+          <EmptyState
+            title="You don’t have access"
+            description="Shared places aren’t available for your account."
+          />
+        ) : (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => router.push("/resources")}
+              className="text-[14px] font-semibold text-[var(--color-action-primary)]"
+            >
+              Open full places list →
+            </button>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {listResources()
+                .filter((r) =>
+                  query
+                    ? r.name.toLowerCase().includes(query.toLowerCase())
+                    : true,
+                )
+                .map((resource) => {
+                  const href = `/resources/${resource.id}`;
+                  return (
+                    <ResourceDiscoveryCard
+                      key={resource.id}
+                      name={resource.name}
+                      description={resource.description}
+                      availability={resource.availabilityPreview}
+                      area={resource.areaLabel}
+                      imageUrl={resource.imageUrl}
+                      onClick={() => router.push(href)}
+                      onReserve={
+                        hasCapability(CAPABILITIES.resourceReserve)
+                          ? () => router.push(`${href}/availability`)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+            </div>
+          </div>
+        )
       ) : null}
     </div>
   );

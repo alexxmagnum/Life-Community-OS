@@ -52,3 +52,13 @@ export {
   CommunityFeed,
 } from "./community/CommunityContent";
 export { CreatePostSheet } from "./community/CreatePostSheet";
+export {
+  ResourceHero,
+  AvailabilityPicker,
+  TimeSlotSelector,
+  ReservationStatusBadge,
+  ReservationSummary,
+  CalendarReservationCard,
+  ResourceDiscoveryCard,
+  type ReservationStatusVariant,
+} from "./resources/ResourceComponents";

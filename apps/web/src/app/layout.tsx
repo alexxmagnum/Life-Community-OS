@@ -5,6 +5,7 @@ import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
 import { CommunityInteractionProvider } from "@/providers/CommunityInteractionProvider";
+import { ReservationProvider } from "@/providers/ReservationProvider";
 
 import "./globals.css";
 
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <TenantProvider>
           <ExperienceParticipationProvider>
             <CommunityInteractionProvider>
-              {children}
+              <ReservationProvider>{children}</ReservationProvider>
             </CommunityInteractionProvider>
           </ExperienceParticipationProvider>
         </TenantProvider>

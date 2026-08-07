@@ -6,6 +6,7 @@ export {
 export * from "./content";
 export * from "./experiences";
 export * from "./community-content";
+export * from "./resources";
 export {
   CAPABILITIES,
   capabilitiesForRole,

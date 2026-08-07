@@ -30,7 +30,7 @@ export function ProfileScreen() {
     {
       label: "Places",
       value: `${profileShortcuts.reservations} booking`,
-      href: "/discover?segment=places",
+      href: "/reservations",
       show: isFeatureEnabled("resources"),
     },
     {

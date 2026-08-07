@@ -106,7 +106,7 @@ export function HomeScreen() {
           <QuickAction
             icon="▣"
             label="Reserve"
-            onClick={() => router.push("/discover?segment=places")}
+            onClick={() => router.push("/resources")}
           />
         ) : null}
         {isFeatureEnabled("incidents") ? (

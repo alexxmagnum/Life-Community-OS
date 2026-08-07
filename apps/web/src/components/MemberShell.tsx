@@ -23,6 +23,8 @@ const navItems: NavItem[] = [
 
 function activeFromPath(pathname: string): NavItemId {
   if (pathname.startsWith("/discover")) return "discover";
+  if (pathname.startsWith("/resources")) return "discover";
+  if (pathname.startsWith("/reservations")) return "me";
   if (pathname.startsWith("/calendar")) return "calendar";
   if (pathname.startsWith("/community")) return "community";
   if (pathname.startsWith("/me")) return "me";
@@ -99,13 +101,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
-    if (isFeatureEnabled("resources")) {
+    if (
+      isFeatureEnabled("resources") &&
+      hasCapability(CAPABILITIES.resourceReserve)
+    ) {
       actions.push({
         id: "reserve",
         title: "Reserve a place",
         description: "Courts, rooms, shared spaces",
         icon: "▣",
-        onSelect: () => router.push("/discover?segment=places"),
+        onSelect: () => router.push("/resources"),
       });
     }
 

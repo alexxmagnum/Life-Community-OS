@@ -3,25 +3,29 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  calendarItems,
   formatExperienceDay,
   formatExperienceTime,
+  formatResourceDayHeading,
+  reservationStatusLabel,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CalendarEventCard,
+  CalendarReservationCard,
   EmptyState,
   SectionHeader,
   cn,
 } from "@life-community-os/ui";
 import { useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 export function CalendarScreen() {
   const router = useRouter();
   const { isFeatureEnabled } = useTenant();
   const { joinedExperiences } = useExperienceParticipation();
+  const { upcoming: upcomingReservations } = useReservations();
   const [view, setView] = useState<"agenda" | "month">("agenda");
-  const [registeredOnly, setRegisteredOnly] = useState(false);
+  const [filter, setFilter] = useState<"all" | "mine">("all");
 
   const joinedAgenda = useMemo(() => {
     return joinedExperiences
@@ -36,42 +40,34 @@ export function CalendarScreen() {
         kind: "experience" as const,
         imageUrl: exp.imageUrl,
         href: `/experiences/${exp.id}`,
-        sortAt: new Date(exp.startsAt).getTime(),
       }));
   }, [joinedExperiences]);
 
-  const staticItems = useMemo(() => {
-    return calendarItems
-      .filter((i) => i.kind !== "experience")
-      .map((item) => ({
-        id: item.id,
-        day: item.day,
-        time: item.time.includes("–")
-          ? item.time.split("–")[0] ?? item.time
-          : item.time,
-        title: item.title,
-        place: item.place,
-        status: item.status,
-        kind: item.kind,
-        imageUrl: "imageUrl" in item ? item.imageUrl : undefined,
-        href: "/calendar",
-        sortAt: 0,
-      }));
-  }, []);
+  const reservationAgenda = useMemo(() => {
+    return upcomingReservations.map((r) => ({
+      id: r.id,
+      day: formatResourceDayHeading(r.date),
+      time: r.start,
+      title: r.resourceName,
+      place: r.location,
+      status: reservationStatusLabel(r.status),
+      kind: "reservation" as const,
+      imageUrl: r.resourceImageUrl,
+      href: `/resources/${r.resourceId}`,
+    }));
+  }, [upcomingReservations]);
 
   const allItems = useMemo(() => {
-    const merged = [...joinedAgenda, ...staticItems];
-    if (registeredOnly) {
-      return merged.filter(
-        (i) => i.status === "Going" || i.status === "Reserved",
-      );
-    }
-    // Also show open community experiences? Keep calendar personal + reservations.
-    return merged.sort((a, b) => {
+    const merged = [...joinedAgenda, ...reservationAgenda];
+    const filtered =
+      filter === "mine"
+        ? merged
+        : merged;
+    return filtered.sort((a, b) => {
       if (a.day !== b.day) return a.day.localeCompare(b.day);
       return a.time.localeCompare(b.time);
     });
-  }, [joinedAgenda, staticItems, registeredOnly]);
+  }, [joinedAgenda, reservationAgenda, filter]);
 
   const days = [...new Set(allItems.map((i) => i.day))];
 
@@ -112,20 +108,44 @@ export function CalendarScreen() {
       <div className="flex gap-2 overflow-x-auto">
         <button
           type="button"
-          onClick={() => setRegisteredOnly((v) => !v)}
+          onClick={() => setFilter("mine")}
           className={cn(
             "min-h-[40px] rounded-full px-4 text-[13px] font-semibold",
-            registeredOnly
+            filter === "mine"
               ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
               : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)]",
           )}
         >
           My activities
         </button>
-        <span className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-4 py-2 text-[13px] font-semibold text-[var(--color-text-secondary)]">
-          All areas
-        </span>
+        <button
+          type="button"
+          onClick={() => router.push("/reservations")}
+          className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+        >
+          My reservations
+        </button>
       </div>
+
+      {reservationAgenda.length > 0 ? (
+        <section className="rounded-[var(--radius-xl)] bg-[var(--color-sea-subtle)] p-4">
+          <SectionHeader title="My reservations" />
+          <ul className="space-y-3">
+            {reservationAgenda.map((item) => (
+              <li key={`res-${item.id}`}>
+                <CalendarReservationCard
+                  time={item.time}
+                  title={item.title}
+                  place={item.place}
+                  statusLabel={item.status}
+                  imageUrl={item.imageUrl}
+                  onClick={() => router.push(item.href)}
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {joinedAgenda.length > 0 ? (
         <section className="rounded-[var(--radius-xl)] bg-[var(--color-action-primary-subtle)] p-4">
@@ -152,8 +172,8 @@ export function CalendarScreen() {
         <div className="rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
           <p className="text-[16px] font-semibold">This month</p>
           <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-            Your joined experiences appear in My activities above. Agenda keeps
-            the day-by-day view human and calm.
+            Joined experiences and reservations appear above. Agenda keeps the
+            day-by-day view human and calm.
           </p>
         </div>
       ) : null}
@@ -162,9 +182,9 @@ export function CalendarScreen() {
         allItems.length === 0 ? (
           <EmptyState
             title="Your week is open"
-            description="Join an experience and it will show up here."
-            actionLabel="Discover experiences"
-            onAction={() => router.push("/discover?segment=experiences")}
+            description="Join an experience or reserve a place and it will show up here."
+            actionLabel="Browse places"
+            onAction={() => router.push("/resources")}
           />
         ) : (
           <div className="space-y-6">
@@ -176,23 +196,26 @@ export function CalendarScreen() {
                     .filter((i) => i.day === day)
                     .map((item) => (
                       <li key={`${item.kind}-${item.id}`}>
-                        <CalendarEventCard
-                          time={item.time}
-                          title={item.title}
-                          place={item.place}
-                          statusLabel={item.status}
-                          imageUrl={item.imageUrl}
-                          kind={
-                            item.kind === "reservation"
-                              ? "reservation"
-                              : "experience"
-                          }
-                          onClick={() => {
-                            if (item.href.startsWith("/experiences")) {
-                              router.push(item.href);
-                            }
-                          }}
-                        />
+                        {item.kind === "reservation" ? (
+                          <CalendarReservationCard
+                            time={item.time}
+                            title={item.title}
+                            place={item.place}
+                            statusLabel={item.status}
+                            imageUrl={item.imageUrl}
+                            onClick={() => router.push(item.href)}
+                          />
+                        ) : (
+                          <CalendarEventCard
+                            time={item.time}
+                            title={item.title}
+                            place={item.place}
+                            statusLabel={item.status}
+                            imageUrl={item.imageUrl}
+                            kind="experience"
+                            onClick={() => router.push(item.href)}
+                          />
+                        )}
                       </li>
                     ))}
                 </ul>
