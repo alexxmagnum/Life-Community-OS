@@ -4,66 +4,35 @@ import { cn } from "../lib/cn";
 
 /** Edge-to-edge territory opening — brand identity lives on photography. */
 export type TerritoryHeroProps = {
-  /** Territory / place identity — shown as uppercase eyebrow above greeting */
-  territoryName: string;
+  /** Consumer brand — from tenant logoText / identity (never hardcoded) */
+  brandName: string;
   greeting: string;
-  /** One living line under the greeting (e.g. “Esta tarde hay actividad”). */
+  /** One living line under the greeting (e.g. “Qué pasa hoy cerca de ti”). */
   callout?: string;
-  /** Resident microzone / area — chip context, not a nav root */
+  /** Resident microzone / area */
   areaLabel: string;
-  weatherLabel?: string;
   imageUrl: string;
+  className?: string;
+  /** @deprecated Prefer brandName — kept for transition */
+  territoryName?: string;
+  weatherLabel?: string;
   onNotifications?: () => void;
   notificationCount?: number;
-  className?: string;
 };
 
 export function TerritoryHero({
+  brandName,
   territoryName,
   greeting,
   callout,
   areaLabel,
-  weatherLabel,
   imageUrl,
-  onNotifications,
-  notificationCount = 0,
   className,
 }: TerritoryHeroProps) {
+  const brand = brandName || territoryName || "";
   return (
     <section className={cn("relative", className)}>
-      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="inline-flex max-w-[72%] items-center gap-2 rounded-full bg-[var(--color-surface-elevated)]/92 px-3.5 py-2.5 shadow-[var(--shadow-elev-1)] backdrop-blur-sm">
-          <span
-            className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-action-accent)]"
-            aria-hidden
-          />
-          <span className="truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-            {areaLabel}
-          </span>
-          {weatherLabel ? (
-            <span className="truncate text-[13px] text-[var(--color-text-secondary)]">
-              · {weatherLabel}
-            </span>
-          ) : null}
-        </div>
-        {onNotifications ? (
-          <button
-            type="button"
-            onClick={onNotifications}
-            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-elevated)]/92 text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] backdrop-blur-sm"
-            aria-label="Notificaciones"
-          >
-            <span className="text-lg leading-none" aria-hidden>
-              ◌
-            </span>
-            {notificationCount > 0 ? (
-              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[var(--color-action-accent)]" />
-            ) : null}
-          </button>
-        ) : null}
-      </div>
-
-      <div className="relative min-h-[62vh] overflow-hidden sm:min-h-[min(58vh,520px)] md:min-h-[min(46vh,440px)] md:rounded-b-[var(--radius-xl)]">
+      <div className="relative min-h-[48vh] overflow-hidden sm:min-h-[min(46vh,420px)] md:min-h-[min(40vh,380px)] md:rounded-b-[var(--radius-xl)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
@@ -74,21 +43,21 @@ export function TerritoryHero({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(20,28,24,0.18) 0%, transparent 36%, var(--color-hero-scrim) 100%)",
+              "linear-gradient(180deg, rgba(20,28,24,0.12) 0%, transparent 32%, var(--color-hero-scrim) 100%)",
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-28">
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-8 pt-24">
           <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[var(--color-text-inverse)]/85">
-            {territoryName}
+            {brand}
           </p>
           <p className="mt-1.5 text-[15px] font-medium tracking-wide text-[var(--color-text-inverse)]/80">
             {areaLabel}
           </p>
-          <h1 className="mt-3.5 max-w-[16ch] font-[family-name:var(--font-display)] text-[40px] font-semibold leading-[1.05] text-[var(--color-text-inverse)]">
+          <h1 className="mt-3.5 max-w-[16ch] font-[family-name:var(--font-display)] text-[36px] font-semibold leading-[1.05] text-[var(--color-text-inverse)] sm:text-[40px]">
             {greeting}
           </h1>
           {callout ? (
-            <p className="mt-3 max-w-[24ch] text-[16px] font-medium leading-6 text-[var(--color-text-inverse)]/88">
+            <p className="mt-3 max-w-[26ch] text-[16px] font-medium leading-6 text-[var(--color-text-inverse)]/88">
               {callout}
             </p>
           ) : null}

@@ -50,7 +50,7 @@ export function CreateSheet({
         <ul className="mt-4 space-y-1">
           {actions.length === 0 ? (
             <li className="px-2 py-6 text-center text-[16px] text-[var(--color-text-secondary)]">
-              Nothing to create right now
+              Ahora no hay nada que aportar
             </li>
           ) : (
             actions.map((action) => (

@@ -11,6 +11,7 @@ export * from "./marketplace";
 export * from "./groups";
 export * from "./local-places";
 export * from "./community-pulse";
+export * from "./home-feed";
 export {
   CAPABILITIES,
   capabilitiesForRole,

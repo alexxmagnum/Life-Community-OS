@@ -12,7 +12,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   identity: {
     territoryName: "Panorámica Golf",
     defaultAreaName: "Aldea Golf",
-    homeCallout: "Tu comunidad hoy",
+    homeCallout: "Qué pasa hoy cerca de ti",
     pulseTitleTemplate: "Hoy en {territory}",
   },
   colors: {

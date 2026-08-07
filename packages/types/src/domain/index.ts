@@ -29,3 +29,16 @@ export {
   selectCommunityPulse,
   summarizeCommunityPulse,
 } from "./community-activity";
+export type {
+  HomeFeedCategory,
+  HomeFeedCategoryFilter,
+  HomeFeedItem,
+  HomeSponsorSlot,
+} from "./home-feed";
+export {
+  DEFAULT_HOME_FEED_CATEGORY_LABELS,
+  HOME_FEED_FILTER_ORDER,
+  sortHomeFeedNewestFirst,
+  filterHomeFeed,
+  placeHomeSponsor,
+} from "./home-feed";

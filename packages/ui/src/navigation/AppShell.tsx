@@ -17,6 +17,8 @@ export type AppShellProps = {
   onNavigate: (item: NavItem) => void;
   onCreate?: () => void;
   showCreateFab?: boolean;
+  /** Persistent mobile app header (fixed). */
+  header?: ReactNode;
   children: ReactNode;
   className?: string;
 };
@@ -28,6 +30,7 @@ export function AppShell({
   onNavigate,
   onCreate,
   showCreateFab = true,
+  header,
   children,
   className,
 }: AppShellProps) {
@@ -40,10 +43,14 @@ export function AppShell({
         onNavigate={onNavigate}
         onCreate={onCreate}
       />
-      <div className="relative flex min-h-screen flex-1 flex-col">
+      <div className="relative flex min-h-screen flex-1 flex-col overflow-x-hidden">
+        {header}
         <main
           className={cn(
-            "mx-auto w-full max-w-[390px] flex-1 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] pt-3 md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
+            "mx-auto w-full max-w-[390px] flex-1 overflow-x-hidden px-4 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
+            header
+              ? "pt-[calc(5.85rem+env(safe-area-inset-top))] md:pt-8"
+              : "pt-3",
             className,
           )}
         >

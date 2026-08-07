@@ -2,8 +2,11 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { currentMember } from "@life-community-os/tenant-life-panoramica";
 import {
+  AppMenuSheet,
   AppShell,
+  CommunityAppHeader,
   CreatePostSheet,
   CreateSheet,
   type CreateAction,
@@ -52,12 +55,19 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(null), 2200);
   };
+
+  const brandName = theme.logoText;
+  const areaLabel =
+    currentMember.areaLabel ||
+    theme.identity?.defaultAreaName ||
+    theme.logoText;
 
   const navItems = useMemo(
     () => buildNav({ marketplace: isFeatureEnabled("marketplace") }),
@@ -69,6 +79,34 @@ export function MemberShell({ children }: { children: ReactNode }) {
       router.prefetch(item.href);
     }
   }, [navItems, router]);
+
+  const menuItems = useMemo(
+    () => [
+      {
+        id: "me",
+        label: "Mi espacio",
+        description: "Lo mío en la comunidad",
+        onSelect: () => router.push("/me"),
+      },
+      {
+        id: "calendar",
+        label: "Mi agenda",
+        description: "Actividades y reservas",
+        onSelect: () => router.push("/calendar"),
+      },
+      ...(isFeatureEnabled("incidents")
+        ? [
+            {
+              id: "report",
+              label: "Avisar de un problema",
+              description: "Cuéntanos qué ocurre",
+              onSelect: () => router.push("/report"),
+            },
+          ]
+        : []),
+    ],
+    [isFeatureEnabled, router],
+  );
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -164,7 +202,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
         title: "Recomendar algo",
         description: "Un consejo local de confianza",
         icon: "★",
-        onSelect: () => showToast("El compositor de recomendaciones llega pronto"),
+        onSelect: () =>
+          showToast("El compositor de recomendaciones llega pronto"),
       });
     }
 
@@ -200,15 +239,30 @@ export function MemberShell({ children }: { children: ReactNode }) {
   return (
     <>
       <AppShell
-        brandName={theme.logoText}
+        brandName={brandName}
         items={navItems}
         activeId={activeFromPath(pathname)}
         onNavigate={(item) => router.push(item.href)}
         onCreate={() => setCreateOpen(true)}
         showCreateFab={createActions.length > 0}
+        header={
+          <CommunityAppHeader
+            brandName={brandName}
+            areaLabel={areaLabel}
+            weatherLabel="Soleado · 24°"
+            onMenuClick={() => setMenuOpen(true)}
+          />
+        }
       >
         {children}
       </AppShell>
+      <AppMenuSheet
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        brandName={brandName}
+        areaLabel={areaLabel}
+        items={menuItems}
+      />
       <CreateSheet
         open={createOpen}
         onClose={() => setCreateOpen(false)}

@@ -37,6 +37,16 @@ export {
   ContentBlock,
 } from "./layout/MobileExperience";
 export {
+  CommunityAppHeader,
+  AppMenuSheet,
+  CategoryFilterSelect,
+  HomeFeedCard,
+  SponsoredFeedCard,
+  HomeFeedSection,
+  type AppMenuItem,
+  type CategoryFilterOption,
+} from "./layout/CommunityAppChrome";
+export {
   MediaCapturePlaceholder,
   MediaPreviewPlaceholder,
 } from "./media/Media";
