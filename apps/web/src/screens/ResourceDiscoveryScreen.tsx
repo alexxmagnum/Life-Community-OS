@@ -6,13 +6,16 @@ import { listResources } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   LoadingState,
+  MobileScreen,
   ResourceDiscoveryCard,
+  ScreenHeader,
+  ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 export function ResourceDiscoveryScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const [query, setQuery] = useState("");
   const [loading] = useState(false);
 
@@ -32,7 +35,7 @@ export function ResourceDiscoveryScreen() {
     return (
       <EmptyState
         title="Los lugares no están disponibles"
-        description="This community hasn’t enabled shared resources yet."
+        description="Esta comunidad aún no ha activado los espacios compartidos."
       />
     );
   }
@@ -46,41 +49,32 @@ export function ResourceDiscoveryScreen() {
     );
   }
 
-  if (loading) return <LoadingState label="Loading places" />;
+  if (loading) return <LoadingState label="Cargando lugares…" />;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Discover
-        </p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          Places
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Shared spaces you can reserve in your community.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Lugares"
+        subtitle="Espacios compartidos que puedes reservar."
+      />
 
-      <label className="block">
-        <span className="sr-only">Search places</span>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search courts, rooms, terraces…"
-          className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-4 text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
-        />
-      </label>
+      <ScreenSearch
+        value={query}
+        onChange={setQuery}
+        placeholder="Buscar pistas, salas, terrazas…"
+        label="Buscar lugares"
+      />
 
       {items.length === 0 ? (
         <EmptyState
-          title="No places match"
-          description="Try another search."
-          actionLabel="Clear"
+          title="Sin resultados"
+          description="Prueba otra búsqueda."
+          actionLabel="Limpiar"
           onAction={() => setQuery("")}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-4">
           {items.map((resource) => {
             const href = `/resources/${resource.id}`;
             const canReserve = hasCapability(CAPABILITIES.resourceReserve);
@@ -103,6 +97,6 @@ export function ResourceDiscoveryScreen() {
           })}
         </div>
       )}
-    </div>
+    </MobileScreen>
   );
 }

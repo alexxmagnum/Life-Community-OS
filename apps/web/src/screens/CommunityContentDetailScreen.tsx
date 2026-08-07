@@ -12,7 +12,9 @@ import {
   Button,
   CommentPreview,
   EmptyState,
+  MobileScreen,
   ReactionBar,
+  ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -105,14 +107,11 @@ export function CommunityContentDetailScreen({
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-10">
-      <button
-        type="button"
+    <MobileScreen>
+      <ScreenBack
+        label="Comunidad"
         onClick={() => router.push("/community")}
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← Comunidad
-      </button>
+      />
 
       <article className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
         {content.imageUrl ? (
@@ -148,7 +147,7 @@ export function CommunityContentDetailScreen({
               onClick={() => router.push(`/experiences/${linked.id}`)}
               className="w-full rounded-[var(--radius-md)] bg-[var(--color-action-primary-subtle)] px-4 py-3 text-left text-[15px] font-semibold text-[var(--color-action-primary)]"
             >
-              Related experience · {linked.title}
+              Actividad relacionada · {linked.title}
             </button>
           ) : null}
           <ReactionBar
@@ -173,10 +172,10 @@ export function CommunityContentDetailScreen({
       </article>
 
       <section className="space-y-4">
-        <h2 className="text-[18px] font-semibold">Conversation</h2>
+        <h2 className="text-[18px] font-semibold">Conversación</h2>
         {content.comments.length === 0 ? (
           <p className="text-[15px] text-[var(--color-text-secondary)]">
-            Start a useful conversation — keep it local and kind.
+            Empieza una conversación útil — cercana y de buen tono.
           </p>
         ) : (
           <div className="space-y-3">
@@ -196,13 +195,13 @@ export function CommunityContentDetailScreen({
           <div className="space-y-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
             <label className="block">
               <span className="mb-1 block text-[13px] font-semibold">
-                Add a comment
+                Añadir un comentario
               </span>
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 rows={3}
-                placeholder="Reply or mention with @Name…"
+                placeholder="Responde o menciona con @Nombre…"
                 className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] p-3 text-[16px] leading-6 outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
               />
             </label>
@@ -211,11 +210,11 @@ export function CommunityContentDetailScreen({
               disabled={draft.trim().length < 2}
               onClick={submitComment}
             >
-              Post comment
+              Publicar comentario
             </Button>
           </div>
         ) : null}
       </section>
-    </div>
+    </MobileScreen>
   );
 }

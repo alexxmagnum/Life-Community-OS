@@ -43,7 +43,7 @@ export function AppShell({
       <div className="relative flex min-h-screen flex-1 flex-col">
         <main
           className={cn(
-            "mx-auto w-full max-w-[1200px] flex-1 px-4 pb-[88px] pt-4 md:px-8 md:pb-10 md:pt-8",
+            "mx-auto w-full max-w-[390px] flex-1 px-4 pb-[calc(88px+env(safe-area-inset-bottom))] pt-3 md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
             className,
           )}
         >

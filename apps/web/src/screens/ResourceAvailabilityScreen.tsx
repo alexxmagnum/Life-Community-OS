@@ -11,6 +11,9 @@ import {
   AvailabilityPicker,
   Button,
   EmptyState,
+  MobileScreen,
+  ScreenBack,
+  ScreenHeader,
   TimeSlotSelector,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -22,7 +25,7 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { getSlots } = useReservations();
   const dates = listAvailabilityDates(7);
   const [selectedDate, setSelectedDate] = useState(dates[0]!);
@@ -52,7 +55,7 @@ export function ResourceAvailabilityScreen({
   if (!resource) {
     return (
       <EmptyState
-        title="Place not found"
+        title="Lugar no encontrado"
         actionLabel="Ver lugares"
         onAction={() => router.push("/resources")}
       />
@@ -67,27 +70,21 @@ export function ResourceAvailabilityScreen({
   const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-10">
-      <button
-        type="button"
+    <MobileScreen>
+      <ScreenBack
+        label={resource.name}
         onClick={() => router.push(`/resources/${resource.id}`)}
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← {resource.name}
-      </button>
+      />
 
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          Availability
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Pick a day and an open slot. Taken times stay blocked for everyone.
-        </p>
-      </div>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Disponibilidad"
+        subtitle="Elige un día y un hueco libre. Los ocupados quedan bloqueados para todos."
+      />
 
-      <section>
-        <h2 className="mb-3 text-[14px] font-semibold text-[var(--color-text-secondary)]">
-          Day
+      <section className="space-y-3">
+        <h2 className="text-[14px] font-semibold text-[var(--color-text-secondary)]">
+          Día
         </h2>
         <AvailabilityPicker
           dates={dateOptions}
@@ -99,9 +96,9 @@ export function ResourceAvailabilityScreen({
         />
       </section>
 
-      <section>
-        <h2 className="mb-3 text-[14px] font-semibold text-[var(--color-text-secondary)]">
-          Time
+      <section className="space-y-3">
+        <h2 className="text-[14px] font-semibold text-[var(--color-text-secondary)]">
+          Hora
         </h2>
         <TimeSlotSelector
           slots={slots}
@@ -111,10 +108,10 @@ export function ResourceAvailabilityScreen({
       </section>
 
       <p className="text-[13px] text-[var(--color-text-tertiary)]">
-        Slot length · {resource.slotMinutes} minutes
+        Duración · {resource.slotMinutes} minutos
         {resource.requiresApproval
-          ? " · May need confirmation"
-          : " · Instant confirm"}
+          ? " · Puede requerir confirmación"
+          : " · Confirmación inmediata"}
       </p>
 
       <Button
@@ -132,8 +129,8 @@ export function ResourceAvailabilityScreen({
           );
         }}
       >
-        Continue
+        Continuar
       </Button>
-    </div>
+    </MobileScreen>
   );
 }

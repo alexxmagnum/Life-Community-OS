@@ -16,9 +16,11 @@ import {
   CommunityPostCard,
   EmptyState,
   ExperienceCard,
+  FilterChipRow,
   GroupCard,
+  MobileScreen,
   ReactionBar,
-  cn,
+  ScreenHeader,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -35,7 +37,7 @@ function decisionLabel(status?: string) {
 export function CommunityScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const {
     feedItems,
     getMyReaction,
@@ -128,40 +130,26 @@ export function CommunityScreen() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          Comunidad
-        </h1>
-        <p className="mt-1 text-[16px] text-[var(--color-text-secondary)]">
-          Qué está pasando: avisos, conversaciones, grupos y decisiones.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Comunidad"
+        subtitle="Qué está pasando: avisos, conversaciones y decisiones."
+      />
 
-      <div className="sticky top-0 z-10 -mx-4 flex gap-2 overflow-x-auto bg-[var(--color-surface-app)]/95 px-4 py-2 backdrop-blur">
-        {chips.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => {
-              setChip(c.id);
-              if (c.id === "groups") {
-                router.replace("/community?tab=groups");
-              } else {
-                router.replace("/community");
-              }
-            }}
-            className={cn(
-              "min-h-[40px] shrink-0 rounded-full px-4 text-[14px] font-semibold",
-              active === c.id
-                ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
-                : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)]",
-            )}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      <FilterChipRow
+        items={chips.map((c) => ({ id: c.id, label: c.label }))}
+        activeId={active}
+        onChange={(id) => {
+          const next = id as Chip;
+          setChip(next);
+          if (next === "groups") {
+            router.replace("/community?tab=groups");
+          } else {
+            router.replace("/community");
+          }
+        }}
+      />
 
       {active === "feed" ? (
         <CommunityFeed
@@ -350,6 +338,6 @@ export function CommunityScreen() {
           ))}
         </CommunityFeed>
       ) : null}
-    </div>
+    </MobileScreen>
   );
 }

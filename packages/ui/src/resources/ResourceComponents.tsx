@@ -104,7 +104,7 @@ export function TimeSlotSelector({
   if (slots.length === 0) {
     return (
       <p className="text-[15px] text-[var(--color-text-secondary)]">
-        No slots for this day.
+        No hay huecos este día.
       </p>
     );
   }
@@ -134,7 +134,7 @@ export function TimeSlotSelector({
             {slot.start}–{slot.end}
             {occupied ? (
               <span className="mt-0.5 block text-[11px] font-medium no-underline">
-                Taken
+                Ocupado
               </span>
             ) : null}
           </button>
@@ -365,7 +365,7 @@ export function ResourceDiscoveryCard({
             </p>
           ) : null}
           <p className="mt-2 text-[15px] font-medium text-[var(--color-action-primary)]">
-            Next: {availability}
+            Próximo: {availability}
             {area ? (
               <span className="font-normal text-[var(--color-text-tertiary)]">
                 {" "}

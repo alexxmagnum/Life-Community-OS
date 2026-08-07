@@ -12,9 +12,11 @@ import {
   ExperienceHero,
   ExperienceMeta,
   JoinButton,
+  MobileScreen,
   OrganizerCard,
   ParticipantList,
   ParticipationStatus,
+  ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -47,7 +49,7 @@ export function ExperienceDetailScreen({
         title="Actividad no encontrada"
         description="Puede haberse eliminado o el enlace no es válido."
         actionLabel="Ver actividades"
-        onAction={() => router.push("/discover?segment=experiences")}
+        onAction={() => router.push("/discover?segment=actividades")}
       />
     );
   }
@@ -66,28 +68,18 @@ export function ExperienceDetailScreen({
   const canJoin = hasCapability(CAPABILITIES.experienceJoin);
   const capacityLabel =
     viewer === "full" || remaining <= 0
-      ? `Full · ${experience.capacity} spots`
-      : `${experience.participantCount} going · ${remaining} of ${experience.capacity} left`;
+      ? `Completo · ${experience.capacity} plazas`
+      : `${experience.participantCount} van · ${remaining} de ${experience.capacity} libres`;
 
   const goJoin = () => {
     if (!canJoin) return;
-    if (viewer === "joined") {
-      router.push(`/experiences/${experience.id}/join`);
-      return;
-    }
     if (viewer === "cancelled" || viewer === "expired") return;
     router.push(`/experiences/${experience.id}/join`);
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-8">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← Back
-      </button>
+    <MobileScreen>
+      <ScreenBack onClick={() => router.back()} />
 
       <ExperienceHero
         imageUrl={experience.imageUrl}
@@ -97,11 +89,6 @@ export function ExperienceDetailScreen({
 
       <div className="flex flex-wrap items-center gap-3">
         <ParticipationStatus status={viewer} />
-        {hasCapability(CAPABILITIES.experienceManage) ? (
-          <span className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
-            Manage available
-          </span>
-        ) : null}
       </div>
 
       <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
@@ -130,15 +117,11 @@ export function ExperienceDetailScreen({
         }
       />
 
-      <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <JoinButton
-          status={viewer}
-          canJoin={canJoin}
-          onClick={goJoin}
-        />
+      <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur">
+        <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
         <div className="flex gap-3">
           <Button variant="secondary" className="flex-1" type="button">
-            Save
+            Guardar
           </Button>
           <Button
             variant="ghost"
@@ -158,10 +141,10 @@ export function ExperienceDetailScreen({
               }
             }}
           >
-            Share
+            Compartir
           </Button>
         </div>
       </div>
-    </div>
+    </MobileScreen>
   );
 }

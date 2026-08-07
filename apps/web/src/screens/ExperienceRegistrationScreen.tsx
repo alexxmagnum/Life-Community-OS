@@ -11,7 +11,9 @@ import {
   Button,
   EmptyState,
   ExperienceMeta,
+  MobileScreen,
   ParticipationStatus,
+  ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -62,7 +64,7 @@ export function ExperienceRegistrationScreen({
       <EmptyState
         title="No puedes participar ahora"
         description="Participar no está disponible para tu cuenta."
-        actionLabel="Back"
+        actionLabel="Volver"
         onAction={() => router.push(`/experiences/${experience.id}`)}
       />
     );
@@ -96,14 +98,11 @@ export function ExperienceRegistrationScreen({
   const confirmed = alreadyJoined || justJoined;
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-10">
-      <button
-        type="button"
+    <MobileScreen>
+      <ScreenBack
+        label="Volver al detalle"
         onClick={() => router.push(`/experiences/${experience.id}`)}
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← Volver al detalle
-      </button>
+      />
 
       <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -200,6 +199,6 @@ export function ExperienceRegistrationScreen({
           </Button>
         </div>
       )}
-    </div>
+    </MobileScreen>
   );
 }

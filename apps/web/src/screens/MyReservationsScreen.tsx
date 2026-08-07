@@ -1,27 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  formatResourceDate,
-} from "@life-community-os/tenant-life-panoramica";
+import { formatResourceDate } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
   EmptyState,
+  MobileScreen,
   ReservationStatusBadge,
   ReservationSummary,
+  ScreenHeader,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function MyReservationsScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { upcoming, past, cancel } = useReservations();
 
   if (!isFeatureEnabled("resources")) {
     return (
       <EmptyState
-        title="Reservations aren’t available"
+        title="Las reservas no están disponibles"
         actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
@@ -33,22 +33,21 @@ export function MyReservationsScreen() {
   }
 
   return (
-    <div className="space-y-8 pb-10">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          Mis reservas
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Upcoming and past bookings for shared places.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Mis reservas"
+        subtitle="Espacios que has reservado en la comunidad."
+      />
 
       <section className="space-y-4">
-        <h2 className="text-[18px] font-semibold">Upcoming</h2>
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+          Próximas
+        </h2>
         {upcoming.length === 0 ? (
           <EmptyState
-            title="No upcoming reservations"
-            description="Reserve a court, room or terrace when you need it."
+            title="No hay reservas próximas"
+            description="Reserva una pista, sala o terraza cuando la necesites."
             actionLabel="Ver lugares"
             onAction={() => router.push("/resources")}
           />
@@ -69,7 +68,7 @@ export function MyReservationsScreen() {
                   className="flex-1"
                   onClick={() => router.push(`/resources/${r.resourceId}`)}
                 >
-                  View place
+                  Ver lugar
                 </Button>
                 {(r.status === "reserved" || r.status === "pending") && (
                   <Button
@@ -77,7 +76,7 @@ export function MyReservationsScreen() {
                     className="flex-1"
                     onClick={() => cancel(r.id)}
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                 )}
               </div>
@@ -87,10 +86,12 @@ export function MyReservationsScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[18px] font-semibold">Past</h2>
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+          Pasadas
+        </h2>
         {past.length === 0 ? (
           <p className="text-[15px] text-[var(--color-text-secondary)]">
-            Past reservations will appear here.
+            Las reservas pasadas aparecerán aquí.
           </p>
         ) : (
           past.map((r) => (
@@ -113,6 +114,6 @@ export function MyReservationsScreen() {
           ))
         )}
       </section>
-    </div>
+    </MobileScreen>
   );
 }

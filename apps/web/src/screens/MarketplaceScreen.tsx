@@ -10,8 +10,11 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  FilterChipRow,
   MarketplaceItemCard,
-  cn,
+  MobileScreen,
+  ScreenHeader,
+  ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -19,15 +22,15 @@ type Filter = "all" | MarketplaceListingKind;
 
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "Todo" },
-  { id: "sell", label: "Se vende" },
-  { id: "buy", label: "Se busca" },
-  { id: "give", label: "Se regala" },
-  { id: "request", label: "Se necesita" },
+  { id: "sell", label: "Vendo" },
+  { id: "buy", label: "Busco" },
+  { id: "give", label: "Regalo" },
+  { id: "request", label: "Presto" },
 ];
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
 
   const items = useMemo(() => {
@@ -57,43 +60,25 @@ export function MarketplaceScreen() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8">
-          Mercado
-        </h1>
-        <p className="mt-2 text-[16px] leading-6 text-[var(--color-text-secondary)]">
-          Compraventa y ayuda entre vecinos — no es una tienda comercial.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Mercado"
+        subtitle="Lo que los vecinos ofrecen, buscan o comparten."
+      />
 
       {hasCapability(CAPABILITIES.marketplaceCreate) ? (
-        <button
-          type="button"
+        <ScreenPrimaryAction
+          label="Publicar anuncio"
           onClick={() => undefined}
-          className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
-        >
-          Publicar anuncio
-        </button>
+        />
       ) : null}
 
-      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {filters.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => setFilter(f.id)}
-            className={cn(
-              "min-h-[40px] shrink-0 rounded-full px-4 text-[14px] font-semibold",
-              filter === f.id
-                ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
-                : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)]",
-            )}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <FilterChipRow
+        items={filters}
+        activeId={filter}
+        onChange={(id) => setFilter(id as Filter)}
+      />
 
       {items.length === 0 ? (
         <EmptyState
@@ -101,20 +86,21 @@ export function MarketplaceScreen() {
           description="Sé la primera persona en publicar algo útil para el barrio."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {items.map((item) => (
             <MarketplaceItemCard
               key={item.id}
               kindLabel={marketplaceKindLabel(item.kind)}
               title={item.title}
-              meta={`${item.areaLabel} · ${formatContentWhen(item.publishedAt)}`}
+              meta={formatContentWhen(item.publishedAt)}
               priceLabel={item.priceLabel}
               imageUrl={item.imageUrl}
               authorName={item.authorName}
+              authorAvatarUrl={item.authorAvatarUrl}
             />
           ))}
         </div>
       )}
-    </div>
+    </MobileScreen>
   );
 }

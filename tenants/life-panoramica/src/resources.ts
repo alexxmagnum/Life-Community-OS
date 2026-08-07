@@ -77,7 +77,7 @@ export const resourceCatalog: CommunityResource[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1400&q=80",
     location: "Zona deportiva · Pista 2",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Life Panoramica",
     type: "sports_facility",
     rules: [
       "Máximo 90 minutos por reserva",
@@ -97,7 +97,7 @@ export const resourceCatalog: CommunityResource[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=80",
     location: "Edificio principal · Planta baja",
-    areaLabel: "Detinsa",
+    areaLabel: "Centro",
     type: "space",
     rules: [
       "Puede requerir aprobación para eventos de más de 12 personas",
@@ -116,8 +116,8 @@ export const resourceCatalog: CommunityResource[] = [
       "Zona de grill compartida con mesas de picnic. Perfecta para encuentros pequeños a la hora dorada.",
     imageUrl:
       "https://images.unsplash.com/photo-1555939596-19271ee170b3?auto=format&fit=crop&w=1400&q=80",
-    location: "Terraza · Aldea Golf",
-    areaLabel: "Aldea Golf",
+    location: "Terraza · Zona norte",
+    areaLabel: "Zona norte",
     type: "amenity",
     rules: [
       "Limpia el grill después de usarlo",
@@ -136,7 +136,7 @@ export const resourceCatalog: CommunityResource[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1626224582411-c8120bdb77e2?auto=format&fit=crop&w=1400&q=80",
     location: "Zona deportiva · Pista 1",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Zona norte",
     type: "sports_facility",
     rules: [
       "Máximo 90 minutos por reserva",

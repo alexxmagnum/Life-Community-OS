@@ -38,7 +38,7 @@ export function BottomNavigation({
         "fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] pb-[env(safe-area-inset-bottom)] md:hidden",
         className,
       )}
-      aria-label="Main"
+      aria-label="Principal"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2 pt-2">
         {items.map((item) => {
@@ -49,7 +49,7 @@ export function BottomNavigation({
                 type="button"
                 onClick={() => onNavigate(item)}
                 className={cn(
-                  "flex min-h-[52px] w-full flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[11px] font-semibold",
+                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[12px] font-semibold",
                   active
                     ? "text-[var(--color-action-primary)]"
                     : "text-[var(--color-text-tertiary)]",
@@ -98,7 +98,7 @@ export function DesktopNavigation({
       <p className="px-3 font-[family-name:var(--font-display)] text-[20px] font-semibold text-[var(--color-action-primary)]">
         {brandName}
       </p>
-      <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Main">
+      <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Principal">
         {items.map((item) => {
           const active = item.id === activeId;
           return (

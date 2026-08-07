@@ -29,17 +29,17 @@ export function TerritoryHero({
 }: TerritoryHeroProps) {
   return (
     <section className={cn("relative", className)}>
-      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 pt-3 md:px-8 md:pt-5">
-        <div className="inline-flex max-w-[70%] items-center gap-2 rounded-full bg-[var(--color-surface-elevated)]/92 px-3.5 py-2 shadow-[var(--shadow-elev-1)] backdrop-blur-sm">
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="inline-flex max-w-[72%] items-center gap-2 rounded-full bg-[var(--color-surface-elevated)]/92 px-3.5 py-2.5 shadow-[var(--shadow-elev-1)] backdrop-blur-sm">
           <span
             className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-action-accent)]"
             aria-hidden
           />
-          <span className="truncate text-[13px] font-semibold text-[var(--color-text-primary)]">
+          <span className="truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
             {areaLabel}
           </span>
           {weatherLabel ? (
-            <span className="hidden truncate text-[13px] text-[var(--color-text-secondary)] sm:inline">
+            <span className="truncate text-[13px] text-[var(--color-text-secondary)]">
               · {weatherLabel}
             </span>
           ) : null}
@@ -48,20 +48,20 @@ export function TerritoryHero({
           <button
             type="button"
             onClick={onNotifications}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-surface-elevated)]/92 text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] backdrop-blur-sm"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-surface-elevated)]/92 text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] backdrop-blur-sm"
             aria-label="Notificaciones"
           >
             <span className="text-lg leading-none" aria-hidden>
               ◌
             </span>
             {notificationCount > 0 ? (
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[var(--color-action-accent)]" />
+              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[var(--color-action-accent)]" />
             ) : null}
           </button>
         ) : null}
       </div>
 
-      <div className="relative min-h-[min(58vh,520px)] overflow-hidden md:min-h-[min(48vh,480px)] md:rounded-b-[var(--radius-xl)]">
+      <div className="relative min-h-[62vh] overflow-hidden sm:min-h-[min(58vh,520px)] md:min-h-[min(46vh,440px)] md:rounded-b-[var(--radius-xl)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageUrl}
@@ -72,18 +72,18 @@ export function TerritoryHero({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, rgba(20,28,24,0.12) 0%, transparent 32%, var(--color-hero-scrim) 100%)",
+              "linear-gradient(180deg, rgba(20,28,24,0.18) 0%, transparent 36%, var(--color-hero-scrim) 100%)",
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 px-5 pb-8 pt-24 md:px-10 md:pb-10">
-          <p className="text-[13px] font-semibold tracking-[0.08em] text-[var(--color-text-inverse)]/90">
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-9 pt-28">
+          <p className="text-[14px] font-semibold tracking-[0.06em] text-[var(--color-text-inverse)]/90">
             {territoryName}
           </p>
-          <h1 className="mt-2 max-w-[18ch] font-[family-name:var(--font-display)] text-[36px] font-semibold leading-[1.1] text-[var(--color-text-inverse)] md:text-[44px]">
+          <h1 className="mt-2 max-w-[16ch] font-[family-name:var(--font-display)] text-[40px] font-semibold leading-[1.05] text-[var(--color-text-inverse)]">
             {greeting}
           </h1>
           {callout ? (
-            <p className="mt-3 max-w-[28ch] text-[16px] font-medium leading-6 text-[var(--color-text-inverse)]/88">
+            <p className="mt-3 max-w-[22ch] text-[17px] font-medium leading-6 text-[var(--color-text-inverse)]/90">
               {callout}
             </p>
           ) : null}
@@ -209,12 +209,12 @@ export function CommunityPulseCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex min-w-[168px] max-w-[200px] shrink-0 flex-col rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]",
+        "flex min-h-[88px] min-w-[200px] max-w-[240px] shrink-0 flex-col justify-center rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]",
         className,
       )}
     >
       <span className="flex items-center gap-2">
-        <span className="text-[13px] font-semibold text-[var(--color-action-primary)]">
+        <span className="text-[14px] font-semibold text-[var(--color-action-primary)]">
           {time}
         </span>
         {live ? (
@@ -224,10 +224,10 @@ export function CommunityPulseCard({
           />
         ) : null}
       </span>
-      <span className="mt-1.5 line-clamp-2 text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
+      <span className="mt-2 line-clamp-2 text-[17px] font-semibold leading-5 text-[var(--color-text-primary)]">
         {title}
       </span>
-      <span className="mt-1.5 line-clamp-1 text-[13px] text-[var(--color-text-tertiary)]">
+      <span className="mt-1.5 line-clamp-1 text-[14px] text-[var(--color-text-tertiary)]">
         {meta}
       </span>
     </button>
@@ -255,18 +255,18 @@ export function ParticipationInvitationCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full rounded-[var(--radius-xl)] bg-[var(--color-action-primary-subtle)] px-5 py-5 text-left",
+        "w-full rounded-[var(--radius-xl)] bg-[var(--color-action-primary-subtle)] px-5 py-6 text-left transition-transform active:scale-[0.99]",
         className,
       )}
     >
-      <span className="block font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-action-primary)]">
+      <span className="block font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8 text-[var(--color-action-primary)]">
         {title}
       </span>
-      <span className="mt-2 block text-[15px] leading-6 text-[var(--color-text-secondary)]">
+      <span className="mt-2 block text-[16px] leading-6 text-[var(--color-text-secondary)]">
         {description}
       </span>
-      <span className="mt-4 inline-block text-[15px] font-semibold text-[var(--color-action-primary)]">
-        {ctaLabel}
+      <span className="mt-5 inline-flex min-h-[48px] items-center text-[16px] font-semibold text-[var(--color-action-primary)]">
+        {ctaLabel} →
       </span>
     </button>
   );

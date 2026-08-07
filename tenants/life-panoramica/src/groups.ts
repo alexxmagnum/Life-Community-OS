@@ -20,7 +20,7 @@ export const groupCatalog: CommunityGroup[] = [
     memberCount: 28,
     imageUrl:
       "https://images.unsplash.com/photo-1626224582411-c8120bdb77e2?auto=format&fit=crop&w=800&q=80",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Life Panoramica",
     categoryLabel: "Deporte",
   },
   {
@@ -30,7 +30,7 @@ export const groupCatalog: CommunityGroup[] = [
     memberCount: 41,
     imageUrl:
       "https://images.unsplash.com/photo-1476610182048-b716b8518aae?auto=format&fit=crop&w=800&q=80",
-    areaLabel: "Valle Golf",
+    areaLabel: "Los pinos",
     categoryLabel: "Ocio",
   },
   {
@@ -49,7 +49,7 @@ export const groupCatalog: CommunityGroup[] = [
     memberCount: 19,
     imageUrl:
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80",
-    areaLabel: "Pinar",
+    areaLabel: "El pinar",
     categoryLabel: "Afición",
   },
 ];

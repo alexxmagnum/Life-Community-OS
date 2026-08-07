@@ -63,7 +63,7 @@ export function ExperienceCard({
           </p>
           {(meta || organizerName) && (
             <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
-              {[organizerName ? `Hosted by ${organizerName}` : null, meta]
+              {[organizerName ? `Organizado por ${organizerName}` : null, meta]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -268,7 +268,7 @@ export function ResourceCard({
             {name}
           </h3>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-            Next: {availability}
+            Próximo: {availability}
             {area ? ` · ${area}` : ""}
           </p>
         </div>
@@ -276,7 +276,7 @@ export function ResourceCard({
       {onReserve ? (
         <div className="border-t border-[var(--color-border-subtle)] px-4 py-3">
           <Button fullWidth onClick={onReserve}>
-            Reserve
+            Reservar
           </Button>
         </div>
       ) : null}

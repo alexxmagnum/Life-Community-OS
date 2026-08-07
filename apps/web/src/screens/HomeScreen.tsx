@@ -6,28 +6,19 @@ import {
   currentMember,
   formatContentWhen,
   formatExperienceTime,
-  formatExperienceWhen,
   listDiscoverableExperiences,
-  listGroups,
-  listLocalPlaces,
-  listMarketplaceListings,
   listOfficialContent,
   listPublishedCommunityContent,
-  marketplaceKindLabel,
-  recommendations,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  ActivityCard,
   CommunityPulseCard,
   CommunityPulseMoment,
   CommunityStory,
-  GroupCard,
-  HomeSection,
-  MarketplaceItemCard,
+  ContentBlock,
+  ExploreLink,
   OfficialNoticeCard,
-  QuickActionBar,
+  ParticipationInvitationCard,
   TerritoryHero,
-  LocalPlaceCard,
 } from "@life-community-os/ui";
 import { useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -54,24 +45,18 @@ export function HomeScreen() {
   const { upcoming: upcomingReservations } = useReservations();
 
   const greeting = greetingFor(currentMember.displayName);
-  const shortName = theme.shortName || theme.logoText;
+  const communityName = theme.logoText;
 
   const official = useMemo(() => {
     const all = listOfficialContent();
     return all.find((c) => c.imageUrl) ?? all[0];
   }, []);
 
-  const neighbourPosts = useMemo(() => {
-    return (feedItems.length ? feedItems : listPublishedCommunityContent())
-      .filter((c) => !c.isOfficial && c.status === "published")
-      .slice(0, 2);
+  const neighbourStory = useMemo(() => {
+    return (feedItems.length ? feedItems : listPublishedCommunityContent()).find(
+      (c) => !c.isOfficial && c.status === "published",
+    );
   }, [feedItems]);
-
-  const plans = listDiscoverableExperiences().slice(0, 2);
-  const localDiscoveries = listLocalPlaces().slice(0, 3);
-  const marketHighlights = listMarketplaceListings().slice(0, 2);
-  const groups = listGroups().slice(0, 2);
-  const tip = recommendations[0];
 
   const pulseItems = useMemo(() => {
     type Pulse = {
@@ -84,7 +69,7 @@ export function HomeScreen() {
     };
     const items: Pulse[] = [];
 
-    for (const exp of joinedExperiences.slice(0, 2)) {
+    for (const exp of joinedExperiences.slice(0, 1)) {
       items.push({
         id: `joined-${exp.id}`,
         time: formatExperienceTime(exp.startsAt),
@@ -103,18 +88,18 @@ export function HomeScreen() {
         href: `/resources/${r.resourceId}`,
       });
     }
-    for (const exp of listDiscoverableExperiences().slice(0, 4)) {
+    for (const exp of listDiscoverableExperiences().slice(0, 3)) {
       if (items.some((i) => i.href === `/experiences/${exp.id}`)) continue;
       items.push({
         id: `exp-${exp.id}`,
         time: formatExperienceTime(exp.startsAt),
         title: exp.title,
-        meta: exp.areaLabel,
+        meta: exp.location,
         live: isLiveSoon(exp.startsAt),
         href: `/experiences/${exp.id}`,
       });
     }
-    return items.slice(0, 5);
+    return items.slice(0, 3);
   }, [joinedExperiences, upcomingReservations]);
 
   const participatingCount = listDiscoverableExperiences().reduce(
@@ -122,88 +107,58 @@ export function HomeScreen() {
     0,
   );
 
-  const livingLine = useMemo(() => {
-    const parts: string[] = [];
-    if (participatingCount > 0) {
-      parts.push(`${participatingCount} vecinos participan`);
-    }
-    if (neighbourPosts.length > 0) {
-      parts.push("Hay actividad de vecinos");
-    }
-    if (marketHighlights.length > 0 && isFeatureEnabled("marketplace")) {
-      parts.push("Nuevos anuncios en el mercado");
-    }
-    if (parts.length === 0) {
-      return "Hoy el territorio está tranquilo — descubre algo cerca";
-    }
-    return parts.join(" · ");
-  }, [isFeatureEnabled, marketHighlights.length, neighbourPosts.length, participatingCount]);
+  const livingLine =
+    pulseItems.length === 0
+      ? "Hoy está tranquilo en la comunidad"
+      : participatingCount > 0
+        ? `${participatingCount} vecinos participan ahora`
+        : "Hay vida cerca de ti";
 
-  const heroCallout =
-    pulseItems.length > 0
-      ? "Todo lo que ocurre alrededor de tu comunidad, en un solo lugar"
-      : `Empieza el día en ${shortName}`;
-
-  const quickActions = useMemo(() => {
-    const items: {
-      id: string;
-      label: string;
-      icon: string;
-      onClick: () => void;
-    }[] = [
-      {
-        id: "community",
-        label: "Comunidad",
-        icon: "◌",
-        onClick: () => router.push("/community"),
-      },
-    ];
+  const invitation = useMemo(() => {
     if (isFeatureEnabled("experiences")) {
-      items.push({
-        id: "plans",
-        label: "Planes",
-        icon: "◎",
-        onClick: () => router.push("/discover?segment=actividades"),
-      });
+      return {
+        title: "Participa hoy",
+        description: "Únete a un plan con vecinos cerca de ti.",
+        ctaLabel: "Ver planes",
+        href: "/discover?segment=actividades",
+      };
     }
     if (isFeatureEnabled("marketplace")) {
-      items.push({
-        id: "market",
-        label: "Mercado",
-        icon: "⇄",
-        onClick: () => router.push("/marketplace"),
-      });
-    } else if (isFeatureEnabled("resources")) {
-      items.push({
-        id: "reserve",
-        label: "Reservar",
-        icon: "▣",
-        onClick: () => router.push("/resources"),
-      });
+      return {
+        title: "Mira el mercado",
+        description: "Lo que tus vecinos ofrecen o necesitan.",
+        ctaLabel: "Abrir mercado",
+        href: "/marketplace",
+      };
     }
-    return items.slice(0, 3);
-  }, [isFeatureEnabled, router]);
+    return {
+      title: "Explora la comunidad",
+      description: "Descubre qué está pasando cerca.",
+      ctaLabel: "Descubrir",
+      href: "/discover",
+    };
+  }, [isFeatureEnabled]);
+
+  const recentLife = official ?? neighbourStory;
 
   return (
-    <div className="-mx-4 -mt-4 md:-mx-8 md:-mt-8">
+    <div className="-mx-4 -mt-3 md:-mx-8 md:-mt-8">
       <TerritoryHero
-        territoryName={theme.logoText}
+        territoryName={communityName}
         greeting={greeting}
-        callout={heroCallout}
-        areaLabel={currentMember.areaLabel}
+        callout="¿Qué está pasando ahora?"
+        areaLabel={communityName}
         weatherLabel="Soleado · 24°"
         imageUrl={theme.imagery.homeHero}
         notificationCount={3}
         onNotifications={() => router.push("/me")}
       />
 
-      <div className="space-y-11 px-4 pb-6 pt-7 md:px-8 md:pt-10">
-        <QuickActionBar items={quickActions} />
-
+      <ContentBlock className="space-y-10 pt-8">
         <CommunityPulseMoment
-          title={`Hoy en ${shortName}`}
+          title="Ahora en la comunidad"
           livingLine={livingLine}
-          emptyLabel="Nada programado todavía — descubre vida cerca."
+          emptyLabel="Nada programado — descubre algo cerca."
           emptyActionLabel="Descubrir"
           onEmptyAction={() => router.push("/discover")}
         >
@@ -221,166 +176,74 @@ export function HomeScreen() {
             : null}
         </CommunityPulseMoment>
 
-        {isFeatureEnabled("feed") && (official || neighbourPosts[0]) ? (
-          <HomeSection
-            title="Actividad de vecinos"
-            subtitle="Conversaciones, avisos y lo que importa hoy."
-            actionLabel="Ver"
-            onAction={() => router.push("/community")}
-          >
-            <div className="space-y-8">
-              {official ? (
-                <OfficialNoticeCard
-                  title={official.title}
-                  preview={official.body}
-                  areaLabel={official.areaLabel}
-                  imageUrl={official.imageUrl}
-                  onClick={() =>
-                    router.push(`/community/content/${official.id}`)
-                  }
-                />
-              ) : null}
-              {neighbourPosts.map((post) => (
-                <CommunityStory
-                  key={post.id}
-                  eyebrow="Vecinos"
-                  title={post.title}
-                  body={post.body}
-                  meta={formatContentWhen(post.publishedAt ?? post.createdAt)}
-                  imageUrl={post.imageUrl}
-                  authorName={post.author.name}
-                  authorAvatarUrl={post.author.avatarUrl}
-                  onClick={() =>
-                    router.push(`/community/content/${post.id}`)
-                  }
-                />
-              ))}
-            </div>
-          </HomeSection>
-        ) : null}
+        <ParticipationInvitationCard
+          title={invitation.title}
+          description={invitation.description}
+          ctaLabel={invitation.ctaLabel}
+          onClick={() => router.push(invitation.href)}
+        />
 
-        {isFeatureEnabled("experiences") && plans.length > 0 ? (
-          <HomeSection
-            title="Planes a los que unirte"
-            subtitle="Ocio, deporte y encuentros cerca de ti."
-            actionLabel="Ver más"
-            onAction={() => router.push("/discover?segment=actividades")}
-          >
-            <div className="space-y-5">
-              {plans.map((exp) => (
-                <ActivityCard
-                  key={exp.id}
-                  title={exp.title}
-                  when={formatExperienceWhen(exp.startsAt)}
-                  where={exp.location}
-                  imageUrl={exp.imageUrl}
-                  peopleLabel={`${exp.participantCount} personas van`}
-                  ctaLabel="Participar"
-                  onClick={() => router.push(`/experiences/${exp.id}`)}
-                  onCta={() => router.push(`/experiences/${exp.id}`)}
-                />
-              ))}
-            </div>
-          </HomeSection>
-        ) : null}
-
-        {isFeatureEnabled("groups") ? (
-          <HomeSection
-            title="Grupos"
-            subtitle="Con quién puedes compartir el día a día."
-            actionLabel="Ver"
-            onAction={() => router.push("/community?tab=groups")}
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {groups.map((g) => (
-                <GroupCard
-                  key={g.id}
-                  name={g.name}
-                  members={g.memberCount}
-                  imageUrl={g.imageUrl}
-                  onOpen={() => router.push("/community?tab=groups")}
-                />
-              ))}
-            </div>
-          </HomeSection>
-        ) : null}
-
-        <HomeSection
-          title="Descubrimientos locales"
-          subtitle="Sitios, servicios y confianza de vecinos."
-          actionLabel="Explorar"
-          onAction={() => router.push("/discover")}
-        >
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {localDiscoveries.map((place) => (
-              <LocalPlaceCard
-                key={place.id}
-                name={place.name}
-                categoryLabel={place.categoryLabel}
-                areaLabel={place.areaLabel}
-                blurb={place.blurb}
-                imageUrl={place.imageUrl}
-                recommendedBy={place.recommendedBy}
-                verified={place.verified}
-                onClick={() => router.push("/discover?segment=lugares")}
+        {isFeatureEnabled("feed") && recentLife ? (
+          <section className="space-y-4">
+            <h2 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8 text-[var(--color-text-primary)]">
+              Vida reciente
+            </h2>
+            {official && recentLife.id === official.id ? (
+              <OfficialNoticeCard
+                title={official.title}
+                preview={official.body}
+                imageUrl={official.imageUrl}
+                onClick={() =>
+                  router.push(`/community/content/${official.id}`)
+                }
               />
-            ))}
-          </div>
-          {isFeatureEnabled("recommendations") && tip ? (
-            <CommunityStory
-              className="mt-6"
-              eyebrow="Recomendación"
-              title={`De confianza · ${tip.author}`}
-              body={tip.quote}
-              imageUrl={tip.imageUrl}
-              authorName={tip.author}
-              onClick={() => router.push("/discover?segment=recomendaciones")}
+            ) : neighbourStory ? (
+              <CommunityStory
+                eyebrow="Vecinos"
+                title={neighbourStory.title}
+                body={neighbourStory.body}
+                meta={formatContentWhen(
+                  neighbourStory.publishedAt ?? neighbourStory.createdAt,
+                )}
+                imageUrl={neighbourStory.imageUrl}
+                authorName={neighbourStory.author.name}
+                authorAvatarUrl={neighbourStory.author.avatarUrl}
+                onClick={() =>
+                  router.push(`/community/content/${neighbourStory.id}`)
+                }
+              />
+            ) : null}
+          </section>
+        ) : null}
+
+        <section className="space-y-3 border-t border-[var(--color-border-subtle)] pt-8">
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
+            Explorar más
+          </h2>
+          <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
+            Comunidad, descubrimientos y mercado cuando quieras.
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <ExploreLink
+              label="Comunidad"
+              hint="Avisos, conversaciones y grupos"
+              onClick={() => router.push("/community")}
             />
-          ) : null}
-        </HomeSection>
-
-        {isFeatureEnabled("marketplace") ? (
-          <HomeSection
-            title="Mercado entre vecinos"
-            subtitle="Compra, vende, regala o pide — sin salir de la comunidad."
-            actionLabel="Ver mercado"
-            onAction={() => router.push("/marketplace")}
-          >
-            <div className="space-y-3">
-              {marketHighlights.map((item) => (
-                <MarketplaceItemCard
-                  key={item.id}
-                  kindLabel={marketplaceKindLabel(item.kind)}
-                  title={item.title}
-                  meta={item.areaLabel}
-                  priceLabel={item.priceLabel}
-                  imageUrl={item.imageUrl}
-                  authorName={item.authorName}
-                  onClick={() => router.push("/marketplace")}
-                />
-              ))}
-            </div>
-          </HomeSection>
-        ) : null}
-
-        {isFeatureEnabled("calendar") ? (
-          <button
-            type="button"
-            onClick={() => router.push("/calendar")}
-            className="flex w-full items-center justify-between rounded-[var(--radius-xl)] bg-[var(--color-action-primary-subtle)] px-5 py-4 text-left"
-          >
-            <span>
-              <span className="block text-[17px] font-semibold text-[var(--color-action-primary)]">
-                Mi agenda
-              </span>
-              <span className="mt-1 block text-[14px] text-[var(--color-text-secondary)]">
-                Tus planes y reservas de esta semana
-              </span>
-            </span>
-            <span className="text-[var(--color-action-primary)]">→</span>
-          </button>
-        ) : null}
-      </div>
+            <ExploreLink
+              label="Descubrir"
+              hint="Planes, sitios y recomendaciones"
+              onClick={() => router.push("/discover")}
+            />
+            {isFeatureEnabled("marketplace") ? (
+              <ExploreLink
+                label="Mercado"
+                hint="Lo que los vecinos ofrecen o buscan"
+                onClick={() => router.push("/marketplace")}
+              />
+            ) : null}
+          </div>
+        </section>
+      </ContentBlock>
     </div>
   );
 }

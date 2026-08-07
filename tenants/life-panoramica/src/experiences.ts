@@ -90,7 +90,7 @@ export const experienceCatalog: Experience[] = [
     startsAt: startSunset,
     endsAt: endOf(startSunset, 1.5),
     location: "Entrada del camino de pinos",
-    areaLabel: "Valle Golf",
+    areaLabel: "Los pinos",
     organizer: {
       id: "org-ana",
       name: "Ana López",
@@ -127,13 +127,13 @@ export const experienceCatalog: Experience[] = [
     id: "exp-sunrise-pines",
     title: "Paseo al amanecer entre pinos",
     description:
-      "Luz temprana, caminos tranquilos y un circuito corto por Valle Golf. Ideal si te gustan las mañanas y la conversación fácil.",
+      "Luz temprana, caminos tranquilos y un circuito corto por Los pinos. Ideal si te gustan las mañanas y la conversación fácil.",
     imageUrl:
       "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=1400&q=80",
     startsAt: startWalk,
     endsAt: endOf(startWalk, 1),
-    location: "Inicio del sendero · Valle Golf",
-    areaLabel: "Valle Golf",
+    location: "Inicio del sendero · Los pinos",
+    areaLabel: "Los pinos",
     organizer: {
       id: "org-marta",
       name: "Marta Ruiz",
@@ -167,8 +167,8 @@ export const experienceCatalog: Experience[] = [
       "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=80",
     startsAt: startStretch,
     endsAt: endOf(startStretch, 1),
-    location: "Terraza · Hacienda",
-    areaLabel: "Hacienda",
+    location: "Terraza · Terraza",
+    areaLabel: "Terraza",
     organizer: {
       id: "org-ines",
       name: "Inés Vidal",
@@ -189,13 +189,13 @@ export const experienceCatalog: Experience[] = [
     id: "exp-coffee",
     title: "Café de vecinos",
     description:
-      "Café, presentaciones y un comienzo tranquilo del día en Aldea Golf. Pasa — sin agenda, solo comunidad.",
+      "Café, presentaciones y un comienzo tranquilo del día en Zona norte. Pasa — sin agenda, solo comunidad.",
     imageUrl:
       "https://images.unsplash.com/photo-1511632765481-a929fcf8e8f4?auto=format&fit=crop&w=1400&q=80",
     startsAt: startCoffee,
     endsAt: endOf(startCoffee, 1.5),
     location: "Terraza comunitaria",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Life Panoramica",
     organizer: {
       id: "org-community",
       name: "Life Panoramica",
@@ -221,7 +221,7 @@ export const experienceCatalog: Experience[] = [
     startsAt: startFull,
     endsAt: endOf(startFull, 2),
     location: "Pistas de pádel 1–2",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Zona norte",
     organizer: {
       id: "org-padel",
       name: "Pádel mañanas",
@@ -246,8 +246,8 @@ export const experienceCatalog: Experience[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1555939596-19271ee170b3?auto=format&fit=crop&w=1400&q=80",
     startsAt: upcoming(6, 19, 0),
-    location: "Terraza · Aldea Golf",
-    areaLabel: "Aldea Golf",
+    location: "Terraza · Zona norte",
+    areaLabel: "Zona norte",
     organizer: {
       id: "org-ana",
       name: "Ana López",
@@ -270,7 +270,7 @@ export const experienceCatalog: Experience[] = [
     startsAt: startExpired,
     endsAt: endOf(startExpired, 1),
     location: "Césped central",
-    areaLabel: "Pinar",
+    areaLabel: "El pinar",
     organizer: {
       id: "org-ines",
       name: "Inés Vidal",

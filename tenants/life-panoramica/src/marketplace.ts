@@ -34,9 +34,9 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     kind: "sell",
     title: "Sofá de dos plazas",
     description:
-      "Buen estado, tela beige. Ideal para terraza cubierta. Recogida en Aldea Golf.",
+      "Buen estado, tela beige. Ideal para terraza cubierta. Recogida en Zona norte.",
     priceLabel: "80 €",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Life Panoramica",
     authorName: "Elena",
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80",
@@ -50,7 +50,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     title: "Bicicleta infantil",
     description:
       "La dejamos gratis a una familia del territorio. Ruedines incluidos.",
-    areaLabel: "Valle Golf",
+    areaLabel: "Los pinos",
     authorName: "Jordi",
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
@@ -64,7 +64,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     title: "¿Alguien presta un taladro?",
     description:
       "Necesito colgar dos cuadros este finde. Devuelvo el mismo día.",
-    areaLabel: "Detinsa",
+    areaLabel: "Centro",
     authorName: "Ana",
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
@@ -77,7 +77,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     kind: "buy",
     title: "Busco mesa de exterior",
     description: "Preferible madera o hierro. Presupuesto flexible.",
-    areaLabel: "Pinar",
+    areaLabel: "El pinar",
     authorName: "Luis",
     imageUrl:
       "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&w=900&q=80",
@@ -95,12 +95,12 @@ export function listMarketplaceListings(): MarketplaceListing[] {
 export function marketplaceKindLabel(kind: MarketplaceListingKind): string {
   switch (kind) {
     case "sell":
-      return "Se vende";
+      return "Vendo";
     case "buy":
-      return "Se busca";
+      return "Busco";
     case "give":
-      return "Se regala";
+      return "Regalo";
     case "request":
-      return "Se necesita";
+      return "Presto";
   }
 }

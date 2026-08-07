@@ -17,11 +17,14 @@ import {
 import {
   ActivityCard,
   EmptyState,
+  FilterChipRow,
   GroupCard,
   LocalPlaceCard,
+  MobileScreen,
   RecommendationCard,
   ResourceDiscoveryCard,
-  cn,
+  ScreenHeader,
+  ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -38,7 +41,7 @@ type Segment =
 export function DiscoverScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState } = useExperienceParticipation();
 
   const segments = useMemo(() => {
@@ -110,46 +113,27 @@ export function DiscoverScreen() {
   );
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8">
-          Descubrir
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Hay vida aquí — ocio, sitios, servicios y planes.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Descubrir"
+        subtitle="Hay vida aquí — planes, sitios y gente de confianza."
+      />
 
-      <label className="block">
-        <span className="sr-only">Buscar</span>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar actividades, sitios, servicios…"
-          className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-4 text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
-        />
-      </label>
+      <ScreenSearch
+        value={query}
+        onChange={setQuery}
+        placeholder="Buscar actividades, sitios, servicios…"
+      />
 
-      <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {segments.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => {
-              setSegment(s.id);
-              router.replace(`/discover?segment=${s.id}`);
-            }}
-            className={cn(
-              "min-h-[40px] shrink-0 rounded-full px-4 text-[14px] font-semibold",
-              active === s.id
-                ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
-                : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)]",
-            )}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <FilterChipRow
+        items={segments}
+        activeId={active}
+        onChange={(id) => {
+          setSegment(id as Segment);
+          router.replace(`/discover?segment=${id}`);
+        }}
+      />
 
       {active === "actividades" ? (
         !hasCapability(CAPABILITIES.experienceView) ? (
@@ -309,6 +293,6 @@ export function DiscoverScreen() {
             ))}
         </div>
       ) : null}
-    </div>
+    </MobileScreen>
   );
 }

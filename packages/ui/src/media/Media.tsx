@@ -29,7 +29,7 @@ export function MediaCapturePlaceholder({
         {hint}
       </p>
       <Button variant="secondary" className="mt-4" type="button" disabled>
-        Open camera
+        Abrir cámara
       </Button>
     </div>
   );
@@ -47,7 +47,7 @@ export function MediaPreviewPlaceholder({
         className,
       )}
     >
-      Preview · Retake / Use
+      Vista previa · Repetir / Usar
     </div>
   );
 }

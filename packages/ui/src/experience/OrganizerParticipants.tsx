@@ -10,7 +10,7 @@ export type OrganizerCardProps = {
 
 export function OrganizerCard({
   name,
-  roleLabel = "Organizer",
+  roleLabel = "Organizador",
   avatarUrl,
   className,
 }: OrganizerCardProps) {
@@ -56,10 +56,10 @@ export function ParticipantList({
       )}
     >
       <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-        Going
+        Van a ir
       </p>
       <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
-        {totalCount} {totalCount === 1 ? "person" : "people"}
+        {totalCount} {totalCount === 1 ? "persona" : "personas"}
       </p>
       {shown.length > 0 ? (
         <div className="mt-3 flex items-center">
@@ -80,7 +80,7 @@ export function ParticipantList({
         </div>
       ) : (
         <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-          Be the first to join
+          Sé la primera persona en participar
         </p>
       )}
     </div>

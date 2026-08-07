@@ -22,7 +22,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Terraza del Valle",
     kind: "restaurant",
     categoryLabel: "Restaurante",
-    areaLabel: "Valle Golf",
+    areaLabel: "Los pinos",
     blurb: "Cena informal con vistas. Ideal para planes espontáneos.",
     imageUrl:
       "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=80",
@@ -33,7 +33,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Café del club",
     kind: "restaurant",
     categoryLabel: "Café",
-    areaLabel: "Hacienda",
+    areaLabel: "Terraza",
     blurb: "Desayunos y reuniones tranquilas entre vecinos.",
     imageUrl:
       "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
@@ -44,7 +44,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Piscina comunitaria",
     kind: "leisure",
     categoryLabel: "Ocio",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Life Panoramica",
     blurb: "Zona de baño y sombra — consulta el horario de verano.",
     imageUrl:
       "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=900&q=80",
@@ -54,7 +54,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Jardinería Panoramica",
     kind: "service",
     categoryLabel: "Servicio",
-    areaLabel: "Toda Panoramica",
+    areaLabel: "Life Panoramica",
     blurb: "Cuidado de exteriores verificado por vecinos.",
     imageUrl:
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80",
@@ -66,7 +66,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Cerrajero Costa",
     kind: "service",
     categoryLabel: "Servicio",
-    areaLabel: "Aldea Golf",
+    areaLabel: "Zona norte",
     blurb: "Llaves el mismo día — muy recomendado.",
     imageUrl:
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=900&q=80",
@@ -78,7 +78,7 @@ export const localPlaceCatalog: LocalPlace[] = [
     name: "Camino de pinos",
     kind: "spot",
     categoryLabel: "Lugar",
-    areaLabel: "Valle Golf",
+    areaLabel: "Los pinos",
     blurb: "Paseo al atardecer. Punto de encuentro habitual.",
     imageUrl:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",

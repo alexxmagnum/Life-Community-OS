@@ -10,7 +10,10 @@ import {
 import {
   EmptyState,
   ExperienceCard,
-  cn,
+  FilterChipRow,
+  MobileScreen,
+  ScreenHeader,
+  ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -31,9 +34,10 @@ function statusLabelFor(
 
 export function ExperienceListScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
+  const [chip, setChip] = useState("all");
 
   const items = useMemo(() => {
     return listDiscoverableExperiences().filter((e) => {
@@ -66,41 +70,30 @@ export function ExperienceListScreen() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Descubrir
-        </p>
-        <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8">
-          Actividades
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Encuentra algo en lo que participar en tu comunidad.
-        </p>
-      </div>
+    <MobileScreen>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title="Actividades"
+        subtitle="Encuentra algo en lo que participar en tu comunidad."
+      />
 
-      <label className="block">
-        <span className="sr-only">Buscar actividades</span>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar paseos, clases, encuentros…"
-          className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-4 text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
-        />
-      </label>
+      <ScreenSearch
+        value={query}
+        onChange={setQuery}
+        placeholder="Buscar paseos, clases, encuentros…"
+        label="Buscar actividades"
+      />
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {["Esta semana", "Exterior", "Bienestar"].map((chip) => (
-          <span
-            key={chip}
-            className={cn(
-              "rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3 py-2 text-[13px] font-semibold text-[var(--color-text-secondary)]",
-            )}
-          >
-            {chip}
-          </span>
-        ))}
-      </div>
+      <FilterChipRow
+        items={[
+          { id: "all", label: "Todas" },
+          { id: "week", label: "Esta semana" },
+          { id: "outdoor", label: "Exterior" },
+          { id: "wellness", label: "Bienestar" },
+        ]}
+        activeId={chip}
+        onChange={setChip}
+      />
 
       {items.length === 0 ? (
         <EmptyState
@@ -110,7 +103,7 @@ export function ExperienceListScreen() {
           onAction={() => setQuery("")}
         />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-4">
           {items.map((exp) => {
             const viewer = getViewerState(exp);
             const remaining = spotsLeft(exp);
@@ -121,7 +114,7 @@ export function ExperienceListScreen() {
                 title={exp.title}
                 when={formatExperienceWhen(exp.startsAt)}
                 where={exp.location}
-                meta={`${exp.participantCount} going · ${remaining} left`}
+                meta={`${exp.participantCount} van · ${remaining} plazas`}
                 imageUrl={exp.imageUrl}
                 organizerName={exp.organizer.name}
                 statusLabel={statusLabelFor(viewer, remaining)}
@@ -133,6 +126,6 @@ export function ExperienceListScreen() {
           })}
         </div>
       )}
-    </div>
+    </MobileScreen>
   );
 }

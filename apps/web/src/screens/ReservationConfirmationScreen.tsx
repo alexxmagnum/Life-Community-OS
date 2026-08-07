@@ -9,7 +9,10 @@ import {
 import {
   Button,
   EmptyState,
+  MobileScreen,
   ReservationSummary,
+  ScreenBack,
+  ScreenHeader,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
@@ -21,7 +24,7 @@ export function ReservationConfirmationScreen({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { reserve } = useReservations();
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +53,9 @@ export function ReservationConfirmationScreen({
   if (!resource || !date || !start || !end) {
     return (
       <EmptyState
-        title="Missing reservation details"
-        description="Choose a day and time again."
-        actionLabel="View availability"
+        title="Faltan datos de la reserva"
+        description="Elige de nuevo el día y la hora."
+        actionLabel="Ver disponibilidad"
         onAction={() =>
           router.push(`/resources/${resourceId}/availability`)
         }
@@ -64,7 +67,7 @@ export function ReservationConfirmationScreen({
     return (
       <EmptyState
         title="No puedes reservar ahora"
-        description="Reserving isn’t available for your account."
+        description="Reservar no está disponible para tu cuenta."
       />
     );
   }
@@ -72,27 +75,23 @@ export function ReservationConfirmationScreen({
   const confirmed = Boolean(confirmedId);
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-10">
-      <button
-        type="button"
+    <MobileScreen>
+      <ScreenBack
+        label="Cambiar horario"
         onClick={() =>
           router.push(`/resources/${resource.id}/availability`)
         }
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← Change slot
-      </button>
+      />
 
-      <div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          {confirmed ? "Reserva hecha" : "Confirmar reserva"}
-        </h1>
-        <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          {confirmed
-            ? "This place is on your calendar. Treat it with care for the next neighbour."
-            : "Double-check the time before you confirm."}
-        </p>
-      </div>
+      <ScreenHeader
+        eyebrow={theme.logoText}
+        title={confirmed ? "Reserva hecha" : "Confirmar reserva"}
+        subtitle={
+          confirmed
+            ? "Este espacio está en tu agenda. Cuídalo para el siguiente vecino."
+            : "Revisa la hora antes de confirmar."
+        }
+      />
 
       <ReservationSummary
         resourceName={resource.name}
@@ -120,7 +119,7 @@ export function ReservationConfirmationScreen({
               end,
             });
             if (!result) {
-              setError("That slot is no longer available. Pick another time.");
+              setError("Ese horario ya no está libre. Elige otro.");
               return;
             }
             setConfirmedId(result.id);
@@ -143,6 +142,6 @@ export function ReservationConfirmationScreen({
           </Button>
         </div>
       )}
-    </div>
+    </MobileScreen>
   );
 }

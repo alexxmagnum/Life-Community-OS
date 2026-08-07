@@ -9,11 +9,12 @@ export type MarketplaceItemCardProps = {
   priceLabel?: string;
   imageUrl: string;
   authorName?: string;
+  authorAvatarUrl?: string;
   onClick?: () => void;
   className?: string;
 };
 
-/** Neighbour exchange listing — not commercial storefront chrome. */
+/** Neighbour exchange — people and trust first, not a storefront. */
 export function MarketplaceItemCard({
   kindLabel,
   title,
@@ -21,6 +22,7 @@ export function MarketplaceItemCard({
   priceLabel,
   imageUrl,
   authorName,
+  authorAvatarUrl,
   onClick,
   className,
 }: MarketplaceItemCardProps) {
@@ -29,30 +31,50 @@ export function MarketplaceItemCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full gap-3 overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]",
+        "w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]",
         className,
       )}
     >
-      <div className="h-[112px] w-[112px] shrink-0 bg-[var(--color-surface-muted)]">
+      <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageUrl} alt="" className="h-full w-full object-cover" />
       </div>
-      <span className="flex min-w-0 flex-1 flex-col justify-center py-3 pr-3">
-        <span className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-action-accent)]">
+      <span className="block space-y-3 p-4">
+        <span className="inline-flex rounded-full bg-[var(--color-action-accent-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-action-accent)]">
           {kindLabel}
         </span>
-        <span className="mt-1 line-clamp-2 text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
+        <span className="block font-[family-name:var(--font-display)] text-[22px] font-semibold leading-7 text-[var(--color-text-primary)]">
           {title}
         </span>
-        <span className="mt-1 line-clamp-1 text-[13px] text-[var(--color-text-secondary)]">
-          {meta}
-          {authorName ? ` · ${authorName}` : ""}
-        </span>
         {priceLabel ? (
-          <span className="mt-2 text-[15px] font-semibold text-[var(--color-action-primary)]">
+          <span className="block text-[17px] font-semibold text-[var(--color-action-primary)]">
             {priceLabel}
           </span>
         ) : null}
+        <span className="flex items-center gap-3 pt-1">
+          {authorAvatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={authorAvatarUrl}
+              alt=""
+              className="h-9 w-9 rounded-full object-cover"
+            />
+          ) : authorName ? (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[13px] font-semibold text-[var(--color-action-primary)]">
+              {authorName.slice(0, 1)}
+            </span>
+          ) : null}
+          <span className="min-w-0">
+            {authorName ? (
+              <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+                {authorName}
+              </span>
+            ) : null}
+            <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+              {meta}
+            </span>
+          </span>
+        </span>
       </span>
     </button>
   );
@@ -158,7 +180,7 @@ export function ActivityCard({
           <img src={imageUrl} alt="" className="h-full w-full object-cover" />
         </div>
         <div className="p-4">
-          <h3 className="text-[18px] font-semibold leading-6 text-[var(--color-text-primary)]">
+          <h3 className="font-[family-name:var(--font-display)] text-[20px] font-semibold leading-6 text-[var(--color-text-primary)]">
             {title}
           </h3>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -176,7 +198,7 @@ export function ActivityCard({
           <button
             type="button"
             onClick={onCta}
-            className="flex min-h-[48px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
+            className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
           >
             {ctaLabel}
           </button>

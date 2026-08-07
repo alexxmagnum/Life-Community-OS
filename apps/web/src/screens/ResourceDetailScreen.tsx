@@ -5,8 +5,10 @@ import { getResourceById } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
   EmptyState,
-  ResourceHero,
+  MobileScreen,
   ReservationStatusBadge,
+  ResourceHero,
+  ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -29,7 +31,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   if (!resource) {
     return (
       <EmptyState
-        title="Place not found"
+        title="Lugar no encontrado"
         actionLabel="Ver lugares"
         onAction={() => router.push("/resources")}
       />
@@ -40,7 +42,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     return (
       <EmptyState
         title="Sin acceso"
-        description="You can’t view this place right now."
+        description="No puedes ver este lugar ahora mismo."
       />
     );
   }
@@ -48,14 +50,8 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   const canReserve = hasCapability(CAPABILITIES.resourceReserve);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-10">
-      <button
-        type="button"
-        onClick={() => router.back()}
-        className="text-[15px] font-semibold text-[var(--color-action-primary)]"
-      >
-        ← Back
-      </button>
+    <MobileScreen>
+      <ScreenBack onClick={() => router.back()} />
 
       <ResourceHero
         imageUrl={resource.imageUrl}
@@ -66,13 +62,8 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       <div className="flex flex-wrap items-center gap-3">
         <ReservationStatusBadge status="available" />
         <span className="text-[14px] text-[var(--color-text-secondary)]">
-          Next opening · {resource.availabilityPreview}
+          Próximo hueco · {resource.availabilityPreview}
         </span>
-        {hasCapability(CAPABILITIES.resourceManage) ? (
-          <span className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
-            Manage available
-          </span>
-        ) : null}
       </div>
 
       <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
@@ -81,7 +72,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
 
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
         <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Where
+          Dónde
         </h2>
         <p className="mt-1 text-[17px] font-semibold">{resource.location}</p>
         <p className="text-[14px] text-[var(--color-text-secondary)]">
@@ -91,7 +82,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
 
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
         <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Community rules
+          Normas de la comunidad
         </h2>
         <ul className="mt-3 space-y-2">
           {resource.rules.map((rule) => (
@@ -105,7 +96,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
         </ul>
       </section>
 
-      <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur md:static md:bg-transparent md:p-0">
+      <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur">
         {canReserve ? (
           <Button
             fullWidth
@@ -113,23 +104,14 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
               router.push(`/resources/${resource.id}/availability`)
             }
           >
-            Reserve
+            Reservar
           </Button>
         ) : (
           <Button fullWidth disabled>
-            Reserve unavailable
+            Reserva no disponible
           </Button>
         )}
-        <Button
-          variant="secondary"
-          fullWidth
-          onClick={() =>
-            router.push(`/resources/${resource.id}/availability`)
-          }
-        >
-          View availability
-        </Button>
       </div>
-    </div>
+    </MobileScreen>
   );
 }

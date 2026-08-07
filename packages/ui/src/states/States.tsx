@@ -62,8 +62,8 @@ export function LoadingState({
 }
 
 export function ErrorState({
-  title = "Something went wrong",
-  description = "Please try again.",
+  title = "Algo ha fallado",
+  description = "Inténtalo de nuevo.",
   onRetry,
   className,
 }: {

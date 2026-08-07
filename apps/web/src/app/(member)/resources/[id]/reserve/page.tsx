@@ -9,7 +9,7 @@ export default async function ResourceReservePage({
 }) {
   const { id } = await params;
   return (
-    <Suspense fallback={<LoadingState label="Loading reservation" />}>
+    <Suspense fallback={<LoadingState label="Cargando reserva…" />}>
       <ReservationConfirmationScreen resourceId={id} />
     </Suspense>
   );
