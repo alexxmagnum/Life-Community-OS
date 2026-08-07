@@ -73,15 +73,15 @@ export function ExperienceListScreen() {
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
-        title="Actividades"
-        subtitle="Encuentra algo en lo que participar en tu comunidad."
+        title="Planes"
+        subtitle="Encuentra algo en lo que participar cerca de ti."
       />
 
       <ScreenSearch
         value={query}
         onChange={setQuery}
         placeholder="Buscar paseos, clases, encuentros…"
-        label="Buscar actividades"
+        label="Buscar planes"
       />
 
       <FilterChipRow

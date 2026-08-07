@@ -120,7 +120,7 @@ export function HomeScreen() {
         title: "Participa hoy",
         description: "Únete a un plan con vecinos cerca de ti.",
         ctaLabel: "Ver planes",
-        href: "/discover?segment=actividades",
+        href: "/discover?intent=hacer",
       };
     }
     if (isFeatureEnabled("marketplace")) {
@@ -218,26 +218,26 @@ export function HomeScreen() {
 
         <section className="space-y-3 border-t border-[var(--color-border-subtle)] pt-8">
           <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
-            Explorar más
+            Seguir explorando
           </h2>
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
-            Comunidad, descubrimientos y mercado cuando quieras.
+            Tu comunidad sigue aquí cuando quieras.
           </p>
           <div className="flex flex-col gap-2 pt-2">
             <ExploreLink
               label="Comunidad"
-              hint="Avisos, conversaciones y grupos"
+              hint="Quién está aquí y qué se habla"
               onClick={() => router.push("/community")}
             />
             <ExploreLink
               label="Descubrir"
-              hint="Planes, sitios y recomendaciones"
+              hint="Hacer · Ir · Encontrar"
               onClick={() => router.push("/discover")}
             />
             {isFeatureEnabled("marketplace") ? (
               <ExploreLink
                 label="Mercado"
-                hint="Lo que los vecinos ofrecen o buscan"
+                hint="Ofrecer, buscar o compartir"
                 onClick={() => router.push("/marketplace")}
               />
             ) : null}

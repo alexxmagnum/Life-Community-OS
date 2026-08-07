@@ -5,9 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   contentTypeLabel,
   formatContentWhen,
-  formatExperienceWhen,
   getExperienceById,
-  listDiscoverableExperiences,
   listGroups,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -15,7 +13,6 @@ import {
   CommunityFeed,
   CommunityPostCard,
   EmptyState,
-  ExperienceCard,
   FilterChipRow,
   GroupCard,
   MobileScreen,
@@ -25,13 +22,32 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
-type Chip = "feed" | "groups" | "talk" | "decide" | "experiences";
+/**
+ * Comunidad answers: "Who is here and what are people doing?"
+ * Plans/activities live in Descubrir → Hacer — not here.
+ */
+type Chip = "conversaciones" | "grupos" | "propuestas";
 
 function decisionLabel(status?: string) {
   if (status === "closing_soon") return "Cierra pronto";
   if (status === "closed") return "Cerrada";
   if (status === "open") return "Abierta";
   return undefined;
+}
+
+function resolveChip(raw: string | null): Chip | null {
+  if (!raw) return null;
+  if (raw === "conversaciones" || raw === "grupos" || raw === "propuestas") {
+    return raw;
+  }
+  const legacy: Record<string, Chip> = {
+    feed: "conversaciones",
+    talk: "conversaciones",
+    groups: "grupos",
+    decide: "propuestas",
+    experiences: "conversaciones",
+  };
+  return legacy[raw] ?? null;
 }
 
 export function CommunityScreen() {
@@ -50,42 +66,40 @@ export function CommunityScreen() {
 
   const chips = (
     [
-      { id: "feed" as const, label: "Novedades", enabled: isFeatureEnabled("feed") },
       {
-        id: "experiences" as const,
-        label: "Planes",
-        enabled: isFeatureEnabled("experiences"),
+        id: "conversaciones" as const,
+        label: "Conversaciones",
+        enabled: isFeatureEnabled("feed") || isFeatureEnabled("interactions"),
       },
       {
-        id: "groups" as const,
+        id: "grupos" as const,
         label: "Grupos",
         enabled: isFeatureEnabled("groups"),
       },
       {
-        id: "talk" as const,
-        label: "Conversar",
-        enabled: isFeatureEnabled("interactions"),
-      },
-      {
-        id: "decide" as const,
-        label: "Decidir",
+        id: "propuestas" as const,
+        label: "Propuestas",
         enabled: isFeatureEnabled("decide"),
       },
     ] satisfies { id: Chip; label: string; enabled: boolean }[]
   ).filter((c) => c.enabled);
 
   const tabParam = searchParams.get("tab");
+  const initial = resolveChip(tabParam);
   const [chip, setChip] = useState<Chip>(
-    tabParam === "groups" && chips.some((c) => c.id === "groups")
-      ? "groups"
-      : chips[0]?.id ?? "feed",
+    initial && chips.some((c) => c.id === initial)
+      ? initial
+      : chips[0]?.id ?? "conversaciones",
   );
 
   useEffect(() => {
-    if (tabParam === "groups" && chips.some((c) => c.id === "groups")) {
-      setChip("groups");
+    const next = resolveChip(tabParam);
+    if (next && chips.some((c) => c.id === next)) {
+      setChip(next);
     }
-  }, [tabParam, chips]);
+    // chips length/ids only change with feature flags
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabParam]);
 
   const active = chips.some((c) => c.id === chip) ? chip : chips[0]?.id;
 
@@ -95,11 +109,8 @@ export function CommunityScreen() {
   const canSave = hasCapability(CAPABILITIES.interactionSave);
   const canReport = hasCapability(CAPABILITIES.interactionReport);
 
-  const discussions = useMemo(
-    () =>
-      feedItems.filter(
-        (c) => c.type === "discussion" || c.type === "member_update",
-      ),
+  const conversations = useMemo(
+    () => feedItems.filter((c) => c.type !== "proposal"),
     [feedItems],
   );
 
@@ -108,7 +119,6 @@ export function CommunityScreen() {
     [feedItems],
   );
 
-  const experiences = listDiscoverableExperiences().slice(0, 4);
   const groupItems = listGroups();
 
   if (!active) {
@@ -120,7 +130,7 @@ export function CommunityScreen() {
     );
   }
 
-  if (!canView && active === "feed") {
+  if (!canView && active === "conversaciones") {
     return (
       <EmptyState
         title="Sin acceso"
@@ -129,12 +139,37 @@ export function CommunityScreen() {
     );
   }
 
+  const renderReactionBar = (item: (typeof feedItems)[number]) => (
+    <ReactionBar
+      acknowledgeCount={item.reactionCounts.acknowledge}
+      supportCount={item.reactionCounts.support}
+      myReaction={getMyReaction(item.id)}
+      commentCount={item.commentCount}
+      saved={isSaved(item.id)}
+      reported={isReported(item.id)}
+      canReact={canReact}
+      canComment={canComment}
+      canSave={canSave}
+      onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
+      onSupport={() => toggleReaction(item.id, "support")}
+      onComment={() => router.push(`/community/content/${item.id}`)}
+      onSave={() => toggleSave(item.id)}
+      onReport={
+        canReport
+          ? () => {
+              reportContent(item.id);
+            }
+          : undefined
+      }
+    />
+  );
+
   return (
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Comunidad"
-        subtitle="Qué está pasando: avisos, conversaciones y decisiones."
+        subtitle="Quién está aquí y qué está pasando entre vecinos."
       />
 
       <FilterChipRow
@@ -143,24 +178,20 @@ export function CommunityScreen() {
         onChange={(id) => {
           const next = id as Chip;
           setChip(next);
-          if (next === "groups") {
-            router.replace("/community?tab=groups");
-          } else {
-            router.replace("/community");
-          }
+          router.replace(`/community?tab=${next}`);
         }}
       />
 
-      {active === "feed" ? (
+      {active === "conversaciones" ? (
         <CommunityFeed
           empty={
             <EmptyState
-              title="Todavía no hay nada"
-              description="Sé la primera persona en compartir algo útil."
+              title="Todavía no hay conversaciones"
+              description="Sé la primera persona en compartir algo útil — adiós al caos del chat."
             />
           }
         >
-          {feedItems.map((item) => {
+          {conversations.map((item) => {
             const preview = item.comments[0];
             const linked = item.linkedExperienceId
               ? getExperienceById(item.linkedExperienceId)
@@ -190,119 +221,39 @@ export function CommunityScreen() {
                     />
                   ) : null
                 }
-                reactionBar={
-                  <ReactionBar
-                    acknowledgeCount={item.reactionCounts.acknowledge}
-                    supportCount={item.reactionCounts.support}
-                    myReaction={getMyReaction(item.id)}
-                    commentCount={item.commentCount}
-                    saved={isSaved(item.id)}
-                    reported={isReported(item.id)}
-                    canReact={canReact}
-                    canComment={canComment}
-                    canSave={canSave}
-                    onAcknowledge={() =>
-                      toggleReaction(item.id, "acknowledge")
-                    }
-                    onSupport={() => toggleReaction(item.id, "support")}
-                    onComment={() =>
-                      router.push(`/community/content/${item.id}`)
-                    }
-                    onSave={() => toggleSave(item.id)}
-                    onReport={
-                      canReport
-                        ? () => {
-                            reportContent(item.id);
-                          }
-                        : undefined
-                    }
-                  />
-                }
+                reactionBar={renderReactionBar(item)}
               />
             );
           })}
         </CommunityFeed>
       ) : null}
 
-      {active === "experiences" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {experiences.map((exp) => (
-            <ExperienceCard
-              key={exp.id}
-              title={exp.title}
-              when={formatExperienceWhen(exp.startsAt)}
-              where={exp.location}
-              meta={`${exp.participantCount} van`}
-              imageUrl={exp.imageUrl}
-              organizerName={exp.organizer.name}
-              ctaLabel="Ver"
-              onClick={() => router.push(`/experiences/${exp.id}`)}
-              onCta={() => router.push(`/experiences/${exp.id}`)}
-            />
-          ))}
-        </div>
+      {active === "grupos" ? (
+        groupItems.length === 0 ? (
+          <EmptyState
+            title="Aún no hay grupos"
+            description="Los grupos de vecinos aparecerán aquí."
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            {groupItems.map((group) => (
+              <GroupCard
+                key={group.id}
+                name={group.name}
+                members={group.memberCount}
+                imageUrl={group.imageUrl}
+              />
+            ))}
+          </div>
+        )
       ) : null}
 
-      {active === "groups" ? (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {groupItems.map((group) => (
-            <GroupCard
-              key={group.id}
-              name={group.name}
-              members={group.memberCount}
-              imageUrl={group.imageUrl}
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {active === "talk" ? (
+      {active === "propuestas" ? (
         <CommunityFeed
           empty={
             <EmptyState
-              title="No hay conversaciones abiertas"
-              description="Empieza una desde Participar (+)."
-            />
-          }
-        >
-          {discussions.map((item) => (
-            <CommunityPostCard
-              key={item.id}
-              title={item.title}
-              body={item.body}
-              typeLabel={contentTypeLabel(item.type)}
-              authorName={item.author.name}
-              authorAvatarUrl={item.author.avatarUrl}
-              meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
-              areaLabel={item.areaLabel}
-              onOpen={() => router.push(`/community/content/${item.id}`)}
-              reactionBar={
-                <ReactionBar
-                  acknowledgeCount={item.reactionCounts.acknowledge}
-                  supportCount={item.reactionCounts.support}
-                  myReaction={getMyReaction(item.id)}
-                  commentCount={item.commentCount}
-                  canReact={canReact}
-                  canComment={canComment}
-                  canSave={false}
-                  onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
-                  onSupport={() => toggleReaction(item.id, "support")}
-                  onComment={() =>
-                    router.push(`/community/content/${item.id}`)
-                  }
-                />
-              }
-            />
-          ))}
-        </CommunityFeed>
-      ) : null}
-
-      {active === "decide" ? (
-        <CommunityFeed
-          empty={
-            <EmptyState
-              title="No hay decisiones abiertas"
-              description="Las propuestas aparecerán aquí cuando existan."
+              title="No hay propuestas abiertas"
+              description="Cuando alguien proponga algo, lo verás aquí para decidir juntos."
             />
           }
         >
@@ -317,23 +268,7 @@ export function CommunityScreen() {
               meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
               decisionStatus={decisionLabel(item.decisionStatus)}
               onOpen={() => router.push(`/community/content/${item.id}`)}
-              reactionBar={
-                <ReactionBar
-                  acknowledgeCount={item.reactionCounts.acknowledge}
-                  supportCount={item.reactionCounts.support}
-                  myReaction={getMyReaction(item.id)}
-                  commentCount={item.commentCount}
-                  canReact={canReact}
-                  canComment={canComment}
-                  canSave={canSave}
-                  onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
-                  onSupport={() => toggleReaction(item.id, "support")}
-                  onComment={() =>
-                    router.push(`/community/content/${item.id}`)
-                  }
-                  onSave={() => toggleSave(item.id)}
-                />
-              }
+              reactionBar={renderReactionBar(item)}
             />
           ))}
         </CommunityFeed>

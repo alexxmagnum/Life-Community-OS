@@ -55,8 +55,8 @@ export function ResourceDiscoveryScreen() {
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
-        title="Lugares"
-        subtitle="Espacios compartidos que puedes reservar."
+        title="Espacios compartidos"
+        subtitle="Pistas, salas y zonas que puedes reservar."
       />
 
       <ScreenSearch

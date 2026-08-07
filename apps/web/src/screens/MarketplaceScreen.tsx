@@ -64,7 +64,7 @@ export function MarketplaceScreen() {
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Mercado"
-        subtitle="Lo que los vecinos ofrecen, buscan o comparten."
+        subtitle="¿Qué ofrecen o necesitan tus vecinos?"
       />
 
       {hasCapability(CAPABILITIES.marketplaceCreate) ? (

@@ -79,8 +79,8 @@ export function CalendarScreen() {
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
-        title="Agenda"
-        subtitle="Tus planes y reservas de la semana."
+        title="Mis actividades"
+        subtitle="Lo que tienes apuntado en la comunidad."
         trailing={
           <button
             type="button"

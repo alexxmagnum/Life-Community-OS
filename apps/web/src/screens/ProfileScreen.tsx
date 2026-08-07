@@ -21,6 +21,10 @@ const roles: { id: DemoRole; label: string }[] = [
   { id: "administrator", label: "Administrador" },
 ];
 
+/**
+ * Yo answers: "What is my life inside the community?"
+ * Agenda/reservations are personal surfaces — not primary nav tabs.
+ */
 export function ProfileScreen() {
   const router = useRouter();
   const { theme, hasCapability, isFeatureEnabled, role, setRole } = useTenant();
@@ -30,7 +34,7 @@ export function ProfileScreen() {
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Yo"
-        subtitle="Tu vida en la comunidad."
+        subtitle="Tu vida dentro de la comunidad."
       />
 
       <ProfileCard
@@ -42,56 +46,70 @@ export function ProfileScreen() {
         onEdit={() => undefined}
       />
 
-      <ExploreLink
-        label="Notificaciones"
-        hint="3 sin leer"
-        onClick={() => undefined}
-      />
-
       <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold">
-          Mi actividad
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Lo mío
         </h2>
-        {isFeatureEnabled("experiences") ? (
+        {isFeatureEnabled("experiences") || isFeatureEnabled("calendar") ? (
           <ExploreLink
-            label="Planes"
-            hint={`${profileShortcuts.going} próximos`}
+            label="Mis actividades"
+            hint={`${profileShortcuts.going} próximas`}
             onClick={() => router.push("/calendar")}
           />
         ) : null}
         {isFeatureEnabled("resources") ? (
           <ExploreLink
-            label="Reservas"
+            label="Mis reservas"
             hint={`${profileShortcuts.reservations} activas`}
             onClick={() => router.push("/reservations")}
           />
         ) : null}
+        {isFeatureEnabled("groups") ? (
+          <ExploreLink
+            label="Mis grupos"
+            hint="Dónde participas"
+            onClick={() => router.push("/community?tab=grupos")}
+          />
+        ) : null}
+        {isFeatureEnabled("feed") ? (
+          <ExploreLink
+            label="Mis publicaciones"
+            hint={`${profileShortcuts.saves} guardadas`}
+            onClick={() => router.push("/community?tab=conversaciones")}
+          />
+        ) : null}
         {isFeatureEnabled("marketplace") ? (
           <ExploreLink
-            label="Mercado"
-            hint="Mis anuncios"
+            label="Mis anuncios"
+            hint="Lo que ofreces o buscas"
             onClick={() => router.push("/marketplace")}
           />
         ) : null}
         <ExploreLink
-          label="Guardados"
-          hint={`${profileShortcuts.saves} guardados`}
-          onClick={() => router.push("/community")}
+          label="Avisar de un problema"
+          hint="Foto y descripción breve"
+          onClick={() => router.push("/report")}
         />
       </section>
 
-      <section className="space-y-2">
-        {["Preferencias de notificación", "Privacidad", "Idioma"].map(
-          (row) => (
-            <ExploreLink key={row} label={row} onClick={() => undefined} />
-          ),
-        )}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Cuenta
+        </h2>
+        <ExploreLink
+          label="Notificaciones"
+          hint="3 sin leer"
+          onClick={() => undefined}
+        />
+        {["Preferencias de aviso", "Privacidad", "Idioma"].map((row) => (
+          <ExploreLink key={row} label={row} onClick={() => undefined} />
+        ))}
       </section>
 
       {hasCapability(CAPABILITIES.manageEnter) ? (
         <ExploreLink
           label="Gestionar comunidad"
-          hint="Herramientas de administración"
+          hint="Solo para quien administra"
           onClick={() => undefined}
         />
       ) : null}
