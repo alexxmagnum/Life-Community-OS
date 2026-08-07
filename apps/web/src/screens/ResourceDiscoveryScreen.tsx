@@ -31,7 +31,7 @@ export function ResourceDiscoveryScreen() {
   if (!isFeatureEnabled("resources")) {
     return (
       <EmptyState
-        title="Places aren’t available"
+        title="Los lugares no están disponibles"
         description="This community hasn’t enabled shared resources yet."
       />
     );
@@ -40,8 +40,8 @@ export function ResourceDiscoveryScreen() {
   if (!hasCapability(CAPABILITIES.resourceView)) {
     return (
       <EmptyState
-        title="You don’t have access"
-        description="Shared places aren’t available for your account."
+        title="Sin acceso"
+        description="Los espacios compartidos no están disponibles para tu cuenta."
       />
     );
   }

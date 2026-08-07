@@ -6,10 +6,11 @@ import { cn } from "../lib/cn";
 
 export type NavItemId =
   | "home"
-  | "discover"
-  | "calendar"
   | "community"
-  | "me";
+  | "discover"
+  | "marketplace"
+  | "me"
+  | "calendar";
 
 export type NavItem = {
   id: NavItemId;

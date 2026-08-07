@@ -31,9 +31,9 @@ export function ExperienceDetailScreen({
   if (!isFeatureEnabled("experiences")) {
     return (
       <EmptyState
-        title="Experiences aren’t available"
-        description="This community hasn’t enabled experiences yet."
-        actionLabel="Back home"
+        title="Las actividades no están disponibles"
+        description="Esta comunidad aún no ha activado las actividades."
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -44,9 +44,9 @@ export function ExperienceDetailScreen({
   if (!experience) {
     return (
       <EmptyState
-        title="Experience not found"
-        description="It may have been removed or the link is out of date."
-        actionLabel="Browse experiences"
+        title="Actividad no encontrada"
+        description="Puede haberse eliminado o el enlace no es válido."
+        actionLabel="Ver actividades"
         onAction={() => router.push("/discover?segment=experiences")}
       />
     );
@@ -55,8 +55,8 @@ export function ExperienceDetailScreen({
   if (!hasCapability(CAPABILITIES.experienceView)) {
     return (
       <EmptyState
-        title="You don’t have access"
-        description="You can’t view this experience right now."
+        title="Sin acceso"
+        description="No puedes ver esta actividad ahora mismo."
       />
     );
   }

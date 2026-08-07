@@ -31,8 +31,8 @@ export function ExperienceRegistrationScreen({
   if (!isFeatureEnabled("experiences")) {
     return (
       <EmptyState
-        title="Experiences aren’t available"
-        actionLabel="Back home"
+        title="Las actividades no están disponibles"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -43,8 +43,8 @@ export function ExperienceRegistrationScreen({
   if (!experience) {
     return (
       <EmptyState
-        title="Experience not found"
-        actionLabel="Browse experiences"
+        title="Actividad no encontrada"
+        actionLabel="Ver actividades"
         onAction={() => router.push("/discover?segment=experiences")}
       />
     );
@@ -60,8 +60,8 @@ export function ExperienceRegistrationScreen({
   if (!canJoin && !alreadyJoined) {
     return (
       <EmptyState
-        title="You can’t join right now"
-        description="Joining isn’t available for your account."
+        title="No puedes participar ahora"
+        description="Participar no está disponible para tu cuenta."
         actionLabel="Back"
         onAction={() => router.push(`/experiences/${experience.id}`)}
       />
@@ -73,10 +73,10 @@ export function ExperienceRegistrationScreen({
       <EmptyState
         title={
           viewer === "cancelled"
-            ? "This experience was cancelled"
-            : "This experience has ended"
+            ? "Esta actividad se ha cancelado"
+            : "Esta actividad ha finalizado"
         }
-        actionLabel="Find something else"
+        actionLabel="Buscar otra cosa"
         onAction={() => router.push("/discover?segment=experiences")}
       />
     );
@@ -102,7 +102,7 @@ export function ExperienceRegistrationScreen({
         onClick={() => router.push(`/experiences/${experience.id}`)}
         className="text-[15px] font-semibold text-[var(--color-action-primary)]"
       >
-        ← Back to details
+        ← Volver al detalle
       </button>
 
       <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
@@ -127,16 +127,16 @@ export function ExperienceRegistrationScreen({
           <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8">
             {confirmed
               ? isFull && participation?.state === "waitlisted"
-                ? "You’re on the waitlist"
-                : "You’re going"
+                ? "Estás en lista de espera"
+                : "Vas a ir"
               : isFull
-                ? "Join the waitlist?"
-                : "Confirm you want to join"}
+                ? "¿Apuntarte a la lista de espera?"
+                : "Confirma que quieres participar"}
           </h1>
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
             {confirmed
-              ? "We’ve added this to your calendar in Life Panoramica. You’ll see it under My activities."
-              : `Join “${experience.title}” with neighbours in ${experience.areaLabel}.`}
+              ? "Lo hemos añadido a tu agenda en Life Panoramica. Lo verás en Mis actividades."
+              : `Participa en “${experience.title}” con vecinos de ${experience.areaLabel}.`}
           </p>
         </div>
       </div>
@@ -147,8 +147,8 @@ export function ExperienceRegistrationScreen({
         areaLabel={experience.areaLabel}
         capacityLabel={
           isFull
-            ? "Currently full"
-            : `${remaining} spots left of ${experience.capacity}`
+            ? "Ahora mismo completo"
+            : `${remaining} plazas de ${experience.capacity}`
         }
       />
 
@@ -161,9 +161,9 @@ export function ExperienceRegistrationScreen({
             className="h-5 w-5 accent-[var(--color-action-primary)]"
           />
           <span className="text-[16px]">
-            Remind me before it starts
+            Avísame antes de que empiece
             <span className="block text-[13px] text-[var(--color-text-tertiary)]">
-              Notifications will connect later (placeholder)
+              Las notificaciones se conectarán más adelante
             </span>
           </span>
         </label>
@@ -178,25 +178,25 @@ export function ExperienceRegistrationScreen({
             }}
             className="h-5 w-5 accent-[var(--color-action-primary)]"
           />
-          <span className="text-[16px]">Reminder preference</span>
+          <span className="text-[16px]">Preferencia de aviso</span>
         </label>
       )}
 
       {!confirmed ? (
         <Button fullWidth onClick={confirmJoin}>
-          {isFull ? "Join waitlist" : "Confirm & join"}
+          {isFull ? "Apuntarme a la espera" : "Confirmar y participar"}
         </Button>
       ) : (
         <div className="space-y-3">
           <Button fullWidth onClick={() => router.push("/calendar")}>
-            View in calendar
+            Ver en la agenda
           </Button>
           <Button
             variant="secondary"
             fullWidth
             onClick={() => router.push(`/experiences/${experience.id}`)}
           >
-            Back to experience
+            Volver a la actividad
           </Button>
         </div>
       )}

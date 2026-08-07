@@ -22,21 +22,21 @@ export function MyReservationsScreen() {
     return (
       <EmptyState
         title="Reservations aren’t available"
-        actionLabel="Back home"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
   }
 
   if (!hasCapability(CAPABILITIES.resourceView)) {
-    return <EmptyState title="You don’t have access" />;
+    return <EmptyState title="Sin acceso" />;
   }
 
   return (
     <div className="space-y-8 pb-10">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          My reservations
+          Mis reservas
         </h1>
         <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
           Upcoming and past bookings for shared places.
@@ -49,7 +49,7 @@ export function MyReservationsScreen() {
           <EmptyState
             title="No upcoming reservations"
             description="Reserve a court, room or terrace when you need it."
-            actionLabel="Browse places"
+            actionLabel="Ver lugares"
             onAction={() => router.push("/resources")}
           />
         ) : (

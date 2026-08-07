@@ -13,22 +13,35 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
-const navItems: NavItem[] = [
-  { id: "home", label: "Inicio", href: "/", icon: "⌂" },
-  { id: "discover", label: "Descubrir", href: "/discover", icon: "◎" },
-  { id: "calendar", label: "Agenda", href: "/calendar", icon: "▦" },
-  { id: "community", label: "Comunidad", href: "/community", icon: "◌" },
-  { id: "me", label: "Yo", href: "/me", icon: "☺" },
-];
+function buildNav(flags: {
+  marketplace: boolean;
+}): NavItem[] {
+  const items: NavItem[] = [
+    { id: "home", label: "Inicio", href: "/", icon: "⌂" },
+    { id: "community", label: "Comunidad", href: "/community", icon: "◌" },
+    { id: "discover", label: "Descubrir", href: "/discover", icon: "◎" },
+  ];
+  if (flags.marketplace) {
+    items.push({
+      id: "marketplace",
+      label: "Mercado",
+      href: "/marketplace",
+      icon: "⇄",
+    });
+  }
+  items.push({ id: "me", label: "Yo", href: "/me", icon: "☺" });
+  return items;
+}
 
 function activeFromPath(pathname: string): NavItemId {
+  if (pathname.startsWith("/marketplace")) return "marketplace";
   if (pathname.startsWith("/discover")) return "discover";
   if (pathname.startsWith("/resources")) return "discover";
+  if (pathname.startsWith("/experiences")) return "discover";
+  if (pathname.startsWith("/calendar")) return "me";
   if (pathname.startsWith("/reservations")) return "me";
-  if (pathname.startsWith("/calendar")) return "calendar";
   if (pathname.startsWith("/community")) return "community";
   if (pathname.startsWith("/me")) return "me";
-  if (pathname.startsWith("/experiences")) return "discover";
   return "home";
 }
 
@@ -45,6 +58,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
     setToast(message);
     window.setTimeout(() => setToast(null), 2200);
   };
+
+  const navItems = useMemo(
+    () => buildNav({ marketplace: isFeatureEnabled("marketplace") }),
+    [isFeatureEnabled],
+  );
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -68,10 +86,26 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "post",
-        title: "Compartir una actualización",
-        description: "Publica para tus vecinos",
+        title: "Compartir en la comunidad",
+        description: "Aviso útil para tus vecinos",
         icon: "✎",
         onSelect: () => setPostOpen(true),
+      });
+    }
+
+    if (
+      isFeatureEnabled("marketplace") &&
+      hasCapability(CAPABILITIES.marketplaceCreate)
+    ) {
+      actions.push({
+        id: "marketplace",
+        title: "Publicar en el mercado",
+        description: "Vende, regala o pide entre vecinos",
+        icon: "⇄",
+        onSelect: () => {
+          showToast("El anuncio llega pronto — mira el mercado");
+          router.push("/marketplace");
+        },
       });
     }
 
@@ -83,7 +117,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         id: "report",
         title: "Avisar de un problema",
         description: "Haz una foto y cuéntanos",
-        icon: "📷",
+        icon: "◌",
         onSelect: () => router.push("/report"),
       });
     }
@@ -121,9 +155,22 @@ export function MemberShell({ children }: { children: ReactNode }) {
       actions.push({
         id: "tip",
         title: "Recomendar algo",
-        description: "Un consejo local para vecinos",
+        description: "Un consejo local de confianza",
         icon: "★",
         onSelect: () => showToast("El compositor de recomendaciones llega pronto"),
+      });
+    }
+
+    if (
+      isFeatureEnabled("groups") &&
+      hasCapability(CAPABILITIES.groupCreate)
+    ) {
+      actions.push({
+        id: "group",
+        title: "Crear un grupo",
+        description: "Paseos, deporte, familias…",
+        icon: "◎",
+        onSelect: () => showToast("El compositor de grupos llega pronto"),
       });
     }
 

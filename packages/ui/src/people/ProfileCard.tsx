@@ -58,7 +58,7 @@ export function ProfileCard({
       )}
       {onEdit ? (
         <Button variant="secondary" className="mt-5" onClick={onEdit}>
-          Edit profile
+          Editar perfil
         </Button>
       ) : null}
       {children}

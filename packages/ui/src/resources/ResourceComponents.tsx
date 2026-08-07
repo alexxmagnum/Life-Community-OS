@@ -156,27 +156,27 @@ const statusStyles: Record<
   { label: string; className: string }
 > = {
   available: {
-    label: "Available",
+    label: "Disponible",
     className:
       "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
   },
   reserved: {
-    label: "Reserved",
+    label: "Reservado",
     className:
       "bg-[var(--color-feedback-success-subtle)] text-[var(--color-feedback-success)]",
   },
   pending: {
-    label: "Pending",
+    label: "Pendiente",
     className:
       "bg-[var(--color-feedback-warning-subtle)] text-[var(--color-feedback-warning)]",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Cancelado",
     className:
       "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
   },
   expired: {
-    label: "Past",
+    label: "Pasado",
     className:
       "bg-[var(--color-surface-muted)] text-[var(--color-text-tertiary)]",
   },
@@ -378,7 +378,7 @@ export function ResourceDiscoveryCard({
       {onReserve ? (
         <div className="border-t border-[var(--color-border-subtle)] px-4 py-3">
           <Button fullWidth onClick={onReserve}>
-            Reserve
+            Reservar
           </Button>
         </div>
       ) : null}

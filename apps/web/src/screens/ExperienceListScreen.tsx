@@ -21,12 +21,12 @@ function statusLabelFor(
   >,
   remaining: number,
 ): string {
-  if (viewer === "joined") return "You’re going";
-  if (viewer === "full") return "Full";
-  if (viewer === "cancelled") return "Cancelled";
-  if (viewer === "expired") return "Ended";
-  if (remaining <= 3) return `${remaining} spots left`;
-  return "Open";
+  if (viewer === "joined") return "Vas a ir";
+  if (viewer === "full") return "Completo";
+  if (viewer === "cancelled") return "Cancelado";
+  if (viewer === "expired") return "Finalizado";
+  if (remaining <= 3) return `${remaining} plazas`;
+  return "Abierto";
 }
 
 export function ExperienceListScreen() {
@@ -50,8 +50,8 @@ export function ExperienceListScreen() {
   if (!isFeatureEnabled("experiences")) {
     return (
       <EmptyState
-        title="Experiences aren’t available"
-        description="This community hasn’t enabled experiences yet."
+        title="Las actividades no están disponibles"
+        description="Esta comunidad aún no ha activado las actividades."
       />
     );
   }
@@ -59,8 +59,8 @@ export function ExperienceListScreen() {
   if (!hasCapability(CAPABILITIES.experienceView)) {
     return (
       <EmptyState
-        title="You don’t have access"
-        description="Experiences aren’t available for your account right now."
+        title="Sin acceso"
+        description="Las actividades no están disponibles para tu cuenta ahora mismo."
       />
     );
   }
@@ -69,28 +69,28 @@ export function ExperienceListScreen() {
     <div className="space-y-5">
       <div>
         <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Discover
+          Descubrir
         </p>
         <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8">
-          Experiences
+          Actividades
         </h1>
         <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
-          Find something to join in your community.
+          Encuentra algo en lo que participar en tu comunidad.
         </p>
       </div>
 
       <label className="block">
-        <span className="sr-only">Search experiences</span>
+        <span className="sr-only">Buscar actividades</span>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search walks, classes, gatherings…"
+          placeholder="Buscar paseos, clases, encuentros…"
           className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-4 text-[16px] outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
         />
       </label>
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {["This week", "Outdoors", "Wellbeing"].map((chip) => (
+        {["Esta semana", "Exterior", "Bienestar"].map((chip) => (
           <span
             key={chip}
             className={cn(
@@ -104,9 +104,9 @@ export function ExperienceListScreen() {
 
       {items.length === 0 ? (
         <EmptyState
-          title="No experiences match"
-          description="Try another search or check back soon."
-          actionLabel="Clear search"
+          title="Sin resultados"
+          description="Prueba otra búsqueda o vuelve más tarde."
+          actionLabel="Limpiar búsqueda"
           onAction={() => setQuery("")}
         />
       ) : (
@@ -125,7 +125,7 @@ export function ExperienceListScreen() {
                 imageUrl={exp.imageUrl}
                 organizerName={exp.organizer.name}
                 statusLabel={statusLabelFor(viewer, remaining)}
-                ctaLabel={viewer === "joined" ? "View" : "View & join"}
+                ctaLabel={viewer === "joined" ? "Ver" : "Ver y participar"}
                 onClick={() => router.push(href)}
                 onCta={() => router.push(href)}
               />

@@ -4,7 +4,7 @@ import { LoadingState } from "@life-community-os/ui";
 
 export default function DiscoverPage() {
   return (
-    <Suspense fallback={<LoadingState label="Loading discover" />}>
+    <Suspense fallback={<LoadingState label="Cargando…" />}>
       <DiscoverScreen />
     </Suspense>
   );

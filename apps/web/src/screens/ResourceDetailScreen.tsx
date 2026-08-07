@@ -17,8 +17,8 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   if (!isFeatureEnabled("resources")) {
     return (
       <EmptyState
-        title="Places aren’t available"
-        actionLabel="Back home"
+        title="Los lugares no están disponibles"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -30,7 +30,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     return (
       <EmptyState
         title="Place not found"
-        actionLabel="Browse places"
+        actionLabel="Ver lugares"
         onAction={() => router.push("/resources")}
       />
     );
@@ -39,7 +39,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   if (!hasCapability(CAPABILITIES.resourceView)) {
     return (
       <EmptyState
-        title="You don’t have access"
+        title="Sin acceso"
         description="You can’t view this place right now."
       />
     );

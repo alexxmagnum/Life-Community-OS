@@ -7,6 +7,9 @@ export * from "./content";
 export * from "./experiences";
 export * from "./community-content";
 export * from "./resources";
+export * from "./marketplace";
+export * from "./groups";
+export * from "./local-places";
 export {
   CAPABILITIES,
   capabilitiesForRole,

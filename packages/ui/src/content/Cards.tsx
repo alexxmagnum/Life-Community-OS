@@ -23,7 +23,7 @@ export function ExperienceCard({
   imageUrl,
   organizerName,
   statusLabel,
-  ctaLabel = "View",
+  ctaLabel = "Ver",
   onCta,
   onClick,
   className,
@@ -362,7 +362,7 @@ export function GroupCard({
           {name}
         </h3>
         <p className="text-[13px] text-[var(--color-text-secondary)]">
-          {members} members
+          {members} miembros
         </p>
       </div>
     </button>

@@ -8,7 +8,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   name: "Life Panoramica",
   shortName: "Panoramica",
   logoText: "Life Panoramica",
-  tagline: "Your community, alive",
+  tagline: "Tu comunidad, viva",
   colors: {
     brandPrimary: "#1F4A3C",
     brandPrimaryHover: "#183A30",

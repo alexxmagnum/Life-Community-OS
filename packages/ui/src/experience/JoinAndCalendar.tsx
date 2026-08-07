@@ -16,27 +16,27 @@ const statusCopy: Record<
   { label: string; tone: string }
 > = {
   available: {
-    label: "Open to join",
+    label: "Abierto a participar",
     tone: "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
   },
   joined: {
-    label: "You’re going",
+    label: "Vas a ir",
     tone: "bg-[var(--color-feedback-success-subtle)] text-[var(--color-feedback-success)]",
   },
   waitlisted: {
-    label: "On the waitlist",
+    label: "En lista de espera",
     tone: "bg-[var(--color-feedback-warning-subtle)] text-[var(--color-feedback-warning)]",
   },
   full: {
-    label: "Full",
+    label: "Completo",
     tone: "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Cancelado",
     tone: "bg-[var(--color-feedback-danger-subtle)] text-[var(--color-feedback-danger)]",
   },
   expired: {
-    label: "Ended",
+    label: "Finalizado",
     tone: "bg-[var(--color-surface-muted)] text-[var(--color-text-tertiary)]",
   },
 };
@@ -76,14 +76,14 @@ export function JoinButton({
   if (status === "joined") {
     return (
       <Button variant="secondary" fullWidth className={className} disabled {...props}>
-        You’re going
+        Vas a ir
       </Button>
     );
   }
   if (status === "waitlisted") {
     return (
       <Button variant="secondary" fullWidth className={className} disabled {...props}>
-        On waitlist
+        En lista de espera
       </Button>
     );
   }
@@ -96,14 +96,14 @@ export function JoinButton({
         disabled={!canJoin}
         {...props}
       >
-        {canJoin ? "Join waitlist" : "Full"}
+        {canJoin ? "Apuntarme a la espera" : "Completo"}
       </Button>
     );
   }
   if (status === "cancelled" || status === "expired") {
     return (
       <Button variant="secondary" fullWidth className={className} disabled>
-        {status === "cancelled" ? "Cancelled" : "No longer available"}
+        {status === "cancelled" ? "Cancelado" : "Ya no disponible"}
       </Button>
     );
   }
@@ -114,7 +114,7 @@ export function JoinButton({
       disabled={!canJoin}
       {...props}
     >
-      Join experience
+      Participar
     </Button>
   );
 }

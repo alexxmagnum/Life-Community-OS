@@ -42,8 +42,8 @@ export function ResourceAvailabilityScreen({
   if (!isFeatureEnabled("resources")) {
     return (
       <EmptyState
-        title="Places aren’t available"
-        actionLabel="Back home"
+        title="Los lugares no están disponibles"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -53,14 +53,14 @@ export function ResourceAvailabilityScreen({
     return (
       <EmptyState
         title="Place not found"
-        actionLabel="Browse places"
+        actionLabel="Ver lugares"
         onAction={() => router.push("/resources")}
       />
     );
   }
 
   if (!hasCapability(CAPABILITIES.resourceView)) {
-    return <EmptyState title="You don’t have access" />;
+    return <EmptyState title="Sin acceso" />;
   }
 
   const canReserve = hasCapability(CAPABILITIES.resourceReserve);

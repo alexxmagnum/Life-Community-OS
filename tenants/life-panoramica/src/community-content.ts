@@ -270,16 +270,16 @@ export function formatContentWhen(iso: string): string {
 export function contentTypeLabel(type: CommunityContentType): string {
   switch (type) {
     case "announcement":
-      return "Official";
+      return "Oficial";
     case "news":
-      return "News";
+      return "Noticia";
     case "discussion":
-      return "Discussion";
+      return "Conversación";
     case "proposal":
-      return "Proposal";
+      return "Propuesta";
     case "member_update":
-      return "Update";
+      return "Actualización";
     default:
-      return "Community";
+      return "Comunidad";
   }
 }

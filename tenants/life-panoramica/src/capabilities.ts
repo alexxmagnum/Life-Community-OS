@@ -26,6 +26,8 @@ export const CAPABILITIES = {
   recommendationCreate: "community.recommendation.create",
   announcementPublishOfficial: "community.announcement.publish_official",
   groupCreate: "community.group.create",
+  marketplaceView: "community.marketplace.view",
+  marketplaceCreate: "community.marketplace.create",
   manageEnter: "community.manage.enter",
 } as const;
 
@@ -52,6 +54,8 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.recommendationCreate,
   CAPABILITIES.proposalCreate,
   CAPABILITIES.groupCreate,
+  CAPABILITIES.marketplaceView,
+  CAPABILITIES.marketplaceCreate,
 ];
 
 const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {

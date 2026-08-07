@@ -33,7 +33,7 @@ export function AuthorCard({
           {name}
           {official ? (
             <span className="ml-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
-              Official
+              Oficial
             </span>
           ) : null}
         </p>
@@ -99,7 +99,7 @@ export function ReactionBar({
         )}
         aria-pressed={myReaction === "acknowledge"}
       >
-        Acknowledge · {acknowledgeCount}
+        Entendido · {acknowledgeCount}
       </button>
       <button
         type="button"
@@ -113,7 +113,7 @@ export function ReactionBar({
         )}
         aria-pressed={myReaction === "support"}
       >
-        Support · {supportCount}
+        Apoyo · {supportCount}
       </button>
       <button
         type="button"
@@ -121,7 +121,7 @@ export function ReactionBar({
         onClick={onComment}
         className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
       >
-        Comments · {commentCount}
+        Comentarios · {commentCount}
       </button>
       {canSave ? (
         <button
@@ -135,7 +135,7 @@ export function ReactionBar({
           )}
           aria-pressed={Boolean(saved)}
         >
-          {saved ? "Saved" : "Save"}
+          {saved ? "Guardado" : "Guardar"}
         </button>
       ) : null}
       {onReport ? (
@@ -145,7 +145,7 @@ export function ReactionBar({
           disabled={reported}
           className="min-h-[40px] rounded-full px-3 text-[13px] font-semibold text-[var(--color-text-tertiary)]"
         >
-          {reported ? "Reported" : "Report"}
+          {reported ? "Avisado" : "Avisar"}
         </button>
       ) : null}
     </div>

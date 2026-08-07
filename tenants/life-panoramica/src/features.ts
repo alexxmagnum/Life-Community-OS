@@ -13,6 +13,7 @@ export type TenantFeatureFlags = {
   incidents: boolean;
   feed: boolean;
   calendar: boolean;
+  marketplace: boolean;
 };
 
 export const lifePanoramicaFeatures: TenantFeatureFlags = {
@@ -26,4 +27,5 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   incidents: true,
   feed: true,
   calendar: true,
+  marketplace: true,
 };

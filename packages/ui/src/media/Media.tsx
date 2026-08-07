@@ -7,8 +7,8 @@ import { Button } from "../actions/Button";
 import { cn } from "../lib/cn";
 
 export function MediaCapturePlaceholder({
-  label = "Take a photo",
-  hint = "Camera opens here when connected",
+  label = "Haz una foto",
+  hint = "La cámara se abrirá aquí cuando esté conectada",
   className,
 }: {
   label?: string;

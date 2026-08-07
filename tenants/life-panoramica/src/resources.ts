@@ -224,13 +224,13 @@ export function formatResourceDate(date: string): string {
   const d = new Date(`${date}T12:00:00`);
   const today = dateOffset(0);
   const tomorrow = dateOffset(1);
-  const label = new Intl.DateTimeFormat("en-GB", {
+  const label = new Intl.DateTimeFormat("es-ES", {
     weekday: "short",
     day: "numeric",
     month: "short",
   }).format(d);
-  if (date === today) return `Today · ${label}`;
-  if (date === tomorrow) return `Tomorrow · ${label}`;
+  if (date === today) return `Hoy · ${label}`;
+  if (date === tomorrow) return `Mañana · ${label}`;
   return label;
 }
 
@@ -238,26 +238,26 @@ export function formatResourceDayHeading(date: string): string {
   const d = new Date(`${date}T12:00:00`);
   const today = dateOffset(0);
   const tomorrow = dateOffset(1);
-  const weekday = new Intl.DateTimeFormat("en-GB", {
+  const weekday = new Intl.DateTimeFormat("es-ES", {
     weekday: "long",
     day: "numeric",
     month: "short",
   }).format(d);
-  if (date === today) return `Today · ${weekday}`;
-  if (date === tomorrow) return `Tomorrow · ${weekday}`;
+  if (date === today) return `Hoy · ${weekday}`;
+  if (date === tomorrow) return `Mañana · ${weekday}`;
   return weekday;
 }
 
 export function reservationStatusLabel(status: ReservationStatus): string {
   switch (status) {
     case "reserved":
-      return "Reserved";
+      return "Reservado";
     case "pending":
-      return "Pending";
+      return "Pendiente";
     case "cancelled":
-      return "Cancelled";
+      return "Cancelado";
     case "expired":
-      return "Past";
+      return "Pasado";
     default:
       return status;
   }

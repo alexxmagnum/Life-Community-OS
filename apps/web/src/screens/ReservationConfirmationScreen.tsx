@@ -40,8 +40,8 @@ export function ReservationConfirmationScreen({
   if (!isFeatureEnabled("resources")) {
     return (
       <EmptyState
-        title="Places aren’t available"
-        actionLabel="Back home"
+        title="Los lugares no están disponibles"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -63,7 +63,7 @@ export function ReservationConfirmationScreen({
   if (!hasCapability(CAPABILITIES.resourceReserve)) {
     return (
       <EmptyState
-        title="You can’t reserve right now"
+        title="No puedes reservar ahora"
         description="Reserving isn’t available for your account."
       />
     );
@@ -85,7 +85,7 @@ export function ReservationConfirmationScreen({
 
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          {confirmed ? "You’re booked" : "Confirm reservation"}
+          {confirmed ? "Reserva hecha" : "Confirmar reserva"}
         </h1>
         <p className="mt-2 text-[16px] text-[var(--color-text-secondary)]">
           {confirmed
@@ -127,19 +127,19 @@ export function ReservationConfirmationScreen({
             setError(null);
           }}
         >
-          {resource.requiresApproval ? "Request reservation" : "Confirm reservation"}
+          {resource.requiresApproval ? "Solicitar reserva" : "Confirmar reserva"}
         </Button>
       ) : (
         <div className="space-y-3">
           <Button fullWidth onClick={() => router.push("/calendar")}>
-            View in calendar
+            Ver en la agenda
           </Button>
           <Button
             variant="secondary"
             fullWidth
             onClick={() => router.push("/reservations")}
           >
-            My reservations
+            Mis reservas
           </Button>
         </div>
       )}

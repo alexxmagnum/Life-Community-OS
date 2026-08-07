@@ -41,7 +41,7 @@ export function EmptyState({
 }
 
 export function LoadingState({
-  label = "Loading…",
+  label = "Cargando…",
   className,
 }: {
   label?: string;
@@ -88,7 +88,7 @@ export function ErrorState({
       </p>
       {onRetry ? (
         <Button variant="secondary" className="mt-3" onClick={onRetry}>
-          Try again
+          Reintentar
         </Button>
       ) : null}
     </div>

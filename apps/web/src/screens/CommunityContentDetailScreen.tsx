@@ -39,8 +39,8 @@ export function CommunityContentDetailScreen({
   if (!isFeatureEnabled("feed") && !isFeatureEnabled("interactions")) {
     return (
       <EmptyState
-        title="Community isn’t available"
-        actionLabel="Back home"
+        title="La comunidad no está disponible"
+        actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
     );
@@ -49,8 +49,8 @@ export function CommunityContentDetailScreen({
   if (!hasCapability(CAPABILITIES.contentView)) {
     return (
       <EmptyState
-        title="You don’t have access"
-        description="This content isn’t available for your account."
+        title="Sin acceso"
+        description="Este contenido no está disponible para tu cuenta."
       />
     );
   }
@@ -60,9 +60,9 @@ export function CommunityContentDetailScreen({
   if (!content || content.status === "archived") {
     return (
       <EmptyState
-        title="Content not found"
-        description="It may have been removed or isn’t published yet."
-        actionLabel="Back to Community"
+        title="Contenido no encontrado"
+        description="Puede haberse eliminado o aún no está publicado."
+        actionLabel="Volver a Comunidad"
         onAction={() => router.push("/community")}
       />
     );
@@ -71,9 +71,9 @@ export function CommunityContentDetailScreen({
   if (content.status === "pending_review") {
     return (
       <EmptyState
-        title="Waiting for review"
-        description="This update isn’t visible to everyone yet."
-        actionLabel="Back to Community"
+        title="Pendiente de revisión"
+        description="Esta actualización aún no es visible para todos."
+        actionLabel="Volver a Comunidad"
         onAction={() => router.push("/community")}
       />
     );
@@ -82,8 +82,8 @@ export function CommunityContentDetailScreen({
   if (content.status !== "published" && content.status !== "expired") {
     return (
       <EmptyState
-        title="Not available"
-        actionLabel="Back to Community"
+        title="No disponible"
+        actionLabel="Volver a Comunidad"
         onAction={() => router.push("/community")}
       />
     );
@@ -111,7 +111,7 @@ export function CommunityContentDetailScreen({
         onClick={() => router.push("/community")}
         className="text-[15px] font-semibold text-[var(--color-action-primary)]"
       >
-        ← Community
+        ← Comunidad
       </button>
 
       <article className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">

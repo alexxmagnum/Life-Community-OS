@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   contentTypeLabel,
   formatContentWhen,
   formatExperienceWhen,
   getExperienceById,
-  groups,
   listDiscoverableExperiences,
+  listGroups,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CommentPreview,
@@ -26,14 +26,15 @@ import { useCommunityInteractions } from "@/providers/CommunityInteractionProvid
 type Chip = "feed" | "groups" | "talk" | "decide" | "experiences";
 
 function decisionLabel(status?: string) {
-  if (status === "closing_soon") return "Closing soon";
-  if (status === "closed") return "Closed";
-  if (status === "open") return "Open";
+  if (status === "closing_soon") return "Cierra pronto";
+  if (status === "closed") return "Cerrada";
+  if (status === "open") return "Abierta";
   return undefined;
 }
 
 export function CommunityScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isFeatureEnabled, hasCapability } = useTenant();
   const {
     feedItems,
@@ -44,33 +45,45 @@ export function CommunityScreen() {
     toggleSave,
     reportContent,
   } = useCommunityInteractions();
-  const [chip, setChip] = useState<Chip>("feed");
 
   const chips = (
     [
-      { id: "feed" as const, label: "Feed", enabled: isFeatureEnabled("feed") },
+      { id: "feed" as const, label: "Novedades", enabled: isFeatureEnabled("feed") },
       {
         id: "experiences" as const,
-        label: "Experiences",
+        label: "Planes",
         enabled: isFeatureEnabled("experiences"),
       },
       {
         id: "groups" as const,
-        label: "Groups",
+        label: "Grupos",
         enabled: isFeatureEnabled("groups"),
       },
       {
         id: "talk" as const,
-        label: "Talk",
+        label: "Conversar",
         enabled: isFeatureEnabled("interactions"),
       },
       {
         id: "decide" as const,
-        label: "Decide",
+        label: "Decidir",
         enabled: isFeatureEnabled("decide"),
       },
     ] satisfies { id: Chip; label: string; enabled: boolean }[]
   ).filter((c) => c.enabled);
+
+  const tabParam = searchParams.get("tab");
+  const [chip, setChip] = useState<Chip>(
+    tabParam === "groups" && chips.some((c) => c.id === "groups")
+      ? "groups"
+      : chips[0]?.id ?? "feed",
+  );
+
+  useEffect(() => {
+    if (tabParam === "groups" && chips.some((c) => c.id === "groups")) {
+      setChip("groups");
+    }
+  }, [tabParam, chips]);
 
   const active = chips.some((c) => c.id === chip) ? chip : chips[0]?.id;
 
@@ -94,12 +107,13 @@ export function CommunityScreen() {
   );
 
   const experiences = listDiscoverableExperiences().slice(0, 4);
+  const groupItems = listGroups();
 
   if (!active) {
     return (
       <EmptyState
-        title="Community is quiet"
-        description="Participation features aren’t enabled for this community yet."
+        title="La comunidad está tranquila"
+        description="Aún no hay funciones de participación activadas."
       />
     );
   }
@@ -107,8 +121,8 @@ export function CommunityScreen() {
   if (!canView && active === "feed") {
     return (
       <EmptyState
-        title="You don’t have access"
-        description="Community content isn’t available for your account."
+        title="Sin acceso"
+        description="El contenido de la comunidad no está disponible para tu cuenta."
       />
     );
   }
@@ -117,10 +131,10 @@ export function CommunityScreen() {
     <div className="space-y-5">
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold">
-          Community
+          Comunidad
         </h1>
         <p className="mt-1 text-[16px] text-[var(--color-text-secondary)]">
-          Official updates, neighbour contributions, and useful discussions.
+          Qué está pasando: avisos, conversaciones, grupos y decisiones.
         </p>
       </div>
 
@@ -129,7 +143,14 @@ export function CommunityScreen() {
           <button
             key={c.id}
             type="button"
-            onClick={() => setChip(c.id)}
+            onClick={() => {
+              setChip(c.id);
+              if (c.id === "groups") {
+                router.replace("/community?tab=groups");
+              } else {
+                router.replace("/community");
+              }
+            }}
             className={cn(
               "min-h-[40px] shrink-0 rounded-full px-4 text-[14px] font-semibold",
               active === c.id
@@ -146,8 +167,8 @@ export function CommunityScreen() {
         <CommunityFeed
           empty={
             <EmptyState
-              title="Nothing here yet"
-              description="Be the first to share something useful."
+              title="Todavía no hay nada"
+              description="Sé la primera persona en compartir algo útil."
             />
           }
         >
@@ -223,10 +244,10 @@ export function CommunityScreen() {
               title={exp.title}
               when={formatExperienceWhen(exp.startsAt)}
               where={exp.location}
-              meta={`${exp.participantCount} going`}
+              meta={`${exp.participantCount} van`}
               imageUrl={exp.imageUrl}
               organizerName={exp.organizer.name}
-              ctaLabel="View"
+              ctaLabel="Ver"
               onClick={() => router.push(`/experiences/${exp.id}`)}
               onCta={() => router.push(`/experiences/${exp.id}`)}
             />
@@ -236,11 +257,11 @@ export function CommunityScreen() {
 
       {active === "groups" ? (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          {groups.map((group) => (
+          {groupItems.map((group) => (
             <GroupCard
               key={group.id}
               name={group.name}
-              members={group.members}
+              members={group.memberCount}
               imageUrl={group.imageUrl}
             />
           ))}
@@ -251,8 +272,8 @@ export function CommunityScreen() {
         <CommunityFeed
           empty={
             <EmptyState
-              title="No open discussions"
-              description="Start a useful conversation from Create."
+              title="No hay conversaciones abiertas"
+              description="Empieza una desde Participar (+)."
             />
           }
         >
@@ -292,8 +313,8 @@ export function CommunityScreen() {
         <CommunityFeed
           empty={
             <EmptyState
-              title="No open decisions"
-              description="Proposals will appear here when available."
+              title="No hay decisiones abiertas"
+              description="Las propuestas aparecerán aquí cuando existan."
             />
           }
         >
@@ -302,7 +323,7 @@ export function CommunityScreen() {
               key={item.id}
               title={item.title}
               body={item.body}
-              typeLabel="Proposal"
+              typeLabel="Propuesta"
               authorName={item.author.name}
               authorAvatarUrl={item.author.avatarUrl}
               meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
