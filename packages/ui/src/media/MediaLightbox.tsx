@@ -26,6 +26,34 @@ const MediaLightboxContext = createContext<MediaLightboxContextValue | null>(
 
 const EXIT_MS = 280;
 
+/**
+ * Avatar / card thumbs often use tiny Unsplash widths (w=100).
+ * Prefer a large variant for the lightbox so the photo can fill the screen.
+ */
+export function resolveLightboxSrc(src: string): string {
+  try {
+    const url = new URL(src);
+    const host = url.hostname;
+    const isUnsplash =
+      host.includes("unsplash.com") || host.includes("images.unsplash.com");
+    if (isUnsplash || url.searchParams.has("w") || url.searchParams.has("width")) {
+      if (url.searchParams.has("w")) url.searchParams.set("w", "1600");
+      if (url.searchParams.has("width")) url.searchParams.set("width", "1600");
+      if (!url.searchParams.has("w") && !url.searchParams.has("width")) {
+        url.searchParams.set("w", "1600");
+      }
+      if (url.searchParams.has("q")) url.searchParams.set("q", "90");
+      else url.searchParams.set("q", "90");
+      url.searchParams.set("auto", "format");
+      url.searchParams.set("fit", "crop");
+      return url.toString();
+    }
+  } catch {
+    /* keep original */
+  }
+  return src;
+}
+
 export function useMediaLightbox() {
   return useContext(MediaLightboxContext);
 }
@@ -43,7 +71,7 @@ export function MediaLightboxProvider({ children }: { children: ReactNode }) {
       exitTimerRef.current = null;
     }
     closingRef.current = false;
-    setMedia({ src, alt });
+    setMedia({ src: resolveLightboxSrc(src), alt });
     setEntered(false);
   }, []);
 
@@ -94,12 +122,12 @@ export function MediaLightboxProvider({ children }: { children: ReactNode }) {
           role="dialog"
           aria-modal="true"
           aria-label={media.alt || "Foto ampliada"}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-[max(0.5rem,env(safe-area-inset-top))] sm:px-4"
           onClick={close}
         >
           <div
             className={cn(
-              "absolute inset-0 bg-black/88 backdrop-blur-[6px] transition-[opacity,backdrop-filter] duration-300 ease-out motion-reduce:transition-none",
+              "absolute inset-0 bg-black/92 backdrop-blur-[8px] transition-[opacity,backdrop-filter] duration-300 ease-out motion-reduce:transition-none",
               entered ? "opacity-100" : "opacity-0",
             )}
             aria-hidden
@@ -109,7 +137,7 @@ export function MediaLightboxProvider({ children }: { children: ReactNode }) {
             type="button"
             onClick={close}
             className={cn(
-              "absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[18px] font-semibold text-white transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none",
+              "absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-[18px] font-semibold text-white transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none sm:right-5",
               entered
                 ? "translate-y-0 opacity-100"
                 : "-translate-y-2 opacity-0",
@@ -124,10 +152,10 @@ export function MediaLightboxProvider({ children }: { children: ReactNode }) {
             src={media.src}
             alt={media.alt}
             className={cn(
-              "relative z-[1] max-h-[min(90vh,900px)] max-w-[min(94vw,720px)] rounded-[16px] object-contain shadow-[0_24px_80px_rgba(0,0,0,0.5)] transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none",
+              "relative z-[1] max-h-[min(96vh,1400px)] max-w-[min(98vw,1200px)] rounded-[12px] object-contain shadow-[0_28px_100px_rgba(0,0,0,0.55)] transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none",
               entered
                 ? "scale-100 opacity-100"
-                : "scale-[0.88] opacity-0",
+                : "scale-[0.92] opacity-0",
             )}
             onClick={(e) => e.stopPropagation()}
           />

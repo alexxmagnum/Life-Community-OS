@@ -22,6 +22,7 @@ export * from "./channel-access";
 export * from "./residency-demo";
 export * from "./content";
 export * from "./experiences";
+export * from "./experience-conversations";
 export * from "./community-content";
 export * from "./resources";
 export * from "./marketplace";

@@ -35,3 +35,5 @@ export const DEMO_PERSON_JORDI = "person-jordi" as const;
 export const DEMO_PERSON_LUIS = "person-luis" as const;
 export const DEMO_PERSON_CLARA = "person-clara" as const;
 export const DEMO_PERSON_TOM = "person-tom" as const;
+/** Catalog author for experience conversation demo (D.0.6). */
+export const DEMO_PERSON_CARLOS = "person-carlos" as const;

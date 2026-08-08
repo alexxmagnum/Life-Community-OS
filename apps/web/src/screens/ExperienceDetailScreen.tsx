@@ -18,6 +18,7 @@ import {
   ParticipationStatus,
   ScreenBack,
 } from "@life-community-os/ui";
+import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
@@ -27,10 +28,16 @@ export function ExperienceDetailScreen({
   experienceId: string;
 }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    theme,
+    configuration,
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+  } = useTenant();
   const { getViewerState } = useExperienceParticipation();
 
-  if (!isFeatureEnabled("experiences")) {
+  if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
       <EmptyState
         title="Las actividades no están disponibles"
@@ -66,6 +73,12 @@ export function ExperienceDetailScreen({
   const viewer = getViewerState(experience);
   const remaining = spotsLeft(experience);
   const canJoin = hasCapability(CAPABILITIES.experienceJoin);
+  const showConversation = canOpenExperienceConversation({
+    experience,
+    configuration,
+    isModuleEnabled,
+    hasCapability,
+  });
   const capacityLabel =
     viewer === "full" || remaining <= 0
       ? `Completo · ${experience.capacity} plazas`
@@ -101,6 +114,31 @@ export function ExperienceDetailScreen({
         areaLabel={experience.areaLabel}
         capacityLabel={capacityLabel}
       />
+
+      {showConversation ? (
+        <button
+          type="button"
+          onClick={() =>
+            router.push(`/experiences/${experience.id}/conversation`)
+          }
+          className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+        >
+          <span className="text-[22px]" aria-hidden>
+            💬
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
+              Conversación
+            </span>
+            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+              Coordina con quienes van a la actividad
+            </span>
+          </span>
+          <span className="text-[var(--color-text-tertiary)]" aria-hidden>
+            ›
+          </span>
+        </button>
+      ) : null}
 
       <OrganizerCard
         name={experience.organizer.name}

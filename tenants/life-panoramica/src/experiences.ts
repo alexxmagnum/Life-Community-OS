@@ -206,7 +206,7 @@ function buildExperienceCatalog(nowMs: number): Experience[] {
     },
     {
       id: "exp-sunrise-pines",
-      title: "Paseo al amanecer entre pinos",
+      title: "Ruta por los pinos",
       description:
         "Luz temprana, caminos tranquilos y un circuito corto por Los pinos. Ideal si te gustan las mañanas y la conversación fácil.",
       imageUrl:
