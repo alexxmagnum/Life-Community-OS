@@ -192,6 +192,26 @@ Breaking changes require new versions.
 
 ---
 
+## Channel
+
+An organization layer for structured community communication inside a Territory (ADR-035).
+
+Channels organize where Community Content and Experiences are published.
+
+Channel is not a Tenant, not a security boundary, not a chat room, and not a replacement for Group, Experience, Resource, or LocalEntity.
+
+---
+
+## Community Area
+
+An optional organizational geography inside a Territory (ADR-005).
+
+Product language may call this a Micro Area.
+
+Community Area is not a Tenant and not a security or authorization boundary.
+
+---
+
 # D
 
 ## Data
@@ -240,9 +260,13 @@ Events remain immutable.
 
 ## Experience
 
-A user interaction journey inside the Platform.
+**Platform UX sense:** a user interaction journey inside the Platform. Experiences consume Capabilities.
 
-Experiences consume Capabilities.
+**Community domain sense (ADR-027 / ADR-039):** a participatory community activity, event, or meeting (registration, capacity, attendance). Product UI may label this an “Activity” via i18n; the canonical domain type remains Experience.
+
+Do not introduce a parallel Activity aggregate beside Experience. Forbidden: Activity, SportActivity, or EventActivity domain entities.
+
+Experience may reference Channel, Group, CommunityArea, and Resource without replacing those aggregates.
 
 ---
 
@@ -296,6 +320,16 @@ Knowledge Graph enriches reasoning.
 
 # M
 
+## Membership
+
+Participation of a Person inside a Territory community (ADR-011).
+
+Membership is belonging — not authentication and not authorization.
+
+Community Area resource eligibility is not stored on Membership; it is derived from active Property Person Relationships (ADR-037).
+
+---
+
 ## Module
 
 A logical grouping of related functionality.
@@ -344,6 +378,14 @@ Permissions remain centralized.
 
 ---
 
+## Person
+
+Stable human domain identity (ADR-010).
+
+Person is not a User Account, not a Membership, and must not carry durable Community Area permission lists. Area-scoped resource access is derived from active residencies (ADR-037).
+
+---
+
 ## Platform Capability
 
 Reusable technical functionality available across Business Domains.
@@ -365,6 +407,32 @@ Platform Intelligence belongs to the Platform.
 A governed business rule controlling behaviour.
 
 Policies belong to Business Domains.
+
+---
+
+## Property
+
+A real-estate unit located at an Address (ADR-007).
+
+Property does not own Person. Associations use Property Person Relationship.
+
+---
+
+## Property Person Relationship
+
+Time-aware association between Person and Property (ADR-008 / ADR-009).
+
+Roles include owner, resident, tenant (renter), family_member, guest, staff, and related types.
+
+Temporal fields: validFrom, validTo, status. Claims begin as pending_verification and do not grant restricted access until verification activates the relationship (ADR-038). Active verified relationships derive Community Area affiliations for resource access (ADR-037). Not a security boundary and not a Permission.
+
+---
+
+## Residency Verification
+
+A verification case that validates a Property Person Relationship claim before it becomes active (ADR-038).
+
+Methods may include residency certificate, owner invitation, administration approval, and approved documentation. Evidence is stored via Platform Core Files references — never as documents on Person.
 
 ---
 
@@ -390,7 +458,7 @@ Queries never modify state.
 
 ## Resource
 
-Anything that can be managed or reserved.
+Anything that can be managed or reserved inside a Tenant community context (ADR-031).
 
 Examples include:
 
@@ -406,7 +474,11 @@ Vehicles
 
 Staff
 
-Resources belong to Organizations.
+Territorial community resources are owned by a Territory Authority (Official Entity Profile), Community Area–scoped stewardship, or an eligible Entity owner — not by resident Persons as owners of territorial assets.
+
+Resources are not owned by Channels.
+
+Resource access must not assume all Territory residents share all resources. Visibility (public information) and reservation eligibility are distinct and may be scoped by Community Area affiliation (ADR-036).
 
 ---
 
@@ -453,6 +525,22 @@ The highest isolation boundary inside the Platform.
 Every Organization belongs to one Tenant.
 
 Tenants remain isolated.
+
+---
+
+## Territory
+
+A geographical or functional community environment belonging to exactly one Tenant.
+
+Territory is where community life is organized. It is not the same as Tenant Membership or a Channel.
+
+---
+
+## Territory Authority
+
+Product alias for an Official Entity Profile (ADR-016) that governs a Territory: official communication, territorial resource stewardship, verification, and related governance responsibilities (ADR-034).
+
+Territory Authority is not a normal resident Person and is not a Membership type. Permissions remain RBAC Role Assignments.
 
 ---
 

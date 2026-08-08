@@ -12,7 +12,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   identity: {
     territoryName: "Panorámica Golf",
     defaultAreaName: "Aldea Golf",
-    homeCallout: "Qué pasa hoy cerca de ti",
+    homeCallout: "Hoy en Panorámica Golf",
     pulseTitleTemplate: "Hoy en {territory}",
   },
   colors: {
@@ -45,7 +45,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   },
   imagery: {
     splash:
-      "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1600&q=80",
     homeHero: "/tenants/life-panoramica/home-hero.jpg",
   },
 };

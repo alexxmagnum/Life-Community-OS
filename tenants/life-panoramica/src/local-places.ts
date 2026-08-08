@@ -81,7 +81,7 @@ export const localEntityCatalog: LocalEntity[] = [
     areaLabel: "Los pinos",
     story: "Paseo al atardecer. Punto de encuentro habitual para caminar.",
     imageUrl:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=80",
     recommendedBy: "Ana",
   },
   {
@@ -89,7 +89,7 @@ export const localEntityCatalog: LocalEntity[] = [
     name: "Piscina comunitaria",
     kind: "place",
     categoryLabel: "Ocio",
-    areaLabel: "Life Panoramica",
+    areaLabel: "Aldea Golf",
     story: "Zona de baño y sombra — consulta el horario de verano.",
     imageUrl:
       "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=900&q=80",
@@ -109,7 +109,7 @@ export const localEntityCatalog: LocalEntity[] = [
     name: "Jardinería Panoramica",
     kind: "service",
     categoryLabel: "Jardinería",
-    areaLabel: "Life Panoramica",
+    areaLabel: "Aldea Golf",
     story: "Cuidado de exteriores. Varios vecinos ya los han usado.",
     imageUrl:
       "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=900&q=80",

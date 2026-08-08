@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { MediaLightboxProvider } from "@life-community-os/ui";
 
 import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
@@ -37,7 +38,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <TenantProvider>
           <ExperienceParticipationProvider>
             <CommunityInteractionProvider>
-              <ReservationProvider>{children}</ReservationProvider>
+              <ReservationProvider>
+                <MediaLightboxProvider>{children}</MediaLightboxProvider>
+              </ReservationProvider>
             </CommunityInteractionProvider>
           </ExperienceParticipationProvider>
         </TenantProvider>

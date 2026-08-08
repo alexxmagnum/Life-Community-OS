@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { listResources } from "@life-community-os/tenant-life-panoramica";
+import {
+  evaluateDemoResourceAccessForPerson,
+  listResources,
+} from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   LoadingState,
@@ -12,10 +15,17 @@ import {
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { resourceAccessHint } from "@/lib/demo-access-copy";
 
 export function ResourceDiscoveryScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    hasCapability,
+    demoPersonId,
+    demoMember,
+  } = useTenant();
   const [query, setQuery] = useState("");
   const [loading] = useState(false);
 
@@ -51,13 +61,24 @@ export function ResourceDiscoveryScreen() {
 
   if (loading) return <LoadingState label="Cargando lugares..." />;
 
+  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
+
   return (
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Espacios compartidos"
-        subtitle="Pistas, salas y zonas que puedes reservar."
+        subtitle="Pistas, salas y zonas. El acceso depende de tu residencia verificada."
       />
+
+      <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2.5">
+        <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+          Vista demo · {demoMember.displayName}
+        </p>
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          {demoMember.residencyStatusLabel}
+        </p>
+      </div>
 
       <ScreenSearch
         value={query}
@@ -77,7 +98,13 @@ export function ResourceDiscoveryScreen() {
         <div className="space-y-4">
           {items.map((resource) => {
             const href = `/resources/${resource.id}`;
-            const canReserve = hasCapability(CAPABILITIES.resourceReserve);
+            const access = evaluateDemoResourceAccessForPerson(
+              resource.id,
+              demoPersonId,
+              roleCanReserve,
+            );
+            const { hint, tone } = resourceAccessHint(access);
+            const showReserve = access.canReserve && roleCanReserve;
             return (
               <ResourceDiscoveryCard
                 key={resource.id}
@@ -86,9 +113,11 @@ export function ResourceDiscoveryScreen() {
                 availability={resource.availabilityPreview}
                 area={resource.areaLabel}
                 imageUrl={resource.imageUrl}
+                accessHint={hint}
+                accessTone={tone}
                 onClick={() => router.push(href)}
                 onReserve={
-                  canReserve
+                  showReserve
                     ? () => router.push(`${href}/availability`)
                     : undefined
                 }

@@ -53,6 +53,7 @@ export function buildHomeFeed(options: HomeFeedBuildOptions): HomeFeedItem[] {
 
   if (features.feed !== false) {
     for (const content of listPublishedCommunityContent()) {
+      if (content.type === "proposal") continue;
       const category: HomeFeedCategory = content.isOfficial
         ? "official"
         : "community";

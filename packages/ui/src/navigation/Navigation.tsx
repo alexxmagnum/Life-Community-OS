@@ -7,6 +7,7 @@ import { cn } from "../lib/cn";
 export type NavItemId =
   | "home"
   | "community"
+  | "create"
   | "discover"
   | "marketplace"
   | "me"
@@ -40,9 +41,26 @@ export function BottomNavigation({
       )}
       aria-label="Principal"
     >
-      <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2 pt-2">
+      <ul className="mx-auto flex max-w-lg items-end justify-between gap-0.5 px-1.5 pt-1.5">
         {items.map((item) => {
           const active = item.id === activeId;
+          const isCreate = item.id === "create";
+
+          if (isCreate) {
+            return (
+              <li key={item.id} className="flex flex-1 justify-center pb-1">
+                <button
+                  type="button"
+                  onClick={() => onNavigate(item)}
+                  className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-[28px] leading-none text-[var(--color-text-inverse)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95"
+                  aria-label={item.label}
+                >
+                  <span aria-hidden>+</span>
+                </button>
+              </li>
+            );
+          }
+
           return (
             <li key={item.id} className="flex-1">
               <a
@@ -62,17 +80,25 @@ export function BottomNavigation({
                   onNavigate(item);
                 }}
                 className={cn(
-                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] text-[12px] font-semibold",
+                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] text-[10px] font-semibold",
                   active
                     ? "text-[var(--color-action-primary)]"
                     : "text-[var(--color-text-tertiary)]",
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                <span className="text-xl" aria-hidden>
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                    active
+                      ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
+                      : "text-[var(--color-text-tertiary)]",
+                  )}
+                  aria-hidden
+                >
                   {item.icon}
                 </span>
-                {item.label}
+                <span className="truncate px-0.5">{item.label}</span>
               </a>
             </li>
           );
@@ -98,9 +124,11 @@ export function DesktopNavigation({
   activeId,
   onNavigate,
   onCreate,
-  createLabel = "Añadir",
+  createLabel = "Crear",
   className,
 }: DesktopNavigationProps) {
+  const linkItems = items.filter((item) => item.id !== "create");
+
   return (
     <aside
       className={cn(
@@ -112,7 +140,7 @@ export function DesktopNavigation({
         {brandName}
       </p>
       <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Principal">
-        {items.map((item) => {
+        {linkItems.map((item) => {
           const active = item.id === activeId;
           return (
             <a
@@ -144,7 +172,8 @@ export function DesktopNavigation({
               {item.label}
             </a>
           );
-        })}      </nav>
+        })}
+      </nav>
       {onCreate ? (
         <button
           type="button"

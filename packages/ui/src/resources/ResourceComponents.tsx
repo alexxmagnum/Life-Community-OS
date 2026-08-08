@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "../actions/Button";
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type ResourceHeroProps = {
   imageUrl: string;
@@ -21,14 +24,15 @@ export function ResourceHero({
         className,
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <ZoomableImage
         src={imageUrl}
         alt=""
-        className="aspect-[5/4] w-full object-cover md:aspect-[21/9]"
+        fill={false}
+        className="aspect-[5/4] w-full md:aspect-[21/9]"
+        wrapperClassName="h-auto w-full"
       />
       <div
-        className="absolute inset-0 flex flex-col justify-end p-5 md:p-8"
+        className="pointer-events-none absolute inset-0 flex flex-col justify-end p-5 md:p-8"
         style={{
           background: "linear-gradient(transparent 35%, var(--color-hero-scrim))",
         }}
@@ -230,11 +234,12 @@ export function ReservationSummary({
       )}
     >
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ZoomableImage
           src={imageUrl}
           alt=""
-          className="aspect-[16/9] w-full object-cover"
+          fill={false}
+          className="aspect-[16/9] w-full"
+          wrapperClassName="h-auto w-full"
         />
       ) : null}
       <div className="space-y-3 p-5">
@@ -299,11 +304,11 @@ export function CalendarReservationCard({
         aria-hidden
       />
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ZoomableImage
           src={imageUrl}
           alt=""
-          className="h-10 w-10 rounded-[var(--radius-sm)] object-cover"
+          className="rounded-[var(--radius-sm)]"
+          wrapperClassName="h-10 w-10 shrink-0"
         />
       ) : null}
       <span className="min-w-0 flex-1">
@@ -331,6 +336,11 @@ export type ResourceDiscoveryCardProps = {
   onReserve?: () => void;
   onClick?: () => void;
   className?: string;
+  /** Access / residency feedback line (demo validation). */
+  accessHint?: string;
+  /** Tone for accessHint */
+  accessTone?: "ok" | "blocked" | "info";
+  reserveLabel?: string;
 };
 
 export function ResourceDiscoveryCard({
@@ -342,7 +352,17 @@ export function ResourceDiscoveryCard({
   onReserve,
   onClick,
   className,
+  accessHint,
+  accessTone = "info",
+  reserveLabel = "Reservar",
 }: ResourceDiscoveryCardProps) {
+  const hintClass =
+    accessTone === "ok"
+      ? "text-[var(--color-success)]"
+      : accessTone === "blocked"
+        ? "text-[var(--color-danger)]"
+        : "text-[var(--color-text-secondary)]";
+
   return (
     <article
       className={cn(
@@ -352,8 +372,7 @@ export function ResourceDiscoveryCard({
     >
       <button type="button" className="block w-full text-left" onClick={onClick}>
         <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
         <div className="p-4">
           <h3 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
@@ -373,12 +392,17 @@ export function ResourceDiscoveryCard({
               </span>
             ) : null}
           </p>
+          {accessHint ? (
+            <p className={cn("mt-2 text-[13px] font-semibold leading-5", hintClass)}>
+              {accessHint}
+            </p>
+          ) : null}
         </div>
       </button>
       {onReserve ? (
         <div className="border-t border-[var(--color-border-subtle)] px-4 py-3">
           <Button fullWidth onClick={onReserve}>
-            Reservar
+            {reserveLabel}
           </Button>
         </div>
       ) : null}

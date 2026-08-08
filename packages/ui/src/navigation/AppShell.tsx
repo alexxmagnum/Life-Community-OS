@@ -16,6 +16,7 @@ export type AppShellProps = {
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
   onCreate?: () => void;
+  /** @deprecated Create lives in bottom nav — keep false */
   showCreateFab?: boolean;
   /** Persistent mobile app header (fixed). */
   header?: ReactNode;
@@ -29,7 +30,7 @@ export function AppShell({
   activeId,
   onNavigate,
   onCreate,
-  showCreateFab = true,
+  showCreateFab = false,
   header,
   children,
   className,
@@ -49,7 +50,7 @@ export function AppShell({
           className={cn(
             "mx-auto w-full max-w-[390px] flex-1 overflow-x-hidden px-4 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
             header
-              ? "pt-[calc(5.85rem+env(safe-area-inset-top))] md:pt-8"
+              ? "pt-[calc(3.75rem+env(safe-area-inset-top))] md:pt-8"
               : "pt-3",
             className,
           )}

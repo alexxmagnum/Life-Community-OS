@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type ExperienceHeroProps = {
   imageUrl: string;
@@ -20,14 +23,15 @@ export function ExperienceHero({
         className,
       )}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <ZoomableImage
         src={imageUrl}
         alt=""
-        className="aspect-[5/4] w-full object-cover md:aspect-[21/9]"
+        fill={false}
+        className="aspect-[5/4] w-full md:aspect-[21/9]"
+        wrapperClassName="h-auto w-full"
       />
       <div
-        className="absolute inset-0 flex flex-col justify-end p-5 md:p-8"
+        className="pointer-events-none absolute inset-0 flex flex-col justify-end p-5 md:p-8"
         style={{
           background: "linear-gradient(transparent 35%, var(--color-hero-scrim))",
         }}

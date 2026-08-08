@@ -14,6 +14,7 @@ import {
   MobileScreen,
   ParticipationStatus,
   ScreenBack,
+  ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -105,11 +106,12 @@ export function ExperienceRegistrationScreen({
       />
 
       <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <ZoomableImage
           src={experience.imageUrl}
           alt=""
-          className="aspect-[16/9] w-full object-cover"
+          fill={false}
+          className="aspect-[16/9] w-full"
+          wrapperClassName="h-auto w-full"
         />
         <div className="space-y-3 p-5">
           <ParticipationStatus

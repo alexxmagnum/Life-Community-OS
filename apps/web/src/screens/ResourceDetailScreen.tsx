@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { getResourceById } from "@life-community-os/tenant-life-panoramica";
+import {
+  evaluateDemoResourceAccessForPerson,
+  getResourceById,
+} from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
   EmptyState,
@@ -11,10 +14,17 @@ import {
   ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { resourceAccessHint } from "@/lib/demo-access-copy";
 
 export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    hasCapability,
+    demoPersonId,
+    demoMember,
+  } = useTenant();
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -47,7 +57,20 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     );
   }
 
-  const canReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const access = evaluateDemoResourceAccessForPerson(
+    resource.id,
+    demoPersonId,
+    roleCanReserve,
+  );
+  const { hint, tone } = resourceAccessHint(access);
+  const canReserve = access.canReserve && roleCanReserve;
+  const hintClass =
+    tone === "ok"
+      ? "text-[var(--color-success)]"
+      : tone === "blocked"
+        ? "text-[var(--color-danger)]"
+        : "text-[var(--color-text-secondary)]";
 
   return (
     <MobileScreen>
@@ -64,6 +87,15 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
         <span className="text-[14px] text-[var(--color-text-secondary)]">
           Próximo hueco · {resource.availabilityPreview}
         </span>
+      </div>
+
+      <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2.5">
+        <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+          Acceso · {demoMember.displayName}
+        </p>
+        <p className={`mt-0.5 text-[14px] font-semibold ${hintClass}`}>
+          {hint}
+        </p>
       </div>
 
       <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
@@ -108,7 +140,9 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
           </Button>
         ) : (
           <Button fullWidth disabled>
-            Reserva no disponible
+            {access.canViewPublicInfo
+              ? "Reserva bloqueada · residencia"
+              : "Reserva no disponible"}
           </Button>
         )}
       </div>

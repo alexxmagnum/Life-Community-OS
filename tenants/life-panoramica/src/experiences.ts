@@ -44,6 +44,11 @@ export type Experience = {
   participants: ExperienceParticipant[];
   status: ExperienceStatus;
   type: ExperienceType;
+  /** ADR-035 organization links (optional). */
+  channelId?: string;
+  groupId?: string;
+  communityAreaId?: string;
+  resourceId?: string;
 };
 
 /** Derived UI state for the current viewer (not stored on Experience). */
@@ -86,7 +91,7 @@ export const experienceCatalog: Experience[] = [
     description:
       "Un paseo suave entre pinos mientras baja la luz. Conoce vecinos, respira y disfruta del camino — sin prisas, solo lugar y gente.",
     imageUrl:
-      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1400&q=80",
     startsAt: startSunset,
     endsAt: endOf(startSunset, 1.5),
     location: "Entrada del camino de pinos",
@@ -129,10 +134,10 @@ export const experienceCatalog: Experience[] = [
     description:
       "Luz temprana, caminos tranquilos y un circuito corto por Los pinos. Ideal si te gustan las mañanas y la conversación fácil.",
     imageUrl:
-      "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1400&q=80",
     startsAt: startWalk,
     endsAt: endOf(startWalk, 1),
-    location: "Inicio del sendero · Los pinos",
+    location: "Inicio del sendero",
     areaLabel: "Los pinos",
     organizer: {
       id: "org-marta",
@@ -164,11 +169,11 @@ export const experienceCatalog: Experience[] = [
     description:
       "Estiramiento al aire libre en la terraza. Movimiento suave, todos los niveles. Trae esterilla si tienes.",
     imageUrl:
-      "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80",
     startsAt: startStretch,
     endsAt: endOf(startStretch, 1),
-    location: "Terraza · Terraza",
-    areaLabel: "Terraza",
+    location: "Terraza comunitaria",
+    areaLabel: "Hacienda",
     organizer: {
       id: "org-ines",
       name: "Inés Vidal",
@@ -195,7 +200,7 @@ export const experienceCatalog: Experience[] = [
     startsAt: startCoffee,
     endsAt: endOf(startCoffee, 1.5),
     location: "Terraza comunitaria",
-    areaLabel: "Life Panoramica",
+    areaLabel: "Aldea Golf",
     organizer: {
       id: "org-community",
       name: "Life Panoramica",
@@ -210,6 +215,8 @@ export const experienceCatalog: Experience[] = [
     ],
     status: "registration_open",
     type: "event",
+    channelId: "ch-events",
+    communityAreaId: "area-aldea-golf",
   },
   {
     id: "exp-padel-social",
@@ -237,6 +244,9 @@ export const experienceCatalog: Experience[] = [
     ],
     status: "full",
     type: "experience",
+    channelId: "ch-padel",
+    groupId: "g-padel",
+    resourceId: "res-padel-2",
   },
   {
     id: "exp-cancelled-bbq",

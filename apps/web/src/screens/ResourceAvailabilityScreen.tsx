@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  evaluateDemoResourceAccessForPerson,
   formatResourceDate,
   getResourceById,
   listAvailabilityDates,
@@ -25,7 +26,8 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability, demoPersonId, demoMember } =
+    useTenant();
   const { getSlots } = useReservations();
   const dates = listAvailabilityDates(7);
   const [selectedDate, setSelectedDate] = useState(dates[0]!);
@@ -66,7 +68,25 @@ export function ResourceAvailabilityScreen({
     return <EmptyState title="Sin acceso" />;
   }
 
-  const canReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const access = evaluateDemoResourceAccessForPerson(
+    resource.id,
+    demoPersonId,
+    roleCanReserve,
+  );
+
+  if (!access.canReserve) {
+    return (
+      <EmptyState
+        title="Reserva no disponible"
+        description={`${demoMember.displayName}: necesitas residencia verificada en el área de este recurso. Puedes ver la información pública, pero no reservar.`}
+        actionLabel="Volver al lugar"
+        onAction={() => router.push(`/resources/${resource.id}`)}
+      />
+    );
+  }
+
+  const canReserve = roleCanReserve;
   const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
   return (

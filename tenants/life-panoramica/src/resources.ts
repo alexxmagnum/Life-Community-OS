@@ -1,8 +1,28 @@
 /**
- * Resources & Reservations — tenant-neutral capability (ADR-031).
+ * Resources & Reservations — tenant demo catalog (ADR-031 / ADR-036).
  * Shared community assets — not a commercial booking marketplace.
- * Mock catalog ready for future API replacement.
+ * Booking workflows are not implemented in this slice — inventory + access policy only.
  */
+
+import type {
+  ResourceAccessPolicy,
+  ResourceOwnerKind,
+  ResourceStatus,
+} from "@life-community-os/types";
+import { evaluateResourceAccess } from "@life-community-os/types";
+
+import {
+  DEMO_AREA_ALDEA_GOLF,
+  DEMO_AREA_CENTRO,
+  DEMO_AREA_ZONA_VERDE,
+  DEMO_AUTHORITY_ADMIN_ID,
+  DEMO_PERSON_JOHN,
+  DEMO_PERSON_LUCIA,
+  DEMO_PERSON_MARTA,
+  DEMO_TENANT_ID,
+  DEMO_TERRITORY_ID,
+} from "./demo-ids";
+import { getVerifiedCommunityAreaIdsForPerson } from "./residency-demo";
 
 export type ResourceType =
   | "sports_facility"
@@ -29,18 +49,22 @@ export type CommunityResource = {
   areaLabel: string;
   type: ResourceType;
   rules: string[];
-  /** Minutes per bookable slot */
   slotMinutes: number;
-  /** Max simultaneous capacity (1 = exclusive) */
   capacity: number;
-  /** Human preview e.g. "Today 17:00" */
   availabilityPreview: string;
   requiresApproval?: boolean;
+  tenantId?: string;
+  territoryId?: string;
+  communityAreaId?: string;
+  ownerKind?: ResourceOwnerKind;
+  ownerId?: string;
+  bookable?: boolean;
+  status?: ResourceStatus;
+  accessPolicy?: ResourceAccessPolicy;
 };
 
 export type TimeSlot = {
   id: string;
-  /** HH:mm */
   start: string;
   end: string;
   status: SlotStatus;
@@ -49,7 +73,6 @@ export type TimeSlot = {
 export type Reservation = {
   id: string;
   resourceId: string;
-  /** YYYY-MM-DD */
   date: string;
   start: string;
   end: string;
@@ -68,89 +91,198 @@ function dateOffset(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+const authorityOwner = {
+  tenantId: DEMO_TENANT_ID,
+  territoryId: DEMO_TERRITORY_ID,
+  ownerKind: "territory_authority" as const,
+  ownerId: DEMO_AUTHORITY_ADMIN_ID,
+  bookable: true,
+  status: "active" as const,
+};
+
 export const resourceCatalog: CommunityResource[] = [
   {
-    id: "res-padel-2",
-    name: "Pista de pádel 2",
+    id: "res-padel-aldea",
+    name: "Padel Court Aldea Golf",
     description:
-      "Pista exterior con iluminación. Ideal para partidos amistosos y práctica. Déjala ordenada para los siguientes vecinos.",
+      "Outdoor court for Aldea Golf residents. Other areas may see public info but cannot reserve (ADR-036).",
     imageUrl:
       "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1400&q=80",
-    location: "Zona deportiva · Pista 2",
-    areaLabel: "Life Panoramica",
+    location: "Aldea Golf · Court 1",
+    areaLabel: "Aldea Golf",
     type: "sports_facility",
+    communityAreaId: DEMO_AREA_ALDEA_GOLF,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "community_area",
+      reservationCommunityAreaIds: [DEMO_AREA_ALDEA_GOLF],
+    },
     rules: [
-      "Máximo 90 minutos por reserva",
-      "Cancela con al menos 2 horas de antelación",
-      "Solo calzado que no marque",
-      "Los invitados deben ir acompañados de un miembro",
+      "Max 90 minutes per reservation",
+      "Cancel at least 2 hours ahead",
+      "Non-marking shoes only",
+      "Requires active verified residency in Aldea Golf",
     ],
     slotMinutes: 90,
     capacity: 1,
-    availabilityPreview: "Hoy 17:00",
+    availabilityPreview: "Today 17:00",
+  },
+  {
+    id: "res-padel-2",
+    name: "Padel Court 2 (shared)",
+    description:
+      "Shared territorial court — any verified Territory member with reserve permission may book.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1400&q=80",
+    location: "Sports zone · Court 2",
+    areaLabel: "Panoramica Golf",
+    type: "sports_facility",
+    communityAreaId: DEMO_AREA_CENTRO,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "territory",
+      sharedAcrossAreas: true,
+    },
+    rules: [
+      "Max 90 minutes per reservation",
+      "Cancel at least 2 hours ahead",
+      "Non-marking shoes only",
+    ],
+    slotMinutes: 90,
+    capacity: 1,
+    availabilityPreview: "Today 17:00",
+  },
+  {
+    id: "res-pool-zona-verde",
+    name: "Zona Verde Pool",
+    description:
+      "Private area pool. Territory members may see it; only Zona Verde verified residents may reserve.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1400&q=80",
+    location: "Zona Verde · Pool deck",
+    areaLabel: "Zona Verde",
+    type: "amenity",
+    communityAreaId: DEMO_AREA_ZONA_VERDE,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "community_area",
+      reservationCommunityAreaIds: [DEMO_AREA_ZONA_VERDE],
+    },
+    rules: [
+      "Quiet hours from 22:00",
+      "Requires active verified residency in Zona Verde",
+    ],
+    slotMinutes: 120,
+    capacity: 1,
+    availabilityPreview: "Sat 11:00",
   },
   {
     id: "res-community-room",
-    name: "Sala comunitaria",
+    name: "Community room",
     description:
-      "Sala luminosa para reuniones pequeñas, talleres y encuentros de vecinos. Mesas y sillas incluidas.",
+      "Bright room for small meetings and neighbour gatherings. Shared territorial resource.",
     imageUrl:
       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1400&q=80",
-    location: "Edificio principal · Planta baja",
+    location: "Main building · Ground floor",
     areaLabel: "Centro",
     type: "space",
+    communityAreaId: DEMO_AREA_CENTRO,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "territory",
+      sharedAcrossAreas: true,
+    },
     rules: [
-      "Puede requerir aprobación para eventos de más de 12 personas",
-      "Deja el mobiliario como lo encontraste",
-      "Sin uso nocturno",
+      "Approval may be required for events over 12 people",
+      "Leave furniture as found",
+      "No overnight use",
     ],
     slotMinutes: 60,
     capacity: 1,
-    availabilityPreview: "Mañana 10:00",
+    availabilityPreview: "Tomorrow 10:00",
     requiresApproval: true,
   },
   {
     id: "res-bbq",
-    name: "Terraza BBQ",
-    description:
-      "Zona de grill compartida con mesas de picnic. Perfecta para encuentros pequeños a la hora dorada.",
+    name: "BBQ terrace",
+    description: "Shared grill area with picnic tables.",
     imageUrl:
       "https://images.unsplash.com/photo-1555939596-19271ee170b3?auto=format&fit=crop&w=1400&q=80",
-    location: "Terraza · Zona norte",
-    areaLabel: "Zona norte",
+    location: "Terrace · North zone",
+    areaLabel: "Centro",
     type: "amenity",
+    communityAreaId: DEMO_AREA_CENTRO,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "territory",
+      sharedAcrossAreas: true,
+    },
     rules: [
-      "Limpia el grill después de usarlo",
-      "Horario de silencio desde las 22:00",
-      "Máximo 3 horas por reserva",
+      "Clean the grill after use",
+      "Quiet hours from 22:00",
+      "Max 3 hours per reservation",
     ],
     slotMinutes: 180,
     capacity: 1,
-    availabilityPreview: "Sáb 19:00",
+    availabilityPreview: "Sat 19:00",
   },
   {
     id: "res-padel-1",
-    name: "Pista de pádel 1",
-    description:
-      "Pista principal cerca de la entrada. Mismas normas comunitarias que la pista 2.",
+    name: "Padel Court 1",
+    description: "Main court near the entrance — shared territorial amenity.",
     imageUrl:
       "https://images.unsplash.com/photo-1626224582411-c8120bdb77e2?auto=format&fit=crop&w=1400&q=80",
-    location: "Zona deportiva · Pista 1",
-    areaLabel: "Zona norte",
+    location: "Sports zone · Court 1",
+    areaLabel: "Centro",
     type: "sports_facility",
+    communityAreaId: DEMO_AREA_CENTRO,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "territory",
+      sharedAcrossAreas: true,
+    },
     rules: [
-      "Máximo 90 minutos por reserva",
-      "Cancela con al menos 2 horas de antelación",
-      "Solo calzado que no marque",
+      "Max 90 minutes per reservation",
+      "Cancel at least 2 hours ahead",
+      "Non-marking shoes only",
     ],
     slotMinutes: 90,
     capacity: 1,
-    availabilityPreview: "Hoy 18:30",
+    availabilityPreview: "Today 18:30",
+  },
+  {
+    id: "res-tennis-aldea",
+    name: "Tennis Court Aldea Golf",
+    description: "Aldea Golf–scoped tennis court (Authority-owned).",
+    imageUrl:
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=1400&q=80",
+    location: "Aldea Golf · Tennis",
+    areaLabel: "Aldea Golf",
+    type: "sports_facility",
+    communityAreaId: DEMO_AREA_ALDEA_GOLF,
+    ...authorityOwner,
+    accessPolicy: {
+      visibility: "territory",
+      reservationScope: "community_area",
+      reservationCommunityAreaIds: [DEMO_AREA_ALDEA_GOLF],
+    },
+    rules: ["Requires active verified residency in Aldea Golf"],
+    slotMinutes: 60,
+    capacity: 1,
+    availabilityPreview: "Tomorrow 09:00",
   },
 ];
 
-/** Baseline occupied slots by resource + date (mock inventory). */
 const occupiedBaseline: Record<string, Record<string, string[]>> = {
+  "res-padel-aldea": {
+    [dateOffset(0)]: ["09:00", "10:30"],
+  },
   "res-padel-2": {
     [dateOffset(0)]: ["09:00", "10:30", "15:30"],
     [dateOffset(1)]: ["11:00", "17:00"],
@@ -164,6 +296,12 @@ const occupiedBaseline: Record<string, Record<string, string[]>> = {
   },
   "res-padel-1": {
     [dateOffset(0)]: ["08:00", "16:00", "17:30"],
+  },
+  "res-pool-zona-verde": {
+    [dateOffset(0)]: ["11:00"],
+  },
+  "res-tennis-aldea": {
+    [dateOffset(1)]: ["09:00"],
   },
 };
 
@@ -181,7 +319,11 @@ function buildSlotsForDay(
   ]);
 
   const slots: TimeSlot[] = [];
-  for (let minutes = openHour * 60; minutes + step <= closeHour * 60; minutes += step) {
+  for (
+    let minutes = openHour * 60;
+    minutes + step <= closeHour * 60;
+    minutes += step
+  ) {
     const sh = Math.floor(minutes / 60);
     const sm = minutes % 60;
     const eh = Math.floor((minutes + step) / 60);
@@ -276,4 +418,52 @@ export function deriveReservationStatus(
   const end = new Date(`${reservation.date}T${reservation.end}:00`);
   if (end.getTime() < now.getTime()) return "expired";
   return reservation.status === "reserved" ? "reserved" : reservation.status;
+}
+
+/** Demo access evaluation — eligibility only, no booking workflow. */
+export function evaluateDemoResourceAccessForPerson(
+  resourceId: string,
+  personId: string,
+  canReservePermission = true,
+) {
+  const resource = getResourceById(resourceId);
+  if (!resource) {
+    return {
+      canViewPublicInfo: false,
+      canReserve: false,
+      reasons: ["resource_not_found"],
+    };
+  }
+  return evaluateResourceAccess(
+    {
+      tenantId: resource.tenantId,
+      territoryId: resource.territoryId,
+      communityAreaId: resource.communityAreaId,
+      bookable: resource.bookable ?? true,
+      status: resource.status ?? "active",
+      accessPolicy: resource.accessPolicy,
+    },
+    {
+      tenantId: DEMO_TENANT_ID,
+      territoryId: DEMO_TERRITORY_ID,
+      communityAreaIds: getVerifiedCommunityAreaIdsForPerson(personId),
+      canReservePermission,
+    },
+  );
+}
+
+export function demoResourceAccessMatrix() {
+  const resourceId = "res-padel-aldea";
+  return {
+    resourceId,
+    marta: evaluateDemoResourceAccessForPerson(resourceId, DEMO_PERSON_MARTA),
+    johnPendingClaim: evaluateDemoResourceAccessForPerson(
+      resourceId,
+      DEMO_PERSON_JOHN,
+    ),
+    luciaOtherArea: evaluateDemoResourceAccessForPerson(
+      resourceId,
+      DEMO_PERSON_LUCIA,
+    ),
+  };
 }

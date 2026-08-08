@@ -23,3 +23,34 @@ export {
   filterHomeFeed,
   placeHomeSponsor,
 } from "./domain/home-feed";
+
+/** Channel boundary validators (ADR-035) — required before persistence. */
+export {
+  CHANNEL_OWNER_COMPATIBILITY,
+  validateChannelBoundaries,
+  assertChannelBoundaries,
+} from "./domain/channel";
+
+/** Resource ownership and area access guards (ADR-031 / ADR-036). */
+export {
+  validateResourceOwnership,
+  validateResourceAccessPolicy,
+  evaluateResourceAccess,
+} from "./domain/resource";
+
+/** Residency-derived Community Area access (ADR-037 / ADR-038). */
+export {
+  DEFAULT_RESIDENCY_ELIGIBILITY_ROLES,
+  DEFAULT_ROLES_REQUIRING_VERIFICATION,
+  isRelationshipActiveAt,
+  isVerifiedResidencyActiveAt,
+  deriveCommunityAreaIdsFromResidencies,
+  resolveResidencyAccessAreas,
+  hasVerifiedResidencyInArea,
+} from "./domain/property-person-relationship";
+
+/** Residency verification cases and evidence (ADR-038). */
+export {
+  validateResidencyVerification,
+  canActivateRelationshipFromVerification,
+} from "./domain/residency-verification";

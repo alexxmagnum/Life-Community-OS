@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { currentMember } from "@life-community-os/tenant-life-panoramica";
 import {
-  AppMenuSheet,
   AppShell,
   CommunityAppHeader,
   CreatePostSheet,
@@ -16,23 +14,110 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
+function IconHome() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 3.2 3.5 10.4a1 1 0 0 0-.3.7V20a1.2 1.2 0 0 0 1.2 1.2h5.1V15.2h5V21.2h5.1A1.2 1.2 0 0 0 20.8 20v-8.9a1 1 0 0 0-.3-.7L12 3.2Z" />
+    </svg>
+  );
+}
+
+function IconCommunity() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="16" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M3.5 19c.8-2.8 2.9-4 5.5-4s4.7 1.2 5.5 4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14 15.2c1.4-.5 2.9-.3 4.2.8"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function IconDiscover() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="m14.5 9.5-1.2 4.3-4.3 1.2 1.2-4.3 4.3-1.2Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconMarket() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M7 7h13l-1.4 8.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.7L6 4H3"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="20" r="1.2" fill="currentColor" />
+      <circle cx="17" cy="20" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconProfile() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M5 19.5c1.2-3 3.5-4.5 7-4.5s5.8 1.5 7 4.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function buildNav(flags: {
   marketplace: boolean;
+  showCreate: boolean;
 }): NavItem[] {
   const items: NavItem[] = [
-    { id: "home", label: "Inicio", href: "/", icon: "⌂" },
-    { id: "community", label: "Comunidad", href: "/community", icon: "◌" },
-    { id: "discover", label: "Descubrir", href: "/discover", icon: "◎" },
+    { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
+    {
+      id: "community",
+      label: "Comunidad",
+      href: "/community",
+      icon: <IconCommunity />,
+    },
   ];
+  if (flags.showCreate) {
+    items.push({ id: "create", label: "Crear", href: "#create", icon: "+" });
+  }
+  items.push({
+    id: "discover",
+    label: "Descubrir",
+    href: "/discover",
+    icon: <IconDiscover />,
+  });
   if (flags.marketplace) {
     items.push({
       id: "marketplace",
       label: "Mercado",
       href: "/marketplace",
-      icon: "⇄",
+      icon: <IconMarket />,
     });
   }
-  items.push({ id: "me", label: "Yo", href: "/me", icon: "☺" });
+  items.push({ id: "me", label: "Perfil", href: "/me", icon: <IconProfile /> });
   return items;
 }
 
@@ -51,11 +136,10 @@ function activeFromPath(pathname: string): NavItemId {
 export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, hasCapability, isFeatureEnabled } = useTenant();
+  const { theme, hasCapability, isFeatureEnabled, demoMember } = useTenant();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -64,49 +148,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
   };
 
   const brandName = theme.logoText;
+  const territoryName = theme.identity?.territoryName;
   const areaLabel =
-    currentMember.areaLabel ||
+    demoMember.areaLabel ||
     theme.identity?.defaultAreaName ||
     theme.logoText;
-
-  const navItems = useMemo(
-    () => buildNav({ marketplace: isFeatureEnabled("marketplace") }),
-    [isFeatureEnabled],
-  );
-
-  useEffect(() => {
-    for (const item of navItems) {
-      router.prefetch(item.href);
-    }
-  }, [navItems, router]);
-
-  const menuItems = useMemo(
-    () => [
-      {
-        id: "me",
-        label: "Mi espacio",
-        description: "Lo mío en la comunidad",
-        onSelect: () => router.push("/me"),
-      },
-      {
-        id: "calendar",
-        label: "Mi agenda",
-        description: "Actividades y reservas",
-        onSelect: () => router.push("/calendar"),
-      },
-      ...(isFeatureEnabled("incidents")
-        ? [
-            {
-              id: "report",
-              label: "Avisar de un problema",
-              description: "Cuéntanos qué ocurre",
-              onSelect: () => router.push("/report"),
-            },
-          ]
-        : []),
-    ],
-    [isFeatureEnabled, router],
-  );
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -236,33 +282,61 @@ export function MemberShell({ children }: { children: ReactNode }) {
     return actions;
   }, [hasCapability, isFeatureEnabled, router]);
 
+  const navItems = useMemo(
+    () =>
+      buildNav({
+        marketplace: isFeatureEnabled("marketplace"),
+        showCreate: createActions.length > 0,
+      }),
+    [createActions.length, isFeatureEnabled],
+  );
+
+  useEffect(() => {
+    const openCreate = () => setCreateOpen(true);
+    window.addEventListener("lcos:open-create", openCreate);
+    return () => window.removeEventListener("lcos:open-create", openCreate);
+  }, []);
+
+  useEffect(() => {
+    for (const item of navItems) {
+      if (item.id === "create") continue;
+      router.prefetch(item.href);
+    }
+  }, [navItems, router]);
+
   return (
     <>
       <AppShell
         brandName={brandName}
         items={navItems}
         activeId={activeFromPath(pathname)}
-        onNavigate={(item) => router.push(item.href)}
+        onNavigate={(item) => {
+          if (item.id === "create") {
+            setCreateOpen(true);
+            return;
+          }
+          router.push(item.href);
+        }}
         onCreate={() => setCreateOpen(true)}
-        showCreateFab={createActions.length > 0}
+        showCreateFab={false}
         header={
           <CommunityAppHeader
             brandName={brandName}
+            territoryName={territoryName}
             areaLabel={areaLabel}
-            weatherLabel="Soleado · 24°"
-            onMenuClick={() => setMenuOpen(true)}
+            weatherLabel="24° ☀"
+            notificationCount={3}
+            onNotifications={() =>
+              showToast("Las notificaciones llegan pronto")
+            }
+            profileImageUrl={demoMember.avatarUrl}
+            profileName={demoMember.displayName}
+            onProfileClick={() => router.push("/me")}
           />
         }
       >
         {children}
       </AppShell>
-      <AppMenuSheet
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        brandName={brandName}
-        areaLabel={areaLabel}
-        items={menuItems}
-      />
       <CreateSheet
         open={createOpen}
         onClose={() => setCreateOpen(false)}

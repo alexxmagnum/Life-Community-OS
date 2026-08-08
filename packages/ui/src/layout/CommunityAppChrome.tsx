@@ -3,59 +3,131 @@
 import type { ReactNode } from "react";
 
 import { cn } from "../lib/cn";
+import { useMediaLightbox, ZoomableImage } from "../media/MediaLightbox";
 
 /**
- * Persistent mobile app chrome — brand + place belonging.
- * Receives identity as props; never hardcodes a tenant name.
+ * Persistent mobile app chrome — private club entrance, not a data bar.
+ * Identity comes from tenant props only.
  */
 export type CommunityAppHeaderProps = {
   brandName: string;
+  territoryName?: string;
   areaLabel: string;
   weatherLabel?: string;
-  onMenuClick?: () => void;
+  notificationCount?: number;
+  onNotifications?: () => void;
+  profileImageUrl?: string;
+  profileName?: string;
+  onProfileClick?: () => void;
   className?: string;
 };
 
 export function CommunityAppHeader({
   brandName,
+  territoryName,
   areaLabel,
   weatherLabel,
-  onMenuClick,
+  notificationCount = 0,
+  onNotifications,
+  profileImageUrl,
+  profileName,
+  onProfileClick,
   className,
 }: CommunityAppHeaderProps) {
+  const lightbox = useMediaLightbox();
+  // Place once: area is enough in chrome; territory lives in Home copy.
+  const placeLabel = areaLabel || territoryName;
+
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-40 border-b border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]/95 backdrop-blur-md md:hidden",
+        "fixed inset-x-0 top-0 z-40 bg-[var(--color-surface-app)]/95 backdrop-blur-xl md:hidden",
         className,
       )}
     >
-      <div className="mx-auto flex max-w-[390px] items-center justify-between gap-3 px-4 pb-3 pt-[max(0.65rem,env(safe-area-inset-top))]">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-text-tertiary)]">
-            {brandName}
-          </p>
-          <p className="mt-0.5 truncate text-[16px] font-semibold leading-5 text-[var(--color-text-primary)]">
-            {areaLabel}
-          </p>
-          {weatherLabel ? (
-            <p className="mt-0.5 truncate text-[12px] text-[var(--color-text-secondary)]">
-              {weatherLabel}
-            </p>
-          ) : null}
-        </div>
-        {onMenuClick ? (
+      <div className="mx-auto flex max-w-[390px] items-center gap-2 px-4 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <p className="font-display max-w-[7.5rem] shrink-0 text-[13px] font-semibold leading-[1.15] tracking-tight text-[var(--color-action-primary)]">
+          {brandName}
+        </p>
+
+        {placeLabel ? (
+          <span className="inline-flex min-w-0 flex-1 items-center gap-1 rounded-full bg-white px-2.5 py-1.5 shadow-[0_1px_2px_rgba(26,31,28,0.05)]">
+            <span className="shrink-0 text-[11px] text-[var(--color-action-primary)]" aria-hidden>
+              ⌖
+            </span>
+            <span className="truncate text-[11px] font-bold text-[var(--color-text-primary)]">
+              {placeLabel}
+            </span>
+          </span>
+        ) : (
+          <span className="flex-1" />
+        )}
+
+        {weatherLabel ? (
+          <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--color-text-secondary)]">
+            {weatherLabel}
+          </span>
+        ) : null}
+
+        {onNotifications ? (
           <button
             type="button"
-            onClick={onMenuClick}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-text-primary)] transition-colors active:bg-[var(--color-surface-muted)]"
-            aria-label="Menú"
+            onClick={onNotifications}
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[var(--color-text-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.05)]"
+            aria-label="Notificaciones"
           >
-            <span className="flex flex-col gap-[5px]" aria-hidden>
-              <span className="block h-[1.5px] w-5 rounded-full bg-current" />
-              <span className="block h-[1.5px] w-5 rounded-full bg-current" />
-              <span className="block h-[1.5px] w-5 rounded-full bg-current" />
-            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M10 19a2 2 0 0 0 4 0"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+            {notificationCount > 0 ? (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-action-primary)] px-1 text-[9px] font-bold text-white ring-2 ring-[var(--color-surface-app)]">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
+
+        {onProfileClick || profileImageUrl ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (profileImageUrl && lightbox) {
+                lightbox.open(profileImageUrl, profileName ?? "");
+                return;
+              }
+              onProfileClick?.();
+            }}
+            className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--color-action-primary-subtle)] ring-1 ring-[var(--color-border-subtle)]"
+            aria-label={
+              profileImageUrl
+                ? `Ampliar foto${profileName ? ` de ${profileName}` : ""}`
+                : "Perfil"
+            }
+          >
+            {profileImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profileImageUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-[12px] font-semibold text-[var(--color-action-primary)]">
+                {(profileName ?? "?").slice(0, 1)}
+              </span>
+            )}
           </button>
         ) : null}
       </div>
@@ -145,65 +217,49 @@ export type CategoryFilterOption = {
 };
 
 export type CategoryFilterSelectProps = {
-  label?: string;
   value: string;
   options: CategoryFilterOption[];
   onChange: (value: string) => void;
   className?: string;
+  label?: string;
 };
 
-/** Filter control — not navigation. */
 export function CategoryFilterSelect({
-  label = "Filtrar",
   value,
   options,
   onChange,
   className,
+  label = "Categoría",
 }: CategoryFilterSelectProps) {
   return (
     <label className={cn("block", className)}>
       <span className="sr-only">{label}</span>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="min-h-[48px] w-full appearance-none rounded-[var(--radius-lg)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-4 pr-10 text-[15px] font-medium text-[var(--color-text-primary)] outline-none focus:border-[var(--color-border-strong)]"
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <span
-          className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[12px] text-[var(--color-text-tertiary)]"
-          aria-hidden
-        >
-          ▾
-        </span>
-      </div>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="min-h-[40px] w-full rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3 text-[14px] font-semibold text-[var(--color-text-primary)]"
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
     </label>
   );
 }
 
 export type HomeFeedCardProps = {
-  categoryLabel: string;
   title: string;
-  authorName: string;
-  authorAvatarUrl?: string;
-  timeLabel: string;
+  meta?: string;
   imageUrl?: string;
   onClick?: () => void;
   className?: string;
 };
 
-/** Chronological community announcement — daily app, not a landing card wall. */
 export function HomeFeedCard({
-  categoryLabel,
   title,
-  authorName,
-  authorAvatarUrl,
-  timeLabel,
+  meta,
   imageUrl,
   onClick,
   className,
@@ -213,46 +269,25 @@ export function HomeFeedCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]",
+        "flex w-full items-center gap-3 py-3 text-left",
         className,
       )}
     >
-      {imageUrl ? (
-        <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-        </div>
-      ) : null}
-      <span className="block space-y-2.5 px-4 py-4">
-        <span className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--color-action-primary)]">
-          {categoryLabel}
-        </span>
-        <span className="block font-[family-name:var(--font-display)] text-[21px] font-semibold leading-7 text-[var(--color-text-primary)]">
+      <span className="min-w-0 flex-1">
+        <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
           {title}
         </span>
-        <span className="flex items-center gap-2.5 pt-0.5">
-          {authorAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={authorAvatarUrl}
-              alt=""
-              className="h-8 w-8 rounded-full object-cover"
-            />
-          ) : (
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[12px] font-semibold text-[var(--color-action-primary)]">
-              {authorName.slice(0, 1)}
-            </span>
-          )}
-          <span className="min-w-0">
-            <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-              {authorName}
-            </span>
-            <span className="block text-[12px] text-[var(--color-text-tertiary)]">
-              {timeLabel}
-            </span>
+        {meta ? (
+          <span className="mt-1 block text-[13px] text-[var(--color-text-secondary)]">
+            {meta}
           </span>
-        </span>
+        ) : null}
       </span>
+      {imageUrl ? (
+        <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--color-surface-muted)]">
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -266,7 +301,6 @@ export type SponsoredFeedCardProps = {
   className?: string;
 };
 
-/** Single non-intrusive sponsor placement — always disclosed. */
 export function SponsoredFeedCard({
   badgeLabel,
   title,
@@ -276,45 +310,36 @@ export function SponsoredFeedCard({
   className,
 }: SponsoredFeedCardProps) {
   const body = (
-    <>
-      {imageUrl ? (
-        <div className="aspect-[21/9] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt=""
-            className="h-full w-full object-cover opacity-90"
-          />
-        </div>
-      ) : null}
-      <span className="block space-y-2 px-4 py-3.5">
-        <span className="inline-flex rounded-full bg-[var(--color-surface-elevated)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+    <span className="flex w-full items-center gap-3 py-4 text-left">
+      <span className="min-w-0 flex-1">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
           {badgeLabel}
         </span>
-        <span className="block text-[17px] font-semibold leading-6 text-[var(--color-text-primary)]">
+        <span className="mt-1 block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
           {title}
         </span>
         {authorName ? (
-          <span className="block text-[13px] text-[var(--color-text-secondary)]">
+          <span className="mt-1 block text-[12px] text-[var(--color-text-tertiary)]">
             {authorName}
           </span>
         ) : null}
       </span>
-    </>
+      {imageUrl ? (
+        <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[14px] bg-[var(--color-surface-muted)]">
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
+        </span>
+      ) : null}
+    </span>
   );
 
   const surface = cn(
-    "w-full overflow-hidden rounded-[var(--radius-xl)] border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface-muted)]/60 text-left",
+    "w-full border-b border-[var(--color-border-subtle)]/80 last:border-b-0",
     className,
   );
 
   if (onClick) {
     return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(surface, "transition-transform active:scale-[0.99]")}
-      >
+      <button type="button" onClick={onClick} className={surface}>
         {body}
       </button>
     );
@@ -328,7 +353,6 @@ export type HomeFeedSectionProps = {
   filter?: ReactNode;
   children: ReactNode;
   emptyLabel?: string;
-  className?: string;
 };
 
 export function HomeFeedSection({
@@ -336,27 +360,18 @@ export function HomeFeedSection({
   filter,
   children,
   emptyLabel,
-  className,
 }: HomeFeedSectionProps) {
-  const hasChildren = Boolean(
-    children && !(Array.isArray(children) && children.length === 0),
-  );
-
   return (
-    <section className={cn("space-y-4", className)}>
-      <div className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8 text-[var(--color-text-primary)]">
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-[22px] font-semibold text-[var(--color-text-primary)]">
           {title}
         </h2>
         {filter}
       </div>
-      {hasChildren ? (
-        <div className="flex flex-col gap-3.5">{children}</div>
-      ) : emptyLabel ? (
-        <p className="rounded-[var(--radius-xl)] bg-[var(--color-surface-muted)]/70 px-5 py-8 text-center text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          {emptyLabel}
-        </p>
-      ) : null}
+      {children ?? (
+        <p className="text-[15px] text-[var(--color-text-secondary)]">{emptyLabel}</p>
+      )}
     </section>
   );
 }

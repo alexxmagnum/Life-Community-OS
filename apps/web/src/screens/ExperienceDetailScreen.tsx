@@ -117,32 +117,37 @@ export function ExperienceDetailScreen({
         }
       />
 
-      <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur">
-        <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
-        <div className="flex gap-3">
-          <Button variant="secondary" className="flex-1" type="button">
-            Guardar
-          </Button>
-          <Button
-            variant="ghost"
-            className="flex-1"
-            type="button"
-            onClick={async () => {
-              if (typeof navigator !== "undefined" && navigator.share) {
-                try {
-                  await navigator.share({
-                    title: experience.title,
-                    text: experience.description,
-                    url: window.location.href,
-                  });
-                } catch {
-                  /* user cancelled */
+      {/* Clears sticky action bar so neighbours stay fully visible */}
+      <div className="h-[132px] shrink-0" aria-hidden />
+
+      <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-4 md:left-1/2 md:max-w-[390px] md:-translate-x-1/2 md:px-4">
+        <div className="space-y-3 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-app)]/95 p-3 shadow-[var(--shadow-elev-2)] backdrop-blur">
+          <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
+          <div className="flex gap-3">
+            <Button variant="secondary" className="flex-1" type="button">
+              Guardar
+            </Button>
+            <Button
+              variant="ghost"
+              className="flex-1"
+              type="button"
+              onClick={async () => {
+                if (typeof navigator !== "undefined" && navigator.share) {
+                  try {
+                    await navigator.share({
+                      title: experience.title,
+                      text: experience.description,
+                      url: window.location.href,
+                    });
+                  } catch {
+                    /* user cancelled */
+                  }
                 }
-              }
-            }}
-          >
-            Compartir
-          </Button>
+              }}
+            >
+              Compartir
+            </Button>
+          </div>
         </div>
       </div>
     </MobileScreen>

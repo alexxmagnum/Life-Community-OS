@@ -21,6 +21,8 @@ export const areas: { id: AreaId; label: string }[] = [
 ];
 
 export const currentMember = {
+  /** Domain Person id — residency derived from PropertyPersonRelationship (ADR-037). */
+  personId: "person-marta",
   displayName: "Marta",
   fullName: "Marta Ruiz",
   membershipLabel: "Miembro · Life Panoramica",
@@ -80,7 +82,7 @@ export const experiences = [
     id: "e2",
     title: "Mediterranean stretch class",
     when: "Sun 10:00",
-    where: "Terrace · Terraza",
+    where: "Terraza comunitaria",
     meta: "8 spots left",
     imageUrl:
       "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80",

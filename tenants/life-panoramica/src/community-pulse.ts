@@ -70,13 +70,16 @@ export function buildCommunityPulse(
           exp.participantCount > 0
             ? `${exp.participantCount} vecinos en “${exp.title}”`
             : `Plan abierto: ${exp.title}`,
-        context: `${exp.location} · ${exp.areaLabel}`,
+        context: [exp.location, exp.areaLabel]
+          .filter(Boolean)
+          .filter((part, i, arr) => arr.indexOf(part) === i)
+          .join(" · "),
         imageUrl: exp.imageUrl,
         personName: exp.organizer.name,
         personAvatarUrl: exp.organizer.avatarUrl,
         href: `/experiences/${exp.id}`,
         occurredAt: exp.startsAt,
-        weight: soon ? 40 : 20 + Math.min(exp.participantCount, 20),
+        weight: soon ? 48 : 32 + Math.min(exp.participantCount, 20),
         live: soon,
       });
     }
@@ -94,7 +97,7 @@ export function buildCommunityPulse(
         personAvatarUrl: item.authorAvatarUrl,
         href: "/marketplace",
         occurredAt: item.publishedAt,
-        weight: 28,
+        weight: 24,
       });
     }
   }
@@ -154,20 +157,23 @@ export function buildCommunityPulse(
 
   if (f.feed !== false) {
     for (const content of listPublishedCommunityContent().slice(0, 4)) {
+      if (content.type === "proposal") continue;
       const isOfficial = content.isOfficial || content.type === "announcement";
       raw.push({
         id: `pulse-content-${content.id}`,
         source: isOfficial ? "announcement" : "community_content",
         headline: isOfficial
-          ? `Aviso: ${content.title}`
-          : `${content.author.name} · ${content.title}`,
-        context: content.areaLabel,
+          ? content.title
+          : content.title,
+        context: isOfficial
+          ? content.body.slice(0, 90)
+          : `${content.author.name}${content.areaLabel ? ` · ${content.areaLabel}` : ""}`,
         imageUrl: content.imageUrl,
         personName: content.author.name,
         personAvatarUrl: content.author.avatarUrl,
         href: `/community/content/${content.id}`,
         occurredAt: content.publishedAt ?? content.createdAt,
-        weight: isOfficial ? 35 : 16,
+        weight: isOfficial ? 8 : 18,
       });
     }
   }

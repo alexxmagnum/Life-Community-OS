@@ -1,6 +1,9 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type MarketplaceItemCardProps = {
   kindLabel: string;
@@ -36,8 +39,7 @@ export function MarketplaceItemCard({
       )}
     >
       <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
       </div>
       <span className="block space-y-3 p-4">
         <span className="inline-flex rounded-full bg-[var(--color-action-accent-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-action-accent)]">
@@ -53,11 +55,11 @@ export function MarketplaceItemCard({
         ) : null}
         <span className="flex items-center gap-3 pt-1">
           {authorAvatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <ZoomableImage
               src={authorAvatarUrl}
-              alt=""
-              className="h-9 w-9 rounded-full object-cover"
+              alt={authorName ?? ""}
+              className="rounded-full"
+              wrapperClassName="h-9 w-9 shrink-0 rounded-full"
             />
           ) : authorName ? (
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[13px] font-semibold text-[var(--color-action-primary)]">
@@ -89,6 +91,8 @@ export type LocalPlaceCardProps = {
   recommendedBy?: string;
   verified?: boolean;
   trustNote?: string;
+  /** immersive = photo story; discovery = CERCA DE TI magazine tile */
+  variant?: "immersive" | "discovery";
   onClick?: () => void;
   className?: string;
 };
@@ -102,23 +106,54 @@ export function LocalPlaceCard({
   recommendedBy,
   verified,
   trustNote,
+  variant = "immersive",
   onClick,
   className,
 }: LocalPlaceCardProps) {
+  if (variant === "discovery") {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(
+          "w-[148px] shrink-0 overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] text-left shadow-[0_4px_16px_rgba(26,31,28,0.06)]",
+          className,
+        )}
+      >
+        <div className="aspect-square bg-[var(--color-surface-muted)]">
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
+        </div>
+        <span className="block space-y-1 px-3 py-3">
+          <span className="font-display block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+            {name}
+          </span>
+          <span className="block truncate text-[11px] text-[var(--color-text-tertiary)]">
+            {categoryLabel}
+            {areaLabel ? ` · ${areaLabel}` : ""}
+          </span>
+          {recommendedBy ? (
+            <span className="block text-[11px] leading-4 text-[var(--color-text-secondary)]">
+              Por {recommendedBy}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "w-[min(78vw,280px)] shrink-0 overflow-hidden rounded-[var(--radius-xl)] text-left",
+        "w-[min(78vw,280px)] shrink-0 overflow-hidden rounded-[24px] text-left shadow-[0_8px_24px_rgba(26,31,28,0.08)]",
         className,
       )}
     >
       <div className="relative aspect-[4/5] bg-[var(--color-surface-muted)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         <div
-          className="absolute inset-0 flex flex-col justify-end p-4"
+          className="pointer-events-none absolute inset-0 flex flex-col justify-end p-4"
           style={{
             background:
               "linear-gradient(transparent 40%, rgba(20,28,24,0.72))",
@@ -199,8 +234,7 @@ export function NeighbourTipCard({
     >
       {imageUrl ? (
         <div className="h-16 w-16 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
       ) : null}
       <span className="min-w-0">
@@ -251,8 +285,7 @@ export function ActivityCard({
     >
       <button type="button" className="block w-full text-left" onClick={onClick}>
         <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
         <div className="p-4">
           <h3 className="font-[family-name:var(--font-display)] text-[20px] font-semibold leading-6 text-[var(--color-text-primary)]">

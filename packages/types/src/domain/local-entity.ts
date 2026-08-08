@@ -1,4 +1,5 @@
 import type { DomainId } from "./ids";
+import type { VerificationLevel } from "./verification";
 
 /**
  * Platform Local Entity / Local Discovery capability (ADR-017 + ADR-032).
@@ -27,11 +28,19 @@ export type LocalEntity = {
   categoryLabel: string;
   /** Territory / area facet label — not a security boundary. */
   areaLabel: string;
+  communityAreaId?: DomainId;
+  /** Optional business/service Channel (ADR-035). */
+  channelId?: DomainId;
   /** Short story / human context — not a directory description field first. */
   story: string;
   imageUrl: string;
-  /** Directory-style verification signal when applicable (ADR-016/017). */
+  /**
+   * Prefer verificationLevel. Kept for backwards compatibility with demo catalogs.
+   * @deprecated Use verificationLevel
+   */
   verified?: boolean;
+  /** Directory-style verification signal (ADR-016/017/035). */
+  verificationLevel?: VerificationLevel;
   /** Neighbour who surfaces trust (ADR-032). */
   recommendedBy?: string;
   /** Optional soft trust line, tenant-authored. */

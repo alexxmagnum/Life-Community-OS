@@ -1,9 +1,10 @@
 "use client";
 
 import {
-  currentMember,
   profileShortcuts,
+  residencyDemoNarratives,
 } from "@life-community-os/tenant-life-panoramica";
+import type { DemoRole } from "@life-community-os/tenant-life-panoramica";
 import {
   ExploreLink,
   MobileScreen,
@@ -12,7 +13,6 @@ import {
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import type { DemoRole } from "@life-community-os/tenant-life-panoramica";
 
 const roles: { id: DemoRole; label: string }[] = [
   { id: "member", label: "Miembro" },
@@ -27,7 +27,27 @@ const roles: { id: DemoRole; label: string }[] = [
  */
 export function ProfileScreen() {
   const router = useRouter();
-  const { theme, hasCapability, isFeatureEnabled, role, setRole } = useTenant();
+  const {
+    theme,
+    hasCapability,
+    isFeatureEnabled,
+    role,
+    setRole,
+    demoMember,
+    demoMembers,
+    demoPersonId,
+    setDemoPersonId,
+  } = useTenant();
+
+  const narrative =
+    residencyDemoNarratives[demoMember.narrativeKey].summary;
+
+  const residencyTone =
+    demoMember.residencyStatusKind === "verified"
+      ? "text-[var(--color-success)]"
+      : demoMember.residencyStatusKind === "pending"
+        ? "text-[var(--color-warning)]"
+        : "text-[var(--color-action-primary)]";
 
   return (
     <MobileScreen>
@@ -38,17 +58,29 @@ export function ProfileScreen() {
       />
 
       <ProfileCard
-        name={currentMember.fullName}
-        membershipLabel={currentMember.membershipLabel}
+        name={demoMember.fullName}
+        membershipLabel={demoMember.membershipLabel}
         areaLabel={
-          currentMember.areaLabel ||
+          demoMember.areaLabel ||
           theme.identity?.defaultAreaName ||
           theme.logoText
         }
-        interests={currentMember.interests}
-        avatarUrl={currentMember.avatarUrl}
+        interests={demoMember.interests}
+        avatarUrl={demoMember.avatarUrl}
         onEdit={() => undefined}
       />
+
+      <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Estado de residencia
+        </p>
+        <p className={`mt-1 text-[15px] font-semibold ${residencyTone}`}>
+          {demoMember.residencyStatusLabel}
+        </p>
+        <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+          {narrative}
+        </p>
+      </section>
 
       <section className="space-y-3">
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
@@ -73,6 +105,13 @@ export function ProfileScreen() {
             label="Mis grupos"
             hint="Dónde participas"
             onClick={() => router.push("/community?tab=grupos")}
+          />
+        ) : null}
+        {isFeatureEnabled("communityChannels") ? (
+          <ExploreLink
+            label="Canales"
+            hint="Oficiales, comunidad y privados"
+            onClick={() => router.push("/community?tab=canales")}
           />
         ) : null}
         {isFeatureEnabled("feed") ? (
@@ -117,6 +156,32 @@ export function ProfileScreen() {
           onClick={() => undefined}
         />
       ) : null}
+
+      <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
+        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          Demo · persona / residencia
+        </p>
+        <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+          Valida acceso a recursos y canales privados. La reclamación pendiente
+          no otorga acceso.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {demoMembers.map((m) => (
+            <button
+              key={m.personId}
+              type="button"
+              onClick={() => setDemoPersonId(m.personId)}
+              className={
+                demoPersonId === m.personId
+                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+              }
+            >
+              {m.displayName}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
         <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">

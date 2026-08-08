@@ -1,5 +1,8 @@
+"use client";
+
 import { Button } from "../actions/Button";
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type ExperienceCardProps = {
   title: string;
@@ -42,14 +45,9 @@ export function ExperienceCard({
         aria-label={title}
       >
         <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
           {statusLabel ? (
-            <span className="absolute left-3 top-3 rounded-full bg-[var(--color-surface-elevated)]/95 px-3 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-[var(--color-surface-elevated)]/95 px-3 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
               {statusLabel}
             </span>
           ) : null}
@@ -160,8 +158,7 @@ export function AnnouncementCard({
     >
       {imageUrl ? (
         <div className="aspect-[16/9] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
       ) : null}
       <div className="border-l-4 border-[var(--color-accent-official)] p-4">
@@ -212,8 +209,7 @@ export function DiscoveryCard({
       )}
     >
       <div className="aspect-[4/3] bg-[var(--color-surface-muted)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
       </div>
       <div className="p-3">
         {badge ? (
@@ -260,8 +256,7 @@ export function ResourceCard({
     >
       <button type="button" className="block w-full text-left" onClick={onClick}>
         <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
         <div className="p-4">
           <h3 className="text-[18px] font-semibold text-[var(--color-text-primary)]">
@@ -310,8 +305,7 @@ export function RecommendationCard({
     >
       {imageUrl ? (
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-surface-muted)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
         </div>
       ) : null}
       <div>
@@ -354,8 +348,7 @@ export function GroupCard({
       )}
     >
       <div className="aspect-[4/3] bg-[var(--color-surface-muted)]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+        <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
       </div>
       <div className="p-3">
         <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">

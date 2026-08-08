@@ -6,7 +6,9 @@ import {
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
+  listChannels,
   listGroups,
+  canAccessChannel,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CommentPreview,
@@ -21,12 +23,13 @@ import {
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
+import { channelAccessLabel } from "@/lib/demo-access-copy";
 
 /**
  * Comunidad answers: "Who is here and what are people doing?"
  * Plans appear as community life in Descubrir — not as a Comunidad module.
  */
-type Chip = "conversaciones" | "grupos" | "propuestas";
+type Chip = "conversaciones" | "grupos" | "propuestas" | "canales";
 
 function decisionLabel(status?: string) {
   if (status === "closing_soon") return "Cierra pronto";
@@ -37,7 +40,12 @@ function decisionLabel(status?: string) {
 
 function resolveChip(raw: string | null): Chip | null {
   if (!raw) return null;
-  if (raw === "conversaciones" || raw === "grupos" || raw === "propuestas") {
+  if (
+    raw === "conversaciones" ||
+    raw === "grupos" ||
+    raw === "propuestas" ||
+    raw === "canales"
+  ) {
     return raw;
   }
   const legacy: Record<string, Chip> = {
@@ -46,6 +54,7 @@ function resolveChip(raw: string | null): Chip | null {
     groups: "grupos",
     decide: "propuestas",
     experiences: "conversaciones",
+    channels: "canales",
   };
   return legacy[raw] ?? null;
 }
@@ -53,7 +62,7 @@ function resolveChip(raw: string | null): Chip | null {
 export function CommunityScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const {
     feedItems,
     getMyReaction,
@@ -75,6 +84,13 @@ export function CommunityScreen() {
         id: "grupos" as const,
         label: "Grupos",
         enabled: isFeatureEnabled("groups"),
+      },
+      {
+        id: "canales" as const,
+        label: "Canales",
+        enabled:
+          isFeatureEnabled("communityChannels") ||
+          isFeatureEnabled("officialChannels"),
       },
       {
         id: "propuestas" as const,
@@ -244,6 +260,69 @@ export function CommunityScreen() {
                 imageUrl={group.imageUrl}
               />
             ))}
+          </div>
+        )
+      ) : null}
+
+      {active === "canales" ? (
+        !hasCapability(CAPABILITIES.channelView) ? (
+          <EmptyState
+            title="Sin acceso"
+            description="Los canales no están disponibles para tu cuenta."
+          />
+        ) : (
+          <div className="space-y-3">
+            <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">
+              Organización de la información — no es un chat. Los canales
+              privados exigen residencia verificada.
+            </p>
+            {listChannels().map((channel) => {
+              const access = canAccessChannel(channel, demoPersonId);
+              const label = channelAccessLabel({
+                allowed: access.allowed,
+                reason: access.reason,
+                requiresVerifiedResidency: channel.requiresVerifiedResidency,
+                type: channel.type,
+              });
+              const toneClass =
+                label.tone === "ok"
+                  ? "text-[var(--color-success)]"
+                  : label.tone === "blocked"
+                    ? "text-[var(--color-danger)]"
+                    : "text-[var(--color-action-primary)]";
+              return (
+                <article
+                  key={channel.id}
+                  className={`rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)] ${
+                    label.locked ? "opacity-80" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                        {channel.type}
+                      </p>
+                      <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                        {channel.name}
+                      </h3>
+                      {channel.description ? (
+                        <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                          {channel.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    {label.locked ? (
+                      <span className="shrink-0 rounded-full bg-[var(--color-danger-subtle)] px-2 py-1 text-[11px] font-bold text-[var(--color-danger)]">
+                        Bloqueado
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className={`mt-3 text-[13px] font-semibold ${toneClass}`}>
+                    {label.badge}
+                  </p>
+                </article>
+              );
+            })}
           </div>
         )
       ) : null}

@@ -1,7 +1,10 @@
+"use client";
+
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { Button } from "../actions/Button";
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type ParticipationStatusVariant =
   | "available"
@@ -161,11 +164,11 @@ export function CalendarEventCard({
         aria-hidden
       />
       {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <ZoomableImage
           src={imageUrl}
           alt=""
-          className="h-10 w-10 rounded-[var(--radius-sm)] object-cover"
+          className="rounded-[var(--radius-sm)]"
+          wrapperClassName="h-10 w-10 shrink-0"
         />
       ) : null}
       <span className="min-w-0 flex-1">

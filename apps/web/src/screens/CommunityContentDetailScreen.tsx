@@ -15,6 +15,7 @@ import {
   MobileScreen,
   ReactionBar,
   ScreenBack,
+  ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -115,11 +116,12 @@ export function CommunityContentDetailScreen({
 
       <article className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
         {content.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <ZoomableImage
             src={content.imageUrl}
             alt=""
-            className="aspect-[16/9] w-full object-cover"
+            fill={false}
+            className="aspect-[16/9] w-full"
+            wrapperClassName="h-auto w-full"
           />
         ) : null}
         <div className="space-y-4 p-5">

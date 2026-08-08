@@ -1,6 +1,6 @@
 /**
- * Capability keys — Experience, Community content, Resources (TECH-002–004).
- * Foundation stub — real AuthZ remains Platform RBAC (ADR-012).
+ * Capability keys — Community Communication Foundation stub (ADR-012).
+ * Real AuthZ remains Platform RBAC; this maps demo roles → capability strings.
  */
 export const CAPABILITIES = {
   experienceView: "community.experience.view",
@@ -19,6 +19,8 @@ export const CAPABILITIES = {
   resourceView: "community.resource.view",
   resourceReserve: "community.resource.reserve",
   resourceManage: "community.resource.manage",
+  /** Territorial resource inventory — Authority / admin only. */
+  resourceCreateTerritorial: "community.resource.create_territorial",
   /** Alias used by earlier Create Sheet wiring */
   reservationCreate: "community.resource.reserve",
   proposalCreate: "community.proposal.create",
@@ -32,6 +34,11 @@ export const CAPABILITIES = {
   groupCreate: "community.group.create",
   marketplaceView: "community.marketplace.view",
   marketplaceCreate: "community.marketplace.create",
+  channelView: "community.channel.view",
+  channelCreate: "community.channel.create",
+  channelPublish: "community.channel.publish",
+  residencyClaim: "community.residency.claim",
+  residencyVerifyReview: "community.residency.verify_review",
   manageEnter: "community.manage.enter",
 } as const;
 
@@ -62,6 +69,8 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.groupCreate,
   CAPABILITIES.marketplaceView,
   CAPABILITIES.marketplaceCreate,
+  CAPABILITIES.channelView,
+  CAPABILITIES.residencyClaim,
 ];
 
 const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
@@ -71,15 +80,24 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.experienceCreate,
     CAPABILITIES.experienceManage,
     CAPABILITIES.resourceManage,
+    CAPABILITIES.channelPublish,
     CAPABILITIES.manageEnter,
   ],
-  moderator: [...memberCaps, CAPABILITIES.manageEnter],
+  moderator: [
+    ...memberCaps,
+    CAPABILITIES.manageEnter,
+    CAPABILITIES.residencyVerifyReview,
+  ],
   administrator: [
     ...memberCaps,
     CAPABILITIES.experienceCreate,
     CAPABILITIES.experienceManage,
     CAPABILITIES.resourceManage,
+    CAPABILITIES.resourceCreateTerritorial,
     CAPABILITIES.announcementPublishOfficial,
+    CAPABILITIES.channelCreate,
+    CAPABILITIES.channelPublish,
+    CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.manageEnter,
   ],
 };

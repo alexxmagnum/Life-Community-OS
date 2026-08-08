@@ -1,8 +1,11 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Children } from "react";
 
 import { Avatar } from "../people/Avatar";
 import { cn } from "../lib/cn";
+import { ZoomableImage } from "../media/MediaLightbox";
 
 export type AuthorCardProps = {
   name: string;
@@ -259,14 +262,13 @@ export function CommunityPostCard({
         ) : null}
       </button>
       {imageUrl ? (
-        <button type="button" onClick={onOpen} className="block w-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={imageUrl}
-            alt=""
-            className="aspect-[16/9] w-full object-cover"
-          />
-        </button>
+        <ZoomableImage
+          src={imageUrl}
+          alt=""
+          fill={false}
+          className="aspect-[16/9] w-full"
+          wrapperClassName="h-auto w-full"
+        />
       ) : null}
       {commentPreview ? (
         <div className="space-y-2 px-4 pb-2">{commentPreview}</div>

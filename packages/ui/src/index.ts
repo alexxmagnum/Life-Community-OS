@@ -51,6 +51,11 @@ export {
   MediaPreviewPlaceholder,
 } from "./media/Media";
 export {
+  MediaLightboxProvider,
+  ZoomableImage,
+  useMediaLightbox,
+} from "./media/MediaLightbox";
+export {
   ExperienceHero,
   ExperienceMeta,
 } from "./experience/ExperienceHero";
@@ -93,7 +98,9 @@ export {
   ExperiencePreviewCard,
   PlacePreviewCard,
   QuickActionBar,
+  GlobalAppSearch,
   HomeSection,
+  type GlobalAppSearchHit,
 } from "./territory/TerritoryHome";
 export {
   MarketplaceItemCard,

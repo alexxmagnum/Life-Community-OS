@@ -62,21 +62,27 @@ export function ParticipantList({
         {totalCount} {totalCount === 1 ? "persona" : "personas"}
       </p>
       {shown.length > 0 ? (
-        <div className="mt-3 flex items-center">
-          {shown.map((p, i) => (
-            <span
-              key={p.id}
-              className="relative"
-              style={{ marginLeft: i === 0 ? 0 : -10, zIndex: shown.length - i }}
-            >
-              <Avatar src={p.avatarUrl} alt={p.name} size="sm" />
-            </span>
-          ))}
-          {extra > 0 ? (
-            <span className="ml-2 text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              +{extra}
-            </span>
-          ) : null}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <div className="flex items-center">
+            {shown.map((p, i) => (
+              <span
+                key={p.id}
+                className="relative"
+                style={{ marginLeft: i === 0 ? 0 : -10, zIndex: shown.length - i }}
+              >
+                <Avatar src={p.avatarUrl} alt={p.name} size="sm" />
+              </span>
+            ))}
+            {extra > 0 ? (
+              <span className="ml-2 text-[13px] font-semibold text-[var(--color-text-secondary)]">
+                +{extra}
+              </span>
+            ) : null}
+          </div>
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            {shown.map((p) => p.name).join(", ")}
+            {extra > 0 ? ` y ${extra} más` : ""}
+          </p>
         </div>
       ) : (
         <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
