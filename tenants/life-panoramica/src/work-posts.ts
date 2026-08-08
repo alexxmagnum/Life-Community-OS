@@ -257,6 +257,23 @@ export function listWorkPostsForContribution(
   return merged;
 }
 
+/**
+ * Resolve a work post by id (catalog + session creates).
+ */
+export function getWorkPostById(
+  workPostId: string,
+  options: { includeSessionCreated?: boolean } = {},
+): WorkPostListing | undefined {
+  const target = workPostId.trim();
+  if (!target) return undefined;
+  const includeSession =
+    options.includeSessionCreated ?? typeof window !== "undefined";
+  const post = listWorkPostsForContribution({
+    includeSessionCreated: includeSession,
+  }).find((item) => item.id === target);
+  return post ? toListing(post) : undefined;
+}
+
 export function listWorkPosts(options?: {
   type?: WorkPostType;
   query?: string;

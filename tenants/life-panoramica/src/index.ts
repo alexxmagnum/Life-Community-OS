@@ -27,6 +27,7 @@ export * from "./community-content";
 export * from "./resources";
 export * from "./marketplace";
 export * from "./work-posts";
+export * from "./work-conversations";
 export * from "./groups";
 export * from "./local-places";
 export * from "./community-pulse";

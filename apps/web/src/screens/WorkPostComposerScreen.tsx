@@ -84,7 +84,7 @@ export function WorkPostComposerScreen() {
 
     setSubmitting(true);
     try {
-      createWorkPost({
+      const created = createWorkPost({
         type,
         title: trimmedTitle,
         description: trimmedDescription,
@@ -95,7 +95,7 @@ export function WorkPostComposerScreen() {
         authorName: demoMember.displayName,
         authorAvatarUrl: demoMember.avatarUrl,
       });
-      router.push("/services/work");
+      router.push(`/services/work/${created.id}`);
     } catch {
       setError("No se pudo publicar el anuncio. Inténtalo de nuevo.");
       setSubmitting(false);

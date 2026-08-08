@@ -33,7 +33,8 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
  */
 export function ServicesCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, isModuleEnabled, hasCapability } =
+    useTenant();
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
   const [workPosts, setWorkPosts] = useState<WorkPostListing[]>([]);
@@ -49,6 +50,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isFeatureEnabled("marketplace") &&
     hasCapability(CAPABILITIES.marketplaceView);
   const canWork =
+    isModuleEnabled("services") &&
     (isFeatureEnabled("work") || isFeatureEnabled("services")) &&
     hasCapability(CAPABILITIES.localView);
 
@@ -175,7 +177,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <ul className="space-y-3">
           {workPosts.map((item) => (
             <li key={item.id}>
-              <article className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[var(--shadow-elev-1)]">
+              <button
+                type="button"
+                onClick={() => router.push(`/services/work/${item.id}`)}
+                className="w-full rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-primary)]">
                     {workPostTypeLabel(item.type)}
@@ -198,7 +204,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
                 <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
                   {formatContentWhen(item.createdAt)}
                 </p>
-              </article>
+              </button>
             </li>
           ))}
         </ul>
