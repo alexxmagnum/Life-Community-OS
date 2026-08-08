@@ -20,7 +20,7 @@ import {
   type PublishingStatus,
   type ReactionKind,
 } from "@life-community-os/tenant-life-panoramica";
-import { currentMember } from "@life-community-os/tenant-life-panoramica";
+import { useTenant } from "./TenantProvider";
 
 const STORAGE_KEY = "lcos:community-interactions";
 
@@ -102,6 +102,7 @@ export function CommunityInteractionProvider({
 }: {
   children: ReactNode;
 }) {
+  const { demoPersonId, demoMember } = useTenant();
   const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
   const [hydrated, setHydrated] = useState(false);
 
@@ -166,33 +167,36 @@ export function CommunityInteractionProvider({
     });
   }, []);
 
-  const addComment = useCallback((contentId: string, body: string) => {
-    const trimmed = body.trim();
-    if (!trimmed) return;
-    const author: CommunityAuthor = {
-      id: "self",
-      name: currentMember.displayName,
-      avatarUrl: currentMember.avatarUrl,
-    };
-    const mentionNames = Array.from(
-      trimmed.matchAll(/@([A-Za-zÀ-ÿ]+)/g),
-      (m) => m[1]!,
-    );
-    const comment: CommunityComment = {
-      id: `local-c-${Date.now()}`,
-      author,
-      body: trimmed,
-      createdAt: new Date().toISOString(),
-      mentionNames: mentionNames.length ? mentionNames : undefined,
-    };
-    setOverrides((prev) => ({
-      ...prev,
-      comments: {
-        ...prev.comments,
-        [contentId]: [...(prev.comments[contentId] ?? []), comment],
-      },
-    }));
-  }, []);
+  const addComment = useCallback(
+    (contentId: string, body: string) => {
+      const trimmed = body.trim();
+      if (!trimmed) return;
+      const author: CommunityAuthor = {
+        id: demoPersonId,
+        name: demoMember.displayName,
+        avatarUrl: demoMember.avatarUrl,
+      };
+      const mentionNames = Array.from(
+        trimmed.matchAll(/@([A-Za-zÀ-ÿ]+)/g),
+        (m) => m[1]!,
+      );
+      const comment: CommunityComment = {
+        id: `local-c-${Date.now()}`,
+        author,
+        body: trimmed,
+        createdAt: new Date().toISOString(),
+        mentionNames: mentionNames.length ? mentionNames : undefined,
+      };
+      setOverrides((prev) => ({
+        ...prev,
+        comments: {
+          ...prev.comments,
+          [contentId]: [...(prev.comments[contentId] ?? []), comment],
+        },
+      }));
+    },
+    [demoMember.avatarUrl, demoMember.displayName, demoPersonId],
+  );
 
   const toggleSave = useCallback((contentId: string) => {
     setOverrides((prev) => {
@@ -235,11 +239,11 @@ export function CommunityInteractionProvider({
         status,
         isOfficial: false,
         author: {
-          id: "self",
-          name: currentMember.fullName,
-          avatarUrl: currentMember.avatarUrl,
+          id: demoPersonId,
+          name: demoMember.fullName,
+          avatarUrl: demoMember.avatarUrl,
         },
-        areaLabel: input.areaLabel ?? currentMember.areaLabel,
+        areaLabel: input.areaLabel ?? demoMember.areaLabel,
         createdAt: now,
         publishedAt: now,
         commentCount: 0,
@@ -252,7 +256,12 @@ export function CommunityInteractionProvider({
       }));
       return item;
     },
-    [],
+    [
+      demoMember.areaLabel,
+      demoMember.avatarUrl,
+      demoMember.fullName,
+      demoPersonId,
+    ],
   );
 
   const value = useMemo(

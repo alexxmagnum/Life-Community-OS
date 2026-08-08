@@ -14,6 +14,12 @@ import {
   listEntitiesNearYou,
   listTrustedHelpEntities,
 } from "@life-community-os/types";
+import {
+  DEMO_PERSON_ANA,
+  DEMO_PERSON_CLARA,
+  DEMO_PERSON_ELENA,
+  DEMO_PERSON_LUIS,
+} from "./demo-ids";
 
 /** @deprecated Prefer LocalEntityKind from @life-community-os/types */
 export type LocalPlaceKind = LocalEntityKind;
@@ -149,6 +155,7 @@ export const localRecommendationCatalog: LocalRecommendation[] = [
     id: "rec-lock",
     body: "Las mejores llaves el mismo día — pregunta por Cerrajero Costa.",
     authorName: "Elena",
+    authorPersonId: DEMO_PERSON_ELENA,
     imageUrl:
       "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=400&q=80",
     relatedEntityId: "lp-lock",
@@ -158,6 +165,7 @@ export const localRecommendationCatalog: LocalRecommendation[] = [
     id: "rec-terraza",
     body: "Si quieres cena al aire libre sin reservar con semanas, Terraza del Valle casi siempre saca mesa.",
     authorName: "Clara",
+    authorPersonId: DEMO_PERSON_CLARA,
     imageUrl:
       "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=400&q=80",
     relatedEntityId: "lp-terraza",
@@ -167,6 +175,7 @@ export const localRecommendationCatalog: LocalRecommendation[] = [
     id: "rec-path",
     body: "El Camino de pinos al atardecer es el secreto mejor guardado para desconectar.",
     authorName: "Ana",
+    authorPersonId: DEMO_PERSON_ANA,
     imageUrl:
       "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=400&q=80",
     relatedEntityId: "lp-path",
@@ -176,6 +185,7 @@ export const localRecommendationCatalog: LocalRecommendation[] = [
     id: "rec-pan",
     body: "El pan de Horno Los Pinos a las 8:00 — merece la pena madrugar un poco.",
     authorName: "Luis",
+    authorPersonId: DEMO_PERSON_LUIS,
     imageUrl:
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=80",
     relatedEntityId: "lp-pan",

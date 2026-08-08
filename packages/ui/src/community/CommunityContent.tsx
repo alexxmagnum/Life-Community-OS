@@ -273,6 +273,7 @@ export function CommunityPostCard({
         <ZoomableImage
           src={imageUrl}
           alt=""
+          zoomable
           fill={false}
           className="aspect-[16/9] w-full"
           wrapperClassName="h-auto w-full"
@@ -301,6 +302,132 @@ export function CommunityFeed({
   return (
     <div className={cn("space-y-4", className)}>
       {count > 0 ? children : empty}
+    </div>
+  );
+}
+
+export type CommunityConversationRowProps = {
+  title: string;
+  body: string;
+  meta?: string;
+  official?: boolean;
+  typeLabel?: string;
+  open: boolean;
+  onToggle: () => void;
+  onOpen?: () => void;
+  reactionBar?: ReactNode;
+  className?: string;
+};
+
+/**
+ * Compact accordion row — title only when collapsed.
+ * Prefer for conversation lists over full CommunityPostCard density.
+ */
+export function CommunityConversationRow({
+  title,
+  body,
+  meta,
+  official,
+  typeLabel,
+  open,
+  onToggle,
+  onOpen,
+  reactionBar,
+  className,
+}: CommunityConversationRowProps) {
+  return (
+    <div
+      className={cn(
+        "border-b border-[var(--color-border-subtle)] last:border-b-0",
+        official && "border-l-[3px] border-l-[var(--color-accent-official)]",
+        className,
+      )}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left active:bg-black/[0.02]"
+      >
+        <span className="min-w-0 flex-1">
+          {typeLabel || official ? (
+            <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+              {[official ? "Oficial" : null, typeLabel]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          ) : null}
+          <span className="block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+            {title}
+          </span>
+        </span>
+        <span
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--color-text-tertiary)] transition-transform duration-200",
+            open && "rotate-180 text-[var(--color-action-primary)]",
+          )}
+          aria-hidden
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 9l6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+
+      {open ? (
+        <div className="space-y-3 px-4 pb-3.5 pt-0">
+          {meta ? (
+            <p className="text-[12px] text-[var(--color-text-tertiary)]">
+              {meta}
+            </p>
+          ) : null}
+          <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
+            {body}
+          </p>
+          {onOpen ? (
+            <button
+              type="button"
+              onClick={onOpen}
+              className="text-[13px] font-semibold text-[var(--color-action-primary)]"
+            >
+              Abrir conversación ›
+            </button>
+          ) : null}
+          {reactionBar ? <div>{reactionBar}</div> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export type CommunityConversationListProps = {
+  children: ReactNode;
+  empty?: ReactNode;
+  className?: string;
+};
+
+/** Single elevated list shell for accordion conversation rows. */
+export function CommunityConversationList({
+  children,
+  empty,
+  className,
+}: CommunityConversationListProps) {
+  const count = Children.count(children);
+  if (count === 0) return <>{empty}</>;
+  return (
+    <div
+      className={cn(
+        "overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]",
+        className,
+      )}
+    >
+      {children}
     </div>
   );
 }

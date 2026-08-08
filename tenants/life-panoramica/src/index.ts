@@ -11,6 +11,8 @@ export {
 } from "./features";
 export * from "./demo-ids";
 export * from "./demo-members";
+export * from "./person-id-alignment";
+export * from "./contribution";
 export * from "./community-areas";
 export * from "./official-entities";
 export * from "./channels";

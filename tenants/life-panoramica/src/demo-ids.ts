@@ -20,3 +20,15 @@ export const DEMO_PERSON_MARTA = "person-marta" as const;
 export const DEMO_PERSON_JOHN = "person-john" as const;
 export const DEMO_PERSON_LUCIA = "person-lucia" as const;
 export const DEMO_PERSON_OWNER_ALDEA = "person-owner-aldea" as const;
+
+/**
+ * Catalog Person ids used in demo content (not Profile switcher members).
+ * Stable join keys for contribution aggregation — not User Accounts.
+ */
+export const DEMO_PERSON_ANA = "person-ana" as const;
+export const DEMO_PERSON_INES = "person-ines" as const;
+export const DEMO_PERSON_ELENA = "person-elena" as const;
+export const DEMO_PERSON_JORDI = "person-jordi" as const;
+export const DEMO_PERSON_LUIS = "person-luis" as const;
+export const DEMO_PERSON_CLARA = "person-clara" as const;
+export const DEMO_PERSON_TOM = "person-tom" as const;

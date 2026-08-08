@@ -89,6 +89,16 @@ export type {
 } from "./diffusion";
 export type { ParticipationTrust } from "./participation-trust";
 export type {
+  RecognitionState,
+  ContributionSignals,
+  ContributionSignalsIssue,
+} from "./contribution";
+export {
+  emptyContributionSignals,
+  validateContributionSignals,
+  deriveRecognitionState,
+} from "./contribution";
+export type {
   CommunityGroup,
   CommunityGroupType,
   CommunityGroupVisibility,

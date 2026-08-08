@@ -10,7 +10,8 @@ import {
   listGroups,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  CommentPreview,
+  CommunityConversationList,
+  CommunityConversationRow,
   CommunityFeed,
   CommunityPostCard,
   EmptyState,
@@ -111,6 +112,10 @@ export function CommunityScreen() {
       ? initial
       : chips[0]?.id ?? "conversaciones",
   );
+  /** One open conversation row at a time — keeps the list compact. */
+  const [openConversationId, setOpenConversationId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const next = resolveChip(tabParam);
@@ -203,7 +208,7 @@ export function CommunityScreen() {
       />
 
       {active === "conversaciones" ? (
-        <CommunityFeed
+        <CommunityConversationList
           empty={
             <EmptyState
               title="Todavía no hay conversaciones"
@@ -212,40 +217,38 @@ export function CommunityScreen() {
           }
         >
           {conversations.map((item) => {
-            const preview = item.comments[0];
             const linked = item.linkedExperienceId
               ? getExperienceById(item.linkedExperienceId)
               : undefined;
+            const when = formatContentWhen(
+              item.publishedAt ?? item.createdAt,
+            );
+            const metaBits = [
+              item.author.name,
+              when,
+              item.areaLabel,
+              linked ? `Actividad · ${linked.title}` : null,
+            ].filter(Boolean);
             return (
-              <CommunityPostCard
+              <CommunityConversationRow
                 key={item.id}
                 title={item.title}
                 body={item.body}
                 typeLabel={contentTypeLabel(item.type)}
                 official={item.isOfficial}
-                authorName={item.author.name}
-                authorAvatarUrl={item.author.avatarUrl}
-                meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
-                areaLabel={item.areaLabel}
-                imageUrl={item.imageUrl}
-                decisionStatus={decisionLabel(item.decisionStatus)}
-                experienceLinkLabel={linked?.title}
-                onOpen={() => router.push(`/community/content/${item.id}`)}
-                commentPreview={
-                  preview ? (
-                    <CommentPreview
-                      authorName={preview.author.name}
-                      body={preview.body}
-                      avatarUrl={preview.author.avatarUrl}
-                      meta={formatContentWhen(preview.createdAt)}
-                    />
-                  ) : null
+                meta={metaBits.join(" · ")}
+                open={openConversationId === item.id}
+                onToggle={() =>
+                  setOpenConversationId((current) =>
+                    current === item.id ? null : item.id,
+                  )
                 }
+                onOpen={() => router.push(`/community/content/${item.id}`)}
                 reactionBar={renderReactionBar(item)}
               />
             );
           })}
-        </CommunityFeed>
+        </CommunityConversationList>
       ) : null}
 
       {active === "grupos" ? (

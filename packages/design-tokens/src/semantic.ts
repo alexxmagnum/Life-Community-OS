@@ -90,5 +90,7 @@ export type TenantBrandTokens = {
   imagery: {
     splash: string;
     homeHero: string;
+    /** Optional brand mark / lockup for chrome (header, menu). */
+    logo?: string;
   };
 };

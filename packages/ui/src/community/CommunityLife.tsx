@@ -58,6 +58,7 @@ export function MarketplaceItemCard({
             <ZoomableImage
               src={authorAvatarUrl}
               alt={authorName ?? ""}
+              zoomable
               className="rounded-full"
               wrapperClassName="h-9 w-9 shrink-0 rounded-full"
             />
@@ -196,7 +197,7 @@ export function LocalLifeRail({ children, className }: LocalLifeRailProps) {
   return (
     <div
       className={cn(
-        "-mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none]",
+        "-mx-2.5 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none]",
         className,
       )}
     >

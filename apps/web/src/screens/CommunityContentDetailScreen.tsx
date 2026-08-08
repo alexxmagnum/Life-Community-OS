@@ -119,6 +119,7 @@ export function CommunityContentDetailScreen({
           <ZoomableImage
             src={content.imageUrl}
             alt=""
+            zoomable
             fill={false}
             className="aspect-[16/9] w-full"
             wrapperClassName="h-auto w-full"

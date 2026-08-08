@@ -120,7 +120,7 @@ export function ExperienceDetailScreen({
       {/* Clears sticky action bar so neighbours stay fully visible */}
       <div className="h-[132px] shrink-0" aria-hidden />
 
-      <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-4 md:left-1/2 md:max-w-[390px] md:-translate-x-1/2 md:px-4">
+      <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-2.5 md:left-1/2 md:max-w-[960px] md:-translate-x-1/2 md:px-8">
         <div className="space-y-3 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-app)]/95 p-3 shadow-[var(--shadow-elev-2)] backdrop-blur">
           <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
           <div className="flex gap-3">

@@ -79,6 +79,8 @@ export {
   CommentPreview,
   CommunityPostCard,
   CommunityFeed,
+  CommunityConversationRow,
+  CommunityConversationList,
 } from "./community/CommunityContent";
 export { CreatePostSheet } from "./community/CreatePostSheet";
 export {

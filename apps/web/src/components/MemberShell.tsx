@@ -21,6 +21,7 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
+import { BrandSplash } from "@/components/BrandSplash";
 
 function IconHome() {
   return (
@@ -159,6 +160,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   };
 
   const brandName = theme.logoText;
+  const brandLogoUrl = theme.imagery.logo;
 
   const menuCategories = useMemo((): AppMenuCategory[] => {
     const go = (href: string) => () => router.push(href);
@@ -623,8 +625,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <BrandSplash />
       <AppShell
         brandName={brandName}
+        brandLogoUrl={brandLogoUrl}
         items={navItems}
         activeId={activeFromPath(pathname)}
         onNavigate={(item) => {
@@ -639,6 +643,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         header={
           <CommunityAppHeader
             brandName={brandName}
+            brandLogoUrl={brandLogoUrl}
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"
@@ -659,6 +664,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         brandName={brandName}
+        brandLogoUrl={brandLogoUrl}
         categories={menuCategories}
         searchPlaceholder={`Buscar en ${brandName}`}
       />

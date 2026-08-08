@@ -3,6 +3,13 @@
  * Tenant mock catalog; same shape for any tenant. Ready for future API.
  */
 
+import {
+  DEMO_PERSON_ANA,
+  DEMO_PERSON_ELENA,
+  DEMO_PERSON_JORDI,
+  DEMO_PERSON_LUIS,
+} from "./demo-ids";
+
 export type MarketplaceListingKind =
   | "sell"
   | "buy"
@@ -17,6 +24,8 @@ export type MarketplaceListing = {
   priceLabel?: string;
   areaLabel: string;
   authorName: string;
+  /** Person id when known — contribution join key (Phase C.4). */
+  authorPersonId?: string;
   authorAvatarUrl?: string;
   imageUrl: string;
   publishedAt: string;
@@ -38,6 +47,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     priceLabel: "80 €",
     areaLabel: "Life Panoramica",
     authorName: "Elena",
+    authorPersonId: DEMO_PERSON_ELENA,
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80",
     imageUrl:
@@ -52,6 +62,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
       "La dejamos gratis a una familia del territorio. Ruedines incluidos.",
     areaLabel: "Los pinos",
     authorName: "Jordi",
+    authorPersonId: DEMO_PERSON_JORDI,
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
     imageUrl:
@@ -66,6 +77,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
       "Necesito colgar dos cuadros este finde. Devuelvo el mismo día.",
     areaLabel: "Centro",
     authorName: "Ana",
+    authorPersonId: DEMO_PERSON_ANA,
     authorAvatarUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
     imageUrl:
@@ -79,6 +91,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     description: "Preferible madera o hierro. Presupuesto flexible.",
     areaLabel: "El pinar",
     authorName: "Luis",
+    authorPersonId: DEMO_PERSON_LUIS,
     imageUrl:
       "https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?auto=format&fit=crop&w=900&q=80",
     publishedAt: hoursAgo(30),

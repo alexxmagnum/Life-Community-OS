@@ -109,6 +109,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
           <ZoomableImage
             src={hub.imageUrl}
             alt={hub.label}
+            zoomable
             wrapperClassName="absolute inset-0 h-full w-full"
           />
           <div

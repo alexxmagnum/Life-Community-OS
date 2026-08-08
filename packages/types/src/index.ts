@@ -54,3 +54,10 @@ export {
   validateResidencyVerification,
   canActivateRelationshipFromVerification,
 } from "./domain/residency-verification";
+
+/** Contribution recognition projection (Phase C.4) — not AuthZ. */
+export {
+  emptyContributionSignals,
+  validateContributionSignals,
+  deriveRecognitionState,
+} from "./domain/contribution";

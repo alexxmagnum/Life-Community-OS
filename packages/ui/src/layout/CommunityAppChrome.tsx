@@ -8,7 +8,7 @@ import {
 } from "react";
 
 import { cn } from "../lib/cn";
-import { ZoomableImage } from "../media/MediaLightbox";
+import { useMediaLightbox, ZoomableImage } from "../media/MediaLightbox";
 
 /**
  * Global mobile app header — brand · notifications · Community Explorer.
@@ -16,6 +16,8 @@ import { ZoomableImage } from "../media/MediaLightbox";
  */
 export type CommunityAppHeaderProps = {
   brandName: string;
+  /** Tenant brand mark — replaces text when provided. */
+  brandLogoUrl?: string;
   onBrandClick?: () => void;
   brandLabel?: string;
   onMenuOpen?: () => void;
@@ -39,6 +41,7 @@ export type CommunityAppHeaderProps = {
 
 export function CommunityAppHeader({
   brandName,
+  brandLogoUrl,
   onBrandClick,
   brandLabel = "Ir al inicio",
   onMenuOpen,
@@ -52,6 +55,8 @@ export function CommunityAppHeader({
   profileLabel = "Mi perfil",
   className,
 }: CommunityAppHeaderProps) {
+  const lightbox = useMediaLightbox();
+
   return (
     <header
       className={cn(
@@ -60,21 +65,40 @@ export function CommunityAppHeader({
       )}
     >
       <div className="pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-[52px] max-w-[390px] items-center gap-2 px-3">
-          {onBrandClick ? (
-            <button
-              type="button"
-              onClick={onBrandClick}
-              className="relative z-10 min-w-0 flex-1 truncate text-left font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)] active:opacity-80"
-              aria-label={brandLabel}
-            >
-              {brandName}
-            </button>
-          ) : (
-            <p className="min-w-0 flex-1 truncate text-left font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)]">
-              {brandName}
-            </p>
-          )}
+        <div className="mx-auto flex h-[52px] w-full max-w-none items-center gap-2 px-2.5">
+          <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+            {brandLogoUrl ? (
+              <button
+                type="button"
+                onClick={() =>
+                  lightbox?.open(brandLogoUrl, `Logo ${brandName}`)
+                }
+                className="shrink-0 rounded-full active:opacity-80"
+                aria-label={`Ver logo de ${brandName}`}
+              >
+                <img
+                  src={brandLogoUrl}
+                  alt=""
+                  data-brand-logo
+                  className="h-12 w-12 object-contain"
+                />
+              </button>
+            ) : null}
+            {onBrandClick ? (
+              <button
+                type="button"
+                onClick={onBrandClick}
+                className="min-w-0 truncate text-left font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)] active:opacity-80"
+                aria-label={brandLabel}
+              >
+                {brandName}
+              </button>
+            ) : (
+              <p className="min-w-0 truncate font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)]">
+                {brandName}
+              </p>
+            )}
+          </div>
 
           <div className="relative z-10 flex shrink-0 items-center gap-0.5">
             {onNotifications ? (
@@ -226,6 +250,7 @@ export type AppMenuSheetProps = {
   open: boolean;
   onClose: () => void;
   brandName: string;
+  brandLogoUrl?: string;
   /** Hierarchical explorer sections (preferred). */
   categories?: AppMenuCategory[];
   /**
@@ -585,11 +610,13 @@ export function AppMenuSheet({
   open,
   onClose,
   brandName,
+  brandLogoUrl,
   categories,
   items,
   searchPlaceholder = "Buscar en Life Panoramica",
   closeLabel = "Cerrar",
 }: AppMenuSheetProps) {
+  const lightbox = useMediaLightbox();
   const [entered, setEntered] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [query, setQuery] = useState("");
@@ -679,7 +706,24 @@ export function AppMenuSheet({
         <div className="shrink-0 px-4 pb-3 pt-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2.5 text-[var(--color-action-primary)]">
-              <BrandMark />
+              {brandLogoUrl ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    lightbox?.open(brandLogoUrl, `Logo ${brandName}`)
+                  }
+                  className="shrink-0 rounded-full active:opacity-80"
+                  aria-label={`Ver logo de ${brandName}`}
+                >
+                  <img
+                    src={brandLogoUrl}
+                    alt=""
+                    className="h-11 w-11 object-contain"
+                  />
+                </button>
+              ) : (
+                <BrandMark />
+              )}
               <p className="truncate font-[family-name:var(--font-brand)] text-[18px] font-semibold tracking-tight">
                 {brandName}
               </p>

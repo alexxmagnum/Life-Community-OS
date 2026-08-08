@@ -27,6 +27,7 @@ export function ResourceHero({
       <ZoomableImage
         src={imageUrl}
         alt=""
+        zoomable
         fill={false}
         className="aspect-[5/4] w-full md:aspect-[21/9]"
         wrapperClassName="h-auto w-full"
@@ -237,6 +238,7 @@ export function ReservationSummary({
         <ZoomableImage
           src={imageUrl}
           alt=""
+          zoomable
           fill={false}
           className="aspect-[16/9] w-full"
           wrapperClassName="h-auto w-full"

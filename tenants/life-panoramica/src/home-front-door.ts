@@ -100,6 +100,9 @@ function areaMatchScore(blob: string, areaLabel: string): number {
   return blob.includes(area) ? 14 : 0;
 }
 
+/** Product timezone — avoids SSR (UTC) vs browser locale day/hour drift. */
+const HOME_TZ = "Europe/Madrid";
+
 function timeRelevanceScore(startsAt: string, now = Date.now()): number {
   const t = new Date(startsAt).getTime();
   const delta = t - now;
@@ -112,21 +115,36 @@ function timeRelevanceScore(startsAt: string, now = Date.now()): number {
   return 2;
 }
 
+function dayKeyInTz(isoOrDate: string | Date, timeZone = HOME_TZ): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(typeof isoOrDate === "string" ? new Date(isoOrDate) : isoOrDate);
+}
+
 function isSameLocalDay(iso: string, now = new Date()): boolean {
-  const d = new Date(iso);
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
+  return dayKeyInTz(iso) === dayKeyInTz(now);
 }
 
 function formatTimeLabel(iso: string): string {
   return new Intl.DateTimeFormat("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: HOME_TZ,
   }).format(new Date(iso));
 }
+
+export type HomeFrontDoorOptions = {
+  limit?: number;
+  /** When false, ignore localStorage-created experiences (SSR-safe). Default true. */
+  includeSessionExperiences?: boolean;
+  /** Clock for ranking / “today”. Omit for Date.now(). */
+  nowMs?: number;
+  /** Drop time-based score variance (stable SSR ranking). */
+  stabilizeTime?: boolean;
+};
 
 export function experienceActivityLabel(title: string): string {
   const t = title.toLowerCase();
@@ -148,31 +166,38 @@ export function experienceActivityLabel(title: string): string {
  */
 export function buildForYouItems(
   member: DemoMemberProfile,
-  options: { limit?: number } = {},
+  options: HomeFrontDoorOptions = {},
 ): ForYouItem[] {
   const limit = options.limit ?? 4;
+  const includeSession = options.includeSessionExperiences !== false;
+  const nowMs = options.nowMs ?? Date.now();
   const tokens = interestTokens(member.interests);
   const items: ForYouItem[] = [];
 
-  for (const exp of listDiscoverableExperiences()) {
+  for (const exp of listDiscoverableExperiences({
+    includeSessionCreated: includeSession,
+  })) {
     const blob = textBlob(exp.title, exp.description, exp.location, exp.areaLabel);
     const score =
       20 +
       interestMatchScore(blob, tokens) +
       areaMatchScore(blob, member.areaLabel) +
-      timeRelevanceScore(exp.startsAt) +
+      (options.stabilizeTime ? 0 : timeRelevanceScore(exp.startsAt, nowMs)) +
       Math.min(exp.participantCount, 10);
+    const peopleBit =
+      exp.participantCount > 0
+        ? `${exp.participantCount} van`
+        : `${Math.max(0, exp.capacity - exp.participantCount)} plazas`;
     items.push({
       id: `foryou-exp-${exp.id}`,
       kind: "experience",
       title: exp.title,
-      subtitle: [
-        experienceActivityLabel(exp.title),
-        formatTimeLabel(exp.startsAt),
-        exp.participantCount > 0
-          ? `${exp.participantCount} van`
-          : `${Math.max(0, exp.capacity - exp.participantCount)} plazas`,
-      ].join(" · "),
+      // Skip clock text while stabilizing — locale/TZ formatting can diverge SSR vs client.
+      subtitle: options.stabilizeTime
+        ? [experienceActivityLabel(exp.title), peopleBit].join(" · ")
+        : [experienceActivityLabel(exp.title), formatTimeLabel(exp.startsAt), peopleBit].join(
+            " · ",
+          ),
       imageUrl: exp.imageUrl,
       href: `/experiences/${exp.id}`,
       score,
@@ -236,18 +261,27 @@ export function buildForYouItems(
     });
   }
 
-  return items.sort((a, b) => b.score - a.score).slice(0, limit);
+  // Deterministic tie-break — unstable Array.sort caused SSR/client hydration mismatches.
+  return items
+    .sort(
+      (a, b) => b.score - a.score || a.id.localeCompare(b.id, "en"),
+    )
+    .slice(0, limit);
 }
 
 /** Hoy — experiences today + important official notices. */
 export function buildTodayMoments(
-  options: { limit?: number } = {},
+  options: HomeFrontDoorOptions = {},
 ): TodayMoment[] {
   const limit = options.limit ?? 5;
+  const includeSession = options.includeSessionExperiences !== false;
+  const now = new Date(options.nowMs ?? Date.now());
   const moments: TodayMoment[] = [];
 
-  for (const exp of listDiscoverableExperiences()) {
-    if (!isSameLocalDay(exp.startsAt)) continue;
+  for (const exp of listDiscoverableExperiences({
+    includeSessionCreated: includeSession,
+  })) {
+    if (!isSameLocalDay(exp.startsAt, now)) continue;
     moments.push({
       id: `today-exp-${exp.id}`,
       timeLabel: formatTimeLabel(exp.startsAt),
@@ -277,7 +311,9 @@ export function buildTodayMoments(
   moments.sort((a, b) => {
     if (a.source === "experience" && b.source !== "experience") return -1;
     if (b.source === "experience" && a.source !== "experience") return 1;
-    return a.timeLabel.localeCompare(b.timeLabel, "es");
+    const timeCmp = a.timeLabel.localeCompare(b.timeLabel, "es");
+    if (timeCmp !== 0) return timeCmp;
+    return a.id.localeCompare(b.id, "en");
   });
 
   return moments.slice(0, limit);
@@ -285,16 +321,28 @@ export function buildTodayMoments(
 
 /** Upcoming experiences for the discovery rail (not only today). */
 export function listUpcomingHomeExperiences(
-  options: { limit?: number } = {},
+  options: HomeFrontDoorOptions = {},
 ): Experience[] {
   const limit = options.limit ?? 6;
-  const now = Date.now();
-  return listDiscoverableExperiences()
-    .filter((e) => new Date(e.startsAt).getTime() >= now - 60 * 60 * 1000)
-    .sort(
-      (a, b) =>
-        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-    )
+  const includeSession = options.includeSessionExperiences !== false;
+  const now = options.nowMs ?? Date.now();
+  const list = listDiscoverableExperiences({
+    includeSessionCreated: includeSession,
+  });
+  // While stabilizing SSR, skip the rolling “now” cutoff so server/client lists match.
+  const filtered = options.stabilizeTime
+    ? list.filter((e) => new Date(e.startsAt).getTime() >= now - 7 * 24 * 60 * 60 * 1000)
+    : list.filter((e) => new Date(e.startsAt).getTime() >= now - 60 * 60 * 1000);
+  return filtered
+    .sort((a, b) => {
+      if (options.stabilizeTime) {
+        return a.id.localeCompare(b.id, "en");
+      }
+      const t =
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+      if (t !== 0) return t;
+      return a.id.localeCompare(b.id, "en");
+    })
     .slice(0, limit);
 }
 
@@ -320,7 +368,10 @@ export function listCuratedNearYou(
         (place.verified ? 4 : 0);
       return { place, score };
     })
-    .sort((a, b) => b.score - a.score);
+    .sort(
+      (a, b) =>
+        b.score - a.score || a.place.id.localeCompare(b.place.id, "en"),
+    );
 
   const picked: LocalEntity[] = [];
   const seenKinds = new Set<string>();
@@ -338,15 +389,35 @@ export function listCuratedNearYou(
 }
 
 /**
+ * Fixed catalog picks for Vida de comunidad — never derive from
+ * listDiscoverableExperiences() order or localStorage (SSR/client hydrate).
+ */
+const COMMUNITY_LIFE_EXPERIENCE_IDS = [
+  "exp-sunset-walk",
+  "exp-sunrise-pines",
+  "exp-coffee",
+] as const;
+
+/**
  * Vida de comunidad — people creating life (not a social feed).
  */
 export function buildCommunityLifeItems(
-  options: { limit?: number } = {},
+  options: HomeFrontDoorOptions = {},
 ): CommunityLifeItem[] {
   const limit = options.limit ?? 5;
   const items: CommunityLifeItem[] = [];
 
-  for (const exp of listDiscoverableExperiences().slice(0, 3)) {
+  // Catalog-only lookup (ignore session creates even when “live”).
+  const byId = new Map(
+    listDiscoverableExperiences({ includeSessionCreated: false }).map((e) => [
+      e.id,
+      e,
+    ]),
+  );
+
+  for (const id of COMMUNITY_LIFE_EXPERIENCE_IDS) {
+    const exp = byId.get(id);
+    if (!exp) continue;
     items.push({
       id: `life-exp-${exp.id}`,
       narrative: `${exp.organizer.name} creó “${exp.title}”`,
@@ -360,7 +431,10 @@ export function buildCommunityLifeItems(
     });
   }
 
-  for (const tip of listNeighbourRecommendations().slice(0, 2)) {
+  const tips = [...listNeighbourRecommendations()].sort((a, b) =>
+    a.id.localeCompare(b.id, "en"),
+  );
+  for (const tip of tips.slice(0, 2)) {
     items.push({
       id: `life-rec-${tip.id}`,
       narrative: tip.relatedLabel
@@ -374,7 +448,10 @@ export function buildCommunityLifeItems(
     });
   }
 
-  for (const proposal of listProposals().slice(0, 2)) {
+  const proposals = [...listProposals()].sort((a, b) =>
+    a.id.localeCompare(b.id, "en"),
+  );
+  for (const proposal of proposals.slice(0, 2)) {
     items.push({
       id: `life-proposal-${proposal.id}`,
       narrative: `Nueva propuesta: ${proposal.title}`,
@@ -386,7 +463,9 @@ export function buildCommunityLifeItems(
     });
   }
 
-  return items.slice(0, limit);
+  return items
+    .sort((a, b) => a.id.localeCompare(b.id, "en"))
+    .slice(0, limit);
 }
 
 /** Optional: scored pulse for Hoy when experiences-today is empty. */

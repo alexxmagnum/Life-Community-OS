@@ -47,6 +47,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   imagery: {
     splash:
       "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=1600&q=80",
-    homeHero: "/tenants/life-panoramica/home-hero.jpg",
+    homeHero: "/tenants/life-panoramica/home-hero.png",
+    logo: "/tenants/life-panoramica/logo.png",
   },
 };

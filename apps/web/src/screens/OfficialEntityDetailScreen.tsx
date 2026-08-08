@@ -94,6 +94,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
             <ZoomableImage
               src={entity.imageUrl}
               alt={entity.name}
+              zoomable
               wrapperClassName="absolute inset-0 h-full w-full"
             />
             <div

@@ -109,6 +109,7 @@ export function ExperienceRegistrationScreen({
         <ZoomableImage
           src={experience.imageUrl}
           alt=""
+          zoomable
           fill={false}
           className="aspect-[16/9] w-full"
           wrapperClassName="h-auto w-full"

@@ -12,6 +12,7 @@ import { cn } from "../lib/cn";
 
 export type AppShellProps = {
   brandName: string;
+  brandLogoUrl?: string;
   items: NavItem[];
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
@@ -26,6 +27,7 @@ export type AppShellProps = {
 
 export function AppShell({
   brandName,
+  brandLogoUrl,
   items,
   activeId,
   onNavigate,
@@ -39,6 +41,7 @@ export function AppShell({
     <div className="flex min-h-screen bg-[var(--color-surface-app)] text-[var(--color-text-primary)]">
       <DesktopNavigation
         brandName={brandName}
+        brandLogoUrl={brandLogoUrl}
         items={items}
         activeId={activeId}
         onNavigate={onNavigate}
@@ -48,9 +51,9 @@ export function AppShell({
         {header}
         <main
           className={cn(
-            "mx-auto w-full max-w-[390px] flex-1 overflow-x-hidden px-4 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
+            "mx-auto w-full max-w-none flex-1 overflow-x-hidden px-2.5 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
             header
-              ? "pt-[calc(3.5rem+env(safe-area-inset-top))] md:pt-8"
+              ? "pt-[calc(3.25rem+env(safe-area-inset-top))] md:pt-8"
               : "pt-3",
             className,
           )}

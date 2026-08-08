@@ -26,6 +26,7 @@ export function ExperienceHero({
       <ZoomableImage
         src={imageUrl}
         alt=""
+        zoomable
         fill={false}
         className="aspect-[5/4] w-full md:aspect-[21/9]"
         wrapperClassName="h-auto w-full"

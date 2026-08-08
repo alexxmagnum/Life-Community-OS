@@ -53,6 +53,10 @@ export type TerritoryHeroProps = {
   weatherLabel?: string;
   /** Accessible name for the place image */
   imageAlt?: string;
+  /**
+   * Whole-app search — sits between chrome and photo, overlapping the image top.
+   */
+  searchSlot?: ReactNode;
 };
 
 export function TerritoryHero({
@@ -64,30 +68,34 @@ export function TerritoryHero({
   areaLabel,
   weatherLabel,
   imageAlt = "",
+  searchSlot,
 }: TerritoryHeroProps) {
   const isBand = variant === "band";
   const isBelonging = variant === "belonging";
-  const showBelongingOverlay = Boolean(
-    greeting || areaLabel || weatherLabel,
-  );
+  const showBelongingCopy = Boolean(greeting || areaLabel);
   const weatherText = weatherLabel ? cleanWeatherLabel(weatherLabel) : "";
 
   return (
     <section className={cn("relative", className)}>
+      {isBelonging && searchSlot ? (
+        /* mt matches mb: same gap under header as between search and photo */
+        <div className="relative z-20 mt-3 mb-3">{searchSlot}</div>
+      ) : null}
+
       <div
         className={cn(
           "relative overflow-hidden bg-[var(--color-surface-muted)]",
           isBand && "h-[72px] rounded-[16px] sm:h-[80px]",
           variant === "stage" && "h-[min(42vh,340px)] rounded-[26px]",
           isBelonging &&
-            "h-[280px] rounded-[28px] shadow-[0_8px_28px_rgba(26,31,28,0.12)] sm:h-[320px]",
+            "aspect-[2.35/1] max-h-[200px] rounded-[12px] shadow-[0_8px_28px_rgba(26,31,28,0.12)] sm:max-h-[220px]",
         )}
       >
         <ZoomableImage
           src={imageUrl}
           alt={imageAlt}
           className={cn(
-            isBand ? "object-[center_40%]" : "object-[center_45%]",
+            isBand ? "object-[center_40%]" : "object-cover object-[center_40%]",
           )}
           wrapperClassName="absolute inset-0 h-full w-full"
         />
@@ -97,27 +105,32 @@ export function TerritoryHero({
             background: isBand
               ? "linear-gradient(90deg, rgba(20,28,24,0.55) 0%, rgba(20,28,24,0.15) 55%, transparent 100%)"
               : isBelonging
-                ? "linear-gradient(180deg, rgba(20,28,24,0.05) 0%, rgba(20,28,24,0.08) 38%, rgba(20,28,24,0.62) 100%)"
+                ? "linear-gradient(180deg, rgba(20,28,24,0.28) 0%, rgba(20,28,24,0.06) 36%, rgba(20,28,24,0.58) 100%)"
                 : "linear-gradient(180deg, rgba(20,28,24,0.04) 0%, transparent 45%, rgba(20,28,24,0.58) 100%)",
           }}
         />
 
-        {isBelonging && showBelongingOverlay ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-5 pt-12 sm:px-6 sm:pb-6">
+        {isBelonging && weatherText ? (
+          <p className="pointer-events-none absolute right-3 top-3 z-[1] flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-medium tabular-nums text-white backdrop-blur-[2px] sm:right-3.5 sm:top-3.5 sm:text-[13px]">
+            <WeatherSunIcon className="shrink-0" />
+            <span>{weatherText}</span>
+          </p>
+        ) : null}
+
+        {isBelonging && showBelongingCopy ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-2.5 pt-14 sm:px-5 sm:pb-3">
             {greeting ? (
-              <p className="text-[22px] font-bold leading-[1.15] tracking-tight text-white drop-shadow-sm sm:text-[26px]">
+              <p
+                className="font-display text-[22px] font-light leading-[1.2] tracking-[0.015em] text-white/80 sm:text-[26px]"
+                style={{ textShadow: "0 1px 14px rgba(20,28,24,0.32)" }}
+                suppressHydrationWarning
+              >
                 {greeting}
               </p>
             ) : null}
             {areaLabel ? (
-              <p className="mt-1 text-[14px] font-medium text-white/90 sm:text-[15px]">
+              <p className="mt-0.5 text-[13px] font-light tracking-[0.03em] text-white/65 sm:text-[14px]">
                 {areaLabel}
-              </p>
-            ) : null}
-            {weatherText ? (
-              <p className="mt-2 flex items-center gap-1.5 text-[13px] font-medium tabular-nums text-white/90 sm:text-[14px]">
-                <WeatherSunIcon className="shrink-0" />
-                <span>{weatherText}</span>
               </p>
             ) : null}
           </div>
@@ -240,7 +253,7 @@ export function GlobalAppSearch({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete="off"
-          className="min-h-[52px] w-full rounded-[16px] border border-[var(--color-border-subtle)] bg-white py-3 pl-11 pr-10 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] shadow-[0_1px_3px_rgba(26,31,28,0.05)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
+          className="min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-subtle)] bg-white py-2.5 pl-11 pr-10 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] shadow-[0_1px_3px_rgba(26,31,28,0.05)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
         />
         {value ? (
           <button
@@ -372,7 +385,7 @@ export function CommunityPulseMoment({
       </div>
       {hasChildren ? (
         layout === "rail" ? (
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          <div className="-mx-2.5 flex gap-3 overflow-x-auto px-2.5 pb-1 [scrollbar-width:none]">
             {children}
           </div>
         ) : (
@@ -545,6 +558,7 @@ export function CommunityActivityCard({
               <ZoomableImage
                 src={personAvatarUrl}
                 alt={personName ?? ""}
+                zoomable
                 className="rounded-full"
                 wrapperClassName="h-6 w-6 shrink-0 rounded-full"
               />
@@ -622,6 +636,7 @@ export function CommunityActivityCard({
                   <ZoomableImage
                     src={personAvatarUrl}
                     alt={personName ?? ""}
+                    zoomable
                     className="rounded-full"
                     wrapperClassName="h-5 w-5 shrink-0 rounded-full"
                   />
@@ -861,6 +876,7 @@ export function CommunityStory({
             {authorAvatarUrl ? (
               <ZoomableImage
                 src={authorAvatarUrl}
+                zoomable
                 alt={authorName ?? ""}
                 className="rounded-full"
                 wrapperClassName="h-9 w-9 shrink-0 rounded-full"

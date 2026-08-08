@@ -41,7 +41,7 @@ export function BottomNavigation({
       )}
       aria-label="Principal"
     >
-      <ul className="mx-auto flex max-w-lg items-end justify-between gap-0.5 px-1.5 pt-1.5">
+      <ul className="mx-auto flex w-full max-w-none items-end justify-between gap-0.5 px-1 pt-1.5">
         {items.map((item) => {
           const active = item.id === activeId;
           const isCreate = item.id === "create";
@@ -110,6 +110,7 @@ export function BottomNavigation({
 
 export type DesktopNavigationProps = {
   brandName: string;
+  brandLogoUrl?: string;
   items: NavItem[];
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
@@ -120,6 +121,7 @@ export type DesktopNavigationProps = {
 
 export function DesktopNavigation({
   brandName,
+  brandLogoUrl,
   items,
   activeId,
   onNavigate,
@@ -136,9 +138,18 @@ export function DesktopNavigation({
         className,
       )}
     >
-      <p className="px-3 font-[family-name:var(--font-display)] text-[20px] font-semibold text-[var(--color-action-primary)]">
-        {brandName}
-      </p>
+      <div className="flex items-center gap-2.5 px-3">
+        {brandLogoUrl ? (
+          <img
+            src={brandLogoUrl}
+            alt=""
+            className="h-12 w-12 shrink-0 object-contain"
+          />
+        ) : null}
+        <p className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[var(--color-action-primary)]">
+          {brandName}
+        </p>
+      </div>
       <nav className="mt-8 flex flex-1 flex-col gap-1" aria-label="Principal">
         {linkItems.map((item) => {
           const active = item.id === activeId;

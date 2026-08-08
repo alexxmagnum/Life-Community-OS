@@ -4,7 +4,17 @@
  * Interactions attach per ADR-028 (content-centric, not a social network).
  */
 
-import { DEMO_AUTHORITY_ADMIN_ID } from "./demo-ids";
+import {
+  DEMO_AUTHORITY_ADMIN_ID,
+  DEMO_PERSON_ANA,
+  DEMO_PERSON_CLARA,
+  DEMO_PERSON_ELENA,
+  DEMO_PERSON_INES,
+  DEMO_PERSON_JORDI,
+  DEMO_PERSON_LUIS,
+  DEMO_PERSON_MARTA,
+  DEMO_PERSON_TOM,
+} from "./demo-ids";
 
 export type PublishingStatus =
   | "draft"
@@ -94,13 +104,13 @@ export const communityContentCatalog: CommunityContent[] = [
     comments: [
       {
         id: "c1",
-        author: { id: "p-elena", name: "Elena" },
+        author: { id: DEMO_PERSON_ELENA, name: "Elena" },
         body: "Se ve mucho más seguro por la noche — gracias.",
         createdAt: hoursAgo(3),
       },
       {
         id: "c2",
-        author: { id: "p-jordi", name: "Jordi" },
+        author: { id: DEMO_PERSON_JORDI, name: "Jordi" },
         body: "¿Será El pinar el siguiente?",
         createdAt: hoursAgo(2),
         replyToId: "c1",
@@ -133,7 +143,7 @@ export const communityContentCatalog: CommunityContent[] = [
     status: "published",
     isOfficial: false,
     author: {
-      id: "p-ana",
+      id: DEMO_PERSON_ANA,
       name: "Ana",
       avatarUrl:
         "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
@@ -147,7 +157,7 @@ export const communityContentCatalog: CommunityContent[] = [
     comments: [
       {
         id: "c3",
-        author: { id: "p-marta", name: "Marta" },
+        author: { id: DEMO_PERSON_MARTA, name: "Marta" },
         body: "Me apunto — nos vemos en la entrada del camino.",
         createdAt: hoursAgo(6),
         mentionNames: ["Ana"],
@@ -162,7 +172,7 @@ export const communityContentCatalog: CommunityContent[] = [
     status: "published",
     isOfficial: false,
     author: {
-      id: "p-luis",
+      id: DEMO_PERSON_LUIS,
       name: "Luis",
       avatarUrl:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
@@ -182,7 +192,7 @@ export const communityContentCatalog: CommunityContent[] = [
     status: "published",
     isOfficial: false,
     author: {
-      id: "p-clara",
+      id: DEMO_PERSON_CLARA,
       name: "Clara",
     },
     areaLabel: "Life Panoramica",
@@ -201,7 +211,7 @@ export const communityContentCatalog: CommunityContent[] = [
     status: "published",
     isOfficial: false,
     author: {
-      id: "p-ines",
+      id: DEMO_PERSON_INES,
       name: "Inés",
       avatarUrl:
         "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
@@ -220,7 +230,7 @@ export const communityContentCatalog: CommunityContent[] = [
     body: "Las dejé en la oficina de la comunidad — pregunta por Marta si son tuyas.",
     status: "pending_review",
     isOfficial: false,
-    author: { id: "p-tom", name: "Tom" },
+    author: { id: DEMO_PERSON_TOM, name: "Tom" },
     areaLabel: "Zona norte",
     createdAt: hoursAgo(1),
     commentCount: 0,

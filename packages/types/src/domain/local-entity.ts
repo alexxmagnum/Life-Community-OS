@@ -54,6 +54,8 @@ export type LocalRecommendation = {
   id: DomainId;
   body: string;
   authorName: string;
+  /** Person id when known — preferred join key for contribution (Phase C.4). */
+  authorPersonId?: DomainId;
   authorAvatarUrl?: string;
   imageUrl?: string;
   /** Optional link to a LocalEntity / Directory profile id. */

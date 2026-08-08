@@ -22,8 +22,8 @@ export function MobileScreen({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-[390px] md:max-w-none",
-        bleed ? "-mx-4 md:-mx-8" : "",
+        "mx-auto w-full max-w-none",
+        bleed ? "-mx-2.5 md:-mx-8" : "",
         className,
       )}
     >
