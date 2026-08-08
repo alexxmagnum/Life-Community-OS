@@ -4,6 +4,8 @@
  * Interactions attach per ADR-028 (content-centric, not a social network).
  */
 
+import { DEMO_AUTHORITY_ADMIN_ID } from "./demo-ids";
+
 export type PublishingStatus =
   | "draft"
   | "pending_review"
@@ -42,6 +44,8 @@ export type CommunityContent = {
   body: string;
   status: PublishingStatus;
   isOfficial: boolean;
+  /** When official — which OfficialEntity published this (ADR-016). */
+  officialEntityId?: string;
   author: CommunityAuthor;
   areaLabel?: string;
   createdAt: string;
@@ -77,9 +81,10 @@ export const communityContentCatalog: CommunityContent[] = [
     body: "La fase 2 ya está lista en los caminos de Zona norte. Gracias por la paciencia durante las obras.",
     status: "published",
     isOfficial: true,
+    officialEntityId: DEMO_AUTHORITY_ADMIN_ID,
     author: {
       id: "org-community",
-      name: "Life Panoramica",
+      name: "Administración Panorámica",
     },
     areaLabel: "Life Panoramica",
     createdAt: hoursAgo(5),
@@ -109,7 +114,8 @@ export const communityContentCatalog: CommunityContent[] = [
     body: "Obras de 10:00 a 14:00 en Zona norte. Guarda un poco de agua para la mañana.",
     status: "published",
     isOfficial: true,
-    author: { id: "org-community", name: "Life Panoramica" },
+    officialEntityId: DEMO_AUTHORITY_ADMIN_ID,
+    author: { id: "org-community", name: "Administración Panorámica" },
     areaLabel: "Zona norte",
     createdAt: daysAgo(1),
     publishedAt: daysAgo(1),

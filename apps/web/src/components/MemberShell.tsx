@@ -13,7 +13,12 @@ import {
   type NavItem,
   type NavItemId,
 } from "@life-community-os/ui";
-import { listExplorerActivities } from "@life-community-os/tenant-life-panoramica";
+import {
+  listExplorerActivities,
+  listOfficialEntities,
+  officialEntityNavIcon,
+  officialEntityNavLabel,
+} from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
@@ -353,40 +358,32 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
-    // 7. Oficial — OfficialEntity
+    // 7. Oficial — OfficialEntity detail hubs (only entities that exist)
     if (isFeatureEnabled("officialChannels") || isFeatureEnabled("municipalServices")) {
-      categories.push({
-        id: "official",
-        tone: "official",
-        glyph: "🏛",
-        label: "Oficial",
-        description: "Información de entidades responsables",
-        children: [
-          {
-            id: "o-admin",
-            label: "Administración",
-            icon: "admin",
-            // Official entity hub is Phase B — land on official channels for now.
-            onSelect: go("/community?tab=canales"),
-          },
-          ...(isFeatureEnabled("municipalServices")
-            ? [
-                {
-                  id: "o-city",
-                  label: "Ayuntamiento",
-                  icon: "city" as const,
-                  onSelect: go("/community?tab=canales"),
-                },
-              ]
-            : []),
-          {
-            id: "o-security",
-            label: "Seguridad",
-            icon: "security",
-            onSelect: go("/community?tab=canales"),
-          },
-        ],
-      });
+      const officialChildren = listOfficialEntities()
+        .filter((entity) => {
+          if (entity.kind === "municipality") {
+            return isFeatureEnabled("municipalServices");
+          }
+          return isFeatureEnabled("officialChannels");
+        })
+        .map((entity) => ({
+          id: `o-${entity.slug}`,
+          label: officialEntityNavLabel(entity),
+          icon: officialEntityNavIcon(entity),
+          onSelect: go(`/official/${entity.slug}`),
+        }));
+
+      if (officialChildren.length > 0) {
+        categories.push({
+          id: "official",
+          tone: "official",
+          glyph: "🏛",
+          label: "Oficial",
+          description: "Información de entidades responsables",
+          children: officialChildren,
+        });
+      }
     }
 
     // 8. Mi perfil — debajo de Oficial (desplegable)
