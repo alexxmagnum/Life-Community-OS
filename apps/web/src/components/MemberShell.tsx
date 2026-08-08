@@ -250,7 +250,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
                   id: "exp-create",
                   label: "Crear experiencia",
                   icon: "proposal" as const,
-                  onSelect: soon("El compositor de experiencias llega pronto"),
+                  onSelect: go("/experiences/create"),
                 },
               ]
             : []),
@@ -452,10 +452,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     ) {
       actions.push({
         id: "experience",
-        title: "Crear actividad",
+        title: "Crear experiencia",
         description: "Organiza un paseo, clase o encuentro",
         icon: "✦",
-        onSelect: () => showToast("El compositor de actividades llega pronto"),
+        onSelect: () => router.push("/experiences/create"),
       });
     }
 

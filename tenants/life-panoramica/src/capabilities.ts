@@ -53,6 +53,8 @@ export type DemoRole =
 const memberCaps: CapabilityKey[] = [
   CAPABILITIES.experienceView,
   CAPABILITIES.experienceJoin,
+  /** Residents create community moments (not admin-only). */
+  CAPABILITIES.experienceCreate,
   CAPABILITIES.contentView,
   CAPABILITIES.contentCreate,
   CAPABILITIES.interactionComment,

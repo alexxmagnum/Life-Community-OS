@@ -294,17 +294,111 @@ export const experienceCatalog: Experience[] = [
   },
 ];
 
+/** Demo-only session creations — no persistence backend (Phase B.2). */
+const CREATED_STORAGE_KEY = "lcos:created-experiences";
+
+export type CreateExperienceInput = {
+  title: string;
+  description: string;
+  startsAt: string;
+  endsAt?: string;
+  location: string;
+  capacity: number;
+  /** Optional Activity Hub slug — links channel/group when known. */
+  activitySlug?: string;
+  resourceId?: string;
+  imageUrl?: string;
+  areaLabel?: string;
+  organizer: ExperienceOrganizer;
+  channelId?: string;
+  groupId?: string;
+};
+
+function readCreatedExperiences(): Experience[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CREATED_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Experience[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCreatedExperiences(items: Experience[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CREATED_STORAGE_KEY, JSON.stringify(items));
+}
+
+function isDiscoverableStatus(status: ExperienceStatus): boolean {
+  return (
+    status === "published" ||
+    status === "registration_open" ||
+    status === "full"
+  );
+}
+
 export function getExperienceById(id: string): Experience | undefined {
-  return experienceCatalog.find((e) => e.id === id);
+  return (
+    readCreatedExperiences().find((e) => e.id === id) ??
+    experienceCatalog.find((e) => e.id === id)
+  );
 }
 
 export function listDiscoverableExperiences(): Experience[] {
-  return experienceCatalog.filter(
-    (e) =>
-      e.status === "published" ||
-      e.status === "registration_open" ||
-      e.status === "full",
+  const created = readCreatedExperiences().filter((e) =>
+    isDiscoverableStatus(e.status),
   );
+  const catalog = experienceCatalog.filter((e) =>
+    isDiscoverableStatus(e.status),
+  );
+  const seen = new Set<string>();
+  const merged: Experience[] = [];
+  for (const exp of [...created, ...catalog]) {
+    if (seen.has(exp.id)) continue;
+    seen.add(exp.id);
+    merged.push(exp);
+  }
+  return merged;
+}
+
+/**
+ * Create a resident experience in the local demo session (no DB).
+ * Returns the Experience for immediate navigation to detail.
+ */
+export function createExperience(input: CreateExperienceInput): Experience {
+  const id = `exp-created-${Date.now().toString(36)}`;
+  const experience: Experience = {
+    id,
+    title: input.title.trim(),
+    description: input.description.trim(),
+    imageUrl:
+      input.imageUrl ??
+      "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1400&q=80",
+    startsAt: input.startsAt,
+    endsAt: input.endsAt,
+    location: input.location.trim(),
+    areaLabel: input.areaLabel?.trim() || "Life Panoramica",
+    organizer: {
+      ...input.organizer,
+      roleLabel: input.organizer.roleLabel ?? "Vecino",
+    },
+    capacity: Math.max(1, Math.floor(input.capacity)),
+    // Base count excludes the viewer; join() marks the creator as registered
+    // and ExperienceDetailScreen adds +1 for the joined viewer.
+    participantCount: 0,
+    participants: [],
+    status: "registration_open",
+    type: "experience",
+    channelId: input.channelId,
+    groupId: input.groupId,
+    resourceId: input.resourceId,
+  };
+
+  const next = [experience, ...readCreatedExperiences().filter((e) => e.id !== id)];
+  writeCreatedExperiences(next);
+  return experience;
 }
 
 export function formatExperienceWhen(startsAt: string): string {
