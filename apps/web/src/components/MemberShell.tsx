@@ -14,10 +14,8 @@ import {
   type NavItemId,
 } from "@life-community-os/ui";
 import {
-  listExplorerActivities,
-  listVisibleOfficialEntities,
-  officialEntityNavIcon,
-  officialEntityNavLabel,
+  bindProjectedNavigation,
+  projectMemberNavigation,
 } from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -100,6 +98,7 @@ function buildNav(flags: {
   marketplace: boolean;
   showCreate: boolean;
 }): NavItem[] {
+  /** Bottom tab bar — module presence for marketplace comes from configuration. */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
     {
@@ -147,7 +146,14 @@ function activeFromPath(pathname: string): NavItemId {
 export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, hasCapability, isFeatureEnabled, demoMember } = useTenant();
+  const {
+    theme,
+    hasCapability,
+    isFeatureEnabled,
+    isModuleEnabled,
+    configuration,
+    demoMember,
+  } = useTenant();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
@@ -162,316 +168,21 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const brandName = theme.logoText;
   const brandLogoUrl = theme.imagery.logo;
 
+  /** Hamburger menu — configuration-driven (D.0.3 Navigation Projector). */
   const menuCategories = useMemo((): AppMenuCategory[] => {
-    const go = (href: string) => () => router.push(href);
-    const soon = (message: string) => () => {
-      setToast(message);
-      window.setTimeout(() => setToast(null), 2200);
-    };
-    const categories: AppMenuCategory[] = [];
-
-    // 1. Comunidad — communication, participation, coexistence
-    categories.push({
-      id: "community",
-      tone: "community",
-      glyph: "🏡",
-      label: "Comunidad",
-      description: "Comunicación y participación vecinal",
-      children: [
-        {
-          id: "c-news",
-          label: "Actualidad",
-          icon: "info",
-          onSelect: go("/community?tab=conversaciones"),
-        },
-        {
-          id: "c-proposals",
-          label: "Propuestas",
-          icon: "proposal",
-          onSelect: go("/community?tab=propuestas"),
-        },
-        ...(isFeatureEnabled("decide")
-          ? [
-              {
-                id: "c-participation",
-                label: "Participación",
-                icon: "help" as const,
-                // Same surface as propuestas until a dedicated polls tab exists (Phase B).
-                onSelect: go("/community?tab=propuestas"),
-              },
-            ]
-          : []),
-        ...(isFeatureEnabled("communityChannels")
-          ? [
-              {
-                id: "c-spaces",
-                label: "Espacios comunitarios",
-                icon: "people" as const,
-                onSelect: go("/community?tab=canales"),
-              },
-            ]
-          : []),
-        {
-          id: "c-pets",
-          label: "Mascotas",
-          icon: "family",
-          // Dedicated pets surface is Phase B — keep real Comunidad route (not a fake page).
-          onSelect: go("/community?tab=conversaciones"),
-        },
-      ],
+    const projected = projectMemberNavigation({
+      configuration,
+      hasCapability,
+      isFeatureEnabled,
     });
-
-    // 2. Actividades — permanent interests (tenant-ordered)
-    if (isFeatureEnabled("activities") || isFeatureEnabled("experiences")) {
-      categories.push({
-        id: "activities",
-        tone: "activities",
-        glyph: "🎯",
-        label: "Actividades",
-        description: "Intereses permanentes de la comunidad",
-        children: listExplorerActivities().map((item) => ({
-          id: item.id,
-          label: item.label,
-          icon: item.icon,
-          onSelect: go(item.href),
-        })),
-      });
-    }
-
-    // 3. Experiencias — temporary moments
-    if (isFeatureEnabled("experiences")) {
-      categories.push({
-        id: "experiences",
-        tone: "experiences",
-        glyph: "✨",
-        label: "Experiencias",
-        description: "Momentos para crear y unirte",
-        children: [
-          {
-            id: "exp-upcoming",
-            label: "Próximas experiencias",
-            icon: "calendar",
-            onSelect: go("/experiences"),
-          },
-          ...(hasCapability(CAPABILITIES.experienceCreate)
-            ? [
-                {
-                  id: "exp-create",
-                  label: "Crear experiencia",
-                  icon: "proposal" as const,
-                  onSelect: go("/experiences/create"),
-                },
-              ]
-            : []),
-        ],
-      });
-    }
-
-    // 4. Reservas — physical resources
-    if (isFeatureEnabled("resources")) {
-      categories.push({
-        id: "reservations",
-        tone: "reservations",
-        glyph: "📅",
-        label: "Reservas",
-        description: "Qué puedes usar y cuándo está libre",
-        children: [
-          {
-            id: "res-sports",
-            label: "Instalaciones deportivas",
-            icon: "sport",
-            onSelect: go("/resources"),
-          },
-          {
-            id: "res-common",
-            label: "Espacios comunes",
-            icon: "place",
-            onSelect: go("/resources"),
-          },
-        ],
-      });
-    }
-
-    // 5. Servicios — "I need something solved" (not a directory)
-    {
-      const serviceChildren: AppMenuCategory["children"] = [];
-      if (isFeatureEnabled("services") || isFeatureEnabled("localLife")) {
-        serviceChildren.push({
-          id: "svc-pro",
-          label: "Profesionales",
-          icon: "briefcase",
-          onSelect: go("/services/professionals"),
-        });
-      }
-      if (isFeatureEnabled("services") || isFeatureEnabled("marketplace")) {
-        serviceChildren.push({
-          id: "svc-neighbour",
-          label: "Ayuda entre vecinos",
-          icon: "handshake",
-          onSelect: go("/services/neighbour-help"),
-        });
-      }
-      if (isFeatureEnabled("mobility")) {
-        serviceChildren.push({
-          id: "svc-mobility",
-          label: "Movilidad",
-          icon: "car",
-          onSelect: go("/services/mobility"),
-        });
-      }
-      if (
-        isFeatureEnabled("marketplace") &&
-        hasCapability(CAPABILITIES.marketplaceView)
-      ) {
-        serviceChildren.push({
-          id: "svc-market",
-          label: "Compra y venta",
-          icon: "cart",
-          onSelect: go("/marketplace"),
-        });
-      }
-      if (isFeatureEnabled("recommendations")) {
-        serviceChildren.push({
-          id: "svc-reco",
-          label: "Recomendaciones",
-          icon: "culture",
-          onSelect: go("/services/recommendations"),
-        });
-      }
-      if (serviceChildren.length > 0) {
-        categories.push({
-          id: "services",
-          tone: "exchange",
-          glyph: "🛠",
-          label: "Servicios",
-          description: "Ayuda, profesionales y soluciones cercanas",
-          children: serviceChildren,
-        });
-      }
-    }
-
-    // 6. Cerca de ti — "What exists around me?" (LocalEntity)
-    if (
-      (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) &&
-      hasCapability(CAPABILITIES.localView)
-    ) {
-      categories.push({
-        id: "near",
-        tone: "local",
-        glyph: "📍",
-        label: "Cerca de ti",
-        description: "Lo que hay alrededor",
-        children: [
-          {
-            id: "near-food",
-            label: "Restaurantes",
-            icon: "restaurant",
-            onSelect: go("/near/restaurants"),
-          },
-          {
-            id: "near-shops",
-            label: "Comercios",
-            icon: "shop",
-            onSelect: go("/near/businesses"),
-          },
-          {
-            id: "near-services",
-            label: "Servicios",
-            icon: "service",
-            onSelect: go("/near/services"),
-          },
-          {
-            id: "near-places",
-            label: "Lugares",
-            icon: "place",
-            onSelect: go("/near/places"),
-          },
-        ],
-      });
-    }
-
-    // 7. Oficial — only modules whose feature flags are on (no ghost destinations)
-    if (
-      isFeatureEnabled("officialChannels") ||
-      isFeatureEnabled("municipalServices") ||
-      isFeatureEnabled("securityModule")
-    ) {
-      const officialChildren = listVisibleOfficialEntities({
-        officialChannels: isFeatureEnabled("officialChannels"),
-        municipalServices: isFeatureEnabled("municipalServices"),
-        securityModule: isFeatureEnabled("securityModule"),
-      }).map((entity) => ({
-        id: `o-${entity.slug}`,
-        label: officialEntityNavLabel(entity),
-        icon: officialEntityNavIcon(entity),
-        onSelect: go(`/official/${entity.slug}`),
-      }));
-
-      if (officialChildren.length > 0) {
-        categories.push({
-          id: "official",
-          tone: "official",
-          glyph: "🏛",
-          label: "Oficial",
-          description: "Información de entidades responsables",
-          children: officialChildren,
-        });
-      }
-    }
-
-    // 8. Mi perfil — debajo de Oficial (desplegable)
-    {
-      const profileChildren: AppMenuCategory["children"] = [
-        { id: "p-identity", label: "Mi identidad", icon: "people", onSelect: go("/me") },
-        { id: "p-residency", label: "Mi residencia", icon: "pin", onSelect: go("/me") },
-        { id: "p-interests", label: "Mis intereses", icon: "games", onSelect: go("/me") },
-        {
-          id: "p-activity",
-          label: "Mi actividad",
-          icon: "calendar",
-          onSelect: go(
-            isFeatureEnabled("experiences") || isFeatureEnabled("calendar")
-              ? "/calendar"
-              : "/me",
-          ),
-        },
-      ];
-      if (isFeatureEnabled("resources")) {
-        profileChildren.push({
-          id: "p-reservations",
-          label: "Mis reservas",
-          icon: "sport",
-          onSelect: go("/reservations"),
-        });
-      }
-      profileChildren.push(
-        {
-          id: "p-saved",
-          label: "Mis guardados",
-          icon: "info",
-          onSelect: go(
-            isFeatureEnabled("experiences") ? "/experiences" : "/me",
-          ),
-        },
-        {
-          id: "p-settings",
-          label: "Configuración",
-          icon: "service",
-          onSelect: go("/me"),
-        },
-      );
-      categories.push({
-        id: "profile",
-        tone: "profile",
-        glyph: "👤",
-        label: "Mi perfil",
-        description: "Tu identidad y tu relación con la comunidad",
-        children: profileChildren,
-      });
-    }
-
-    return categories;
-  }, [hasCapability, isFeatureEnabled, router]);
+    return bindProjectedNavigation(projected, {
+      onNavigate: (href) => router.push(href),
+      onSignOut: () => {
+        setToast("Sesión demo — Cerrar sesión llega con autenticación");
+        window.setTimeout(() => setToast(null), 2200);
+      },
+    }) as AppMenuCategory[];
+  }, [configuration, hasCapability, isFeatureEnabled, router]);
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -604,10 +315,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const navItems = useMemo(
     () =>
       buildNav({
-        marketplace: isFeatureEnabled("marketplace"),
+        marketplace: isModuleEnabled("marketplace"),
         showCreate: createActions.length > 0,
       }),
-    [createActions.length, isFeatureEnabled],
+    [createActions.length, isModuleEnabled],
   );
 
   useEffect(() => {

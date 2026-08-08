@@ -13,6 +13,8 @@ export * from "./demo-ids";
 export * from "./demo-members";
 export * from "./person-id-alignment";
 export * from "./contribution";
+export * from "./tenant-configuration";
+export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";
 export * from "./channels";

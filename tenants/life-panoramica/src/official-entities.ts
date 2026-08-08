@@ -3,6 +3,8 @@ import type { Channel, VerificationLevel } from "@life-community-os/types";
 import {
   DEMO_AUTHORITY_ADMIN_ID,
   DEMO_AUTHORITY_MUNICIPALITY_ID,
+  DEMO_AUTHORITY_PUBLIC_SERVICES_ID,
+  DEMO_AUTHORITY_SECURITY_ID,
   DEMO_TENANT_ID,
   DEMO_TERRITORY_ID,
 } from "./demo-ids";
@@ -85,6 +87,42 @@ export const officialEntityCatalog: OfficialEntityProfile[] = [
       hours: "Lun–Vie · 8:30–14:00",
     },
   },
+  {
+    id: DEMO_AUTHORITY_SECURITY_ID,
+    tenantId: DEMO_TENANT_ID,
+    territoryId: DEMO_TERRITORY_ID,
+    slug: "seguridad",
+    kind: "other_official",
+    name: "Seguridad",
+    description:
+      "Seguridad del territorio: garita, avisos, patrulla e incidencias. Demostración — foundation showcase.",
+    verificationLevel: "official_verified",
+    imageUrl:
+      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80",
+    contact: {
+      email: "seguridad@lifepanoramica.demo",
+      phone: "+34 900 000 300",
+      hours: "24 h · emergencias",
+    },
+  },
+  {
+    id: DEMO_AUTHORITY_PUBLIC_SERVICES_ID,
+    tenantId: DEMO_TENANT_ID,
+    territoryId: DEMO_TERRITORY_ID,
+    slug: "servicios-publicos",
+    kind: "public_service",
+    name: "Servicios públicos",
+    description:
+      "Información de emergencias, contactos útiles y salud pública del entorno.",
+    verificationLevel: "official_verified",
+    imageUrl:
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
+    contact: {
+      email: "servicios@municipio.demo",
+      phone: "+34 900 000 112",
+      hours: "Información · 24 h",
+    },
+  },
 ];
 
 /** Product alias: Territory Authority for this demo territory. */
@@ -141,14 +179,16 @@ export function officialEntityNavLabel(entity: OfficialEntityProfile): string {
 
 export function officialEntityNavIcon(
   entity: OfficialEntityProfile,
-): "admin" | "city" | "security" | "info" {
+): "admin" | "city" | "security" | "public" | "info" {
   switch (entity.kind) {
     case "territory_authority":
       return "admin";
     case "municipality":
       return "city";
     case "public_service":
-      return "security";
+      return "public";
+    case "other_official":
+      return entity.slug === "seguridad" ? "security" : "info";
     default:
       return "info";
   }
@@ -162,7 +202,7 @@ export function listChannelsForOfficialEntity(entityId: string): Channel[] {
 
 /**
  * Official nav / listings — only entities whose module flag is on.
- * Security / municipality stay hidden until explicitly enabled.
+ * Reference demo enables municipality + security + public services (full product).
  */
 export function listVisibleOfficialEntities(flags: {
   officialChannels?: boolean;
@@ -173,8 +213,11 @@ export function listVisibleOfficialEntities(flags: {
     if (entity.kind === "municipality") {
       return Boolean(flags.municipalServices);
     }
-    if (entity.kind === "public_service" || entity.kind === "other_official") {
-      // Future security / public-service entities ride on securityModule.
+    if (entity.kind === "public_service") {
+      return Boolean(flags.municipalServices);
+    }
+    if (entity.kind === "other_official") {
+      // Security entity (and similar) ride on securityModule.
       return Boolean(flags.securityModule);
     }
     // territory_authority (Administración)

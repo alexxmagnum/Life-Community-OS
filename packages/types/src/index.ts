@@ -61,3 +61,25 @@ export {
   validateContributionSignals,
   deriveRecognitionState,
 } from "./domain/contribution";
+
+/** Platform Module Registry (Phase D.0.1) — tenant-neutral catalogue. */
+export {
+  PLATFORM_MODULE_REGISTRY_VERSION,
+  PLATFORM_MODULE_REGISTRY,
+  listPlatformModules,
+  listRootPlatformModules,
+  getPlatformModuleById,
+  listPlatformModulesByFeatureFlag,
+  validatePlatformModuleRegistry,
+  getPlatformModuleRegistryDocument,
+} from "./platform/module-registry";
+
+/** Tenant Configuration adapter spine (Phase D.0.2). */
+export {
+  resolveModuleEnabledFromFeatures,
+  tenantPackToTenantConfiguration,
+  resolveTenantConfiguration,
+  isTenantModuleEnabled,
+  applyTenantConfigurationPreset,
+  assertTenantConfigurationCoversRegistry,
+} from "./platform/tenant-configuration";

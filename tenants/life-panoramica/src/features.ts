@@ -29,13 +29,13 @@ export type TenantFeatureFlags = {
   communityChannels: boolean;
   officialChannels: boolean;
   /**
-   * Municipality integrations / Ayuntamiento module.
-   * Off by default — enable when municipal Official Entity surface is ready.
+   * Municipality / Ayuntamiento module.
+   * Reference demo: ON (full product showcase). Production tenants may disable.
    */
   municipalServices: boolean;
   /**
    * Official Security module (entity, gates, patrol, notices, incidents).
-   * Off by default — architecture only until product enables it.
+   * Reference demo: ON (full product showcase). Production tenants may disable.
    */
   securityModule: boolean;
   mobility: boolean;
@@ -47,6 +47,11 @@ export type TenantFeatureFlags = {
   intelligentDiffusion: boolean;
 };
 
+/**
+ * Life Panoramica reference demo — FULL PRODUCT MODE.
+ * Build everything → verify experience → configure visibility later.
+ * Flags remain the customization/rollout mechanism for other tenants.
+ */
 export const lifePanoramicaFeatures: TenantFeatureFlags = {
   experiences: true,
   activities: true,
@@ -65,12 +70,20 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   marketplace: true,
   communityChannels: true,
   officialChannels: true,
-  /** Hidden until municipality module is explicitly enabled. */
-  municipalServices: false,
-  /** Hidden until security module is explicitly enabled. */
-  securityModule: false,
+  municipalServices: true,
+  securityModule: true,
   mobility: true,
   residencyVerification: true,
   participationTrust: true,
   intelligentDiffusion: true,
+};
+
+/** Minimal community showcase — core living modules only (future tenants). */
+export const lifePanoramicaFeaturesMinimal: TenantFeatureFlags = {
+  ...lifePanoramicaFeatures,
+  municipalServices: false,
+  securityModule: false,
+  marketplace: false,
+  mobility: false,
+  recommendations: false,
 };

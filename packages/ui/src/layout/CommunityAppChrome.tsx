@@ -243,6 +243,11 @@ export type AppMenuCategory = {
   tone: AppMenuCategoryTone;
   /** Optional glyph inside the tone tile */
   glyph?: string;
+  /**
+   * Conceptual hamburger area (D.0.3).
+   * Explorer = community modules; account = Mi perfil (+ sign out).
+   */
+  area?: "explorer" | "account";
   children: AppMenuLeaf[];
 };
 
@@ -764,16 +769,25 @@ export function AppMenuSheet({
 
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-1">
           <ul className="space-y-0.5">
-            {filtered.map((category) => {
+            {filtered.map((category, index) => {
               const isOpen = expanded[category.id] ?? false;
+              const prev = filtered[index - 1];
+              const showAccountSeparator =
+                category.area === "account" && prev?.area !== "account";
               return (
                 <li key={category.id}>
+                  {showAccountSeparator ? (
+                    <div
+                      className="mx-2.5 mb-1 mt-3 border-t border-[var(--color-border-subtle)] pt-2"
+                      aria-hidden
+                    />
+                  ) : null}
                   <button
                     type="button"
                     aria-expanded={isOpen}
                     onClick={() =>
-                      setExpanded((prev) => ({
-                        ...prev,
+                      setExpanded((prevState) => ({
+                        ...prevState,
                         [category.id]: !isOpen,
                       }))
                     }

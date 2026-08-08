@@ -14,6 +14,9 @@ export const DEMO_AREA_CENTRO = "area-centro" as const;
 /** Official Entity / Territory Authority (ADR-016 / ADR-037 product alias). */
 export const DEMO_AUTHORITY_ADMIN_ID = "oe-panoramica-admin" as const;
 export const DEMO_AUTHORITY_MUNICIPALITY_ID = "oe-municipality-demo" as const;
+export const DEMO_AUTHORITY_SECURITY_ID = "oe-panoramica-security" as const;
+export const DEMO_AUTHORITY_PUBLIC_SERVICES_ID =
+  "oe-panoramica-public-services" as const;
 
 /** Demo Person ids — not User Account rows. */
 export const DEMO_PERSON_MARTA = "person-marta" as const;

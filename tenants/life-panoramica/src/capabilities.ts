@@ -41,8 +41,8 @@ export const CAPABILITIES = {
   residencyVerifyReview: "community.residency.verify_review",
   manageEnter: "community.manage.enter",
   /**
-   * Security module foundation (future Official Security entity).
-   * UI gated by feature flag `securityModule` — do not expose navigation yet.
+   * Security module actions — visibility is TenantConfiguration / module enablement.
+   * Publishing notices requires a dedicated create capability when introduced.
    */
   securityView: "community.security.view",
   securityNoticesView: "community.security.notices.view",

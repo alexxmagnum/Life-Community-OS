@@ -11,6 +11,8 @@ import {
 } from "react";
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
 import type { TenantBrandTokens } from "@life-community-os/design-tokens";
+import type { TenantConfiguration } from "@life-community-os/types";
+import { isTenantModuleEnabled } from "@life-community-os/types";
 import {
   CAPABILITIES,
   canAccessMunicipalityModule,
@@ -21,6 +23,7 @@ import {
   lifePanoramicaFeatures,
   lifePanoramicaTheme,
   listDemoMembers,
+  resolveLifePanoramicaTenantConfiguration,
   type CapabilityKey,
   type DemoMemberProfile,
   type DemoRole,
@@ -30,6 +33,11 @@ import {
 type TenantContextValue = {
   theme: TenantBrandTokens;
   features: TenantFeatureFlags;
+  /**
+   * Declarative tenant configuration (D.0.2).
+   * Source today: tenant pack adapter. Future: runtime configuration.
+   */
+  configuration: TenantConfiguration;
   role: DemoRole;
   setRole: (role: DemoRole) => void;
   /** Active demo Person for residency / access validation (ADR-037/038). */
@@ -39,13 +47,25 @@ type TenantContextValue = {
   demoMembers: DemoMemberProfile[];
   hasCapability: (key: CapabilityKey | string) => boolean;
   isFeatureEnabled: (key: keyof TenantFeatureFlags) => boolean;
+  /** Module availability — not a permission check. */
+  isModuleEnabled: (moduleId: string) => boolean;
 };
 
 const TenantReactContext = createContext<TenantContextValue | null>(null);
 
+/**
+ * Resolve TenantConfiguration for the active tenant.
+ * D.0.2: always from Life Panoramica pack adapter.
+ * Future: switch source to runtime configuration without changing callers.
+ */
+export function resolveTenantConfiguration(): TenantConfiguration {
+  return resolveLifePanoramicaTenantConfiguration();
+}
+
 export function TenantProvider({ children }: { children: ReactNode }) {
   const theme = lifePanoramicaTheme;
   const features = lifePanoramicaFeatures;
+  const configuration = useMemo(() => resolveTenantConfiguration(), []);
   const [role, setRole] = useState<DemoRole>("member");
   const [demoPersonId, setDemoPersonId] = useState<string>(DEMO_PERSON_MARTA);
 
@@ -69,6 +89,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     [features],
   );
 
+  const isModuleEnabled = useCallback(
+    (moduleId: string) => isTenantModuleEnabled(configuration, moduleId),
+    [configuration],
+  );
+
   const demoMembers = useMemo(() => listDemoMembers(), []);
   const demoMember = useMemo(() => {
     return (
@@ -81,6 +106,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     () => ({
       theme,
       features,
+      configuration,
       role,
       setRole,
       demoPersonId,
@@ -89,16 +115,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       demoMembers,
       hasCapability,
       isFeatureEnabled,
+      isModuleEnabled,
     }),
     [
       theme,
       features,
+      configuration,
       role,
       demoPersonId,
       demoMember,
       demoMembers,
       hasCapability,
       isFeatureEnabled,
+      isModuleEnabled,
     ],
   );
 
