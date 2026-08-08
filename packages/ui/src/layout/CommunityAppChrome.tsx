@@ -11,9 +11,8 @@ import { cn } from "../lib/cn";
 import { ZoomableImage } from "../media/MediaLightbox";
 
 /**
- * Global mobile app header — outside the hero.
- * Identity only: brand · notifications · menu.
- * Territory / weather belong in the belonging hero (Home), not here.
+ * Global mobile app header — brand · notifications · Community Explorer.
+ * Profile lives as a row under Oficial in the explorer drawer.
  */
 export type CommunityAppHeaderProps = {
   brandName: string;
@@ -25,13 +24,13 @@ export type CommunityAppHeaderProps = {
   onNotifications?: () => void;
   notificationsLabel?: string;
   className?: string;
-  /** @deprecated Avatar removed from header — ignored */
+  /** @deprecated Profile is under Oficial in the explorer — ignored */
   profileImageUrl?: string;
-  /** @deprecated Avatar removed from header — ignored */
+  /** @deprecated Profile is under Oficial in the explorer — ignored */
   profileName?: string;
-  /** @deprecated Avatar removed from header — ignored */
+  /** @deprecated Profile is under Oficial in the explorer — ignored */
   onProfileClick?: () => void;
-  /** @deprecated Avatar removed from header — ignored */
+  /** @deprecated Profile is under Oficial in the explorer — ignored */
   profileLabel?: string;
   /** @deprecated Place context moved to TerritoryHero — ignored */
   territoryName?: string;
@@ -46,7 +45,7 @@ export function CommunityAppHeader({
   onBrandClick,
   brandLabel = "Ir al inicio",
   onMenuOpen,
-  menuLabel = "Menú",
+  menuLabel = "Explorar comunidad",
   notificationCount = 0,
   onNotifications,
   notificationsLabel = "Notificaciones",
@@ -183,10 +182,12 @@ export type AppMenuLeaf = {
 export type AppMenuCategoryTone =
   | "community"
   | "activities"
+  | "experiences"
+  | "reservations"
   | "exchange"
   | "local"
-  | "events"
-  | "official";
+  | "official"
+  | "profile";
 
 /** Expandable category in the Community Explorer drawer. */
 export type AppMenuCategory = {
@@ -211,8 +212,9 @@ export type AppMenuSheetProps = {
   items?: AppMenuItem[];
   searchPlaceholder?: string;
   closeLabel?: string;
-  /** Pinned footer action — e.g. Mi perfil */
+  /** @deprecated Use a `profile` category with children instead */
   profileLabel?: string;
+  /** @deprecated Use a `profile` category with children instead */
   onProfileSelect?: () => void;
   /** @deprecated Explorer uses brand + search — area line removed from chrome */
   areaLabel?: string;
@@ -222,10 +224,12 @@ export type AppMenuSheetProps = {
 const TONE_TILE: Record<AppMenuCategoryTone, string> = {
   community: "bg-[#E7F0EC] text-[#1F4A3C]",
   activities: "bg-[#E8F1F4] text-[#3D6B7A]",
+  experiences: "bg-[#FBF3DC] text-[#B8860B]",
+  reservations: "bg-[#E8F0F4] text-[#3D5A6B]",
   exchange: "bg-[#F8EFE6] text-[#C47A3A]",
   local: "bg-[#EFE8F4] text-[#6B4F8A]",
-  events: "bg-[#FBF3DC] text-[#B8860B]",
   official: "bg-[#E8EAF4] text-[#3A4570]",
+  profile: "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
 };
 
 function BrandMark({ className }: { className?: string }) {
@@ -316,7 +320,16 @@ function CategoryGlyph({ tone }: { tone: AppMenuCategoryTone }) {
           <path d="M10 14h4" {...stroke} />
         </svg>
       );
-    case "events":
+    case "experiences":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 3.5 13.8 9h5.7l-4.6 3.4 1.8 5.6L12 14.8 7.3 18l1.8-5.6L4.5 9h5.7L12 3.5Z"
+            {...stroke}
+          />
+        </svg>
+      );
+    case "reservations":
       return (
         <svg {...common}>
           <rect x="4" y="6" width="16" height="14" rx="2.2" {...stroke} />
@@ -331,6 +344,16 @@ function CategoryGlyph({ tone }: { tone: AppMenuCategoryTone }) {
           <path d="M6 20V10l6-5 6 5v10" {...stroke} />
           <path d="M9 20v-5h6v5" {...stroke} />
           <path d="M9 12h.01M12 12h.01M15 12h.01" {...stroke} />
+        </svg>
+      );
+    case "profile":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="9" r="3.25" {...stroke} />
+          <path
+            d="M5.5 19.5c1.2-3 3.6-4.5 6.5-4.5s5.3 1.5 6.5 4.5"
+            {...stroke}
+          />
         </svg>
       );
   }
@@ -544,8 +567,6 @@ export function AppMenuSheet({
   items,
   searchPlaceholder = "Buscar en Life Panoramica",
   closeLabel = "Cerrar",
-  profileLabel = "Mi perfil",
-  onProfileSelect,
 }: AppMenuSheetProps) {
   const [entered, setEntered] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -765,45 +786,6 @@ export function AppMenuSheet({
                 </li>
               );
             })}
-
-            {onProfileSelect ? (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onProfileSelect();
-                    onClose();
-                  }}
-                  className="flex w-full items-center gap-3 rounded-[16px] px-2.5 py-2.5 text-left transition-colors active:bg-black/[0.03]"
-                >
-                  <span
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
-                    aria-hidden
-                  >
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <circle
-                        cx="12"
-                        cy="9"
-                        r="3.25"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                      />
-                      <path
-                        d="M5.5 19.5c1.2-3 3.6-4.5 6.5-4.5s5.3 1.5 6.5 4.5"
-                        stroke="currentColor"
-                        strokeWidth="1.7"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
-                      {profileLabel}
-                    </span>
-                  </span>
-                </button>
-              </li>
-            ) : null}
           </ul>
         </nav>
       </aside>

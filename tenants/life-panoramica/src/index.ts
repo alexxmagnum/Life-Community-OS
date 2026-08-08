@@ -26,6 +26,7 @@ export * from "./local-places";
 export * from "./community-pulse";
 export * from "./home-feed";
 export * from "./home-search";
+export * from "./explorer-nav";
 export {
   CAPABILITIES,
   capabilitiesForRole,

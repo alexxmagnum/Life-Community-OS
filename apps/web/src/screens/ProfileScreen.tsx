@@ -22,8 +22,9 @@ const roles: { id: DemoRole; label: string }[] = [
 ];
 
 /**
- * Yo answers: "What is my life inside the community?"
- * Agenda/reservations are personal surfaces — not primary nav tabs.
+ * Mi perfil — personal navigation system (separate from Community Explorer).
+ * Answers: "Who am I and what is my relationship with the community?"
+ * Navigation IA only — no new domain models.
  */
 export function ProfileScreen() {
   const router = useRouter();
@@ -53,8 +54,8 @@ export function ProfileScreen() {
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
-        title="Yo"
-        subtitle="Tu vida dentro de la comunidad."
+        title="Mi perfil"
+        subtitle="Tu identidad y tu relación con la comunidad."
       />
 
       <ProfileCard
@@ -70,83 +71,190 @@ export function ProfileScreen() {
         onEdit={() => undefined}
       />
 
-      <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Estado de residencia
-        </p>
-        <p className={`mt-1 text-[15px] font-semibold ${residencyTone}`}>
-          {demoMember.residencyStatusLabel}
-        </p>
-        <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-          {narrative}
-        </p>
-      </section>
-
+      {/* Mi identidad */}
       <section className="space-y-3">
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Lo mío
+          Mi identidad
         </h2>
-        {isFeatureEnabled("experiences") || isFeatureEnabled("calendar") ? (
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Cómo apareces en la comunidad.
+        </p>
+        <ExploreLink
+          label="Nombre y foto"
+          hint={demoMember.fullName}
+          onClick={() => undefined}
+        />
+        <ExploreLink
+          label="Idioma"
+          hint="Español"
+          onClick={() => undefined}
+        />
+        <ExploreLink
+          label="Preferencias de comunicación"
+          hint="Cómo y cuándo te avisamos"
+          onClick={() => undefined}
+        />
+      </section>
+
+      {/* Mi residencia */}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Mi residencia
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Tu vínculo verificado con el territorio.
+        </p>
+        <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Estado de verificación
+          </p>
+          <p className={`mt-1 text-[15px] font-semibold ${residencyTone}`}>
+            {demoMember.residencyStatusLabel}
+          </p>
+          <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+            {narrative}
+          </p>
+          {demoMember.areaLabel ? (
+            <p className="mt-3 text-[13px] font-medium text-[var(--color-text-primary)]">
+              Área · {demoMember.areaLabel}
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Mis intereses */}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Mis intereses
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Para recibir contenido más relevante.
+        </p>
+        {demoMember.interests.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {demoMember.interests.map((interest) => (
+              <span
+                key={interest}
+                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
+              >
+                {interest}
+              </span>
+            ))}
+          </div>
+        ) : (
           <ExploreLink
-            label="Mis actividades"
+            label="Elegir intereses"
+            hint="Golf, pádel, gastronomía…"
+            onClick={() => undefined}
+          />
+        )}
+        <ExploreLink
+          label="Editar intereses"
+          hint="Ajusta lo que te importa"
+          onClick={() => undefined}
+        />
+      </section>
+
+      {/* Mi actividad */}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Mi actividad
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Tu participación en la comunidad.
+        </p>
+        {isFeatureEnabled("experiences") ? (
+          <ExploreLink
+            label="Experiencias creadas y unidas"
             hint={`${profileShortcuts.going} próximas`}
             onClick={() => router.push("/calendar")}
           />
         ) : null}
-        {isFeatureEnabled("resources") ? (
-          <ExploreLink
-            label="Mis reservas"
-            hint={`${profileShortcuts.reservations} activas`}
-            onClick={() => router.push("/reservations")}
-          />
-        ) : null}
         {isFeatureEnabled("groups") ? (
           <ExploreLink
-            label="Mis grupos"
+            label="Grupos"
             hint="Dónde participas"
             onClick={() => router.push("/community?tab=grupos")}
           />
         ) : null}
-        {isFeatureEnabled("communityChannels") ? (
+        {isFeatureEnabled("feed") || isFeatureEnabled("decide") ? (
           <ExploreLink
-            label="Canales"
-            hint="Oficiales, comunidad y privados"
-            onClick={() => router.push("/community?tab=canales")}
+            label="Participación comunitaria"
+            hint="Propuestas, encuestas y aportaciones"
+            onClick={() => router.push("/community")}
           />
         ) : null}
-        {isFeatureEnabled("feed") ? (
-          <ExploreLink
-            label="Mis publicaciones"
-            hint={`${profileShortcuts.saves} guardadas`}
-            onClick={() => router.push("/community?tab=conversaciones")}
-          />
-        ) : null}
-        {isFeatureEnabled("marketplace") ? (
-          <ExploreLink
-            label="Mis anuncios"
-            hint="Lo que ofreces o buscas"
-            onClick={() => router.push("/marketplace")}
-          />
-        ) : null}
-        <ExploreLink
-          label="Avisar de un problema"
-          hint="Foto y descripción breve"
-          onClick={() => router.push("/report")}
-        />
       </section>
 
+      {/* Mis reservas */}
+      {isFeatureEnabled("resources") ? (
+        <section className="space-y-3">
+          <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+            Mis reservas
+          </h2>
+          <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+            Acceso rápido a tus reservas.
+          </p>
+          <ExploreLink
+            label="Próximas reservas"
+            hint={`${profileShortcuts.reservations} activas`}
+            onClick={() => router.push("/reservations")}
+          />
+          <ExploreLink
+            label="Historial"
+            hint="Reservas anteriores"
+            onClick={() => router.push("/reservations")}
+          />
+        </section>
+      ) : null}
+
+      {/* Mis guardados */}
       <section className="space-y-3">
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Cuenta
+          Mis guardados
         </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Para volver a lo que te interesa.
+        </p>
+        {isFeatureEnabled("experiences") ? (
+          <ExploreLink
+            label="Experiencias guardadas"
+            hint={`${profileShortcuts.saves} guardadas`}
+            onClick={() => router.push("/experiences")}
+          />
+        ) : null}
+        {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
+          <ExploreLink
+            label="Lugares guardados"
+            hint="Sitios cerca de ti"
+            onClick={() => router.push("/discover")}
+          />
+        ) : null}
+      </section>
+
+      {/* Configuración */}
+      <section className="space-y-3">
+        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+          Configuración
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Gestiona tu cuenta.
+        </p>
+        <ExploreLink
+          label="Privacidad"
+          hint="Quién ve tu información"
+          onClick={() => undefined}
+        />
         <ExploreLink
           label="Notificaciones"
           hint="3 sin leer"
           onClick={() => undefined}
         />
-        {["Preferencias de aviso", "Privacidad", "Idioma"].map((row) => (
-          <ExploreLink key={row} label={row} onClick={() => undefined} />
-        ))}
+        <ExploreLink
+          label="Idioma"
+          hint="Español"
+          onClick={() => undefined}
+        />
       </section>
 
       {hasCapability(CAPABILITIES.manageEnter) ? (
@@ -162,7 +270,7 @@ export function ProfileScreen() {
           Demo · persona / residencia
         </p>
         <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
-          Valida acceso a recursos y canales privados. La reclamación pendiente
+          Valida acceso a recursos y espacios privados. La reclamación pendiente
           no otorga acceso.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">

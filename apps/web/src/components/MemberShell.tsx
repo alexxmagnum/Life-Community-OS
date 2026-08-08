@@ -13,6 +13,7 @@ import {
   type NavItem,
   type NavItemId,
 } from "@life-community-os/ui";
+import { listExplorerActivities } from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 
@@ -154,97 +155,281 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   const menuCategories = useMemo((): AppMenuCategory[] => {
     const go = (href: string) => () => router.push(href);
+    const soon = (message: string) => () => {
+      setToast(message);
+      window.setTimeout(() => setToast(null), 2200);
+    };
+    const categories: AppMenuCategory[] = [];
 
-    return [
-      {
-        id: "community",
-        tone: "community",
-        label: "Comunidad",
-        description: "La vida de nuestros vecinos",
-        children: [
-          { id: "c-info", label: "Información general", icon: "info", onSelect: go("/community") },
-          { id: "c-zone", label: "Mi zona", icon: "pin", onSelect: go("/community") },
-          { id: "c-neighbours", label: "Vecinos", icon: "people", onSelect: go("/community") },
-          { id: "c-families", label: "Familias", icon: "family", onSelect: go("/community") },
-          { id: "c-help", label: "Ayuda entre vecinos", icon: "help", onSelect: go("/community") },
-          { id: "c-proposals", label: "Propuestas comunitarias", icon: "proposal", onSelect: go("/community") },
-        ],
-      },
-      {
+    // 1. Comunidad — communication, participation, coexistence
+    categories.push({
+      id: "community",
+      tone: "community",
+      glyph: "🏡",
+      label: "Comunidad",
+      description: "Comunicación y participación vecinal",
+      children: [
+        { id: "c-news", label: "Actualidad", icon: "info", onSelect: go("/community") },
+        { id: "c-proposals", label: "Propuestas", icon: "proposal", onSelect: go("/community") },
+        ...(isFeatureEnabled("decide")
+          ? [
+              {
+                id: "c-participation",
+                label: "Participación",
+                icon: "help" as const,
+                onSelect: go("/community"),
+              },
+            ]
+          : []),
+        ...(isFeatureEnabled("communityChannels")
+          ? [
+              {
+                id: "c-spaces",
+                label: "Espacios comunitarios",
+                icon: "people" as const,
+                onSelect: go("/community"),
+              },
+            ]
+          : []),
+        {
+          id: "c-pets",
+          label: "Mascotas",
+          icon: "family",
+          onSelect: go("/community"),
+        },
+      ],
+    });
+
+    // 2. Actividades — permanent interests (tenant-ordered)
+    if (isFeatureEnabled("activities") || isFeatureEnabled("experiences")) {
+      categories.push({
         id: "activities",
         tone: "activities",
+        glyph: "🎯",
         label: "Actividades",
-        description: "Deportes, clases y experiencias",
-        children: [
-          { id: "a-padel", label: "Pádel", icon: "padel", onSelect: go("/resources") },
-          { id: "a-tennis", label: "Tenis", icon: "tennis", onSelect: go("/resources") },
-          { id: "a-golf", label: "Golf", icon: "golf", onSelect: go("/discover") },
-          { id: "a-hike", label: "Senderismo", icon: "hike", onSelect: go("/discover") },
-          { id: "a-class", label: "Clases y talleres", icon: "class", onSelect: go("/discover") },
-          { id: "a-games", label: "Juegos y vida social", icon: "games", onSelect: go("/discover") },
-          { id: "a-events", label: "Eventos y torneos", icon: "trophy", onSelect: go("/discover") },
-        ],
-      },
-      {
-        id: "exchange",
-        tone: "exchange",
-        label: "Intercambio",
-        description: "Compra, vende y comparte",
+        description: "Intereses permanentes de la comunidad",
+        children: listExplorerActivities().map((item) => ({
+          id: item.id,
+          label: item.label,
+          icon: item.icon,
+          onSelect: go(item.href),
+        })),
+      });
+    }
+
+    // 3. Experiencias — temporary moments
+    if (isFeatureEnabled("experiences")) {
+      categories.push({
+        id: "experiences",
+        tone: "experiences",
+        glyph: "✨",
+        label: "Experiencias",
+        description: "Momentos para crear y unirte",
         children: [
           {
-            id: "e-market",
-            label: "Compra y venta",
-            icon: "cart",
-            onSelect: go(
-              isFeatureEnabled("marketplace") ? "/marketplace" : "/discover",
-            ),
+            id: "exp-upcoming",
+            label: "Próximas experiencias",
+            icon: "calendar",
+            onSelect: go("/experiences"),
           },
-          { id: "e-services", label: "Servicios entre vecinos", icon: "handshake", onSelect: go("/discover") },
-          { id: "e-pro", label: "Profesionales", icon: "briefcase", onSelect: go("/discover") },
-          { id: "e-car", label: "Compartir coche", icon: "car", onSelect: go("/discover") },
+          ...(hasCapability(CAPABILITIES.experienceCreate)
+            ? [
+                {
+                  id: "exp-create",
+                  label: "Crear experiencia",
+                  icon: "proposal" as const,
+                  onSelect: soon("El compositor de experiencias llega pronto"),
+                },
+              ]
+            : []),
         ],
-      },
-      {
-        id: "local",
+      });
+    }
+
+    // 4. Reservas — physical resources
+    if (isFeatureEnabled("resources")) {
+      categories.push({
+        id: "reservations",
+        tone: "reservations",
+        glyph: "📅",
+        label: "Reservas",
+        description: "Qué puedes usar y cuándo está libre",
+        children: [
+          {
+            id: "res-sports",
+            label: "Instalaciones deportivas",
+            icon: "sport",
+            onSelect: go("/resources"),
+          },
+          {
+            id: "res-common",
+            label: "Espacios comunes",
+            icon: "place",
+            onSelect: go("/resources"),
+          },
+        ],
+      });
+    }
+
+    // 5. Servicios — help, professionals, marketplace, mobility
+    {
+      const serviceChildren: AppMenuCategory["children"] = [];
+      if (isFeatureEnabled("services") || isFeatureEnabled("localLife")) {
+        serviceChildren.push({
+          id: "svc-pro",
+          label: "Profesionales",
+          icon: "briefcase",
+          onSelect: go("/discover"),
+        });
+      }
+      serviceChildren.push({
+        id: "svc-neighbour",
+        label: "Ayuda entre vecinos",
+        icon: "handshake",
+        onSelect: go("/community"),
+      });
+      if (isFeatureEnabled("mobility")) {
+        serviceChildren.push({
+          id: "svc-mobility",
+          label: "Movilidad",
+          icon: "car",
+          onSelect: go("/discover"),
+        });
+      }
+      if (isFeatureEnabled("marketplace")) {
+        serviceChildren.push({
+          id: "svc-market",
+          label: "Compra y venta",
+          icon: "cart",
+          onSelect: go("/marketplace"),
+        });
+      }
+      if (isFeatureEnabled("recommendations")) {
+        serviceChildren.push({
+          id: "svc-reco",
+          label: "Recomendaciones",
+          icon: "culture",
+          onSelect: go("/discover"),
+        });
+      }
+      if (serviceChildren.length > 0) {
+        categories.push({
+          id: "services",
+          tone: "exchange",
+          glyph: "🛠",
+          label: "Servicios",
+          description: "Ayuda, profesionales y soluciones cercanas",
+          children: serviceChildren,
+        });
+      }
+    }
+
+    // 6. Cerca de ti — LocalEntity discovery
+    if (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) {
+      categories.push({
+        id: "near",
         tone: "local",
-        label: "Vida local",
-        description: "Todo lo que necesitas cerca",
+        glyph: "📍",
+        label: "Cerca de ti",
+        description: "Lo que hay alrededor",
         children: [
-          { id: "l-food", label: "Restaurantes y bares", icon: "restaurant", onSelect: go("/discover") },
-          { id: "l-shops", label: "Comercios", icon: "shop", onSelect: go("/discover") },
-          { id: "l-pharma", label: "Farmacia y salud", icon: "pharmacy", onSelect: go("/discover") },
-          { id: "l-near", label: "Servicios cercanos", icon: "service", onSelect: go("/discover") },
-          { id: "l-places", label: "Lugares de interés", icon: "place", onSelect: go("/discover") },
+          { id: "near-food", label: "Restaurantes", icon: "restaurant", onSelect: go("/discover") },
+          { id: "near-shops", label: "Comercios", icon: "shop", onSelect: go("/discover") },
+          { id: "near-services", label: "Servicios", icon: "service", onSelect: go("/discover") },
+          { id: "near-places", label: "Lugares", icon: "place", onSelect: go("/discover") },
         ],
-      },
-      {
-        id: "events",
-        tone: "events",
-        label: "Eventos",
-        description: "Lo que ocurre en Panorámica",
-        children: [
-          { id: "ev-next", label: "Próximos eventos", icon: "calendar", onSelect: go("/discover") },
-          { id: "ev-kids", label: "Eventos infantiles", icon: "child", onSelect: go("/discover") },
-          { id: "ev-sport", label: "Eventos deportivos", icon: "sport", onSelect: go("/discover") },
-          { id: "ev-culture", label: "Eventos culturales", icon: "culture", onSelect: go("/calendar") },
-          { id: "ev-party", label: "Fiestas y celebraciones", icon: "party", onSelect: go("/discover") },
-        ],
-      },
-      {
+      });
+    }
+
+    // 7. Oficial — OfficialEntity
+    if (isFeatureEnabled("officialChannels") || isFeatureEnabled("municipalServices")) {
+      categories.push({
         id: "official",
         tone: "official",
+        glyph: "🏛",
         label: "Oficial",
-        description: "Canales oficiales y servicios",
+        description: "Información de entidades responsables",
         children: [
-          { id: "o-admin", label: "Administración Panorámica", icon: "admin", onSelect: go("/community") },
-          { id: "o-city", label: "Ayuntamiento", icon: "city", onSelect: go("/community") },
-          { id: "o-security", label: "Seguridad", icon: "security", onSelect: go("/community") },
-          { id: "o-works", label: "Mantenimiento y obras", icon: "works", onSelect: go("/community") },
-          { id: "o-public", label: "Servicios públicos", icon: "public", onSelect: go("/community") },
+          { id: "o-admin", label: "Administración", icon: "admin", onSelect: go("/community") },
+          ...(isFeatureEnabled("municipalServices")
+            ? [
+                {
+                  id: "o-city",
+                  label: "Ayuntamiento",
+                  icon: "city" as const,
+                  onSelect: go("/community"),
+                },
+                {
+                  id: "o-public",
+                  label: "Servicios públicos",
+                  icon: "public" as const,
+                  onSelect: go("/community"),
+                },
+              ]
+            : []),
+          {
+            id: "o-security",
+            label: "Seguridad",
+            icon: "security",
+            onSelect: go("/community"),
+          },
         ],
-      },
-    ];
-  }, [isFeatureEnabled, router]);
+      });
+    }
+
+    // 8. Mi perfil — debajo de Oficial (desplegable)
+    {
+      const profileChildren: AppMenuCategory["children"] = [
+        { id: "p-identity", label: "Mi identidad", icon: "people", onSelect: go("/me") },
+        { id: "p-residency", label: "Mi residencia", icon: "pin", onSelect: go("/me") },
+        { id: "p-interests", label: "Mis intereses", icon: "games", onSelect: go("/me") },
+        {
+          id: "p-activity",
+          label: "Mi actividad",
+          icon: "calendar",
+          onSelect: go(
+            isFeatureEnabled("experiences") || isFeatureEnabled("calendar")
+              ? "/calendar"
+              : "/me",
+          ),
+        },
+      ];
+      if (isFeatureEnabled("resources")) {
+        profileChildren.push({
+          id: "p-reservations",
+          label: "Mis reservas",
+          icon: "sport",
+          onSelect: go("/reservations"),
+        });
+      }
+      profileChildren.push(
+        {
+          id: "p-saved",
+          label: "Mis guardados",
+          icon: "info",
+          onSelect: go(
+            isFeatureEnabled("experiences") ? "/experiences" : "/me",
+          ),
+        },
+        {
+          id: "p-settings",
+          label: "Configuración",
+          icon: "service",
+          onSelect: go("/me"),
+        },
+      );
+      categories.push({
+        id: "profile",
+        tone: "profile",
+        glyph: "👤",
+        label: "Mi perfil",
+        description: "Tu identidad y tu relación con la comunidad",
+        children: profileChildren,
+      });
+    }
+
+    return categories;
+  }, [hasCapability, isFeatureEnabled, router]);
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -416,6 +601,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
             brandName={brandName}
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
+            menuLabel="Explorar comunidad"
             notificationCount={3}
             onNotifications={() =>
               showToast("Las notificaciones llegan pronto")
@@ -431,8 +617,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
         brandName={brandName}
         categories={menuCategories}
         searchPlaceholder={`Buscar en ${brandName}`}
-        profileLabel="Mi perfil"
-        onProfileSelect={() => router.push("/me")}
       />
       <CreateSheet
         open={createOpen}
