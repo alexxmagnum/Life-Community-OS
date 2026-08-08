@@ -169,15 +169,26 @@ export function MemberShell({ children }: { children: ReactNode }) {
       label: "Comunidad",
       description: "Comunicación y participación vecinal",
       children: [
-        { id: "c-news", label: "Actualidad", icon: "info", onSelect: go("/community") },
-        { id: "c-proposals", label: "Propuestas", icon: "proposal", onSelect: go("/community") },
+        {
+          id: "c-news",
+          label: "Actualidad",
+          icon: "info",
+          onSelect: go("/community?tab=conversaciones"),
+        },
+        {
+          id: "c-proposals",
+          label: "Propuestas",
+          icon: "proposal",
+          onSelect: go("/community?tab=propuestas"),
+        },
         ...(isFeatureEnabled("decide")
           ? [
               {
                 id: "c-participation",
                 label: "Participación",
                 icon: "help" as const,
-                onSelect: go("/community"),
+                // Same surface as propuestas until a dedicated polls tab exists (Phase B).
+                onSelect: go("/community?tab=propuestas"),
               },
             ]
           : []),
@@ -187,7 +198,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
                 id: "c-spaces",
                 label: "Espacios comunitarios",
                 icon: "people" as const,
-                onSelect: go("/community"),
+                onSelect: go("/community?tab=canales"),
               },
             ]
           : []),
@@ -195,7 +206,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
           id: "c-pets",
           label: "Mascotas",
           icon: "family",
-          onSelect: go("/community"),
+          // Dedicated pets surface is Phase B — keep real Comunidad route (not a fake page).
+          onSelect: go("/community?tab=conversaciones"),
         },
       ],
     });
@@ -350,20 +362,20 @@ export function MemberShell({ children }: { children: ReactNode }) {
         label: "Oficial",
         description: "Información de entidades responsables",
         children: [
-          { id: "o-admin", label: "Administración", icon: "admin", onSelect: go("/community") },
+          {
+            id: "o-admin",
+            label: "Administración",
+            icon: "admin",
+            // Official entity hub is Phase B — land on official channels for now.
+            onSelect: go("/community?tab=canales"),
+          },
           ...(isFeatureEnabled("municipalServices")
             ? [
                 {
                   id: "o-city",
                   label: "Ayuntamiento",
                   icon: "city" as const,
-                  onSelect: go("/community"),
-                },
-                {
-                  id: "o-public",
-                  label: "Servicios públicos",
-                  icon: "public" as const,
-                  onSelect: go("/community"),
+                  onSelect: go("/community?tab=canales"),
                 },
               ]
             : []),
@@ -371,7 +383,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
             id: "o-security",
             label: "Seguridad",
             icon: "security",
-            onSelect: go("/community"),
+            onSelect: go("/community?tab=canales"),
           },
         ],
       });
