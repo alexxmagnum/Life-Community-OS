@@ -1,0 +1,409 @@
+/**
+ * Home front door — deterministic personalization + section builders (Phase C.3).
+ * No AI. Scores over existing Experience / LocalEntity / Content / Pulse.
+ * Architecture allows swapping the scorer later without new domain models.
+ */
+
+import type { CommunityActivity, LocalEntity } from "@life-community-os/types";
+
+import { listProposals, listOfficialContent } from "./community-content";
+import type { DemoMemberProfile } from "./demo-members";
+import {
+  listDiscoverableExperiences,
+  type Experience,
+} from "./experiences";
+import {
+  listNearYou,
+  listNeighbourRecommendations,
+} from "./local-places";
+import { buildCommunityPulse } from "./community-pulse";
+
+export type ForYouItem = {
+  id: string;
+  kind: "experience" | "local" | "welcome" | "proposal";
+  title: string;
+  subtitle: string;
+  imageUrl?: string;
+  href: string;
+  score: number;
+};
+
+export type TodayMoment = {
+  id: string;
+  timeLabel: string;
+  title: string;
+  meta: string;
+  href: string;
+  imageUrl?: string;
+  source: "experience" | "announcement" | "activity";
+};
+
+export type CommunityLifeItem = {
+  id: string;
+  narrative: string;
+  context?: string;
+  href: string;
+  imageUrl?: string;
+  personName?: string;
+  personAvatarUrl?: string;
+};
+
+/** Normalize interest / catalog tokens for soft matching. */
+function normalizeToken(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .trim();
+}
+
+const INTEREST_ALIASES: Record<string, string[]> = {
+  caminar: ["caminar", "paseo", "sender", "walk", "atardecer", "pinos"],
+  padel: ["padel", "pádel"],
+  natacion: ["natacion", "piscina", "swim", "baño"],
+  cafe: ["cafe", "café", "desayuno", "club"],
+  golf: ["golf"],
+  familia: ["familia", "familiar", "niñ", "taller"],
+};
+
+function interestTokens(interests: string[]): string[] {
+  const tokens = new Set<string>();
+  for (const interest of interests) {
+    const n = normalizeToken(interest);
+    tokens.add(n);
+    for (const [key, aliases] of Object.entries(INTEREST_ALIASES)) {
+      if (n.includes(key) || aliases.some((a) => n.includes(normalizeToken(a)))) {
+        aliases.forEach((a) => tokens.add(normalizeToken(a)));
+        tokens.add(key);
+      }
+    }
+  }
+  return [...tokens];
+}
+
+function textBlob(...parts: Array<string | undefined>): string {
+  return normalizeToken(parts.filter(Boolean).join(" "));
+}
+
+function interestMatchScore(blob: string, tokens: string[]): number {
+  let score = 0;
+  for (const token of tokens) {
+    if (token.length < 3) continue;
+    if (blob.includes(token)) score += 18;
+  }
+  return Math.min(score, 36);
+}
+
+function areaMatchScore(blob: string, areaLabel: string): number {
+  const area = normalizeToken(areaLabel.replace(/\(.*?\)/g, ""));
+  if (!area) return 0;
+  return blob.includes(area) ? 14 : 0;
+}
+
+function timeRelevanceScore(startsAt: string, now = Date.now()): number {
+  const t = new Date(startsAt).getTime();
+  const delta = t - now;
+  if (delta < 0) return 0;
+  const hours = delta / (1000 * 60 * 60);
+  if (hours <= 6) return 28;
+  if (hours <= 24) return 22;
+  if (hours <= 72) return 14;
+  if (hours <= 168) return 8;
+  return 2;
+}
+
+function isSameLocalDay(iso: string, now = new Date()): boolean {
+  const d = new Date(iso);
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}
+
+function formatTimeLabel(iso: string): string {
+  return new Intl.DateTimeFormat("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso));
+}
+
+export function experienceActivityLabel(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes("golf")) return "Golf";
+  if (t.includes("pádel") || t.includes("padel")) return "Pádel";
+  if (t.includes("yoga") || t.includes("estir")) return "Bienestar";
+  if (t.includes("paseo") || t.includes("sender") || t.includes("atardecer")) {
+    return "Naturaleza";
+  }
+  if (t.includes("juego") || t.includes("mesa")) return "Ocio";
+  if (t.includes("café") || t.includes("cafe")) return "Encuentro";
+  if (t.includes("taller") || t.includes("clase")) return "Clases";
+  return "Experiencia";
+}
+
+/**
+ * Para ti — personalized shortlist.
+ * Rank boosts only; never exclusive filters.
+ */
+export function buildForYouItems(
+  member: DemoMemberProfile,
+  options: { limit?: number } = {},
+): ForYouItem[] {
+  const limit = options.limit ?? 4;
+  const tokens = interestTokens(member.interests);
+  const items: ForYouItem[] = [];
+
+  for (const exp of listDiscoverableExperiences()) {
+    const blob = textBlob(exp.title, exp.description, exp.location, exp.areaLabel);
+    const score =
+      20 +
+      interestMatchScore(blob, tokens) +
+      areaMatchScore(blob, member.areaLabel) +
+      timeRelevanceScore(exp.startsAt) +
+      Math.min(exp.participantCount, 10);
+    items.push({
+      id: `foryou-exp-${exp.id}`,
+      kind: "experience",
+      title: exp.title,
+      subtitle: [
+        experienceActivityLabel(exp.title),
+        formatTimeLabel(exp.startsAt),
+        exp.participantCount > 0
+          ? `${exp.participantCount} van`
+          : `${Math.max(0, exp.capacity - exp.participantCount)} plazas`,
+      ].join(" · "),
+      imageUrl: exp.imageUrl,
+      href: `/experiences/${exp.id}`,
+      score,
+    });
+  }
+
+  for (const place of listNearYou().slice(0, 8)) {
+    const blob = textBlob(
+      place.name,
+      place.categoryLabel,
+      place.areaLabel,
+      place.story,
+    );
+    const score =
+      12 +
+      interestMatchScore(blob, tokens) +
+      areaMatchScore(blob, member.areaLabel) +
+      (place.recommendedBy ? 8 : 0) +
+      (place.verified ? 6 : 0);
+    items.push({
+      id: `foryou-place-${place.id}`,
+      kind: "local",
+      title: place.name,
+      subtitle: `${place.categoryLabel} · ${place.areaLabel}`,
+      imageUrl: place.imageUrl,
+      href: "/near/places",
+      score,
+    });
+  }
+
+  if (member.residencyStatusKind === "pending") {
+    items.push({
+      id: "foryou-welcome-verify",
+      kind: "welcome",
+      title: "Completa tu verificación",
+      subtitle: "Así desbloqueas espacios privados de tu zona",
+      href: "/me",
+      score: 40,
+    });
+  } else if (member.residencyStatusKind === "other_area") {
+    items.push({
+      id: "foryou-welcome-neighbours",
+      kind: "welcome",
+      title: "Conoce vecinos cerca de ti",
+      subtitle: `Empieza en ${member.areaLabel}`,
+      href: "/community?tab=canales",
+      score: 34,
+    });
+  }
+
+  const proposal = listProposals()[0];
+  if (proposal) {
+    items.push({
+      id: `foryou-proposal-${proposal.id}`,
+      kind: "proposal",
+      title: proposal.title,
+      subtitle: "Propuesta comunitaria abierta",
+      imageUrl: proposal.imageUrl,
+      href: `/community/content/${proposal.id}`,
+      score: 16 + areaMatchScore(textBlob(proposal.areaLabel), member.areaLabel),
+    });
+  }
+
+  return items.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+/** Hoy — experiences today + important official notices. */
+export function buildTodayMoments(
+  options: { limit?: number } = {},
+): TodayMoment[] {
+  const limit = options.limit ?? 5;
+  const moments: TodayMoment[] = [];
+
+  for (const exp of listDiscoverableExperiences()) {
+    if (!isSameLocalDay(exp.startsAt)) continue;
+    moments.push({
+      id: `today-exp-${exp.id}`,
+      timeLabel: formatTimeLabel(exp.startsAt),
+      title: exp.title,
+      meta:
+        exp.participantCount > 0
+          ? `${exp.participantCount} vecinos · ${exp.location}`
+          : exp.location,
+      href: `/experiences/${exp.id}`,
+      imageUrl: exp.imageUrl,
+      source: "experience",
+    });
+  }
+
+  for (const notice of listOfficialContent().slice(0, 2)) {
+    moments.push({
+      id: `today-official-${notice.id}`,
+      timeLabel: "Aviso",
+      title: notice.title,
+      meta: notice.body.slice(0, 80),
+      href: `/community/content/${notice.id}`,
+      imageUrl: notice.imageUrl,
+      source: "announcement",
+    });
+  }
+
+  moments.sort((a, b) => {
+    if (a.source === "experience" && b.source !== "experience") return -1;
+    if (b.source === "experience" && a.source !== "experience") return 1;
+    return a.timeLabel.localeCompare(b.timeLabel, "es");
+  });
+
+  return moments.slice(0, limit);
+}
+
+/** Upcoming experiences for the discovery rail (not only today). */
+export function listUpcomingHomeExperiences(
+  options: { limit?: number } = {},
+): Experience[] {
+  const limit = options.limit ?? 6;
+  const now = Date.now();
+  return listDiscoverableExperiences()
+    .filter((e) => new Date(e.startsAt).getTime() >= now - 60 * 60 * 1000)
+    .sort(
+      (a, b) =>
+        new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+    )
+    .slice(0, limit);
+}
+
+/** Curated near-you — one of each vibe when possible, not a dump. */
+export function listCuratedNearYou(
+  member: DemoMemberProfile,
+  options: { limit?: number } = {},
+): LocalEntity[] {
+  const limit = options.limit ?? 4;
+  const tokens = interestTokens(member.interests);
+  const ranked = listNearYou()
+    .map((place) => {
+      const blob = textBlob(
+        place.name,
+        place.categoryLabel,
+        place.areaLabel,
+        place.story,
+      );
+      const score =
+        interestMatchScore(blob, tokens) +
+        areaMatchScore(blob, member.areaLabel) +
+        (place.recommendedBy ? 10 : 0) +
+        (place.verified ? 4 : 0);
+      return { place, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const picked: LocalEntity[] = [];
+  const seenKinds = new Set<string>();
+  for (const { place } of ranked) {
+    if (picked.length >= limit) break;
+    const kindKey =
+      place.kind === "restaurant" || place.kind === "cafe"
+        ? "food"
+        : place.kind;
+    if (seenKinds.has(kindKey) && picked.length + 1 < limit) continue;
+    seenKinds.add(kindKey);
+    picked.push(place);
+  }
+  return picked;
+}
+
+/**
+ * Vida de comunidad — people creating life (not a social feed).
+ */
+export function buildCommunityLifeItems(
+  options: { limit?: number } = {},
+): CommunityLifeItem[] {
+  const limit = options.limit ?? 5;
+  const items: CommunityLifeItem[] = [];
+
+  for (const exp of listDiscoverableExperiences().slice(0, 3)) {
+    items.push({
+      id: `life-exp-${exp.id}`,
+      narrative: `${exp.organizer.name} creó “${exp.title}”`,
+      context: [experienceActivityLabel(exp.title), exp.location]
+        .filter(Boolean)
+        .join(" · "),
+      href: `/experiences/${exp.id}`,
+      imageUrl: exp.imageUrl,
+      personName: exp.organizer.name,
+      personAvatarUrl: exp.organizer.avatarUrl,
+    });
+  }
+
+  for (const tip of listNeighbourRecommendations().slice(0, 2)) {
+    items.push({
+      id: `life-rec-${tip.id}`,
+      narrative: tip.relatedLabel
+        ? `${tip.authorName} recomendó ${tip.relatedLabel}`
+        : `${tip.authorName} compartió una recomendación`,
+      context: tip.body.slice(0, 72),
+      href: "/services/recommendations",
+      imageUrl: tip.imageUrl,
+      personName: tip.authorName,
+      personAvatarUrl: tip.authorAvatarUrl,
+    });
+  }
+
+  for (const proposal of listProposals().slice(0, 2)) {
+    items.push({
+      id: `life-proposal-${proposal.id}`,
+      narrative: `Nueva propuesta: ${proposal.title}`,
+      context: proposal.author.name,
+      href: `/community/content/${proposal.id}`,
+      imageUrl: proposal.imageUrl,
+      personName: proposal.author.name,
+      personAvatarUrl: proposal.author.avatarUrl,
+    });
+  }
+
+  return items.slice(0, limit);
+}
+
+/** Optional: scored pulse for Hoy when experiences-today is empty. */
+export function buildPersonalizedPulse(
+  member: DemoMemberProfile,
+  input: Parameters<typeof buildCommunityPulse>[0] = {},
+): CommunityActivity[] {
+  const tokens = interestTokens(member.interests);
+  const raw = buildCommunityPulse({ ...input, limit: 12 });
+  return [...raw]
+    .map((item) => {
+      const blob = textBlob(item.headline, item.context, item.personName);
+      const boost =
+        interestMatchScore(blob, tokens) +
+        areaMatchScore(blob, member.areaLabel);
+      return { ...item, weight: (item.weight ?? 0) + boost };
+    })
+    .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+    .slice(0, input.limit ?? 5);
+}

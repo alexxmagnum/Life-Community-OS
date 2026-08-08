@@ -23,15 +23,12 @@ export type CommunityAppHeaderProps = {
   notificationCount?: number;
   onNotifications?: () => void;
   notificationsLabel?: string;
-  className?: string;
-  /** @deprecated Profile is under Oficial in the explorer — ignored */
+  /** Optional profile entry — identity only, no weather/territory. */
   profileImageUrl?: string;
-  /** @deprecated Profile is under Oficial in the explorer — ignored */
   profileName?: string;
-  /** @deprecated Profile is under Oficial in the explorer — ignored */
   onProfileClick?: () => void;
-  /** @deprecated Profile is under Oficial in the explorer — ignored */
   profileLabel?: string;
+  className?: string;
   /** @deprecated Place context moved to TerritoryHero — ignored */
   territoryName?: string;
   /** @deprecated Place context moved to TerritoryHero — ignored */
@@ -49,6 +46,10 @@ export function CommunityAppHeader({
   notificationCount = 0,
   onNotifications,
   notificationsLabel = "Notificaciones",
+  profileImageUrl,
+  profileName,
+  onProfileClick,
+  profileLabel = "Mi perfil",
   className,
 }: CommunityAppHeaderProps) {
   return (
@@ -103,6 +104,27 @@ export function CommunityAppHeader({
                     {notificationCount > 9 ? "9+" : notificationCount}
                   </span>
                 ) : null}
+              </button>
+            ) : null}
+
+            {onProfileClick ? (
+              <button
+                type="button"
+                onClick={onProfileClick}
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition-colors active:bg-black/[0.04]"
+                aria-label={profileLabel}
+              >
+                {profileImageUrl ? (
+                  <img
+                    src={profileImageUrl}
+                    alt=""
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[13px] font-semibold">
+                    {(profileName ?? "?").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
               </button>
             ) : null}
 

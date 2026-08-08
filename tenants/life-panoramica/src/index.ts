@@ -28,6 +28,7 @@ export * from "./home-feed";
 export * from "./home-search";
 export * from "./explorer-nav";
 export * from "./service-near-hubs";
+export * from "./home-front-door";
 export {
   CAPABILITIES,
   canAccessMunicipalityModule,

@@ -146,7 +146,7 @@ function activeFromPath(pathname: string): NavItemId {
 export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, hasCapability, isFeatureEnabled } = useTenant();
+  const { theme, hasCapability, isFeatureEnabled, demoMember } = useTenant();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
@@ -646,6 +646,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
             onNotifications={() =>
               showToast("Las notificaciones llegan pronto")
             }
+            profileImageUrl={demoMember.avatarUrl}
+            profileName={demoMember.displayName}
+            profileLabel="Mi perfil"
+            onProfileClick={() => router.push("/me")}
           />
         }
       >
