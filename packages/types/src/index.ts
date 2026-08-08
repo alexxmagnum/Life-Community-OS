@@ -83,3 +83,33 @@ export {
   applyTenantConfigurationPreset,
   assertTenantConfigurationCoversRegistry,
 } from "./platform/tenant-configuration";
+
+/** Contextual Conversation Layer (ADR-043) — contracts + context adapters. */
+export {
+  KNOWN_CONVERSATION_CONTEXT_TYPES,
+  isKnownConversationContextType,
+  validateConversationContext,
+  validateConversation,
+  validateMessage,
+  REACTION_TYPES,
+  REACTION_TYPE_GLYPH,
+  isReactionType,
+  emptyMessageReactionSummary,
+  QUICK_ACTION_KINDS,
+  isQuickActionKind,
+  RETENTION_POLICY_TYPES,
+  DEFAULT_RETENTION_POLICY_IDS,
+  validateRetentionPolicy,
+  isAdapterModuleAvailable,
+  shouldProjectConversationContext,
+  createConversationContextAdapterRegistry,
+  createExperienceConversationAdapter,
+  experienceContextMatches,
+  createGroupConversationAdapter,
+  createWorkConversationAdapter,
+  createCommunityDiscussionConversationAdapter,
+  COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
+  createReservationConversationAdapter,
+  createOfficialConversationAdapter,
+  createDefaultConversationContextAdapterRegistry,
+} from "./platform/communication";
