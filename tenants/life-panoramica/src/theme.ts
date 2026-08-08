@@ -14,6 +14,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
     defaultAreaName: "Aldea Golf",
     homeCallout: "Hoy en Panorámica Golf",
     pulseTitleTemplate: "Hoy en {territory}",
+    weatherLabel: "24° · Soleado",
   },
   colors: {
     brandPrimary: "#1F4A3C",

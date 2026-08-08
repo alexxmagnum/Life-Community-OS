@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AppShell,
+  AppMenuSheet,
   CommunityAppHeader,
   CreatePostSheet,
   CreateSheet,
+  type AppMenuCategory,
   type CreateAction,
   type NavItem,
   type NavItemId,
@@ -136,10 +138,11 @@ function activeFromPath(pathname: string): NavItemId {
 export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, hasCapability, isFeatureEnabled, demoMember } = useTenant();
+  const { theme, hasCapability, isFeatureEnabled } = useTenant();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -148,11 +151,100 @@ export function MemberShell({ children }: { children: ReactNode }) {
   };
 
   const brandName = theme.logoText;
-  const territoryName = theme.identity?.territoryName;
-  const areaLabel =
-    demoMember.areaLabel ||
-    theme.identity?.defaultAreaName ||
-    theme.logoText;
+
+  const menuCategories = useMemo((): AppMenuCategory[] => {
+    const go = (href: string) => () => router.push(href);
+
+    return [
+      {
+        id: "community",
+        tone: "community",
+        label: "Comunidad",
+        description: "La vida de nuestros vecinos",
+        children: [
+          { id: "c-info", label: "Información general", icon: "info", onSelect: go("/community") },
+          { id: "c-zone", label: "Mi zona", icon: "pin", onSelect: go("/community") },
+          { id: "c-neighbours", label: "Vecinos", icon: "people", onSelect: go("/community") },
+          { id: "c-families", label: "Familias", icon: "family", onSelect: go("/community") },
+          { id: "c-help", label: "Ayuda entre vecinos", icon: "help", onSelect: go("/community") },
+          { id: "c-proposals", label: "Propuestas comunitarias", icon: "proposal", onSelect: go("/community") },
+        ],
+      },
+      {
+        id: "activities",
+        tone: "activities",
+        label: "Actividades",
+        description: "Deportes, clases y experiencias",
+        children: [
+          { id: "a-padel", label: "Pádel", icon: "padel", onSelect: go("/resources") },
+          { id: "a-tennis", label: "Tenis", icon: "tennis", onSelect: go("/resources") },
+          { id: "a-golf", label: "Golf", icon: "golf", onSelect: go("/discover") },
+          { id: "a-hike", label: "Senderismo", icon: "hike", onSelect: go("/discover") },
+          { id: "a-class", label: "Clases y talleres", icon: "class", onSelect: go("/discover") },
+          { id: "a-games", label: "Juegos y vida social", icon: "games", onSelect: go("/discover") },
+          { id: "a-events", label: "Eventos y torneos", icon: "trophy", onSelect: go("/discover") },
+        ],
+      },
+      {
+        id: "exchange",
+        tone: "exchange",
+        label: "Intercambio",
+        description: "Compra, vende y comparte",
+        children: [
+          {
+            id: "e-market",
+            label: "Compra y venta",
+            icon: "cart",
+            onSelect: go(
+              isFeatureEnabled("marketplace") ? "/marketplace" : "/discover",
+            ),
+          },
+          { id: "e-services", label: "Servicios entre vecinos", icon: "handshake", onSelect: go("/discover") },
+          { id: "e-pro", label: "Profesionales", icon: "briefcase", onSelect: go("/discover") },
+          { id: "e-car", label: "Compartir coche", icon: "car", onSelect: go("/discover") },
+        ],
+      },
+      {
+        id: "local",
+        tone: "local",
+        label: "Vida local",
+        description: "Todo lo que necesitas cerca",
+        children: [
+          { id: "l-food", label: "Restaurantes y bares", icon: "restaurant", onSelect: go("/discover") },
+          { id: "l-shops", label: "Comercios", icon: "shop", onSelect: go("/discover") },
+          { id: "l-pharma", label: "Farmacia y salud", icon: "pharmacy", onSelect: go("/discover") },
+          { id: "l-near", label: "Servicios cercanos", icon: "service", onSelect: go("/discover") },
+          { id: "l-places", label: "Lugares de interés", icon: "place", onSelect: go("/discover") },
+        ],
+      },
+      {
+        id: "events",
+        tone: "events",
+        label: "Eventos",
+        description: "Lo que ocurre en Panorámica",
+        children: [
+          { id: "ev-next", label: "Próximos eventos", icon: "calendar", onSelect: go("/discover") },
+          { id: "ev-kids", label: "Eventos infantiles", icon: "child", onSelect: go("/discover") },
+          { id: "ev-sport", label: "Eventos deportivos", icon: "sport", onSelect: go("/discover") },
+          { id: "ev-culture", label: "Eventos culturales", icon: "culture", onSelect: go("/calendar") },
+          { id: "ev-party", label: "Fiestas y celebraciones", icon: "party", onSelect: go("/discover") },
+        ],
+      },
+      {
+        id: "official",
+        tone: "official",
+        label: "Oficial",
+        description: "Canales oficiales y servicios",
+        children: [
+          { id: "o-admin", label: "Administración Panorámica", icon: "admin", onSelect: go("/community") },
+          { id: "o-city", label: "Ayuntamiento", icon: "city", onSelect: go("/community") },
+          { id: "o-security", label: "Seguridad", icon: "security", onSelect: go("/community") },
+          { id: "o-works", label: "Mantenimiento y obras", icon: "works", onSelect: go("/community") },
+          { id: "o-public", label: "Servicios públicos", icon: "public", onSelect: go("/community") },
+        ],
+      },
+    ];
+  }, [isFeatureEnabled, router]);
 
   const createActions = useMemo(() => {
     const actions: CreateAction[] = [];
@@ -322,21 +414,26 @@ export function MemberShell({ children }: { children: ReactNode }) {
         header={
           <CommunityAppHeader
             brandName={brandName}
-            territoryName={territoryName}
-            areaLabel={areaLabel}
-            weatherLabel="24° ☀"
+            onBrandClick={() => router.push("/")}
+            onMenuOpen={() => setMenuOpen(true)}
             notificationCount={3}
             onNotifications={() =>
               showToast("Las notificaciones llegan pronto")
             }
-            profileImageUrl={demoMember.avatarUrl}
-            profileName={demoMember.displayName}
-            onProfileClick={() => router.push("/me")}
           />
         }
       >
         {children}
       </AppShell>
+      <AppMenuSheet
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        brandName={brandName}
+        categories={menuCategories}
+        searchPlaceholder={`Buscar en ${brandName}`}
+        profileLabel="Mi perfil"
+        onProfileSelect={() => router.push("/me")}
+      />
       <CreateSheet
         open={createOpen}
         onClose={() => setCreateOpen(false)}

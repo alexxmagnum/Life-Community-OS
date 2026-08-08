@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 import { MediaLightboxProvider } from "@life-community-os/ui";
 
 import { TenantProvider } from "@/providers/TenantProvider";
@@ -22,6 +22,14 @@ const display = Fraunces({
   display: "swap",
 });
 
+/** Wordmark only — distinct from editorial Fraunces headings. */
+const brand = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-brand",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Life Panoramica",
@@ -33,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={`${sans.variable} ${display.variable}`}>
+    <html lang="es" className={`${sans.variable} ${display.variable} ${brand.variable}`}>
       <body className="min-h-screen font-sans antialiased">
         <TenantProvider>
           <ExperienceParticipationProvider>

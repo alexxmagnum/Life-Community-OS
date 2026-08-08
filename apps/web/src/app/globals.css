@@ -69,6 +69,10 @@
     font-family: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
   }
 
+  .font-brand {
+    font-family: var(--font-brand), "Cormorant Garamond", ui-serif, Georgia, serif;
+  }
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;

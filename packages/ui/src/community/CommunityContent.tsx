@@ -233,34 +233,42 @@ export function CommunityPostCard({
         className,
       )}
     >
-      <button
-        type="button"
-        onClick={onOpen}
-        className="block w-full p-4 text-left"
-      >
+      <div className="p-4">
+        {/* Author row stays outside the open button — Avatar is interactive. */}
         <AuthorCard
           name={authorName}
           avatarUrl={authorAvatarUrl}
           official={official}
           meta={[typeLabel, meta, areaLabel].filter(Boolean).join(" · ")}
         />
-        {decisionStatus ? (
-          <span className="mt-3 inline-flex rounded-full bg-[var(--color-feedback-warning-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-feedback-warning)]">
-            {decisionStatus}
-          </span>
-        ) : null}
-        <h3 className="mt-3 text-[18px] font-semibold leading-6 text-[var(--color-text-primary)]">
-          {title}
-        </h3>
-        <p className="mt-2 line-clamp-3 text-[16px] leading-6 text-[var(--color-text-secondary)]">
-          {body}
-        </p>
-        {experienceLinkLabel ? (
-          <p className="mt-2 text-[14px] font-semibold text-[var(--color-action-primary)]">
-            Actividad · {experienceLinkLabel}
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-3 block w-full text-left"
+        >
+          {decisionStatus ? (
+            <span className="inline-flex rounded-full bg-[var(--color-feedback-warning-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-feedback-warning)]">
+              {decisionStatus}
+            </span>
+          ) : null}
+          <h3
+            className={cn(
+              "text-[18px] font-semibold leading-6 text-[var(--color-text-primary)]",
+              decisionStatus ? "mt-3" : undefined,
+            )}
+          >
+            {title}
+          </h3>
+          <p className="mt-2 line-clamp-3 text-[16px] leading-6 text-[var(--color-text-secondary)]">
+            {body}
           </p>
-        ) : null}
-      </button>
+          {experienceLinkLabel ? (
+            <p className="mt-2 text-[14px] font-semibold text-[var(--color-action-primary)]">
+              Actividad · {experienceLinkLabel}
+            </p>
+          ) : null}
+        </button>
+      </div>
       {imageUrl ? (
         <ZoomableImage
           src={imageUrl}

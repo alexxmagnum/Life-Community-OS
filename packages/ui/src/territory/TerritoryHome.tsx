@@ -5,45 +5,87 @@ import type { ReactNode } from "react";
 import { cn } from "../lib/cn";
 import { ZoomableImage } from "../media/MediaLightbox";
 
-/** Symbolic place band — identity strip, not a presentation hero. */
+function WeatherSunIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="4" fill="#F5C518" />
+      <path
+        d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.05 5.05l1.55 1.55M17.4 17.4l1.55 1.55M17.4 6.6l1.55-1.55M5.05 18.95l1.55-1.55"
+        stroke="#F5C518"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/** Strip leading emoji so the hero can render a proper sun glyph. */
+function cleanWeatherLabel(label: string): string {
+  return label.replace(/^[^\dA-Za-zÁÉÍÓÚáéíóúÑñ]+/, "").trim();
+}
+
+/**
+ * Territory visual — belonging layer on Home (`belonging`),
+ * optional thin strip (`band`), or tall presentation (`stage`).
+ * No counters, CTAs, or dashboard chrome inside the hero.
+ */
 export type TerritoryHeroProps = {
   imageUrl: string;
-  /** Soft caption over the photo */
+  /** Soft caption (band/stage). Prefer greeting overlay for belonging. */
   caption?: string;
-  /** band = flat symbolic strip (Home default); stage = tall presentation */
-  variant?: "band" | "stage";
+  /**
+   * belonging = inset rounded photo card (mock home entrance)
+   * band = thin symbolic strip
+   * stage = tall presentation card
+   */
+  variant?: "belonging" | "band" | "stage";
   className?: string;
-  brandName?: string;
+  /** Time-of-day greeting with member name — belonging overlay */
   greeting?: string;
-  callout?: string;
   areaLabel?: string;
-  territoryName?: string;
   weatherLabel?: string;
-  onNotifications?: () => void;
-  notificationCount?: number;
+  /** Accessible name for the place image */
+  imageAlt?: string;
 };
 
 export function TerritoryHero({
   imageUrl,
   caption,
-  variant = "band",
+  variant = "belonging",
   className,
+  greeting,
+  areaLabel,
+  weatherLabel,
+  imageAlt = "",
 }: TerritoryHeroProps) {
   const isBand = variant === "band";
+  const isBelonging = variant === "belonging";
+  const showBelongingOverlay = Boolean(
+    greeting || areaLabel || weatherLabel,
+  );
+  const weatherText = weatherLabel ? cleanWeatherLabel(weatherLabel) : "";
 
   return (
     <section className={cn("relative", className)}>
       <div
         className={cn(
           "relative overflow-hidden bg-[var(--color-surface-muted)]",
-          isBand
-            ? "h-[72px] rounded-[16px] sm:h-[80px]"
-            : "h-[min(42vh,340px)] rounded-[26px]",
+          isBand && "h-[72px] rounded-[16px] sm:h-[80px]",
+          variant === "stage" && "h-[min(42vh,340px)] rounded-[26px]",
+          isBelonging &&
+            "h-[280px] rounded-[28px] shadow-[0_8px_28px_rgba(26,31,28,0.12)] sm:h-[320px]",
         )}
       >
         <ZoomableImage
           src={imageUrl}
-          alt=""
+          alt={imageAlt}
           className={cn(
             isBand ? "object-[center_40%]" : "object-[center_45%]",
           )}
@@ -54,10 +96,34 @@ export function TerritoryHero({
           style={{
             background: isBand
               ? "linear-gradient(90deg, rgba(20,28,24,0.55) 0%, rgba(20,28,24,0.15) 55%, transparent 100%)"
-              : "linear-gradient(180deg, rgba(20,28,24,0.04) 0%, transparent 45%, rgba(20,28,24,0.58) 100%)",
+              : isBelonging
+                ? "linear-gradient(180deg, rgba(20,28,24,0.05) 0%, rgba(20,28,24,0.08) 38%, rgba(20,28,24,0.62) 100%)"
+                : "linear-gradient(180deg, rgba(20,28,24,0.04) 0%, transparent 45%, rgba(20,28,24,0.58) 100%)",
           }}
         />
-        {caption ? (
+
+        {isBelonging && showBelongingOverlay ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-5 pb-5 pt-12 sm:px-6 sm:pb-6">
+            {greeting ? (
+              <p className="text-[22px] font-bold leading-[1.15] tracking-tight text-white drop-shadow-sm sm:text-[26px]">
+                {greeting}
+              </p>
+            ) : null}
+            {areaLabel ? (
+              <p className="mt-1 text-[14px] font-medium text-white/90 sm:text-[15px]">
+                {areaLabel}
+              </p>
+            ) : null}
+            {weatherText ? (
+              <p className="mt-2 flex items-center gap-1.5 text-[13px] font-medium tabular-nums text-white/90 sm:text-[14px]">
+                <WeatherSunIcon className="shrink-0" />
+                <span>{weatherText}</span>
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!isBelonging && caption ? (
           <p
             className={cn(
               "pointer-events-none absolute font-display font-medium italic text-white drop-shadow-sm",

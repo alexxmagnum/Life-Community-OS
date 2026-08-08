@@ -44,6 +44,10 @@ export {
   SponsoredFeedCard,
   HomeFeedSection,
   type AppMenuItem,
+  type AppMenuCategory,
+  type AppMenuLeaf,
+  type AppMenuLeafIcon,
+  type AppMenuCategoryTone,
   type CategoryFilterOption,
 } from "./layout/CommunityAppChrome";
 export {

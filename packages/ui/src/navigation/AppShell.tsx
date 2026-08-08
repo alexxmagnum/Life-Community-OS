@@ -50,7 +50,7 @@ export function AppShell({
           className={cn(
             "mx-auto w-full max-w-[390px] flex-1 overflow-x-hidden px-4 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
             header
-              ? "pt-[calc(3.75rem+env(safe-area-inset-top))] md:pt-8"
+              ? "pt-[calc(3.5rem+env(safe-area-inset-top))] md:pt-8"
               : "pt-3",
             className,
           )}

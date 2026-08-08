@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildCommunityPulse,
@@ -8,29 +8,30 @@ import {
   getHomeSponsorSlot,
   listDiscoverableExperiences,
   listNearYou,
-  searchHomeCatalog,
 } from "@life-community-os/tenant-life-panoramica";
 import type { CommunityActivitySource } from "@life-community-os/types";
 import {
   CommunityActivityCard,
   CommunityPulseMoment,
   ExperiencePreviewCard,
-  GlobalAppSearch,
   HomeSection,
   LocalLifeRail,
   LocalPlaceCard,
-  QuickActionBar,
   SponsoredFeedCard,
   TerritoryHero,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-function greetingFor(name: string) {
-  return `Hola, ${name}`;
-}
-
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
+}
+
+/** Belonging greeting — Spanish product copy; i18n catalogue later. */
+function belongingGreeting(name: string, now = new Date()): string {
+  const hour = now.getHours();
+  const salutation =
+    hour < 12 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
+  return `${salutation}, ${name}`;
 }
 
 function categoryForSource(source: CommunityActivitySource): string {
@@ -81,13 +82,7 @@ function experienceCategory(title: string): string {
   return "Plan";
 }
 
-function openCreateSheet() {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("lcos:open-create"));
-  }
-}
-
-/** Prefer life over administration in editorial order. */
+/** Prefer life over administration in editorial order (pre-P3 Today). */
 function editorialRank(source: CommunityActivitySource): number {
   switch (source) {
     case "experience":
@@ -111,10 +106,14 @@ function editorialRank(source: CommunityActivitySource): number {
   }
 }
 
+/**
+ * Home front door — P1/P2:
+ * Belonging hero first. No search / quick actions / agenda in first viewport.
+ * Existing pulse / experiences / near-you remain until P3 Today.
+ */
 export function HomeScreen() {
   const router = useRouter();
   const { theme, isFeatureEnabled, hasCapability, demoMember } = useTenant();
-  const [query, setQuery] = useState("");
 
   const territoryName =
     theme.identity?.territoryName ?? theme.logoText;
@@ -126,6 +125,8 @@ export function HomeScreen() {
     demoMember.areaLabel ||
     theme.identity?.defaultAreaName ||
     undefined;
+  const weatherLabel = theme.identity?.weatherLabel;
+  const greeting = belongingGreeting(demoMember.displayName);
 
   const canPulse =
     isFeatureEnabled("communityPulse") &&
@@ -134,11 +135,6 @@ export function HomeScreen() {
   const canLocal =
     isFeatureEnabled("localLife") &&
     hasCapability(CAPABILITIES.localView);
-
-  const searchHits = useMemo(
-    () => (query.trim().length >= 2 ? searchHomeCatalog(query, 8) : []),
-    [query],
-  );
 
   const pulse = useMemo(() => {
     if (!canPulse) return [];
@@ -175,153 +171,16 @@ export function HomeScreen() {
     return listNearYou().slice(0, 6);
   }, [canLocal]);
 
-  const quickActions = useMemo(() => {
-    const items: {
-      id: string;
-      label: string;
-      icon: ReactNode;
-      hint?: string;
-      onClick: () => void;
-    }[] = [];
-
-    if (
-      isFeatureEnabled("resources") &&
-      hasCapability(CAPABILITIES.resourceReserve)
-    ) {
-      items.push({
-        id: "reserve",
-        label: "Reservar",
-        hint: "Pistas y salones",
-        icon: (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="m9 15 2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        ),
-        onClick: () => router.push("/resources"),
-      });
-    }
-    if (isFeatureEnabled("experiences")) {
-      items.push({
-        id: "events",
-        label: "Eventos",
-        hint: "Planes de hoy",
-        icon: (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M8 3v4M16 3v4M4 10h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="m12 13 1.1 2.2 2.4.3-1.8 1.7.5 2.4L12 18.4 9.8 19.6l.5-2.4-1.8-1.7 2.4-.3L12 13Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-          </svg>
-        ),
-        onClick: () => router.push("/discover"),
-      });
-    }
-    if (isFeatureEnabled("marketplace")) {
-      items.push({
-        id: "market",
-        label: "Mercado",
-        hint: "Entre vecinos",
-        icon: (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path d="M7 7h13l-1.4 8.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.7L6 4H3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx="10" cy="20" r="1" fill="currentColor" />
-            <circle cx="17" cy="20" r="1" fill="currentColor" />
-          </svg>
-        ),
-        onClick: () => router.push("/marketplace"),
-      });
-    }
-    items.push({
-      id: "create",
-      label: "Crear",
-      hint: "Comparte algo",
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-      ),
-      onClick: openCreateSheet,
-    });
-    return items.slice(0, 4);
-  }, [hasCapability, isFeatureEnabled, router]);
-
-  const searchSuggestions = useMemo(() => {
-    const chips: { id: string; label: string; onClick: () => void }[] = [];
-    if (isFeatureEnabled("resources")) {
-      chips.push({
-        id: "chip-padel",
-        label: "Pádel",
-        onClick: () => setQuery("pádel"),
-      });
-    }
-    if (isFeatureEnabled("experiences")) {
-      chips.push({
-        id: "chip-paseo",
-        label: "Paseos",
-        onClick: () => setQuery("paseo"),
-      });
-    }
-    if (isFeatureEnabled("marketplace")) {
-      chips.push({
-        id: "chip-market",
-        label: "Mercado",
-        onClick: () => router.push("/marketplace"),
-      });
-    }
-    chips.push({
-      id: "chip-create",
-      label: "Crear",
-      onClick: openCreateSheet,
-    });
-    return chips;
-  }, [isFeatureEnabled, router]);
-
   return (
-    <div className="space-y-4 overflow-x-hidden pb-8 md:space-y-5">
-      <GlobalAppSearch
-        value={query}
-        onChange={setQuery}
-        placeholder="Buscar planes, reservas, mercado, sitios…"
-        hits={searchHits}
-        onSelectHit={(hit) => {
-          setQuery("");
-          router.push(hit.href);
-        }}
-        suggestions={searchSuggestions}
-      />
-
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-[26px] font-semibold leading-tight tracking-tight text-[var(--color-action-primary)]">
-            {greetingFor(demoMember.displayName)}{" "}
-            <span aria-hidden>👋</span>
-          </h1>
-          {areaLine ? (
-            <p className="mt-0.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
-              {areaLine}
-            </p>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={() => router.push("/calendar")}
-          className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.05)]"
-        >
-          Mi agenda
-        </button>
-      </div>
-
+    <div className="space-y-6 overflow-x-hidden pb-8 md:space-y-8">
       <TerritoryHero
-        variant="band"
+        variant="belonging"
         imageUrl={theme.imagery.homeHero}
-        caption="Panorámica Golf"
+        imageAlt={territoryName}
+        greeting={greeting}
+        areaLabel={areaLine}
+        weatherLabel={weatherLabel}
       />
-
-      {quickActions.length > 0 ? (
-        <QuickActionBar items={quickActions} />
-      ) : null}
 
       <div className="space-y-8 pt-1 md:space-y-10">
         {canPulse ? (

@@ -53,6 +53,11 @@ export type TenantBrandTokens = {
      * Supports `{territory}` placeholder — never hardcode tenant names in UI.
      */
     pulseTitleTemplate?: string;
+    /**
+     * Optional weather line for belonging hero overlay (demo/config).
+     * Not shown in global header.
+     */
+    weatherLabel?: string;
   };
   colors: {
     brandPrimary: string;
