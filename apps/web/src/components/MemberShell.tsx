@@ -15,7 +15,7 @@ import {
 } from "@life-community-os/ui";
 import {
   listExplorerActivities,
-  listOfficialEntities,
+  listVisibleOfficialEntities,
   officialEntityNavIcon,
   officialEntityNavLabel,
 } from "@life-community-os/tenant-life-panoramica";
@@ -132,6 +132,8 @@ function buildNav(flags: {
 function activeFromPath(pathname: string): NavItemId {
   if (pathname.startsWith("/marketplace")) return "marketplace";
   if (pathname.startsWith("/discover")) return "discover";
+  if (pathname.startsWith("/services")) return "discover";
+  if (pathname.startsWith("/near")) return "discover";
   if (pathname.startsWith("/resources")) return "discover";
   if (pathname.startsWith("/experiences")) return "discover";
   if (pathname.startsWith("/calendar")) return "me";
@@ -288,7 +290,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
-    // 5. Servicios — help, professionals, marketplace, mobility
+    // 5. Servicios — "I need something solved" (not a directory)
     {
       const serviceChildren: AppMenuCategory["children"] = [];
       if (isFeatureEnabled("services") || isFeatureEnabled("localLife")) {
@@ -296,24 +298,29 @@ export function MemberShell({ children }: { children: ReactNode }) {
           id: "svc-pro",
           label: "Profesionales",
           icon: "briefcase",
-          onSelect: go("/discover"),
+          onSelect: go("/services/professionals"),
         });
       }
-      serviceChildren.push({
-        id: "svc-neighbour",
-        label: "Ayuda entre vecinos",
-        icon: "handshake",
-        onSelect: go("/community"),
-      });
+      if (isFeatureEnabled("services") || isFeatureEnabled("marketplace")) {
+        serviceChildren.push({
+          id: "svc-neighbour",
+          label: "Ayuda entre vecinos",
+          icon: "handshake",
+          onSelect: go("/services/neighbour-help"),
+        });
+      }
       if (isFeatureEnabled("mobility")) {
         serviceChildren.push({
           id: "svc-mobility",
           label: "Movilidad",
           icon: "car",
-          onSelect: go("/discover"),
+          onSelect: go("/services/mobility"),
         });
       }
-      if (isFeatureEnabled("marketplace")) {
+      if (
+        isFeatureEnabled("marketplace") &&
+        hasCapability(CAPABILITIES.marketplaceView)
+      ) {
         serviceChildren.push({
           id: "svc-market",
           label: "Compra y venta",
@@ -326,7 +333,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
           id: "svc-reco",
           label: "Recomendaciones",
           icon: "culture",
-          onSelect: go("/discover"),
+          onSelect: go("/services/recommendations"),
         });
       }
       if (serviceChildren.length > 0) {
@@ -341,8 +348,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
       }
     }
 
-    // 6. Cerca de ti — LocalEntity discovery
-    if (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) {
+    // 6. Cerca de ti — "What exists around me?" (LocalEntity)
+    if (
+      (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) &&
+      hasCapability(CAPABILITIES.localView)
+    ) {
       categories.push({
         id: "near",
         tone: "local",
@@ -350,29 +360,50 @@ export function MemberShell({ children }: { children: ReactNode }) {
         label: "Cerca de ti",
         description: "Lo que hay alrededor",
         children: [
-          { id: "near-food", label: "Restaurantes", icon: "restaurant", onSelect: go("/discover") },
-          { id: "near-shops", label: "Comercios", icon: "shop", onSelect: go("/discover") },
-          { id: "near-services", label: "Servicios", icon: "service", onSelect: go("/discover") },
-          { id: "near-places", label: "Lugares", icon: "place", onSelect: go("/discover") },
+          {
+            id: "near-food",
+            label: "Restaurantes",
+            icon: "restaurant",
+            onSelect: go("/near/restaurants"),
+          },
+          {
+            id: "near-shops",
+            label: "Comercios",
+            icon: "shop",
+            onSelect: go("/near/businesses"),
+          },
+          {
+            id: "near-services",
+            label: "Servicios",
+            icon: "service",
+            onSelect: go("/near/services"),
+          },
+          {
+            id: "near-places",
+            label: "Lugares",
+            icon: "place",
+            onSelect: go("/near/places"),
+          },
         ],
       });
     }
 
-    // 7. Oficial — OfficialEntity detail hubs (only entities that exist)
-    if (isFeatureEnabled("officialChannels") || isFeatureEnabled("municipalServices")) {
-      const officialChildren = listOfficialEntities()
-        .filter((entity) => {
-          if (entity.kind === "municipality") {
-            return isFeatureEnabled("municipalServices");
-          }
-          return isFeatureEnabled("officialChannels");
-        })
-        .map((entity) => ({
-          id: `o-${entity.slug}`,
-          label: officialEntityNavLabel(entity),
-          icon: officialEntityNavIcon(entity),
-          onSelect: go(`/official/${entity.slug}`),
-        }));
+    // 7. Oficial — only modules whose feature flags are on (no ghost destinations)
+    if (
+      isFeatureEnabled("officialChannels") ||
+      isFeatureEnabled("municipalServices") ||
+      isFeatureEnabled("securityModule")
+    ) {
+      const officialChildren = listVisibleOfficialEntities({
+        officialChannels: isFeatureEnabled("officialChannels"),
+        municipalServices: isFeatureEnabled("municipalServices"),
+        securityModule: isFeatureEnabled("securityModule"),
+      }).map((entity) => ({
+        id: `o-${entity.slug}`,
+        label: officialEntityNavLabel(entity),
+        icon: officialEntityNavIcon(entity),
+        onSelect: go(`/official/${entity.slug}`),
+      }));
 
       if (officialChildren.length > 0) {
         categories.push({

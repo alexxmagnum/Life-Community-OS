@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  canAccessChannel,
+  filterAccessibleChannels,
   formatExperienceWhen,
   getExplorerActivityBySlug,
   listChannelsForActivity,
@@ -52,8 +52,14 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
   const hub = useMemo(() => getExplorerActivityBySlug(slug), [slug]);
 
   const channels = useMemo(
-    () => (hub ? listChannelsForActivity(hub.slug) : []),
-    [hub],
+    () =>
+      hub
+        ? filterAccessibleChannels(
+            listChannelsForActivity(hub.slug),
+            demoPersonId,
+          )
+        : [],
+    [hub, demoPersonId],
   );
   const groups = useMemo(
     () => (hub ? listGroupsForActivity(hub.slug) : []),
@@ -149,10 +155,9 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
         ) : (
           <div className="space-y-3">
             {channels.map((ch) => {
-              const access = canAccessChannel(ch, demoPersonId);
               const label = channelAccessLabel({
-                allowed: access.allowed,
-                reason: access.reason,
+                allowed: true,
+                reason: "accessible",
                 requiresVerifiedResidency: ch.requiresVerifiedResidency,
                 type: ch.type,
               });

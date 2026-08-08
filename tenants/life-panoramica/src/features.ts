@@ -28,7 +28,16 @@ export type TenantFeatureFlags = {
   /** Channel organization layer (ADR-035). */
   communityChannels: boolean;
   officialChannels: boolean;
+  /**
+   * Municipality integrations / Ayuntamiento module.
+   * Off by default — enable when municipal Official Entity surface is ready.
+   */
   municipalServices: boolean;
+  /**
+   * Official Security module (entity, gates, patrol, notices, incidents).
+   * Off by default — architecture only until product enables it.
+   */
+  securityModule: boolean;
   mobility: boolean;
   /** Residency verification workflows (ADR-038). */
   residencyVerification: boolean;
@@ -56,7 +65,10 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   marketplace: true,
   communityChannels: true,
   officialChannels: true,
-  municipalServices: true,
+  /** Hidden until municipality module is explicitly enabled. */
+  municipalServices: false,
+  /** Hidden until security module is explicitly enabled. */
+  securityModule: false,
   mobility: true,
   residencyVerification: true,
   participationTrust: true,

@@ -1,6 +1,6 @@
 import type { Channel } from "@life-community-os/types";
 
-import { getChannelById } from "./channels";
+import { getChannelById, listChannels } from "./channels";
 import { personHasVerifiedResidencyInArea } from "./residency-demo";
 
 /**
@@ -26,4 +26,19 @@ export function canAccessChannel(
     return { allowed: true, reason: "verified_residency" };
   }
   return { allowed: false, reason: "verified_residency_required" };
+}
+
+/**
+ * Normal channel listings must never show inaccessible destinations.
+ * Blocked / "Bloqueado" cards are not rendered in primary navigation lists.
+ */
+export function listAccessibleChannels(personId: string): Channel[] {
+  return listChannels().filter((ch) => canAccessChannel(ch, personId).allowed);
+}
+
+export function filterAccessibleChannels(
+  channels: Channel[],
+  personId: string,
+): Channel[] {
+  return channels.filter((ch) => canAccessChannel(ch, personId).allowed);
 }

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  canAccessChannel,
+  filterAccessibleChannels,
   formatContentWhen,
   getOfficialEntityBySlug,
   listChannelsForOfficialEntity,
@@ -50,8 +50,14 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   const entity = useMemo(() => getOfficialEntityBySlug(slug), [slug]);
 
   const channels = useMemo(
-    () => (entity ? listChannelsForOfficialEntity(entity.id) : []),
-    [entity],
+    () =>
+      entity
+        ? filterAccessibleChannels(
+            listChannelsForOfficialEntity(entity.id),
+            demoPersonId,
+          )
+        : [],
+    [entity, demoPersonId],
   );
   const communications = useMemo(
     () => (entity ? listContentForOfficialEntity(entity.id) : []),
@@ -238,10 +244,9 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           ) : (
             <div className="space-y-3">
               {channels.map((ch) => {
-                const access = canAccessChannel(ch, demoPersonId);
                 const label = channelAccessLabel({
-                  allowed: access.allowed,
-                  reason: access.reason,
+                  allowed: true,
+                  reason: "accessible",
                   requiresVerifiedResidency: ch.requiresVerifiedResidency,
                   type: ch.type,
                 });

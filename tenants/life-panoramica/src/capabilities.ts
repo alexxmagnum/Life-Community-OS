@@ -40,6 +40,15 @@ export const CAPABILITIES = {
   residencyClaim: "community.residency.claim",
   residencyVerifyReview: "community.residency.verify_review",
   manageEnter: "community.manage.enter",
+  /**
+   * Security module foundation (future Official Security entity).
+   * UI gated by feature flag `securityModule` — do not expose navigation yet.
+   */
+  securityView: "community.security.view",
+  securityNoticesView: "community.security.notices.view",
+  securityGateView: "community.security.gate.view",
+  securityPatrolView: "community.security.patrol.view",
+  securityIncidentCreate: "community.security.incident.create",
 } as const;
 
 export type CapabilityKey = (typeof CAPABILITIES)[keyof typeof CAPABILITIES];
@@ -101,8 +110,33 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.channelPublish,
     CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.manageEnter,
+    // Ready when `securityModule` feature flag is enabled — no UI yet.
+    CAPABILITIES.securityView,
+    CAPABILITIES.securityNoticesView,
+    CAPABILITIES.securityGateView,
+    CAPABILITIES.securityPatrolView,
+    CAPABILITIES.securityIncidentCreate,
   ],
 };
+
+/**
+ * Module visibility helpers — feature flag + capability.
+ * Navigation must use these; never show modules that are off or unauthorized.
+ */
+export function canAccessSecurityModule(input: {
+  featureEnabled: boolean;
+  hasCapability: (key: CapabilityKey | string) => boolean;
+}): boolean {
+  return (
+    input.featureEnabled && input.hasCapability(CAPABILITIES.securityView)
+  );
+}
+
+export function canAccessMunicipalityModule(input: {
+  featureEnabled: boolean;
+}): boolean {
+  return input.featureEnabled;
+}
 
 export function capabilitiesForRole(role: DemoRole): Set<CapabilityKey> {
   return new Set(roleCapabilities[role]);

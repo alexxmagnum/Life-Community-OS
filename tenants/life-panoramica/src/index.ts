@@ -27,8 +27,11 @@ export * from "./community-pulse";
 export * from "./home-feed";
 export * from "./home-search";
 export * from "./explorer-nav";
+export * from "./service-near-hubs";
 export {
   CAPABILITIES,
+  canAccessMunicipalityModule,
+  canAccessSecurityModule,
   capabilitiesForRole,
   type CapabilityKey,
   type DemoRole,

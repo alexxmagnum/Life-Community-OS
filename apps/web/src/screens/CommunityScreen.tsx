@@ -6,9 +6,8 @@ import {
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
-  listChannels,
+  listAccessibleChannels,
   listGroups,
-  canAccessChannel,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CommentPreview,
@@ -72,6 +71,11 @@ export function CommunityScreen() {
     toggleSave,
     reportContent,
   } = useCommunityInteractions();
+
+  const accessibleChannels = useMemo(
+    () => listAccessibleChannels(demoPersonId),
+    [demoPersonId],
+  );
 
   const chips = (
     [
@@ -273,31 +277,31 @@ export function CommunityScreen() {
         ) : (
           <div className="space-y-3">
             <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">
-              Organización de la información — no es un chat. Los canales
-              privados exigen residencia verificada.
+              Organización de la información — no es un chat. Solo ves los
+              espacios a los que tienes acceso.
             </p>
-            {listChannels().map((channel) => {
-              const access = canAccessChannel(channel, demoPersonId);
-              const label = channelAccessLabel({
-                allowed: access.allowed,
-                reason: access.reason,
-                requiresVerifiedResidency: channel.requiresVerifiedResidency,
-                type: channel.type,
-              });
-              const toneClass =
-                label.tone === "ok"
-                  ? "text-[var(--color-success)]"
-                  : label.tone === "blocked"
-                    ? "text-[var(--color-danger)]"
+            {accessibleChannels.length === 0 ? (
+              <EmptyState
+                title="No hay espacios disponibles"
+                description="Cuando tengas acceso a un canal de tu comunidad, aparecerá aquí."
+              />
+            ) : (
+              accessibleChannels.map((channel) => {
+                const label = channelAccessLabel({
+                  allowed: true,
+                  reason: "accessible",
+                  requiresVerifiedResidency: channel.requiresVerifiedResidency,
+                  type: channel.type,
+                });
+                const toneClass =
+                  label.tone === "ok"
+                    ? "text-[var(--color-success)]"
                     : "text-[var(--color-action-primary)]";
-              return (
-                <article
-                  key={channel.id}
-                  className={`rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)] ${
-                    label.locked ? "opacity-80" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
+                return (
+                  <article
+                    key={channel.id}
+                    className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
+                  >
                     <div className="min-w-0">
                       <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                         {channel.type}
@@ -311,18 +315,13 @@ export function CommunityScreen() {
                         </p>
                       ) : null}
                     </div>
-                    {label.locked ? (
-                      <span className="shrink-0 rounded-full bg-[var(--color-danger-subtle)] px-2 py-1 text-[11px] font-bold text-[var(--color-danger)]">
-                        Bloqueado
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className={`mt-3 text-[13px] font-semibold ${toneClass}`}>
-                    {label.badge}
-                  </p>
-                </article>
-              );
-            })}
+                    <p className={`mt-3 text-[13px] font-semibold ${toneClass}`}>
+                      {label.badge}
+                    </p>
+                  </article>
+                );
+              })
+            )}
           </div>
         )
       ) : null}

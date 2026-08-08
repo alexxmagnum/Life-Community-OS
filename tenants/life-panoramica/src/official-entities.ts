@@ -160,6 +160,28 @@ export function listChannelsForOfficialEntity(entityId: string): Channel[] {
   );
 }
 
+/**
+ * Official nav / listings — only entities whose module flag is on.
+ * Security / municipality stay hidden until explicitly enabled.
+ */
+export function listVisibleOfficialEntities(flags: {
+  officialChannels?: boolean;
+  municipalServices?: boolean;
+  securityModule?: boolean;
+}): OfficialEntityProfile[] {
+  return listOfficialEntities().filter((entity) => {
+    if (entity.kind === "municipality") {
+      return Boolean(flags.municipalServices);
+    }
+    if (entity.kind === "public_service" || entity.kind === "other_official") {
+      // Future security / public-service entities ride on securityModule.
+      return Boolean(flags.securityModule);
+    }
+    // territory_authority (Administración)
+    return Boolean(flags.officialChannels);
+  });
+}
+
 export function listContentForOfficialEntity(
   entityId: string,
 ): CommunityContent[] {

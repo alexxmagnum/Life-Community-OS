@@ -13,6 +13,8 @@ import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
 import type { TenantBrandTokens } from "@life-community-os/design-tokens";
 import {
   CAPABILITIES,
+  canAccessMunicipalityModule,
+  canAccessSecurityModule,
   capabilitiesForRole,
   DEMO_PERSON_MARTA,
   getDemoMemberByPersonId,
@@ -115,4 +117,8 @@ export function useTenant() {
   return ctx;
 }
 
-export { CAPABILITIES };
+export {
+  CAPABILITIES,
+  canAccessMunicipalityModule,
+  canAccessSecurityModule,
+};
