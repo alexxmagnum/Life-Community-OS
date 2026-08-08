@@ -193,7 +193,7 @@ export function DiscoverScreen() {
                         name={g.name}
                         members={g.memberCount}
                         imageUrl={g.imageUrl}
-                        onOpen={() => router.push("/community?tab=grupos")}
+                        onOpen={() => router.push(`/community/groups/${g.id}`)}
                       />
                     ))}
                   </div>

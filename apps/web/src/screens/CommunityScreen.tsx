@@ -62,7 +62,13 @@ function resolveChip(raw: string | null): Chip | null {
 export function CommunityScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    demoPersonId,
+  } = useTenant();
   const {
     feedItems,
     getMyReaction,
@@ -88,7 +94,8 @@ export function CommunityScreen() {
       {
         id: "grupos" as const,
         label: "Grupos",
-        enabled: isFeatureEnabled("groups"),
+        enabled:
+          isFeatureEnabled("groups") && isModuleEnabled("community.groups"),
       },
       {
         id: "canales" as const,
@@ -265,6 +272,7 @@ export function CommunityScreen() {
                 name={group.name}
                 members={group.memberCount}
                 imageUrl={group.imageUrl}
+                onOpen={() => router.push(`/community/groups/${group.id}`)}
               />
             ))}
           </div>
