@@ -112,4 +112,25 @@ export {
   createReservationConversationAdapter,
   createOfficialConversationAdapter,
   createDefaultConversationContextAdapterRegistry,
+  EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./platform/communication";
+
+/** Platform Core Files & Media (ADR-020 / D.0.5c) — contracts only. */
+export {
+  FILE_TYPES,
+  FILE_REFERENCE_STATUSES,
+  isFileType,
+  isFileReferenceStatus,
+  isFileReferenceReady,
+  validateFileReference,
+  FILE_VARIANT_KINDS,
+  PREFERRED_IMAGE_FORMATS,
+  isFileVariantKind,
+  validateFileVariant,
+  pickDeliveryVariant,
+  DEFAULT_IMAGE_OPTIMIZATION_CONTRACT,
+  DEFAULT_MEDIA_PIPELINE_CONTRACT,
+  shouldProjectFileReference,
+  canDeliverFileReference,
+  isFileEligibleForRetentionCleanup,
+} from "./platform/files";

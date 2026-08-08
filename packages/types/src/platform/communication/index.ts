@@ -57,8 +57,10 @@ export type {
 export {
   RETENTION_POLICY_TYPES,
   DEFAULT_RETENTION_POLICY_IDS,
+  EPHEMERAL_MEDIA_TTL_PRESETS,
   validateRetentionPolicy,
 } from "./retention-policy";
+export type { EphemeralMediaTtlPreset } from "./retention-policy";
 
 export type {
   ContextLifecycleState,

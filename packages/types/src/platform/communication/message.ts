@@ -1,29 +1,32 @@
 import type { DomainId, IsoDateTimeString } from "../../domain/ids";
+import type { FileType } from "../files/file-reference";
+import type { FileVariantKind } from "../files/file-variant";
 import type { QuickActionKind } from "./quick-actions";
 import { isQuickActionKind } from "./quick-actions";
 import type { MessageReactionSummary, ReactionType } from "./reactions";
 import { isReactionType } from "./reactions";
 
 /**
- * Conversation Message (ADR-043 / D.0.5a).
+ * Conversation Message (ADR-043).
  *
  * Belongs to a Conversation under a domain Context.
- * Media is referenced (ADR-020 Files) — never uncontrolled mobile originals.
+ * Media is referenced via Core Files (ADR-020 / D.0.5c) — never raw upload URLs.
  */
 
 /**
- * File reference attached to a message.
- * Physical bytes live in Core Files; this is a stable pointer + role hint.
+ * Pointer from a Message to a FileReference.
+ * `fileId` MUST equal FileReference.id — never embed imageUrl / blob URLs here.
  */
 export type MessageMediaRef = {
+  /** FileReference.id */
   fileId: DomainId;
-  /** Optional MIME / family hint for clients. */
-  kind?: "image" | "video" | "audio" | "file";
+  /** Mirrors FileReference.fileType when known. */
+  kind?: FileType;
   /**
-   * Pipeline role — thumbnail / preview / optimized are preferred for display.
-   * original_ref is never the uncontrolled mobile upload as serving asset.
+   * Preferred variant for display.
+   * Use thumbnail | preview | optimized — never serve original_ref by default.
    */
-  role?: "thumbnail" | "preview" | "optimized" | "original_ref";
+  role?: FileVariantKind;
 };
 
 export type Message = {

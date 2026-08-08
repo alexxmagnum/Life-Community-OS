@@ -17,6 +17,15 @@ export const RETENTION_POLICY_TYPES = [
 
 export type RetentionPolicyType = (typeof RETENTION_POLICY_TYPES)[number];
 
+/**
+ * Suggested ephemeral media windows (days).
+ * Applied via RetentionPolicy / FileOwnerContext — not Message code.
+ */
+export const EPHEMERAL_MEDIA_TTL_PRESETS = [7, 30] as const;
+
+export type EphemeralMediaTtlPreset =
+  (typeof EPHEMERAL_MEDIA_TTL_PRESETS)[number];
+
 export type RetentionPolicy = {
   id: DomainId;
   type: RetentionPolicyType;
@@ -26,6 +35,11 @@ export type RetentionPolicy = {
   archiveAfter?: number;
   /** When true, media refs should enter cleanup after archive / TTL. */
   cleanupMedia?: boolean;
+  /**
+   * Optional media-specific TTL (days) — e.g. experience coordination photos.
+   * Custom values allowed; presets 7 / 30 are recommended.
+   */
+  mediaTtlDays?: number | EphemeralMediaTtlPreset;
 };
 
 /**
@@ -43,7 +57,8 @@ export type RetentionPolicyIssueCode =
   | "missing_id"
   | "missing_type"
   | "negative_ttl"
-  | "negative_archive_after";
+  | "negative_archive_after"
+  | "negative_media_ttl";
 
 export type RetentionPolicyIssue = {
   code: RetentionPolicyIssueCode;
@@ -86,6 +101,13 @@ export function validateRetentionPolicy(
       code: "negative_archive_after",
       message: "archiveAfter must be >= 0 when set.",
       field: "archiveAfter",
+    });
+  }
+  if (policy.mediaTtlDays !== undefined && policy.mediaTtlDays < 0) {
+    issues.push({
+      code: "negative_media_ttl",
+      message: "mediaTtlDays must be >= 0 when set.",
+      field: "mediaTtlDays",
     });
   }
 
