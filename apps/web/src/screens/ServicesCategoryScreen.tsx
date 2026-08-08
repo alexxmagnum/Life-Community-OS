@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatContentWhen,
@@ -9,8 +9,12 @@ import {
   listMobilityListings,
   listNeighbourHelpListings,
   listRecommendationsForHub,
+  listWorkPostsForHub,
   marketplaceKindLabel,
+  workPostTypeLabel,
+  type WorkPostListing,
 } from "@life-community-os/tenant-life-panoramica";
+import type { WorkPostType } from "@life-community-os/types";
 import {
   EmptyState,
   LocalPlaceCard,
@@ -18,6 +22,7 @@ import {
   MobileScreen,
   NeighbourTipCard,
   ScreenBack,
+  ScreenPrimaryAction,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -30,6 +35,8 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
   const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const [query, setQuery] = useState("");
+  const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
+  const [workPosts, setWorkPosts] = useState<WorkPostListing[]>([]);
 
   const hub = useMemo(() => getServicesCategoryBySlug(category), [category]);
 
@@ -41,6 +48,9 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const canMarket =
     isFeatureEnabled("marketplace") &&
     hasCapability(CAPABILITIES.marketplaceView);
+  const canWork =
+    (isFeatureEnabled("work") || isFeatureEnabled("services")) &&
+    hasCapability(CAPABILITIES.localView);
 
   const entities = useMemo(() => {
     if (!hub || hub.content.kind !== "local-entities") return [];
@@ -66,15 +76,29 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     return listRecommendationsForHub(query);
   }, [hub, canLocal, isFeatureEnabled, query]);
 
+  useEffect(() => {
+    if (!hub || hub.content.kind !== "work" || !canWork) {
+      setWorkPosts([]);
+      return;
+    }
+    setWorkPosts(
+      listWorkPostsForHub({
+        type: workFilter === "all" ? undefined : workFilter,
+        query,
+        includeSessionCreated: true,
+      }),
+    );
+  }, [hub, canWork, workFilter, query]);
+
   if (!hub) {
     return (
       <MobileScreen>
-        <ScreenBack onClick={() => router.back()} />
+        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
         <EmptyState
           title="Servicio no encontrado"
           description="Esta categoría no forma parte de tu comunidad."
-          actionLabel="Volver al inicio"
-          onAction={() => router.push("/")}
+          actionLabel="Ver servicios"
+          onAction={() => router.push("/services")}
         />
       </MobileScreen>
     );
@@ -83,12 +107,12 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   if (!featureOk) {
     return (
       <MobileScreen>
-        <ScreenBack label="Servicios" onClick={() => router.back()} />
+        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
         <EmptyState
           title="No disponible"
           description="Este módulo no está activo en tu comunidad ahora mismo."
-          actionLabel="Volver al inicio"
-          onAction={() => router.push("/")}
+          actionLabel="Ver servicios"
+          onAction={() => router.push("/services")}
         />
       </MobileScreen>
     );
@@ -131,6 +155,55 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         </div>
       );
     }
+  } else if (hub.content.kind === "work") {
+    if (!canWork) {
+      body = (
+        <EmptyState
+          title="Sin acceso"
+          description="Los anuncios de trabajo no están disponibles para tu cuenta."
+        />
+      );
+    } else if (workPosts.length === 0) {
+      body = (
+        <EmptyState
+          title={hub.emptyTitle}
+          description={hub.emptyDescription}
+        />
+      );
+    } else {
+      body = (
+        <ul className="space-y-3">
+          {workPosts.map((item) => (
+            <li key={item.id}>
+              <article className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[var(--shadow-elev-1)]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-primary)]">
+                    {workPostTypeLabel(item.type)}
+                  </span>
+                  <span className="text-[12px] font-medium text-[var(--color-text-tertiary)]">
+                    {item.categoryLabel}
+                  </span>
+                </div>
+                <p className="mt-2 text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                  {item.description}
+                </p>
+                <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                  {item.authorName}
+                  {item.location ? ` · ${item.location}` : ""}
+                  {item.availability ? ` · ${item.availability}` : ""}
+                </p>
+                <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+                  {formatContentWhen(item.createdAt)}
+                </p>
+              </article>
+            </li>
+          ))}
+        </ul>
+      );
+    }
   } else if (hub.content.kind === "neighbour-help") {
     if (!canMarket) {
       body = (
@@ -144,7 +217,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <EmptyState
           title={hub.emptyTitle}
           description={hub.emptyDescription}
-          actionLabel="Ver mercado"
+          actionLabel="Ver compra y venta"
           onAction={() => router.push("/marketplace")}
         />
       );
@@ -226,9 +299,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     }
   }
 
+  const isWorkHub = hub.content.kind === "work";
+
   return (
     <MobileScreen>
-      <ScreenBack label="Servicios" onClick={() => router.back()} />
+      <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
 
       <header className="space-y-2">
         <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
@@ -245,14 +320,72 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         </p>
       </header>
 
+      {isWorkHub ? (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() =>
+              setWorkFilter((current) =>
+                current === "looking_for_work" ? "all" : "looking_for_work",
+              )
+            }
+            aria-pressed={workFilter === "looking_for_work"}
+            className={
+              workFilter === "looking_for_work"
+                ? "rounded-[16px] bg-[var(--color-action-primary-subtle)] px-3 py-3 text-left ring-2 ring-[var(--color-action-primary)]"
+                : "rounded-[16px] bg-[var(--color-surface-elevated)] px-3 py-3 text-left shadow-[var(--shadow-elev-1)]"
+            }
+          >
+            <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+              Busco trabajo
+            </span>
+            <span className="mt-1 block text-[12px] leading-snug text-[var(--color-text-secondary)]">
+              Quiero trabajar cerca de casa
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setWorkFilter((current) =>
+                current === "offering_work" ? "all" : "offering_work",
+              )
+            }
+            aria-pressed={workFilter === "offering_work"}
+            className={
+              workFilter === "offering_work"
+                ? "rounded-[16px] bg-[var(--color-action-primary-subtle)] px-3 py-3 text-left ring-2 ring-[var(--color-action-primary)]"
+                : "rounded-[16px] bg-[var(--color-surface-elevated)] px-3 py-3 text-left shadow-[var(--shadow-elev-1)]"
+            }
+          >
+            <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+              Ofrezco trabajo
+            </span>
+            <span className="mt-1 block text-[12px] leading-snug text-[var(--color-text-secondary)]">
+              Necesito a alguien para un trabajo
+            </span>
+          </button>
+        </div>
+      ) : null}
+
       <ScreenSearch
         value={query}
         onChange={setQuery}
-        placeholder={`Buscar en ${hub.label.toLowerCase()}…`}
+        placeholder={
+          isWorkHub
+            ? "Buscar anuncios de trabajo…"
+            : `Buscar en ${hub.label.toLowerCase()}…`
+        }
         label={`Buscar ${hub.label}`}
       />
 
       {body}
+
+      {isWorkHub && canWork ? (
+        <ScreenPrimaryAction
+          label="Publicar anuncio"
+          onClick={() => router.push("/services/work/create")}
+        />
+      ) : null}
     </MobileScreen>
   );
 }

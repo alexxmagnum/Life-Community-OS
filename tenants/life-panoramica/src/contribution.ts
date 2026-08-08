@@ -10,6 +10,7 @@ import type {
   ContributionSignalsIssue,
   LocalRecommendation,
   RecognitionState,
+  WorkPost,
 } from "@life-community-os/types";
 import {
   deriveRecognitionState,
@@ -34,6 +35,7 @@ import {
   marketplaceCatalog,
   type MarketplaceListing,
 } from "./marketplace";
+import { listWorkPostsForContribution } from "./work-posts";
 import { resolvePersonId } from "./person-id-alignment";
 
 export type ContributionSourceInput = {
@@ -43,6 +45,7 @@ export type ContributionSourceInput = {
   groups?: readonly CommunityGroup[];
   recommendations?: readonly LocalRecommendation[];
   marketplace?: readonly MarketplaceListing[];
+  workPosts?: readonly WorkPost[];
   /**
    * Experience ids the person joined in this session (localStorage overlay).
    * Catalog participants are counted separately.
@@ -92,6 +95,9 @@ export function aggregateContributionSignals(
   const recommendations =
     input.recommendations ?? localRecommendationCatalog;
   const marketplace = input.marketplace ?? marketplaceCatalog;
+  const workPosts =
+    input.workPosts ??
+    listWorkPostsForContribution({ includeSessionCreated: true });
   const sessionJoined = new Set(input.sessionJoinedExperienceIds ?? []);
 
   for (const exp of experiences) {
@@ -152,6 +158,12 @@ export function aggregateContributionSignals(
     });
     if (authorId && authorId === targetId) {
       signals.neighbourHelpListings += 1;
+    }
+  }
+
+  for (const post of workPosts) {
+    if (post.createdByPersonId === targetId) {
+      signals.workPostsPublished += 1;
     }
   }
 

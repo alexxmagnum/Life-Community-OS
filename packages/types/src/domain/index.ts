@@ -112,6 +112,12 @@ export type {
   LocalRecommendation,
   LocalDiscoveryFilter,
 } from "./local-entity";
+export type {
+  WorkPost,
+  WorkPostType,
+  WorkPostCategory,
+  WorkPostStatus,
+} from "./work-post";
 export {
   filterLocalEntities,
   listEntitiesNearYou,

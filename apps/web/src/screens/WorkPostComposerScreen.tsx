@@ -1,0 +1,279 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  createWorkPost,
+  WORK_POST_CATEGORIES,
+  workPostTypeLabel,
+} from "@life-community-os/tenant-life-panoramica";
+import type { WorkPostCategory, WorkPostType } from "@life-community-os/types";
+import {
+  EmptyState,
+  MobileScreen,
+  ScreenBack,
+  ScreenPrimaryAction,
+} from "@life-community-os/ui";
+import { useTenant } from "@/providers/TenantProvider";
+
+function isWorkPostType(value: string | null): value is WorkPostType {
+  return value === "looking_for_work" || value === "offering_work";
+}
+
+/**
+ * Community work board composer — Busco / Ofrezco trabajo.
+ * Demo session storage only (no backend persistence).
+ */
+export function WorkPostComposerScreen() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { theme, isFeatureEnabled, isModuleEnabled, demoMember } = useTenant();
+
+  const initialType = searchParams.get("type");
+  const [type, setType] = useState<WorkPostType | null>(
+    isWorkPostType(initialType) ? initialType : null,
+  );
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState<WorkPostCategory>("other");
+  const [availability, setAvailability] = useState("");
+  const [location, setLocation] = useState(demoMember.areaLabel || "");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const typeLabel = useMemo(
+    () => (type ? workPostTypeLabel(type) : null),
+    [type],
+  );
+
+  const workEnabled =
+    isModuleEnabled("services") &&
+    (isFeatureEnabled("work") || isFeatureEnabled("services"));
+
+  if (!workEnabled) {
+    return (
+      <MobileScreen>
+        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
+        <EmptyState
+          title="Trabajo no disponible"
+          description="Este tablón no está activo en tu comunidad ahora mismo."
+          actionLabel="Ver servicios"
+          onAction={() => router.push("/services")}
+        />
+      </MobileScreen>
+    );
+  }
+
+  const fieldClass =
+    "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
+
+  const onPublish = () => {
+    if (!type) return;
+    setError(null);
+
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+    if (!trimmedTitle) {
+      setError("Pon un título corto para el anuncio.");
+      return;
+    }
+    if (!trimmedDescription) {
+      setError("Cuenta un poco más: qué buscas o qué ofreces.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      createWorkPost({
+        type,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        category,
+        availability: availability.trim() || undefined,
+        location: location.trim() || undefined,
+        createdByPersonId: demoMember.personId,
+        authorName: demoMember.displayName,
+        authorAvatarUrl: demoMember.avatarUrl,
+      });
+      router.push("/services/work");
+    } catch {
+      setError("No se pudo publicar el anuncio. Inténtalo de nuevo.");
+      setSubmitting(false);
+    }
+  };
+
+  if (!type) {
+    return (
+      <MobileScreen>
+        <ScreenBack label="Cancelar" onClick={() => router.back()} />
+
+        <header className="space-y-2">
+          <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+            {theme.logoText} · Trabajo
+          </p>
+          <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
+            Publicar en Trabajo
+          </h1>
+          <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+            Un anuncio sencillo entre vecinos. No es un portal de empleo.
+          </p>
+        </header>
+
+        <div className="mt-2 space-y-3">
+          <button
+            type="button"
+            onClick={() => setType("looking_for_work")}
+            className="flex w-full items-start gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+          >
+            <span className="text-[22px]" aria-hidden>
+              🔍
+            </span>
+            <span>
+              <span className="block text-[17px] font-semibold text-[var(--color-text-primary)]">
+                Busco trabajo
+              </span>
+              <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                Quiero trabajar cerca de casa — jardinería, clases, ayuda…
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setType("offering_work")}
+            className="flex w-full items-start gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+          >
+            <span className="text-[22px]" aria-hidden>
+              📢
+            </span>
+            <span>
+              <span className="block text-[17px] font-semibold text-[var(--color-text-primary)]">
+                Ofrezco trabajo
+              </span>
+              <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                Necesito a alguien para una tarea o trabajo puntual
+              </span>
+            </span>
+          </button>
+        </div>
+      </MobileScreen>
+    );
+  }
+
+  return (
+    <MobileScreen>
+      <ScreenBack
+        label="Tipo de anuncio"
+        onClick={() => {
+          setType(null);
+          setError(null);
+        }}
+      />
+
+      <header className="space-y-2">
+        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+          {theme.logoText} · Trabajo
+        </p>
+        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
+          {typeLabel}
+        </h1>
+        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+          {type === "looking_for_work"
+            ? "Cuenta qué trabajo buscas y cuándo puedes."
+            : "Cuenta qué trabajo ofreces y a quién necesitas."}
+        </p>
+      </header>
+
+      <div className="space-y-4">
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            Título
+          </span>
+          <input
+            className={fieldClass}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={
+              type === "looking_for_work"
+                ? "Ej. Trabajo de jardinería"
+                : "Ej. Mantenimiento del jardín"
+            }
+            maxLength={80}
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            Categoría
+          </span>
+          <select
+            className={fieldClass}
+            value={category}
+            onChange={(e) => setCategory(e.target.value as WorkPostCategory)}
+          >
+            {WORK_POST_CATEGORIES.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            Descripción
+          </span>
+          <textarea
+            className={`${fieldClass} min-h-[120px] resize-none py-3`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={
+              type === "looking_for_work"
+                ? "Ej. Busco trabajo de jardinería unas horas a la semana."
+                : "Ej. Necesito a alguien para el mantenimiento del jardín."
+            }
+            maxLength={500}
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            Disponibilidad
+          </span>
+          <input
+            className={fieldClass}
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            placeholder="Ej. Mañanas, fines de semana…"
+            maxLength={80}
+          />
+        </label>
+
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            Zona
+          </span>
+          <input
+            className={fieldClass}
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Ej. Zona norte, Centro…"
+            maxLength={80}
+          />
+        </label>
+
+        {error ? (
+          <p className="text-[14px] font-medium text-[var(--color-danger)]" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </div>
+
+      <ScreenPrimaryAction
+        label={submitting ? "Publicando…" : "Publicar anuncio"}
+        onClick={onPublish}
+        disabled={submitting}
+      />
+    </MobileScreen>
+  );
+}

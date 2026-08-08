@@ -24,7 +24,12 @@ export {
   type NavItem,
   type NavItemId,
 } from "./navigation/Navigation";
-export { CreateSheet, type CreateAction } from "./navigation/CreateSheet";
+export {
+  CreateSheet,
+  type CreateAction,
+  type CreateActionSection,
+  type CreateSheetProps,
+} from "./navigation/CreateSheet";
 export { AppShell } from "./navigation/AppShell";
 export {
   MobileScreen,

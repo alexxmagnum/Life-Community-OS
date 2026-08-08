@@ -10,6 +10,7 @@ import {
   CreateSheet,
   type AppMenuCategory,
   type CreateAction,
+  type CreateActionSection,
   type NavItem,
   type NavItemId,
 } from "@life-community-os/ui";
@@ -50,32 +51,16 @@ function IconCommunity() {
   );
 }
 
-function IconDiscover() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
-      <path
-        d="m14.5 9.5-1.2 4.3-4.3 1.2 1.2-4.3 4.3-1.2Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function IconMarket() {
+function IconServices() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M7 7h13l-1.4 8.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.7L6 4H3"
+        d="M14.7 6.3a4.5 4.5 0 0 0-6.2 6.2L4 17l3 3 4.5-4.5a4.5 4.5 0 0 0 6.2-6.2l-2.4 2.4-2.6-.6-.6-2.6 2.4-2.4Z"
         stroke="currentColor"
-        strokeWidth="1.7"
+        strokeWidth="1.65"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx="10" cy="20" r="1.2" fill="currentColor" />
-      <circle cx="17" cy="20" r="1.2" fill="currentColor" />
     </svg>
   );
 }
@@ -95,10 +80,10 @@ function IconProfile() {
 }
 
 function buildNav(flags: {
-  marketplace: boolean;
+  services: boolean;
   showCreate: boolean;
 }): NavItem[] {
-  /** Bottom tab bar — module presence for marketplace comes from configuration. */
+  /** High-frequency destinations — not a second explorer. */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
     {
@@ -111,18 +96,12 @@ function buildNav(flags: {
   if (flags.showCreate) {
     items.push({ id: "create", label: "Crear", href: "#create", icon: "+" });
   }
-  items.push({
-    id: "discover",
-    label: "Descubrir",
-    href: "/discover",
-    icon: <IconDiscover />,
-  });
-  if (flags.marketplace) {
+  if (flags.services) {
     items.push({
-      id: "marketplace",
-      label: "Mercado",
-      href: "/marketplace",
-      icon: <IconMarket />,
+      id: "services",
+      label: "Servicios",
+      href: "/services",
+      icon: <IconServices />,
     });
   }
   items.push({ id: "me", label: "Perfil", href: "/me", icon: <IconProfile /> });
@@ -130,12 +109,9 @@ function buildNav(flags: {
 }
 
 function activeFromPath(pathname: string): NavItemId {
-  if (pathname.startsWith("/marketplace")) return "marketplace";
-  if (pathname.startsWith("/discover")) return "discover";
-  if (pathname.startsWith("/services")) return "discover";
-  if (pathname.startsWith("/near")) return "discover";
-  if (pathname.startsWith("/resources")) return "discover";
-  if (pathname.startsWith("/experiences")) return "discover";
+  if (pathname.startsWith("/services")) return "services";
+  if (pathname.startsWith("/marketplace")) return "services";
+  if (pathname.startsWith("/resources")) return "services";
   if (pathname.startsWith("/calendar")) return "me";
   if (pathname.startsWith("/reservations")) return "me";
   if (pathname.startsWith("/community")) return "community";
@@ -184,19 +160,50 @@ export function MemberShell({ children }: { children: ReactNode }) {
     }) as AppMenuCategory[];
   }, [configuration, hasCapability, isFeatureEnabled, router]);
 
-  const createActions = useMemo(() => {
-    const actions: CreateAction[] = [];
+  /** Contribution entry (+) — ordered by community value, not admin tools. */
+  const createSections = useMemo((): CreateActionSection[] => {
+    const life: CreateAction[] = [];
+    const share: CreateAction[] = [];
+    const practical: CreateAction[] = [];
 
     if (
-      isFeatureEnabled("experiences") &&
+      isModuleEnabled("experiences") &&
       hasCapability(CAPABILITIES.experienceCreate)
     ) {
-      actions.push({
+      life.push({
         id: "experience",
         title: "Crear experiencia",
         description: "Organiza un paseo, clase o encuentro",
-        icon: "✦",
+        icon: "✨",
         onSelect: () => router.push("/experiences/create"),
+      });
+    }
+
+    if (
+      isModuleEnabled("community") &&
+      isFeatureEnabled("groups") &&
+      hasCapability(CAPABILITIES.groupCreate)
+    ) {
+      life.push({
+        id: "group",
+        title: "Crear un grupo",
+        description: "Intereses, deporte o vecinos con algo en común",
+        icon: "👥",
+        onSelect: () => showToast("El compositor de grupos llega pronto"),
+      });
+    }
+
+    if (
+      isModuleEnabled("community.proposals") &&
+      isFeatureEnabled("decide") &&
+      hasCapability(CAPABILITIES.proposalCreate)
+    ) {
+      life.push({
+        id: "proposal",
+        title: "Abrir una propuesta",
+        description: "Pide a la comunidad que decida",
+        icon: "💡",
+        onSelect: () => showToast("El compositor de propuestas llega pronto"),
       });
     }
 
@@ -204,67 +211,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
       isFeatureEnabled("feed") &&
       hasCapability(CAPABILITIES.contentCreate)
     ) {
-      actions.push({
+      share.push({
         id: "post",
         title: "Compartir en la comunidad",
-        description: "Aviso útil para tus vecinos",
-        icon: "✎",
+        description: "Información útil para tus vecinos",
+        icon: "📢",
         onSelect: () => setPostOpen(true),
-      });
-    }
-
-    if (
-      isFeatureEnabled("marketplace") &&
-      hasCapability(CAPABILITIES.marketplaceCreate)
-    ) {
-      actions.push({
-        id: "marketplace",
-        title: "Publicar en el mercado",
-        description: "Vende, regala o pide entre vecinos",
-        icon: "⇄",
-        onSelect: () => {
-          showToast("El anuncio llega pronto — mira el mercado");
-          router.push("/marketplace");
-        },
-      });
-    }
-
-    if (
-      isFeatureEnabled("incidents") &&
-      hasCapability(CAPABILITIES.incidentCreate)
-    ) {
-      actions.push({
-        id: "report",
-        title: "Avisar de un problema",
-        description: "Haz una foto y cuéntanos",
-        icon: "◌",
-        onSelect: () => router.push("/report"),
-      });
-    }
-
-    if (
-      isFeatureEnabled("decide") &&
-      hasCapability(CAPABILITIES.proposalCreate)
-    ) {
-      actions.push({
-        id: "proposal",
-        title: "Abrir una propuesta",
-        description: "Pide a la comunidad que decida",
-        icon: "◈",
-        onSelect: () => showToast("El compositor de propuestas llega pronto"),
-      });
-    }
-
-    if (
-      isFeatureEnabled("resources") &&
-      hasCapability(CAPABILITIES.resourceReserve)
-    ) {
-      actions.push({
-        id: "reserve",
-        title: "Reservar un espacio",
-        description: "Pistas, salas y zonas compartidas",
-        icon: "▣",
-        onSelect: () => router.push("/resources"),
       });
     }
 
@@ -273,26 +225,91 @@ export function MemberShell({ children }: { children: ReactNode }) {
       isFeatureEnabled("localLife") &&
       hasCapability(CAPABILITIES.recommendationCreate)
     ) {
-      actions.push({
+      share.push({
         id: "tip",
         title: "Recomendar algo",
-        description: "Un consejo local de confianza",
-        icon: "★",
+        description: "Sitios, profesionales o consejos de confianza",
+        icon: "⭐",
         onSelect: () =>
           showToast("El compositor de recomendaciones llega pronto"),
       });
     }
 
     if (
-      isFeatureEnabled("groups") &&
-      hasCapability(CAPABILITIES.groupCreate)
+      isModuleEnabled("services") &&
+      (isFeatureEnabled("services") || isFeatureEnabled("marketplace"))
     ) {
-      actions.push({
-        id: "group",
-        title: "Crear un grupo",
-        description: "Paseos, deporte, familias…",
-        icon: "◎",
-        onSelect: () => showToast("El compositor de grupos llega pronto"),
+      share.push({
+        id: "neighbour-help",
+        title: "Pedir u ofrecer ayuda",
+        description: "Una mano entre vecinos",
+        icon: "🤝",
+        onSelect: () => router.push("/services/neighbour-help"),
+      });
+    }
+
+    if (
+      isModuleEnabled("services") &&
+      (isFeatureEnabled("services") || isFeatureEnabled("localLife"))
+    ) {
+      share.push({
+        id: "offer-service",
+        title: "Ofrecer un servicio",
+        description: "Publica tu oficio o servicio de confianza",
+        icon: "💼",
+        onSelect: () => {
+          showToast("El alta de profesionales llega pronto");
+          router.push("/services/professionals");
+        },
+      });
+    }
+
+    if (isModuleEnabled("services") && isFeatureEnabled("work")) {
+      share.push({
+        id: "work-post",
+        title: "Publicar en Trabajo",
+        description: "Busco trabajo u ofrezco un trabajo cerca",
+        icon: "💼",
+        onSelect: () => router.push("/services/work/create"),
+      });
+    }
+
+    if (
+      isModuleEnabled("marketplace") &&
+      hasCapability(CAPABILITIES.marketplaceCreate)
+    ) {
+      practical.push({
+        id: "marketplace",
+        title: "Compra y venta",
+        description: "Vende, regala o pide entre vecinos",
+        icon: "🛒",
+        onSelect: () => router.push("/marketplace"),
+      });
+    }
+
+    if (
+      isModuleEnabled("reservations") &&
+      hasCapability(CAPABILITIES.resourceReserve)
+    ) {
+      practical.push({
+        id: "reserve",
+        title: "Reservar un espacio",
+        description: "Pistas, salas y zonas compartidas",
+        icon: "📅",
+        onSelect: () => router.push("/resources"),
+      });
+    }
+
+    if (
+      isFeatureEnabled("incidents") &&
+      hasCapability(CAPABILITIES.incidentCreate)
+    ) {
+      practical.push({
+        id: "report",
+        title: "Avisar de un problema",
+        description: "Haz una foto y cuéntanos",
+        icon: "⚠️",
+        onSelect: () => router.push("/report"),
       });
     }
 
@@ -300,25 +317,48 @@ export function MemberShell({ children }: { children: ReactNode }) {
       isFeatureEnabled("feed") &&
       hasCapability(CAPABILITIES.announcementPublishOfficial)
     ) {
-      actions.push({
+      practical.push({
         id: "official",
         title: "Aviso oficial",
-        description: "Comunicado de la comunidad",
+        description: "Comunicado de la administración",
         icon: "⚑",
         onSelect: () => showToast("La publicación oficial llega pronto"),
       });
     }
 
-    return actions;
-  }, [hasCapability, isFeatureEnabled, router]);
+    const sections: CreateActionSection[] = [];
+    if (life.length) {
+      sections.push({
+        id: "life",
+        title: "Crear vida de comunidad",
+        actions: life,
+      });
+    }
+    if (share.length) {
+      sections.push({ id: "share", title: "Compartir valor", actions: share });
+    }
+    if (practical.length) {
+      sections.push({
+        id: "practical",
+        title: "Acciones prácticas",
+        actions: practical,
+      });
+    }
+    return sections;
+  }, [hasCapability, isFeatureEnabled, isModuleEnabled, router]);
+
+  const createActionCount = createSections.reduce(
+    (n, s) => n + s.actions.length,
+    0,
+  );
 
   const navItems = useMemo(
     () =>
       buildNav({
-        marketplace: isModuleEnabled("marketplace"),
-        showCreate: createActions.length > 0,
+        services: isModuleEnabled("services"),
+        showCreate: createActionCount > 0,
       }),
-    [createActions.length, isModuleEnabled],
+    [createActionCount, isModuleEnabled],
   );
 
   useEffect(() => {
@@ -382,7 +422,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
       <CreateSheet
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        actions={createActions}
+        sections={createSections}
       />
       <CreatePostSheet
         open={postOpen}

@@ -114,6 +114,8 @@ function serviceLeafIcon(
   switch (slug) {
     case "professionals":
       return "briefcase";
+    case "work":
+      return "briefcase";
     case "neighbour-help":
       return "handshake";
     case "mobility":

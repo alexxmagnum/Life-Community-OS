@@ -10,6 +10,11 @@ export type TenantFeatureFlags = {
   /** Alias semantic for experiences (Activity product language). */
   activities: boolean;
   services: boolean;
+  /**
+   * Community job board inside Servicios (Busco / Ofrezco trabajo).
+   * Not professionals, not neighbour-help, not marketplace goods.
+   */
+  work: boolean;
   resources: boolean;
   recommendations: boolean;
   /** Local Entity / Local Discovery ecosystem (ADR-017 / ADR-032). */
@@ -56,6 +61,7 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   experiences: true,
   activities: true,
   services: true,
+  work: true,
   resources: true,
   recommendations: true,
   localLife: true,
@@ -86,4 +92,5 @@ export const lifePanoramicaFeaturesMinimal: TenantFeatureFlags = {
   marketplace: false,
   mobility: false,
   recommendations: false,
+  work: false,
 };

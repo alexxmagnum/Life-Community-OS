@@ -5,7 +5,12 @@
  * No directory product; filters existing LocalEntity / Marketplace / Recommendations.
  */
 
-import type { LocalEntity, LocalEntityKind, LocalRecommendation } from "@life-community-os/types";
+import type {
+  LocalEntity,
+  LocalEntityKind,
+  LocalRecommendation,
+  WorkPostType,
+} from "@life-community-os/types";
 
 import type { TenantFeatureFlags } from "./features";
 import {
@@ -16,9 +21,11 @@ import {
   listMarketplaceListings,
   type MarketplaceListing,
 } from "./marketplace";
+import { listWorkPosts, type WorkPostListing } from "./work-posts";
 
 export type ServicesCategorySlug =
   | "professionals"
+  | "work"
   | "neighbour-help"
   | "mobility"
   | "recommendations";
@@ -41,6 +48,7 @@ export type ServicesCategoryHub = {
   featureKeys: (keyof TenantFeatureFlags)[];
   content:
     | { kind: "local-entities"; entityKinds: LocalEntityKind[] }
+    | { kind: "work" }
     | { kind: "neighbour-help" }
     | { kind: "mobility" }
     | { kind: "recommendations" };
@@ -61,11 +69,24 @@ export const servicesCategoryHubs: ServicesCategoryHub[] = [
     slug: "professionals",
     label: "Profesionales",
     problem: "Necesito a alguien cualificado.",
-    description: "Jardinería, reparaciones, limpieza, soporte y más cerca de ti.",
+    description:
+      "Jardinería, mantenimiento, limpieza, reparaciones, clases y servicios del hogar de confianza.",
     emptyTitle: "No hay profesionales publicados todavía.",
     emptyDescription: "Cuando un vecino o proveedor publique su perfil, lo verás aquí.",
     featureKeys: ["services", "localLife"],
     content: { kind: "local-entities", entityKinds: ["service"] },
+  },
+  {
+    slug: "work",
+    label: "Trabajo",
+    problem: "Busco trabajo u ofrezco un trabajo cerca de casa.",
+    description:
+      "Anuncios entre vecinos: trabajo puntual, mantenimiento, clases y colaboración local.",
+    emptyTitle: "No hay anuncios de trabajo todavía.",
+    emptyDescription:
+      "Cuando alguien publique que busca u ofrece trabajo, aparecerá aquí.",
+    featureKeys: ["work", "services"],
+    content: { kind: "work" },
   },
   {
     slug: "neighbour-help",
@@ -211,4 +232,13 @@ export function listRecommendationsForHub(
   query?: string,
 ): LocalRecommendation[] {
   return listNeighbourRecommendations(query);
+}
+
+/** Community job board — separate from professionals, neighbour-help, marketplace. */
+export function listWorkPostsForHub(options?: {
+  type?: WorkPostType;
+  query?: string;
+  includeSessionCreated?: boolean;
+}): WorkPostListing[] {
+  return listWorkPosts(options);
 }

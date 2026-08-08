@@ -39,6 +39,8 @@ export type ContributionSignals = {
   recommendationsAuthored: number;
   /** Neighbour-help marketplace listings (give / request). */
   neighbourHelpListings: number;
+  /** Community job board posts authored (looking_for_work / offering_work). Recognition only. */
+  workPostsPublished: number;
 };
 
 export type ContributionSignalsIssue = {
@@ -65,6 +67,7 @@ const NON_NEGATIVE_FIELDS: ReadonlyArray<
   "proposalSupportReceived",
   "recommendationsAuthored",
   "neighbourHelpListings",
+  "workPostsPublished",
 ];
 
 /** Empty signals for a person — recognition defaults to new_neighbour. */
@@ -84,6 +87,7 @@ export function emptyContributionSignals(
     proposalSupportReceived: 0,
     recommendationsAuthored: 0,
     neighbourHelpListings: 0,
+    workPostsPublished: 0,
   };
 }
 
@@ -162,6 +166,7 @@ export function deriveRecognitionState(
     proposalsAuthored,
     recommendationsAuthored,
     neighbourHelpListings,
+    workPostsPublished,
   } = signals;
 
   const sustainedImpact =
@@ -184,7 +189,8 @@ export function deriveRecognitionState(
   if (
     experiencesJoined >= 1 ||
     recommendationsAuthored >= 1 ||
-    neighbourHelpListings >= 1
+    neighbourHelpListings >= 1 ||
+    workPostsPublished >= 1
   ) {
     return "active_participant";
   }

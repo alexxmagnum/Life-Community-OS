@@ -8,7 +8,10 @@ export type NavItemId =
   | "home"
   | "community"
   | "create"
+  | "services"
+  /** @deprecated Kept for route active-state mapping; not a bottom-tab destination. */
   | "discover"
+  /** @deprecated Commerce lives under Servicios; kept for active-state mapping. */
   | "marketplace"
   | "me"
   | "calendar";

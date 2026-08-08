@@ -25,6 +25,7 @@ export * from "./experiences";
 export * from "./community-content";
 export * from "./resources";
 export * from "./marketplace";
+export * from "./work-posts";
 export * from "./groups";
 export * from "./local-places";
 export * from "./community-pulse";

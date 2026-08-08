@@ -439,12 +439,17 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
     id: "services",
     name: "Services",
     description:
-      "Resident needs — professionals, neighbour help, mobility, recommendations.",
+      "Resident needs — professionals, neighbour help, community jobs, mobility, recommendations.",
     category: "core",
     status: "core",
     defaultEnabled: true,
     dependencies: [],
-    featureFlagKeys: ["services", "recommendations", "mobility"],
+    featureFlagKeys: [
+      "services",
+      "work",
+      "recommendations",
+      "mobility",
+    ],
     capabilityKeys: [CAP.localView, CAP.recommendationCreate],
     navigation: {
       menuGroup: "services",
