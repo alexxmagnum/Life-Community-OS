@@ -33,8 +33,11 @@ export {
 
 export {
   createOfficialConversationAdapter,
+  allowsOfficialResidentReplies,
+  allowsOfficialReactions,
   type OfficialConversationSnapshot,
   type OfficialEntityKind,
+  type OfficialInteractionMode,
 } from "./official-adapter";
 
 import type { ConversationContextAdapterRegistry } from "../adapter-registry";

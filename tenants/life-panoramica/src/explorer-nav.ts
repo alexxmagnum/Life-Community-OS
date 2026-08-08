@@ -236,12 +236,15 @@ export function listGroupsForActivity(slug: string): CommunityGroup[] {
   );
 }
 
-export function listExperiencesForActivity(slug: string): Experience[] {
+export function listExperiencesForActivity(
+  slug: string,
+  options?: { includeSessionCreated?: boolean },
+): Experience[] {
   const hub = getExplorerActivityBySlug(slug);
   if (!hub) return [];
   const channelIds = new Set(listChannelsForActivity(slug).map((c) => c.id));
   const groupIds = new Set(listGroupsForActivity(slug).map((g) => g.id));
-  return listDiscoverableExperiences().filter((e) => {
+  return listDiscoverableExperiences(options).filter((e) => {
     if (e.channelId && channelIds.has(e.channelId)) return true;
     if (e.groupId && groupIds.has(e.groupId)) return true;
     return matchesKeywords(

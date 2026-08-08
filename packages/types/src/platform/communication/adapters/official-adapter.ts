@@ -25,15 +25,45 @@ export type OfficialEntityKind =
   | "public_service"
   | (string & {});
 
+/**
+ * Official interaction mode — product behaviour, not AuthZ.
+ * announcement_only: read (+ react); no free resident discussion.
+ * announcement_with_responses: residents may reply; official moderates.
+ */
+export type OfficialInteractionMode =
+  | "announcement_only"
+  | "announcement_with_responses";
+
 export type OfficialConversationSnapshot = {
   id: DomainId;
   title: string;
   officialEntityId: DomainId;
   kind?: OfficialEntityKind;
-  status?: "draft" | "active" | "archived" | string;
+  status?: "draft" | "active" | "archived" | "locked" | string;
+  interactionMode?: OfficialInteractionMode;
+  /** When false, reactions are hidden even if messages exist. Default true. */
+  reactionsEnabled?: boolean;
   audiencePersonIds?: readonly DomainId[];
   staffPersonIds?: readonly DomainId[];
 };
+
+/** Whether residents may post free-form / quick-action replies. */
+export function allowsOfficialResidentReplies(
+  snapshot: OfficialConversationSnapshot | undefined,
+): boolean {
+  if (!snapshot) return false;
+  const life = mapOfficialLifecycle(snapshot.status);
+  if (life === "archived" || snapshot.status === "locked") return false;
+  return snapshot.interactionMode === "announcement_with_responses";
+}
+
+export function allowsOfficialReactions(
+  snapshot: OfficialConversationSnapshot | undefined,
+): boolean {
+  if (!snapshot) return false;
+  if (snapshot.reactionsEnabled === false) return false;
+  return mapOfficialLifecycle(snapshot.status) !== "archived";
+}
 
 /** Map official kind → Platform Module Registry submodule id (fail closed). */
 function submoduleIdForKind(kind: OfficialEntityKind | undefined): string | null {
@@ -72,6 +102,9 @@ function mapOfficialLifecycle(
       return "draft";
     case "archived":
       return "archived";
+    case "locked":
+      // Locked notices remain open for viewing; posting gated separately.
+      return "active";
     case "active":
     case undefined:
       return "active";

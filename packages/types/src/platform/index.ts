@@ -85,6 +85,7 @@ export type {
   ReservationConversationSnapshot,
   OfficialConversationSnapshot,
   OfficialEntityKind,
+  OfficialInteractionMode,
 } from "./communication";
 export {
   KNOWN_CONVERSATION_CONTEXT_TYPES,
@@ -112,6 +113,8 @@ export {
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   createReservationConversationAdapter,
   createOfficialConversationAdapter,
+  allowsOfficialResidentReplies,
+  allowsOfficialReactions,
   createDefaultConversationContextAdapterRegistry,
   EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./communication";

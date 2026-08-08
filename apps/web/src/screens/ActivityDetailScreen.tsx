@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   filterAccessibleChannels,
@@ -48,6 +48,12 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
+  /** After mount, merge localStorage session creates (SSR-safe). */
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
 
   const hub = useMemo(() => getExplorerActivityBySlug(slug), [slug]);
 
@@ -66,8 +72,13 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
     [hub],
   );
   const experiences = useMemo(
-    () => (hub ? listExperiencesForActivity(hub.slug) : []),
-    [hub],
+    () =>
+      hub
+        ? listExperiencesForActivity(hub.slug, {
+            includeSessionCreated: sessionReady,
+          })
+        : [],
+    [hub, sessionReady],
   );
   const resources = useMemo(
     () => (hub ? listResourcesForActivity(hub.slug) : []),

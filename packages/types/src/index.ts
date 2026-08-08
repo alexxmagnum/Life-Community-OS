@@ -111,6 +111,8 @@ export {
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   createReservationConversationAdapter,
   createOfficialConversationAdapter,
+  allowsOfficialResidentReplies,
+  allowsOfficialReactions,
   createDefaultConversationContextAdapterRegistry,
   EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./platform/communication";

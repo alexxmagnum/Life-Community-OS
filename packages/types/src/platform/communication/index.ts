@@ -86,6 +86,8 @@ export {
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   createReservationConversationAdapter,
   createOfficialConversationAdapter,
+  allowsOfficialResidentReplies,
+  allowsOfficialReactions,
   createDefaultConversationContextAdapterRegistry,
 } from "./adapters";
 export type {
@@ -96,4 +98,5 @@ export type {
   ReservationConversationSnapshot,
   OfficialConversationSnapshot,
   OfficialEntityKind,
+  OfficialInteractionMode,
 } from "./adapters";

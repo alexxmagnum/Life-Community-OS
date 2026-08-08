@@ -17,6 +17,7 @@ export * from "./tenant-configuration";
 export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";
+export * from "./official-conversations";
 export * from "./channels";
 export * from "./channel-access";
 export * from "./residency-demo";

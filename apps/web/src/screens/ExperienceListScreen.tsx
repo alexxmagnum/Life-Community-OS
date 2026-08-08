@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
@@ -38,9 +38,16 @@ export function ExperienceListScreen() {
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
 
   const items = useMemo(() => {
-    return listDiscoverableExperiences().filter((e) => {
+    return listDiscoverableExperiences({
+      includeSessionCreated: sessionReady,
+    }).filter((e) => {
       if (!query) return true;
       const q = query.toLowerCase();
       return (
@@ -49,7 +56,7 @@ export function ExperienceListScreen() {
         e.areaLabel.toLowerCase().includes(q)
       );
     });
-  }, [query]);
+  }, [query, sessionReady]);
 
   if (!isFeatureEnabled("experiences")) {
     return (

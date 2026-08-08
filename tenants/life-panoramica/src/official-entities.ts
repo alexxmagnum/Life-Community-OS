@@ -1,4 +1,8 @@
-import type { Channel, VerificationLevel } from "@life-community-os/types";
+import type {
+  Channel,
+  OfficialEntityKind as AdapterOfficialKind,
+  VerificationLevel,
+} from "@life-community-os/types";
 
 import {
   DEMO_AUTHORITY_ADMIN_ID,
@@ -191,6 +195,46 @@ export function officialEntityNavIcon(
       return entity.slug === "seguridad" ? "security" : "info";
     default:
       return "info";
+  }
+}
+
+/**
+ * Platform Module Registry submodule for an official entity (fail closed).
+ * Aligns with navigation-projector + Communication official adapter.
+ */
+export function officialEntityModuleId(entity: OfficialEntityProfile): string {
+  switch (entity.kind) {
+    case "territory_authority":
+      return "administration";
+    case "municipality":
+      return "municipality";
+    case "public_service":
+      return "publicServices";
+    case "other_official":
+      return entity.slug === "seguridad" ? "security" : "official";
+    default:
+      return "official";
+  }
+}
+
+/**
+ * Bridge tenant OfficialEntityKind → Communication adapter kind.
+ * Ensures security/municipality submodule gating works correctly.
+ */
+export function toOfficialAdapterKind(
+  entity: OfficialEntityProfile,
+): AdapterOfficialKind {
+  switch (entity.kind) {
+    case "territory_authority":
+      return "administration";
+    case "municipality":
+      return "municipality";
+    case "public_service":
+      return "public_service";
+    case "other_official":
+      return entity.slug === "seguridad" ? "security" : "administration";
+    default:
+      return "administration";
   }
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
@@ -36,6 +36,11 @@ export function DiscoverScreen() {
   const { theme, isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
@@ -54,7 +59,9 @@ export function DiscoverScreen() {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
     const q = query.trim().toLowerCase();
-    return listDiscoverableExperiences().filter((e) => {
+    return listDiscoverableExperiences({
+      includeSessionCreated: sessionReady,
+    }).filter((e) => {
       if (!q) return true;
       return (
         e.title.toLowerCase().includes(q) ||
@@ -62,7 +69,7 @@ export function DiscoverScreen() {
         e.areaLabel.toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled, hasCapability]);
+  }, [query, isFeatureEnabled, hasCapability, sessionReady]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];

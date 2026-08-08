@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import {
   filterAccessibleChannels,
   formatContentWhen,
+  getOfficialConversationBundleForEntity,
   getOfficialEntityBySlug,
   listChannelsForOfficialEntity,
   listContentForOfficialEntity,
   officialEntityKindLabel,
+  officialInteractionModeLabel,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CommunityPostCard,
@@ -17,6 +19,10 @@ import {
   ScreenBack,
   ZoomableImage,
 } from "@life-community-os/ui";
+import {
+  canOpenOfficialConversation,
+  isOfficialEntitySurfaceAvailable,
+} from "@/lib/official-conversation-access";
 import { useTenant } from "@/providers/TenantProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
@@ -45,7 +51,14 @@ function contentTypeLabel(
  */
 export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
-  const { theme, demoPersonId, isFeatureEnabled } = useTenant();
+  const {
+    theme,
+    demoPersonId,
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    configuration,
+  } = useTenant();
 
   const entity = useMemo(() => getOfficialEntityBySlug(slug), [slug]);
 
@@ -77,6 +90,43 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
       </MobileScreen>
     );
   }
+
+  if (
+    !isOfficialEntitySurfaceAvailable({
+      entity,
+      isModuleEnabled,
+    })
+  ) {
+    return (
+      <MobileScreen>
+        <ScreenBack label="Oficial" onClick={() => router.push("/")} />
+        <EmptyState
+          title="No disponible"
+          description="Este espacio oficial no está activo en tu comunidad ahora mismo."
+          actionLabel="Volver al inicio"
+          onAction={() => router.push("/")}
+        />
+      </MobileScreen>
+    );
+  }
+
+  const showConversation = canOpenOfficialConversation({
+    entity,
+    configuration,
+    isModuleEnabled,
+    hasCapability,
+  });
+  const noticeBundle = showConversation
+    ? getOfficialConversationBundleForEntity(entity.id)
+    : undefined;
+  const conversationCtaLabel =
+    noticeBundle?.snapshot.interactionMode === "announcement_with_responses"
+      ? "Respuestas"
+      : "Conversación";
+  const conversationCtaHint =
+    noticeBundle?.snapshot.interactionMode === "announcement_with_responses"
+      ? "Consulta y responde a este aviso oficial"
+      : "Lee el aviso oficial de esta entidad";
 
   const contact = entity.contact;
   const hasContact = Boolean(
@@ -132,6 +182,34 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           </p>
         </div>
       </section>
+
+      {showConversation ? (
+        <button
+          type="button"
+          onClick={() =>
+            router.push(`/official/${entity.slug}/conversation`)
+          }
+          className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+        >
+          <span className="text-[22px]" aria-hidden>
+            💬
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
+              {conversationCtaLabel}
+            </span>
+            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+              {conversationCtaHint}
+              {noticeBundle
+                ? ` · ${officialInteractionModeLabel(noticeBundle.snapshot.interactionMode)}`
+                : ""}
+            </span>
+          </span>
+          <span className="text-[var(--color-text-tertiary)]" aria-hidden>
+            ›
+          </span>
+        </button>
+      ) : null}
 
       {/* 2. Information / communications */}
       {isFeatureEnabled("feed") || isFeatureEnabled("officialChannels") ? (
