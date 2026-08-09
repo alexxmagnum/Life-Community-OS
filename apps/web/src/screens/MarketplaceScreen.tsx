@@ -11,9 +11,9 @@ import {
 import {
   EmptyState,
   FilterChipRow,
+  FlowScreenHeader,
   MarketplaceItemCard,
   MobileScreen,
-  ScreenHeader,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -30,7 +30,7 @@ const filters: { id: Filter; label: string }[] = [
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
 
   const items = useMemo(() => {
@@ -61,10 +61,11 @@ export function MarketplaceScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Mercado"
         subtitle="¿Qué ofrecen o necesitan tus vecinos?"
+        onBack={() => router.push("/services")}
+        onExit={() => router.push("/services")}
       />
 
       {hasCapability(CAPABILITIES.marketplaceCreate) ? (

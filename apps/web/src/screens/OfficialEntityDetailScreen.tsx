@@ -15,8 +15,8 @@ import {
 import {
   CommunityPostCard,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
   ZoomableImage,
 } from "@life-community-os/ui";
 import {
@@ -52,7 +52,6 @@ function contentTypeLabel(
 export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const {
-    theme,
     demoPersonId,
     isFeatureEnabled,
     isModuleEnabled,
@@ -80,7 +79,11 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   if (!entity) {
     return (
       <MobileScreen>
-        <ScreenBack onClick={() => router.back()} />
+        <FlowScreenHeader
+          title="Oficial"
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="Entidad no encontrada"
           description="Esta entidad oficial no forma parte de tu comunidad."
@@ -99,7 +102,11 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   ) {
     return (
       <MobileScreen>
-        <ScreenBack label="Oficial" onClick={() => router.push("/")} />
+        <FlowScreenHeader
+          title="Oficial"
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="No disponible"
           description="Este espacio oficial no está activo en tu comunidad ahora mismo."
@@ -135,7 +142,12 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack label="Oficial" onClick={() => router.back()} />
+      <FlowScreenHeader
+        title={entity.name}
+        subtitle={officialEntityKindLabel(entity.kind)}
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
+      />
 
       {/* 1. Identity */}
       <section className="overflow-hidden rounded-[24px] bg-[var(--color-surface-muted)]">
@@ -147,36 +159,9 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
               zoomable
               wrapperClassName="absolute inset-0 h-full w-full"
             />
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                background:
-                  "linear-gradient(transparent 40%, rgba(20,28,24,0.72))",
-              }}
-            />
-            <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="text-[15px] font-semibold text-white/80">
-                {theme.logoText} · Oficial
-              </p>
-              <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-white">
-                {entity.name}
-              </h1>
-            </div>
           </div>
-        ) : (
-          <div className="space-y-2 px-4 pt-4">
-            <p className="text-[15px] font-semibold text-[var(--color-text-tertiary)]">
-              {theme.logoText} · Oficial
-            </p>
-            <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-              {entity.name}
-            </h1>
-          </div>
-        )}
+        ) : null}
         <div className="space-y-2 px-4 py-4">
-          <p className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
-            {officialEntityKindLabel(entity.kind)}
-          </p>
           <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
             {entity.description}
           </p>

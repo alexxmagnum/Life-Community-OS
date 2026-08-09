@@ -69,9 +69,8 @@ export function ProfileScreen() {
   return (
     <MobileScreen>
       <ScreenHeader
-        eyebrow={theme.logoText}
         title="Mi perfil"
-        subtitle="Tu identidad y tu lugar en el territorio."
+        subtitle="Tu identidad en la comunidad."
       />
 
       <ProfileCard
@@ -115,7 +114,7 @@ export function ProfileScreen() {
           Mi hogar
         </h2>
         <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu vínculo con una propiedad del territorio — no es un catálogo
+          Tu vínculo con tu hogar en la comunidad — no es un catálogo
           inmobiliario.
         </p>
         {primary ? (
@@ -144,7 +143,7 @@ export function ProfileScreen() {
                 </p>
               ) : null}
               <p>
-                Territorio ·{" "}
+                Comunidad ·{" "}
                 <span className="font-medium text-[var(--color-text-primary)]">
                   {primary.territoryLabel}
                 </span>

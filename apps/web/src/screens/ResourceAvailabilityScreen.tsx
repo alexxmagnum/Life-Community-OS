@@ -12,9 +12,8 @@ import {
   AvailabilityPicker,
   Button,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
-  ScreenHeader,
   TimeSlotSelector,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -26,7 +25,7 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoPersonId, demoMember } =
+  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember } =
     useTenant();
   const { getSlots } = useReservations();
   const dates = listAvailabilityDates(7);
@@ -91,15 +90,11 @@ export function ResourceAvailabilityScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label={resource.name}
-        onClick={() => router.push(`/resources/${resource.id}`)}
-      />
-
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Disponibilidad"
         subtitle="Elige un día y un hueco libre. Los ocupados quedan bloqueados para todos."
+        onBack={() => router.push(`/resources/${resource.id}`)}
+        onExit={() => router.push("/resources")}
       />
 
       <section className="space-y-3">

@@ -75,9 +75,6 @@ export function CreatePostSheet({
             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] p-3 text-[16px] leading-6 outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
           />
         </label>
-        <p className="mt-2 text-[14px] text-[var(--color-text-tertiary)]">
-          Consejo: menciona a alguien con @Nombre (solo interfaz por ahora).
-        </p>
         <div className="mt-5 flex gap-3">
           <Button variant="secondary" className="flex-1" onClick={onClose}>
             Cancelar

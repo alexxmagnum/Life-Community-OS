@@ -194,7 +194,7 @@ export function projectMemberNavigation(
         tone: "community",
         glyph: "🏡",
         label: "Comunidad",
-        description: "La vida del territorio — vecinos, actividad y participación",
+        description: "La vida de la comunidad — vecinos, actividad y participación",
         children,
       });
     }

@@ -11,9 +11,9 @@ import {
   Button,
   EmptyState,
   ExperienceMeta,
+  FlowScreenHeader,
   MobileScreen,
   ParticipationStatus,
-  ScreenBack,
   ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -100,9 +100,19 @@ export function ExperienceRegistrationScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Volver al detalle"
-        onClick={() => router.push(`/experiences/${experience.id}`)}
+      <FlowScreenHeader
+        title={
+          confirmed
+            ? isFull && participation?.state === "waitlisted"
+              ? "Lista de espera"
+              : "Participación confirmada"
+            : isFull
+              ? "Lista de espera"
+              : "Confirmar participación"
+        }
+        subtitle={experience.title}
+        onBack={() => router.push(`/experiences/${experience.id}`)}
+        onExit={() => router.push("/experiences")}
       />
 
       <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
@@ -126,18 +136,9 @@ export function ExperienceRegistrationScreen({
                   : "available"
             }
           />
-          <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8">
-            {confirmed
-              ? isFull && participation?.state === "waitlisted"
-                ? "Estás en lista de espera"
-                : "Vas a ir"
-              : isFull
-                ? "¿Apuntarte a la lista de espera?"
-                : "Confirma que quieres participar"}
-          </h1>
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
             {confirmed
-              ? "Lo hemos añadido a tu agenda en Life Panoramica. Lo verás en Mis actividades."
+              ? "Lo hemos añadido a tu agenda. Lo verás en Mis actividades."
               : `Participa en “${experience.title}” con vecinos de ${experience.areaLabel}.`}
           </p>
         </div>

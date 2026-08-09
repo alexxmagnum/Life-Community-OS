@@ -144,23 +144,29 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const brandName = theme.logoText;
   const brandLogoUrl = theme.imagery.logo;
 
-  /** Hamburger menu — configuration-driven (D.0.3 Navigation Projector). */
+  /** Hamburger menu — hide actions that cannot complete a real flow yet. */
   const menuCategories = useMemo((): AppMenuCategory[] => {
     const projected = projectMemberNavigation({
       configuration,
       hasCapability,
       isFeatureEnabled,
     });
-    return bindProjectedNavigation(projected, {
+    const bound = bindProjectedNavigation(projected, {
       onNavigate: (href) => router.push(href),
-      onSignOut: () => {
-        setToast("Sesión demo — Cerrar sesión llega con autenticación");
-        window.setTimeout(() => setToast(null), 2200);
-      },
+      onSignOut: () => undefined,
     }) as AppMenuCategory[];
+    return bound
+      .map((category) => ({
+        ...category,
+        children: category.children.filter((leaf) => leaf.id !== "p-sign-out"),
+      }))
+      .filter((category) => category.children.length > 0);
   }, [configuration, hasCapability, isFeatureEnabled, router]);
 
-  /** Contribution entry (+) — ordered by community value, not admin tools. */
+  /**
+   * Contribution entry (+) — only actions that complete a real flow.
+   * Fake / toast-only actions are omitted (trust foundation).
+   */
   const createSections = useMemo((): CreateActionSection[] => {
     const life: CreateAction[] = [];
     const share: CreateAction[] = [];
@@ -180,34 +186,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
     }
 
     if (
-      isModuleEnabled("community") &&
-      isFeatureEnabled("groups") &&
-      hasCapability(CAPABILITIES.groupCreate)
-    ) {
-      life.push({
-        id: "group",
-        title: "Crear un grupo",
-        description: "Intereses, deporte o vecinos con algo en común",
-        icon: "👥",
-        onSelect: () => showToast("El compositor de grupos llega pronto"),
-      });
-    }
-
-    if (
-      isModuleEnabled("community.proposals") &&
-      isFeatureEnabled("decide") &&
-      hasCapability(CAPABILITIES.proposalCreate)
-    ) {
-      life.push({
-        id: "proposal",
-        title: "Abrir una propuesta",
-        description: "Pide a la comunidad que decida",
-        icon: "💡",
-        onSelect: () => showToast("El compositor de propuestas llega pronto"),
-      });
-    }
-
-    if (
       isFeatureEnabled("feed") &&
       hasCapability(CAPABILITIES.contentCreate)
     ) {
@@ -221,21 +199,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
     }
 
     if (
-      isFeatureEnabled("recommendations") &&
-      isFeatureEnabled("localLife") &&
-      hasCapability(CAPABILITIES.recommendationCreate)
-    ) {
-      share.push({
-        id: "tip",
-        title: "Recomendar algo",
-        description: "Sitios, profesionales o consejos de confianza",
-        icon: "⭐",
-        onSelect: () =>
-          showToast("El compositor de recomendaciones llega pronto"),
-      });
-    }
-
-    if (
       isModuleEnabled("services") &&
       (isFeatureEnabled("services") || isFeatureEnabled("marketplace"))
     ) {
@@ -245,22 +208,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
         description: "Una mano entre vecinos",
         icon: "🤝",
         onSelect: () => router.push("/services/neighbour-help"),
-      });
-    }
-
-    if (
-      isModuleEnabled("services") &&
-      (isFeatureEnabled("services") || isFeatureEnabled("localLife"))
-    ) {
-      share.push({
-        id: "offer-service",
-        title: "Ofrecer un servicio",
-        description: "Publica tu oficio o servicio de confianza",
-        icon: "💼",
-        onSelect: () => {
-          showToast("El alta de profesionales llega pronto");
-          router.push("/services/professionals");
-        },
       });
     }
 
@@ -310,19 +257,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
         description: "Haz una foto y cuéntanos",
         icon: "⚠️",
         onSelect: () => router.push("/report"),
-      });
-    }
-
-    if (
-      isFeatureEnabled("feed") &&
-      hasCapability(CAPABILITIES.announcementPublishOfficial)
-    ) {
-      practical.push({
-        id: "official",
-        title: "Aviso oficial",
-        description: "Comunicado de la administración",
-        icon: "⚑",
-        onSelect: () => showToast("La publicación oficial llega pronto"),
       });
     }
 
@@ -398,10 +332,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"
-            notificationCount={3}
-            onNotifications={() =>
-              showToast("Las notificaciones llegan pronto")
-            }
             profileImageUrl={demoMember.avatarUrl}
             profileName={demoMember.displayName}
             profileLabel="Mi perfil"
@@ -430,7 +360,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         onSubmit={(input) => {
           const created = createPublication(input);
           if (created) {
-            showToast("Publicado en Comunidad");
+            showToast("Publicado. Ya puedes verlo en Comunidad.");
             router.push(`/community/content/${created.id}`);
           }
         }}

@@ -10,8 +10,8 @@ import {
 import type { WorkPostCategory, WorkPostType } from "@life-community-os/types";
 import {
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { useTenant } from "@/providers/TenantProvider";
@@ -27,7 +27,7 @@ function isWorkPostType(value: string | null): value is WorkPostType {
 export function WorkPostComposerScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, isModuleEnabled, demoMember } = useTenant();
+  const { isFeatureEnabled, isModuleEnabled, demoMember } = useTenant();
 
   const initialType = searchParams.get("type");
   const [type, setType] = useState<WorkPostType | null>(
@@ -53,7 +53,11 @@ export function WorkPostComposerScreen() {
   if (!workEnabled) {
     return (
       <MobileScreen>
-        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
+        <FlowScreenHeader
+          title="Trabajo"
+          onBack={() => router.push("/services")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="Trabajo no disponible"
           description="Este tablón no está activo en tu comunidad ahora mismo."
@@ -105,19 +109,12 @@ export function WorkPostComposerScreen() {
   if (!type) {
     return (
       <MobileScreen>
-        <ScreenBack label="Cancelar" onClick={() => router.back()} />
-
-        <header className="space-y-2">
-          <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-            {theme.logoText} · Trabajo
-          </p>
-          <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-            Publicar en Trabajo
-          </h1>
-          <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-            Un anuncio sencillo entre vecinos. No es un portal de empleo.
-          </p>
-        </header>
+        <FlowScreenHeader
+          title="Publicar en Trabajo"
+          subtitle="Un anuncio sencillo entre vecinos. No es un portal de empleo."
+          onBack={() => router.push("/services/work")}
+          onExit={() => router.push("/services")}
+        />
 
         <div className="mt-2 space-y-3">
           <button
@@ -162,27 +159,19 @@ export function WorkPostComposerScreen() {
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Tipo de anuncio"
-        onClick={() => {
+      <FlowScreenHeader
+        title={typeLabel ?? "Publicar anuncio"}
+        subtitle={
+          type === "looking_for_work"
+            ? "Cuenta qué trabajo buscas y cuándo puedes."
+            : "Cuenta qué trabajo ofreces y a quién necesitas."
+        }
+        onBack={() => {
           setType(null);
           setError(null);
         }}
+        onExit={() => router.push("/services")}
       />
-
-      <header className="space-y-2">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Trabajo
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          {typeLabel}
-        </h1>
-        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          {type === "looking_for_work"
-            ? "Cuenta qué trabajo buscas y cuándo puedes."
-            : "Cuenta qué trabajo ofreces y a quién necesitas."}
-        </p>
-      </header>
 
       <div className="space-y-4">
         <label className="block space-y-1.5">

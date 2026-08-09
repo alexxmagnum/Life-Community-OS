@@ -21,8 +21,8 @@ import {
 import {
   Avatar,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -38,7 +38,6 @@ export function ExperienceConversationScreen({
 }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isFeatureEnabled,
     isModuleEnabled,
@@ -106,7 +105,11 @@ export function ExperienceConversationScreen({
   if (!moduleOn) {
     return (
       <MobileScreen>
-        <ScreenBack label="Inicio" onClick={() => router.push("/")} />
+        <FlowScreenHeader
+          title="Conversación"
+          onBack={() => router.push("/experiences")}
+          onExit={() => router.push("/experiences")}
+        />
         <EmptyState
           title="No disponible"
           description="Las actividades no están activas en tu comunidad."
@@ -120,9 +123,10 @@ export function ExperienceConversationScreen({
   if (ready && !allowed) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label="Actividad"
-          onClick={() => router.push(`/experiences/${experienceId}`)}
+        <FlowScreenHeader
+          title="Conversación"
+          onBack={() => router.push(`/experiences/${experienceId}`)}
+          onExit={() => router.push("/experiences")}
         />
         <EmptyState
           title="Conversación no disponible"
@@ -170,21 +174,14 @@ export function ExperienceConversationScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Actividad"
-        onClick={() => router.push(`/experiences/${experienceId}`)}
+      <FlowScreenHeader
+        title={title}
+        subtitle={experienceTitle || "Actividad"}
+        onBack={() => router.push(`/experiences/${experienceId}`)}
+        onExit={() => router.push("/experiences")}
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Evento
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight text-[var(--color-text-primary)]">
-          {title}
-        </h1>
-        <p className="text-[15px] leading-snug text-[var(--color-text-secondary)]">
-          {experienceTitle || "Actividad"}
-        </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
             Experiencia
@@ -220,11 +217,6 @@ export function ExperienceConversationScreen({
                 {message.body ? (
                   <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
                     {message.body}
-                  </p>
-                ) : null}
-                {message.mediaRefs?.length ? (
-                  <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
-                    Adjunto preparado (mediaRefs)
                   </p>
                 ) : null}
                 <div className="mt-2 flex flex-wrap gap-1.5">

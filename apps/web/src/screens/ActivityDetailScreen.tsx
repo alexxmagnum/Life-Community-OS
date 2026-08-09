@@ -15,10 +15,10 @@ import {
 import {
   EmptyState,
   ExperienceCard,
+  FlowScreenHeader,
   GroupCard,
   MobileScreen,
   ResourceDiscoveryCard,
-  ScreenBack,
   ScreenPrimaryAction,
   ZoomableImage,
 } from "@life-community-os/ui";
@@ -46,7 +46,7 @@ function statusLabelFor(
  */
 export function ActivityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   /** After mount, merge localStorage session creates (SSR-safe). */
   const [sessionReady, setSessionReady] = useState(false);
@@ -92,7 +92,11 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
   if (!hub) {
     return (
       <MobileScreen>
-        <ScreenBack onClick={() => router.back()} />
+        <FlowScreenHeader
+          title="Actividades"
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="Actividad no encontrada"
           description="Esta actividad no forma parte del explorador de tu comunidad."
@@ -112,7 +116,12 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack label="Actividades" onClick={() => router.back()} />
+      <FlowScreenHeader
+        title={hub.label}
+        subtitle={hub.description}
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
+      />
 
       {/* 1. Identity */}
       <section className="overflow-hidden rounded-[24px] bg-[var(--color-surface-muted)]">
@@ -123,26 +132,8 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
             zoomable
             wrapperClassName="absolute inset-0 h-full w-full"
           />
-          <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(transparent 40%, rgba(20,28,24,0.72))",
-            }}
-          />
-          <div className="absolute inset-x-0 bottom-0 p-4">
-            <p className="text-[15px] font-semibold text-white/80">
-              {theme.logoText} · Actividad
-            </p>
-            <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-white">
-              {hub.label}
-            </h1>
-          </div>
         </div>
         <div className="space-y-2 px-4 py-4">
-          <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-            {hub.description}
-          </p>
           {participantHint ? (
             <p className="text-[15px] font-medium text-[var(--color-text-tertiary)]">
               {participantHint} vecinos en grupos relacionados

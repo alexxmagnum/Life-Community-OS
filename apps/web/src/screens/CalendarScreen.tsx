@@ -13,8 +13,8 @@ import {
   CalendarReservationCard,
   EmptyState,
   FilterChipRow,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenHeader,
 } from "@life-community-os/ui";
 import { useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -22,7 +22,7 @@ import { useReservations } from "@/providers/ReservationProvider";
 
 export function CalendarScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled } = useTenant();
+  const { isFeatureEnabled } = useTenant();
   const { joinedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
   const [view, setView] = useState<"agenda" | "month">("agenda");
@@ -77,20 +77,20 @@ export function CalendarScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Mis actividades"
         subtitle="Lo que tienes apuntado en la comunidad."
-        trailing={
-          <button
-            type="button"
-            onClick={() => router.push("/reservations")}
-            className="text-[14px] font-semibold text-[var(--color-action-primary)]"
-          >
-            Reservas
-          </button>
-        }
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
       />
+
+      <button
+        type="button"
+        onClick={() => router.push("/reservations")}
+        className="self-start text-[14px] font-semibold text-[var(--color-action-primary)]"
+      >
+        Reservas
+      </button>
 
       <FilterChipRow
         items={[

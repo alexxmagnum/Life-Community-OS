@@ -43,7 +43,6 @@ export function CommunityHubScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
-    theme,
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
@@ -233,7 +232,6 @@ export function CommunityHubScreen() {
   return (
     <MobileScreen>
       <ScreenHeader
-        eyebrow={theme.logoText}
         title="Comunidad"
         subtitle="El lugar donde viven los vecinos."
       />

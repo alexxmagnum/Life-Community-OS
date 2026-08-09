@@ -11,12 +11,12 @@ import {
   EmptyState,
   ExperienceHero,
   ExperienceMeta,
+  FlowScreenHeader,
   JoinButton,
   MobileScreen,
   OrganizerCard,
   ParticipantList,
   ParticipationStatus,
-  ScreenBack,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -29,7 +29,6 @@ export function ExperienceDetailScreen({
 }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isFeatureEnabled,
     isModuleEnabled,
@@ -92,12 +91,15 @@ export function ExperienceDetailScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack onClick={() => router.back()} />
+      <FlowScreenHeader
+        title={experience.title}
+        onBack={() => router.push("/experiences")}
+        onExit={() => router.push("/experiences")}
+      />
 
       <ExperienceHero
         imageUrl={experience.imageUrl}
         title={experience.title}
-        brandOverline={theme.logoText}
       />
 
       <div className="flex flex-wrap items-center gap-3">

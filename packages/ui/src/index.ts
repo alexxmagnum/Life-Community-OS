@@ -35,6 +35,7 @@ export {
   MobileScreen,
   ScreenHeader,
   ScreenBack,
+  FlowScreenHeader,
   FilterChipRow,
   ScreenSearch,
   ScreenPrimaryAction,

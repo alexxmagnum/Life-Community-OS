@@ -22,8 +22,8 @@ import {
 import {
   Avatar,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
 } from "@life-community-os/ui";
 import {
   canOpenGroupConversation,
@@ -38,7 +38,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 export function GroupConversationScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isFeatureEnabled,
     isModuleEnabled,
@@ -120,7 +119,11 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
   if (!moduleOn) {
     return (
       <MobileScreen>
-        <ScreenBack label="Comunidad" onClick={() => router.push("/community")} />
+        <FlowScreenHeader
+          title="Conversación"
+          onBack={() => router.push("/community")}
+          onExit={() => router.push("/community")}
+        />
         <EmptyState
           title="No disponible"
           description="Los grupos no están activos en tu comunidad."
@@ -134,9 +137,10 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
   if (ready && !allowed) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label="Grupo"
-          onClick={() => router.push(`/community/groups/${groupId}`)}
+        <FlowScreenHeader
+          title="Conversación"
+          onBack={() => router.push(`/community/groups/${groupId}`)}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
           title="Conversación no disponible"
@@ -184,21 +188,14 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Grupo"
-        onClick={() => router.push(`/community/groups/${groupId}`)}
+      <FlowScreenHeader
+        title={title}
+        subtitle={groupName || "Grupo"}
+        onBack={() => router.push(`/community/groups/${groupId}`)}
+        onExit={() => router.push("/community")}
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Grupo
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight text-[var(--color-text-primary)]">
-          {title}
-        </h1>
-        <p className="text-[15px] leading-snug text-[var(--color-text-secondary)]">
-          {groupName || "Grupo"}
-        </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
           {categoryLabel ? (
             <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
@@ -241,11 +238,6 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
                 {message.body ? (
                   <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
                     {message.body}
-                  </p>
-                ) : null}
-                {message.mediaRefs?.length ? (
-                  <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
-                    Adjunto preparado (mediaRefs)
                   </p>
                 ) : null}
                 <div className="mt-2 flex flex-wrap gap-1.5">

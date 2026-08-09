@@ -5,17 +5,17 @@ import { formatResourceDate } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
   ReservationStatusBadge,
   ReservationSummary,
-  ScreenHeader,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function MyReservationsScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability } = useTenant();
   const { upcoming, past, cancel } = useReservations();
 
   if (!isFeatureEnabled("resources")) {
@@ -34,10 +34,11 @@ export function MyReservationsScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Mis reservas"
         subtitle="Espacios que has reservado en la comunidad."
+        onBack={() => router.push("/resources")}
+        onExit={() => router.push("/resources")}
       />
 
       <section className="space-y-4">

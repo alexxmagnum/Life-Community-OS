@@ -16,12 +16,12 @@ import {
   ActivityCard,
   CommunityLifeSection,
   EmptyState,
+  FlowScreenHeader,
   GroupCard,
   LocalLifeRail,
   LocalPlaceCard,
   MobileScreen,
   NeighbourTipCard,
-  ScreenHeader,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -33,7 +33,7 @@ import { useExperienceParticipation } from "@/providers/ExperienceParticipationP
  */
 export function DiscoverScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
@@ -100,10 +100,11 @@ export function DiscoverScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Descubrir"
         subtitle="Explora la vida a tu alrededor."
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
       />
 
       <ScreenSearch
@@ -170,7 +171,7 @@ export function DiscoverScreen() {
 
           {hasPlans ? (
             <CommunityLifeSection
-              title="Planes y actividades"
+              title="Experiencias y actividades"
               subtitle="Lo que está pasando y grupos abiertos."
             >
               <div className="space-y-4">

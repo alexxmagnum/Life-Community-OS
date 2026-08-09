@@ -25,8 +25,8 @@ import {
 import {
   Avatar,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
 } from "@life-community-os/ui";
 import {
   canOpenOfficialConversation,
@@ -41,7 +41,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 export function OfficialConversationScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isModuleEnabled,
     hasCapability,
@@ -129,7 +128,11 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
   if (!entity || !surfaceOn) {
     return (
       <MobileScreen>
-        <ScreenBack label="Oficial" onClick={() => router.push("/")} />
+        <FlowScreenHeader
+          title="Comunicación oficial"
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="No disponible"
           description="Esta comunicación oficial no está activa en tu comunidad."
@@ -143,9 +146,10 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
   if (ready && !allowed) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label={entity.name}
-          onClick={() => router.push(`/official/${entity.slug}`)}
+        <FlowScreenHeader
+          title="Comunicación oficial"
+          onBack={() => router.push(`/official/${entity.slug}`)}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="Comunicación no disponible"
@@ -196,21 +200,14 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label={entity.name}
-        onClick={() => router.push(`/official/${entity.slug}`)}
+      <FlowScreenHeader
+        title={title}
+        subtitle={entityName}
+        onBack={() => router.push(`/official/${entity.slug}`)}
+        onExit={() => router.push("/")}
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Oficial
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight text-[var(--color-text-primary)]">
-          {title}
-        </h1>
-        <p className="text-[15px] leading-snug text-[var(--color-text-secondary)]">
-          {entityName}
-        </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
             {modeLabel}
@@ -288,11 +285,6 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
                 {message.body ? (
                   <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
                     {message.body}
-                  </p>
-                ) : null}
-                {message.mediaRefs?.length ? (
-                  <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
-                    Adjunto preparado (mediaRefs)
                   </p>
                 ) : null}
                 {canReact ? (

@@ -24,7 +24,7 @@ export function TerritoryBelongingCard({
   return (
     <section
       className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
-      aria-label="Tu lugar en el territorio"
+      aria-label="Tu lugar en la comunidad"
     >
       <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
         Tu lugar

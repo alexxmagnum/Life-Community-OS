@@ -18,11 +18,11 @@ import {
 import type { WorkPostType } from "@life-community-os/types";
 import {
   EmptyState,
+  FlowScreenHeader,
   LocalPlaceCard,
   MarketplaceItemCard,
   MobileScreen,
   NeighbourTipCard,
-  ScreenBack,
   ScreenPrimaryAction,
   ScreenSearch,
 } from "@life-community-os/ui";
@@ -35,7 +35,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 export function ServicesCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
   const {
-    theme,
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
@@ -104,7 +103,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   if (!hub) {
     return (
       <MobileScreen>
-        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
+        <FlowScreenHeader
+          title="Servicios"
+          onBack={() => router.push("/services")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="Servicio no encontrado"
           description="Esta categoría no forma parte de tu comunidad."
@@ -118,7 +121,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   if (!featureOk) {
     return (
       <MobileScreen>
-        <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
+        <FlowScreenHeader
+          title="Servicios"
+          onBack={() => router.push("/services")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="No disponible"
           description="Este módulo no está activo en tu comunidad ahora mismo."
@@ -318,22 +325,16 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
+      <FlowScreenHeader
+        title={hub.label}
+        subtitle={hub.problem}
+        onBack={() => router.push("/services")}
+        onExit={() => router.push("/services")}
+      />
 
-      <header className="space-y-2">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Servicios
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          {hub.label}
-        </h1>
-        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          {hub.problem}
-        </p>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          {hub.description}
-        </p>
-      </header>
+      <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
+        {hub.description}
+      </p>
 
       {isWorkHub ? (
         <div className="grid grid-cols-2 gap-3">

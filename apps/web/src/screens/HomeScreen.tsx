@@ -244,7 +244,7 @@ const DO_TODAY_DOORS: ReadonlyArray<{
     id: "experiences",
     emoji: "✨",
     label: "Experiencias",
-    hint: "Planes y encuentros",
+    hint: "Encuentros y planes",
     href: "/experiences",
     tint: "bg-[#DCEEE4]",
     card: "bg-[#F3FAF6] border border-[#C5DED0]",
@@ -870,7 +870,7 @@ export function HomeScreen() {
         {isFeatureEnabled("experiences") ? (
           <HomeSection
             title="Qué puedes hacer hoy"
-            subtitle="Planes y encuentros cerca."
+            subtitle="Experiencias y encuentros cerca."
             actionLabel="Ver todas"
             onAction={() => router.push("/experiences")}
           >

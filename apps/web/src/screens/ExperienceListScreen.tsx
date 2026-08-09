@@ -11,8 +11,8 @@ import {
   EmptyState,
   ExperienceCard,
   FilterChipRow,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenHeader,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -34,7 +34,7 @@ function statusLabelFor(
 
 export function ExperienceListScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
@@ -78,17 +78,18 @@ export function ExperienceListScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
-        title="Planes"
+      <FlowScreenHeader
+        title="Experiencias"
         subtitle="Encuentra algo en lo que participar cerca de ti."
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
       />
 
       <ScreenSearch
         value={query}
         onChange={setQuery}
         placeholder="Buscar paseos, clases, encuentros…"
-        label="Buscar planes"
+        label="Buscar experiencias"
       />
 
       <FilterChipRow

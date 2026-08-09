@@ -105,6 +105,63 @@ export function ScreenBack({
   );
 }
 
+export type FlowScreenHeaderProps = {
+  /** Exact destination title — must match navigation label. */
+  title: string;
+  /** Short helper line only when useful. */
+  subtitle?: string;
+  /** Return to previous logical location. */
+  onBack: () => void;
+  /** Leave the current flow / context. */
+  onExit: () => void;
+  className?: string;
+};
+
+/**
+ * Global internal-screen chrome — trust & consistency.
+ * ← Volver (left) · × Salir (right) · destination title below.
+ * Do not put brand / territory / internal concepts here.
+ */
+export function FlowScreenHeader({
+  title,
+  subtitle,
+  onBack,
+  onExit,
+  className,
+}: FlowScreenHeaderProps) {
+  return (
+    <header className={cn("space-y-3", className)}>
+      <div className="flex items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+        >
+          ← Volver
+        </button>
+        <button
+          type="button"
+          onClick={onExit}
+          className="inline-flex min-h-[44px] items-center text-[15px] font-semibold text-[var(--color-text-secondary)]"
+          aria-label="Salir"
+        >
+          × Salir
+        </button>
+      </div>
+      <div className="min-w-0">
+        <h1 className="font-sans text-[26px] font-semibold leading-8 tracking-tight text-[var(--color-text-primary)]">
+          {title}
+        </h1>
+        {subtitle ? (
+          <p className="mt-1 text-[15px] leading-6 text-[var(--color-text-secondary)]">
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+    </header>
+  );
+}
+
 export type FilterChip = {
   id: string;
   label: string;

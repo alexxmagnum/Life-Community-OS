@@ -10,8 +10,8 @@ import {
 import {
   Avatar,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
 } from "@life-community-os/ui";
 import { canOpenWorkConversation } from "@/lib/work-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -22,7 +22,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isFeatureEnabled,
     isModuleEnabled,
@@ -37,7 +36,11 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   if (!workEnabled) {
     return (
       <MobileScreen>
-        <ScreenBack label="Trabajo" onClick={() => router.push("/services/work")} />
+        <FlowScreenHeader
+          title="Trabajo"
+          onBack={() => router.push("/services/work")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="Trabajo no disponible"
           description="Este tablón no está activo en tu comunidad ahora mismo."
@@ -53,7 +56,11 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   if (!workPost) {
     return (
       <MobileScreen>
-        <ScreenBack label="Trabajo" onClick={() => router.push("/services/work")} />
+        <FlowScreenHeader
+          title="Trabajo"
+          onBack={() => router.push("/services/work")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="Anuncio no encontrado"
           description="Puede haberse cerrado o el enlace no es válido."
@@ -67,7 +74,11 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   if (!hasCapability(CAPABILITIES.localView)) {
     return (
       <MobileScreen>
-        <ScreenBack label="Trabajo" onClick={() => router.push("/services/work")} />
+        <FlowScreenHeader
+          title="Trabajo"
+          onBack={() => router.push("/services/work")}
+          onExit={() => router.push("/services")}
+        />
         <EmptyState
           title="Sin acceso"
           description="No puedes ver este anuncio con tu cuenta actual."
@@ -93,15 +104,14 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Trabajo"
-        onClick={() => router.push("/services/work")}
+      <FlowScreenHeader
+        title={workPost.title}
+        subtitle={workPostTypeLabel(workPost.type)}
+        onBack={() => router.push("/services/work")}
+        onExit={() => router.push("/services")}
       />
 
       <header className="space-y-3">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Trabajo
-        </p>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[14px] font-semibold text-[var(--color-text-primary)]">
             {workPostTypeLabel(workPost.type)}
@@ -110,9 +120,6 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
             {workPost.categoryLabel}
           </span>
         </div>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          {workPost.title}
-        </h1>
         <p className="text-[16px] leading-7 text-[var(--color-text-secondary)]">
           {workPost.description}
         </p>

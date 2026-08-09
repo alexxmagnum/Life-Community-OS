@@ -10,9 +10,9 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  FlowScreenHeader,
   LocalPlaceCard,
   MobileScreen,
-  ScreenBack,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -23,7 +23,7 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
  */
 export function NearbyCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const [query, setQuery] = useState("");
 
   const hub = useMemo(() => getNearCategoryBySlug(category), [category]);
@@ -48,7 +48,11 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
   if (!hub) {
     return (
       <MobileScreen>
-        <ScreenBack onClick={() => router.back()} />
+        <FlowScreenHeader
+          title="Cerca de ti"
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="Categoría no encontrada"
           description="Esta categoría no forma parte de tu comunidad."
@@ -62,7 +66,11 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
   if (!canLocal) {
     return (
       <MobileScreen>
-        <ScreenBack label="Cerca de ti" onClick={() => router.back()} />
+        <FlowScreenHeader
+          title={hub.label}
+          onBack={() => router.push("/")}
+          onExit={() => router.push("/")}
+        />
         <EmptyState
           title="No disponible"
           description="La vida local no está activa para tu cuenta ahora mismo."
@@ -75,24 +83,18 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack label="Cerca de ti" onClick={() => router.back()} />
+      <FlowScreenHeader
+        title={hub.label}
+        subtitle={hub.problem}
+        onBack={() => router.push("/")}
+        onExit={() => router.push("/")}
+      />
 
-      <header className="space-y-2">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Cerca de ti
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          {hub.label}
-        </h1>
-        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          {hub.problem}
-        </p>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          {areaLabels.length > 0
-            ? `Priorizado cerca de ${areaLabels.join(", ")} — relevancia, no un directorio.`
-            : hub.description}
-        </p>
-      </header>
+      <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
+        {areaLabels.length > 0
+          ? `Priorizado cerca de ${areaLabels.join(", ")} — relevancia, no un directorio.`
+          : hub.description}
+      </p>
 
       <ScreenSearch
         value={query}

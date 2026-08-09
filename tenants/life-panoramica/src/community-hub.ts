@@ -61,7 +61,7 @@ export const communityHubAreas: readonly CommunityHubAreaDefinition[] = [
   {
     id: "actualidad",
     label: "Actualidad",
-    purpose: "Lo que está pasando ahora en el territorio.",
+    purpose: "Lo que está pasando ahora en la comunidad.",
     icon: "info",
     moduleIds: ["community"],
     featureKeys: ["feed"],
@@ -103,7 +103,7 @@ export const communityHubAreas: readonly CommunityHubAreaDefinition[] = [
   {
     id: "participacion",
     label: "Participación",
-    purpose: "Cómo participar y aportar en la vida del territorio.",
+    purpose: "Cómo participar y aportar en la vida de la comunidad.",
     icon: "handshake",
     moduleIds: ["community.proposals", "community"],
     featureKeys: ["decide"],
@@ -111,7 +111,7 @@ export const communityHubAreas: readonly CommunityHubAreaDefinition[] = [
   {
     id: "espacios",
     label: "Espacios comunitarios",
-    purpose: "Lugares compartidos del territorio.",
+    purpose: "Lugares compartidos de la comunidad.",
     icon: "place",
     moduleIds: ["community", "reservations"],
   },

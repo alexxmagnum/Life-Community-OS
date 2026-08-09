@@ -11,8 +11,8 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -166,19 +166,12 @@ export function CreateExperienceScreen() {
 
   return (
     <MobileScreen>
-      <ScreenBack label="Cancelar" onClick={() => router.back()} />
-
-      <header className="space-y-2">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText}
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          Crear experiencia
-        </h1>
-        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          Tienes una idea: invita a tus vecinos a un momento concreto.
-        </p>
-      </header>
+      <FlowScreenHeader
+        title="Crear experiencia"
+        subtitle="Tienes una idea: invita a tus vecinos a un momento concreto."
+        onBack={() => router.push("/experiences")}
+        onExit={() => router.push("/experiences")}
+      />
 
       <section className="space-y-4">
         <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">

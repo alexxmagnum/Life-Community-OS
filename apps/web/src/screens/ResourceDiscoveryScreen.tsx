@@ -8,10 +8,10 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  FlowScreenHeader,
   LoadingState,
   MobileScreen,
   ResourceDiscoveryCard,
-  ScreenHeader,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -20,7 +20,6 @@ import { resourceAccessHint } from "@/lib/demo-access-copy";
 export function ResourceDiscoveryScreen() {
   const router = useRouter();
   const {
-    theme,
     isFeatureEnabled,
     hasCapability,
     demoPersonId,
@@ -64,10 +63,11 @@ export function ResourceDiscoveryScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title="Espacios compartidos"
         subtitle="Pistas, salas y zonas comunes de la comunidad."
+        onBack={() => router.push("/services")}
+        onExit={() => router.push("/services")}
       />
 
       <ScreenSearch

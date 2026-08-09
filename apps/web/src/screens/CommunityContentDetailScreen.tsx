@@ -12,9 +12,9 @@ import {
   Button,
   CommentPreview,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
   ReactionBar,
-  ScreenBack,
   ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -109,9 +109,10 @@ export function CommunityContentDetailScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Comunidad"
-        onClick={() => router.push("/community")}
+      <FlowScreenHeader
+        title={content.title}
+        onBack={() => router.push("/community")}
+        onExit={() => router.push("/community")}
       />
 
       <article className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
@@ -138,9 +139,6 @@ export function CommunityContentDetailScreen({
               .filter(Boolean)
               .join(" · ")}
           />
-          <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-8">
-            {content.title}
-          </h1>
           <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
             {content.body}
           </p>

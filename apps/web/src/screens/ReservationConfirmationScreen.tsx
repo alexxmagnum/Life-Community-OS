@@ -9,10 +9,9 @@ import {
 import {
   Button,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
   ReservationSummary,
-  ScreenBack,
-  ScreenHeader,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
@@ -24,7 +23,7 @@ export function ReservationConfirmationScreen({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability } = useTenant();
   const { reserve } = useReservations();
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,21 +75,17 @@ export function ReservationConfirmationScreen({
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Cambiar horario"
-        onClick={() =>
-          router.push(`/resources/${resource.id}/availability`)
-        }
-      />
-
-      <ScreenHeader
-        eyebrow={theme.logoText}
+      <FlowScreenHeader
         title={confirmed ? "Reserva hecha" : "Confirmar reserva"}
         subtitle={
           confirmed
             ? "Este espacio está en tu agenda. Cuídalo para el siguiente vecino."
             : "Revisa la hora antes de confirmar."
         }
+        onBack={() =>
+          router.push(`/resources/${resource.id}/availability`)
+        }
+        onExit={() => router.push("/resources")}
       />
 
       <ReservationSummary

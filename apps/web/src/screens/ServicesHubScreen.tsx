@@ -92,10 +92,13 @@ export function ServicesHubScreen() {
 
   return (
     <MobileScreen>
-      <header className="pt-1">
+      <header className="space-y-2 pt-1">
         <h1 className="font-sans text-[28px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
-          Necesito resolver algo
+          Servicios
         </h1>
+        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+          Necesito resolver algo
+        </p>
       </header>
 
       {entries.length === 0 ? (

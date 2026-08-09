@@ -8,10 +8,10 @@ import {
 import {
   Button,
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
   ReservationStatusBadge,
   ResourceHero,
-  ScreenBack,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { resourceAccessHint } from "@/lib/demo-access-copy";
@@ -19,7 +19,6 @@ import { resourceAccessHint } from "@/lib/demo-access-copy";
 export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   const router = useRouter();
   const {
-    theme,
     isFeatureEnabled,
     hasCapability,
     demoPersonId,
@@ -74,12 +73,15 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack onClick={() => router.back()} />
+      <FlowScreenHeader
+        title={resource.name}
+        onBack={() => router.push("/resources")}
+        onExit={() => router.push("/resources")}
+      />
 
       <ResourceHero
         imageUrl={resource.imageUrl}
         name={resource.name}
-        overline={theme.logoText}
       />
 
       <div className="flex flex-wrap items-center gap-3">

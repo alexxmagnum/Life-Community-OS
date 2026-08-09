@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { getGroupById } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  FlowScreenHeader,
   MobileScreen,
-  ScreenBack,
   ZoomableImage,
 } from "@life-community-os/ui";
 import { canOpenGroupConversation } from "@/lib/group-conversation-access";
@@ -17,7 +17,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 export function GroupDetailScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
   const {
-    theme,
     configuration,
     isFeatureEnabled,
     isModuleEnabled,
@@ -30,9 +29,10 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
   if (!groupsOn) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label="Comunidad"
-          onClick={() => router.push("/community?tab=grupos")}
+        <FlowScreenHeader
+          title="Grupos"
+          onBack={() => router.push("/community?tab=grupos")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
           title="Grupos no disponibles"
@@ -49,9 +49,10 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
   if (!group) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label="Comunidad"
-          onClick={() => router.push("/community?tab=grupos")}
+        <FlowScreenHeader
+          title="Grupos"
+          onBack={() => router.push("/community?tab=grupos")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
           title="Grupo no encontrado"
@@ -66,9 +67,10 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
   if (!hasCapability(CAPABILITIES.contentView)) {
     return (
       <MobileScreen>
-        <ScreenBack
-          label="Comunidad"
-          onClick={() => router.push("/community?tab=grupos")}
+        <FlowScreenHeader
+          title="Grupos"
+          onBack={() => router.push("/community?tab=grupos")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
           title="Sin acceso"
@@ -87,9 +89,11 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
 
   return (
     <MobileScreen>
-      <ScreenBack
-        label="Grupos"
-        onClick={() => router.push("/community?tab=grupos")}
+      <FlowScreenHeader
+        title={group.name}
+        subtitle={group.categoryLabel}
+        onBack={() => router.push("/community?tab=grupos")}
+        onExit={() => router.push("/community")}
       />
 
       <div className="overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
@@ -103,19 +107,10 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
       </div>
 
       <header className="space-y-2">
-        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
-          {theme.logoText} · Grupo
-        </p>
-        <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
-          {group.name}
-        </h1>
         <p className="text-[16px] leading-7 text-[var(--color-text-secondary)]">
           {group.description}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
-            {group.categoryLabel}
-          </span>
           <span className="text-[15px] text-[var(--color-text-tertiary)]">
             {group.memberCount} miembros
             {group.areaLabel ? ` · ${group.areaLabel}` : ""}
