@@ -291,8 +291,13 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const openCreate = () => setCreateOpen(true);
+    const openPost = () => setPostOpen(true);
     window.addEventListener("lcos:open-create", openCreate);
-    return () => window.removeEventListener("lcos:open-create", openCreate);
+    window.addEventListener("lcos:open-post", openPost);
+    return () => {
+      window.removeEventListener("lcos:open-create", openCreate);
+      window.removeEventListener("lcos:open-post", openPost);
+    };
   }, []);
 
   useEffect(() => {

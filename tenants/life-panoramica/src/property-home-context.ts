@@ -73,7 +73,7 @@ function statusPresentation(
 ): Pick<PropertyHomeEntry, "statusLabel" | "statusKind"> {
   switch (status) {
     case "active":
-      return { statusLabel: "Residencia verificada", statusKind: "verified" };
+      return { statusLabel: "Verificado", statusKind: "verified" };
     case "pending_verification":
       return {
         statusLabel: "Verificación pendiente",
@@ -100,7 +100,7 @@ function headlineFor(
     case "owner":
       return `Mi propiedad en ${territoryLabel}${place}`;
     case "tenant":
-      return `Mi residencia actual${place}`;
+      return `Mi hogar actual${place}`;
     case "guest":
       return `Estancia en ${territoryLabel}${place}`;
     case "manager":
@@ -130,7 +130,7 @@ function toEntry(
   const area = address.communityAreaId
     ? getCommunityAreaById(address.communityAreaId)
     : undefined;
-  const territoryLabel = address.locality ?? "tu territorio";
+  const territoryLabel = address.locality ?? "tu zona";
   const { statusLabel, statusKind } = statusPresentation(relationship.status);
   const grantsResidencyAccess =
     relationship.status === "active" && Boolean(relationship.verifiedAt);
@@ -180,7 +180,7 @@ export function getMyHomeContext(personId: string): MyHomeContext {
     homes,
     verifiedCommunityAreaIds: access.communityAreaIds,
     emptyMessage:
-      "Aún no tienes un hogar vinculado. Cuando verifiques tu residencia, aquí verás tu lugar en el territorio.",
+      "Aún no tienes un hogar vinculado. Cuando verifiques tu zona, aquí verás tu lugar en la comunidad.",
   };
 }
 

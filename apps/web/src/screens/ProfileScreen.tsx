@@ -245,7 +245,7 @@ export function ProfileScreen() {
           <ExploreLink
             label="Mis avisos"
             hint="Seguimiento de lo que has enviado"
-            onClick={() => router.push("/report?view=last")}
+            onClick={() => router.push("/report?view=mine")}
           />
         ) : null}
         {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
@@ -264,55 +264,59 @@ export function ProfileScreen() {
         </p>
       ) : null}
 
-      <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
-        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-          Demo · persona
-        </p>
-        <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-          Cambia de persona para ver distintos vínculos de hogar.
-        </p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {demoMembers.map((m) => (
-            <button
-              key={m.personId}
-              type="button"
-              onClick={() => setDemoPersonId(m.personId)}
-              className={
-                demoPersonId === m.personId
-                  ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                  : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-              }
-            >
-              {m.displayName}
-            </button>
-          ))}
-        </div>
-      </section>
+      {process.env.NODE_ENV === "development" ? (
+        <>
+          <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
+            <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+              Dev · persona
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+              Solo en desarrollo. Cambia de persona para probar vínculos de hogar.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {demoMembers.map((m) => (
+                <button
+                  key={m.personId}
+                  type="button"
+                  onClick={() => setDemoPersonId(m.personId)}
+                  className={
+                    demoPersonId === m.personId
+                      ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                      : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                  }
+                >
+                  {m.displayName}
+                </button>
+              ))}
+            </div>
+          </section>
 
-      <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
-        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-          Demo · rol
-        </p>
-        <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-          Simula permisos futuros — independiente de tu hogar.
-        </p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {roles.map((r) => (
-            <button
-              key={r.id}
-              type="button"
-              onClick={() => setRole(r.id)}
-              className={
-                role === r.id
-                  ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                  : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-              }
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </section>
+          <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
+            <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+              Dev · rol
+            </p>
+            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+              Solo en desarrollo. Simula permisos — independiente de tu hogar.
+            </p>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {roles.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRole(r.id)}
+                  className={
+                    role === r.id
+                      ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                      : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                  }
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : null}
     </MobileScreen>
   );
 }

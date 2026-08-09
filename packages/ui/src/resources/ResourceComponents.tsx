@@ -385,8 +385,15 @@ export function ResourceDiscoveryCard({
               {description}
             </p>
           ) : null}
-          <p className="mt-2 text-[15px] font-medium text-[var(--color-action-primary)]">
-            Próximo: {availability}
+          <p
+            className={cn(
+              "mt-2 text-[15px] font-medium",
+              onReserve
+                ? "text-[var(--color-action-primary)]"
+                : "text-[var(--color-text-secondary)]",
+            )}
+          >
+            {onReserve ? `Próximo: ${availability}` : availability}
             {area ? (
               <span className="font-normal text-[var(--color-text-tertiary)]">
                 {" "}

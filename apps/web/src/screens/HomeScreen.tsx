@@ -301,11 +301,11 @@ export function HomeScreen() {
     () => `Hola ${demoMember.displayName}`,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  /** Collapsed by default — peek + unwrap rest in batches of 5. */
+  /** Open by default — preview content without peek → expand → open. */
   const PAGE = 5;
-  const [forYouOpen, setForYouOpen] = useState(false);
+  const [forYouOpen, setForYouOpen] = useState(true);
   const [forYouVisibleCount, setForYouVisibleCount] = useState(PAGE);
-  const [todayOpen, setTodayOpen] = useState(false);
+  const [todayOpen, setTodayOpen] = useState(true);
   const [todayVisibleCount, setTodayVisibleCount] = useState(PAGE);
   const forYouSectionRef = useRef<HTMLElement | null>(null);
   const todaySectionRef = useRef<HTMLElement | null>(null);
@@ -314,35 +314,6 @@ export function HomeScreen() {
     setLive(true);
     setGreeting(belongingGreeting(demoMember.displayName, madridHour()));
   }, [demoMember.displayName]);
-
-  /** Collapse open accordions when tapping outside. */
-  useEffect(() => {
-    if (!forYouOpen && !todayOpen) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (
-        forYouOpen &&
-        forYouSectionRef.current &&
-        !forYouSectionRef.current.contains(target)
-      ) {
-        setForYouOpen(false);
-        setForYouVisibleCount(PAGE);
-      }
-      if (
-        todayOpen &&
-        todaySectionRef.current &&
-        !todaySectionRef.current.contains(target)
-      ) {
-        setTodayOpen(false);
-        setTodayVisibleCount(PAGE);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [forYouOpen, todayOpen]);
 
   const searchHits = useMemo(
     () => searchHomeCatalog(searchQuery, 8),
@@ -575,11 +546,11 @@ export function HomeScreen() {
 
             {!forYouOpen ? (
               forYouPeek ? (
-                <div className="border-t border-[var(--color-border-subtle)]">
+                <div className="space-y-1 border-t border-[var(--color-border-subtle)] px-3 pb-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setForYouOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+                    onClick={() => router.push(forYouPeek.href)}
+                    className="flex w-full items-center gap-3 rounded-[14px] border border-[#E8E2D8] bg-white px-3 py-2.5 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
@@ -591,12 +562,19 @@ export function HomeScreen() {
                         </span>
                       ) : null}
                     </span>
-                    {forYou.length > 1 ? (
-                      <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
-                        +{forYou.length - 1}
-                      </span>
-                    ) : null}
+                    <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
+                      Abrir
+                    </span>
                   </button>
+                  {forYou.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setForYouOpen(true)}
+                      className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                    >
+                      Ver {forYou.length - 1} más
+                    </button>
+                  ) : null}
                 </div>
               ) : null
             ) : forYou.length > 0 ? (
@@ -724,12 +702,12 @@ export function HomeScreen() {
             </button>
 
             {!todayOpen ? (
-              <div className="border-t border-[var(--color-border-subtle)]">
+              <div className="space-y-1 border-t border-[var(--color-border-subtle)] px-3 pb-3 pt-2">
                 {todayPeek ? (
                   <button
                     type="button"
-                    onClick={() => setTodayOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+                    onClick={() => router.push(todayPeek.href)}
+                    className="flex w-full items-center gap-3 rounded-[14px] border border-[#E8E2D8] bg-white px-3 py-2.5 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
@@ -739,11 +717,18 @@ export function HomeScreen() {
                         {todayPeek.context}
                       </span>
                     </span>
-                    {todayItems.length > 1 ? (
-                      <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
-                        +{todayItems.length - 1}
-                      </span>
-                    ) : null}
+                    <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
+                      Abrir
+                    </span>
+                  </button>
+                ) : null}
+                {todayItems.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setTodayOpen(true)}
+                    className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Ver {todayItems.length - 1} más
                   </button>
                 ) : null}
               </div>

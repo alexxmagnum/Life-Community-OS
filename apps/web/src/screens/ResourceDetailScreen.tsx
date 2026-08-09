@@ -85,10 +85,18 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       />
 
       <div className="flex flex-wrap items-center gap-3">
-        <ReservationStatusBadge status="available" />
-        <span className="text-[14px] text-[var(--color-text-secondary)]">
-          Próximo hueco · {resource.availabilityPreview}
-        </span>
+        {canReserve ? (
+          <ReservationStatusBadge status="available" />
+        ) : (
+          <span className="inline-flex min-h-[32px] items-center rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]">
+            No disponible para ti
+          </span>
+        )}
+        {canReserve ? (
+          <span className="text-[14px] text-[var(--color-text-secondary)]">
+            Próximo hueco · {resource.availabilityPreview}
+          </span>
+        ) : null}
       </div>
 
       <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2.5">

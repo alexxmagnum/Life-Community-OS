@@ -35,7 +35,7 @@ export const demoMemberCatalog: DemoMemberProfile[] = [
     interests: ["Caminar", "Pádel"],
     avatarUrl:
       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80",
-    residencyStatusLabel: "Residencia verificada · Aldea Golf",
+    residencyStatusLabel: "Verificado · Aldea Golf",
     residencyStatusKind: "verified",
     narrativeKey: "marta",
   },
@@ -61,7 +61,7 @@ export const demoMemberCatalog: DemoMemberProfile[] = [
     interests: ["Natación", "Café"],
     avatarUrl:
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=200&q=80",
-    residencyStatusLabel: "Residencia verificada · Zona Verde",
+    residencyStatusLabel: "Verificado · Zona Verde",
     residencyStatusKind: "other_area",
     narrativeKey: "lucia",
   },

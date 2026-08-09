@@ -74,11 +74,11 @@ export function ServicesHubScreen() {
     if (isModuleEnabled("reservations") && isFeatureEnabled("resources")) {
       const reserveHint =
         territoryAccess.eligibleResourceCount > 0
-          ? `${territoryAccess.eligibleResourceCount} espacios que puedes reservar.`
-          : "Instalaciones y espacios compartidos de la comunidad.";
+          ? `${territoryAccess.eligibleResourceCount} espacios disponibles para ti.`
+          : "Pistas, salas y zonas compartidas para reservar.";
       cards.push({
-        id: "community-services",
-        title: "Servicios comunitarios",
+        id: "community-resources",
+        title: "Espacios y reservas",
         description: reserveHint,
         href: "/resources",
         icon: "🏘",
@@ -100,7 +100,7 @@ export function ServicesHubScreen() {
           Servicios
         </h1>
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          Necesito resolver algo
+          Profesionales y ayuda · espacios para reservar
         </p>
       </header>
 

@@ -100,7 +100,11 @@ export function ResourceDiscoveryScreen() {
                 key={resource.id}
                 name={resource.name}
                 description={resource.description}
-                availability={resource.availabilityPreview}
+                availability={
+                  showReserve
+                    ? resource.availabilityPreview
+                    : "No disponible para ti"
+                }
                 area={resource.areaLabel}
                 imageUrl={resource.imageUrl}
                 accessHint={hint}

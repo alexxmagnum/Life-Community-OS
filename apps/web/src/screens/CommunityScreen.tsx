@@ -314,6 +314,18 @@ export function CommunityHubScreen() {
         <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
           Qué pasa hoy con tus vecinos.
         </p>
+        {isFeatureEnabled("feed") &&
+        hasCapability(CAPABILITIES.contentCreate) ? (
+          <button
+            type="button"
+            onClick={() =>
+              window.dispatchEvent(new Event("lcos:open-post"))
+            }
+            className="mt-2 text-[14px] font-semibold text-[var(--color-action-primary)]"
+          >
+            Escribir en la comunidad
+          </button>
+        ) : null}
       </header>
 
       {alerts.length > 0 ? (
