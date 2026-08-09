@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Children } from "react";
 
 import { Avatar } from "../people/Avatar";
@@ -63,6 +63,11 @@ export type ReactionBarProps = {
   onSave?: () => void;
   onReport?: () => void;
   reported?: boolean;
+  /**
+   * Prefer action language (“Comentar”) over badge counts.
+   * Count still shown when > 0 for social proof.
+   */
+  commentActionLabel?: string;
   className?: string;
 };
 
@@ -81,8 +86,13 @@ export function ReactionBar({
   onSave,
   onReport,
   reported,
+  commentActionLabel,
   className,
 }: ReactionBarProps) {
+  const commentLabel =
+    commentActionLabel ??
+    (commentCount > 0 ? `Comentar · ${commentCount}` : "Comentar");
+
   return (
     <div
       className={cn(
@@ -124,7 +134,7 @@ export function ReactionBar({
         onClick={onComment}
         className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
       >
-        Comentarios · {commentCount}
+        {commentLabel}
       </button>
       {canSave ? (
         <button
@@ -190,11 +200,20 @@ export function CommentPreview({
   );
 }
 
+export type CommunityPostTone =
+  | "official"
+  | "neighbour"
+  | "proposal"
+  | "discussion"
+  | "alert";
+
 export type CommunityPostCardProps = {
   title: string;
   body: string;
   typeLabel: string;
   official?: boolean;
+  /** Visual hierarchy for the town square — not identical cards. */
+  tone?: CommunityPostTone;
   authorName: string;
   authorAvatarUrl?: string;
   meta: string;
@@ -205,7 +224,19 @@ export type CommunityPostCardProps = {
   onOpen?: () => void;
   reactionBar?: ReactNode;
   commentPreview?: ReactNode;
+  /** Visible comment composer — do not hide behind badges. */
+  commentComposer?: ReactNode;
   className?: string;
+};
+
+const TONE_SHELL: Record<CommunityPostTone, string> = {
+  official: "border-l-4 border-[var(--color-accent-official)]",
+  neighbour: "border-l-4 border-[var(--color-action-accent)]",
+  proposal:
+    "border-l-4 border-[var(--color-feedback-warning)] bg-[var(--color-feedback-warning-subtle)]/40",
+  discussion: "border-l-4 border-[var(--color-sea)]",
+  alert:
+    "border-l-4 border-[var(--color-feedback-danger)] bg-[var(--color-feedback-danger-subtle)]/50",
 };
 
 export function CommunityPostCard({
@@ -213,6 +244,7 @@ export function CommunityPostCard({
   body,
   typeLabel,
   official,
+  tone,
   authorName,
   authorAvatarUrl,
   meta,
@@ -223,13 +255,17 @@ export function CommunityPostCard({
   onOpen,
   reactionBar,
   commentPreview,
+  commentComposer,
   className,
 }: CommunityPostCardProps) {
+  const resolvedTone: CommunityPostTone | undefined =
+    tone ?? (official ? "official" : undefined);
+
   return (
     <article
       className={cn(
         "overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]",
-        official && "border-l-4 border-[var(--color-accent-official)]",
+        resolvedTone ? TONE_SHELL[resolvedTone] : undefined,
         className,
       )}
     >
@@ -282,8 +318,63 @@ export function CommunityPostCard({
       {commentPreview ? (
         <div className="space-y-2 px-4 pb-2">{commentPreview}</div>
       ) : null}
-      {reactionBar ? <div className="px-4 pb-4">{reactionBar}</div> : null}
+      {reactionBar ? (
+        <div className={cn("px-4", commentComposer ? "pb-2" : "pb-4")}>
+          {reactionBar}
+        </div>
+      ) : null}
+      {commentComposer ? (
+        <div className="border-t border-[var(--color-border-subtle)] px-4 py-3">
+          {commentComposer}
+        </div>
+      ) : null}
     </article>
+  );
+}
+
+export type InlineCommentComposerProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
+  placeholder?: string;
+  submitLabel?: string;
+  disabled?: boolean;
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
+  className?: string;
+};
+
+/** Obvious comment action — input + send, not a count badge. */
+export function InlineCommentComposer({
+  value,
+  onChange,
+  onSubmit,
+  placeholder = "Escribe un comentario…",
+  submitLabel = "Enviar",
+  disabled,
+  inputRef,
+  className,
+}: InlineCommentComposerProps) {
+  const canSend = value.trim().length >= 2 && !disabled;
+  return (
+    <div className={cn("flex flex-col gap-2", className)}>
+      <textarea
+        ref={inputRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        placeholder={placeholder}
+        aria-label="Escribir comentario"
+        className="min-h-[72px] w-full resize-none rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 py-2.5 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
+      />
+      <button
+        type="button"
+        disabled={!canSend}
+        onClick={onSubmit}
+        className="flex min-h-[44px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[15px] font-semibold text-[var(--color-text-inverse)] disabled:opacity-45"
+      >
+        {submitLabel}
+      </button>
+    </div>
   );
 }
 

@@ -87,6 +87,8 @@ export {
   CommunityFeed,
   CommunityConversationRow,
   CommunityConversationList,
+  InlineCommentComposer,
+  type CommunityPostTone,
 } from "./community/CommunityContent";
 export { CreatePostSheet } from "./community/CreatePostSheet";
 export {
