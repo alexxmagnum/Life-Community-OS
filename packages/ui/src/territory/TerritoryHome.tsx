@@ -954,7 +954,7 @@ export function ExperiencePreviewCard({
               {categoryLabel}
             </span>
           ) : null}
-          <h3 className="font-display text-[22px] font-semibold leading-6 text-[var(--color-text-inverse)]">
+          <h3 className="font-sans text-[18px] font-semibold leading-6 text-[var(--color-text-inverse)]">
             {title}
           </h3>
           <p className="mt-1.5 text-[13px] text-[var(--color-text-inverse)]/90">
@@ -1035,6 +1035,8 @@ export type HomeSectionProps = {
   onAction?: () => void;
   children: ReactNode;
   className?: string;
+  /** Serif atmospheric title — Home plaza moments only. */
+  atmospheric?: boolean;
 };
 
 export function HomeSection({
@@ -1044,12 +1046,20 @@ export function HomeSection({
   onAction,
   children,
   className,
+  atmospheric = false,
 }: HomeSectionProps) {
   return (
     <section className={cn("space-y-3.5", className)}>
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-sans text-[20px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[21px]">
+          <h2
+            className={cn(
+              "leading-7 tracking-tight text-[var(--color-text-primary)]",
+              atmospheric
+                ? "font-display text-[22px] font-semibold sm:text-[24px]"
+                : "font-sans text-[20px] font-semibold sm:text-[21px]",
+            )}
+          >
             {title}
           </h2>
           {subtitle ? (
@@ -1062,7 +1072,7 @@ export function HomeSection({
           <button
             type="button"
             onClick={onAction}
-            className="shrink-0 text-[13px] font-semibold text-[var(--color-action-primary)]"
+            className="shrink-0 text-[13px] font-semibold text-[var(--color-action-primary)] transition-opacity active:opacity-70"
           >
             {actionLabel} ›
           </button>

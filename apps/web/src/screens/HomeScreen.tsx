@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildCommunityLifeItems,
@@ -9,17 +9,21 @@ import {
   communityAlertIcon,
   communityAlertKindLabel,
   experienceActivityLabel,
+  formatExperienceWhen,
   listActiveCommunityAlerts,
   listCuratedNearYou,
   listUpcomingHomeExperiences,
   searchHomeCatalog,
+  spotsLeft,
   territoryDiscoveryAreaLabels,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
+  ExperiencePreviewCard,
   GlobalAppSearch,
   HomeSection,
   TerritoryHero,
+  ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -27,14 +31,12 @@ function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
 }
 
-/** Belonging greeting — Spanish product copy; i18n catalogue later. */
 function belongingGreeting(name: string, hour: number): string {
   const salutation =
     hour < 12 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
   return `${salutation} ${name}`;
 }
 
-/** Stable hour in Europe/Madrid. */
 function madridHour(nowMs = Date.now()): number {
   const hourStr = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/Madrid",
@@ -44,51 +46,201 @@ function madridHour(nowMs = Date.now()): number {
   return Number(hourStr);
 }
 
-function forYouIcon(
+/** Geometric line icons — design-system stroke language (no emoji as primary UI). */
+function LineIcon({
+  name,
+  className,
+}: {
+  name:
+    | "notice"
+    | "welcome"
+    | "pin"
+    | "spark"
+    | "golf"
+    | "dining"
+    | "sports"
+    | "events"
+    | "family"
+    | "chevron";
+  className?: string;
+}) {
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none" as const,
+    className,
+    "aria-hidden": true as const,
+  };
+  switch (name) {
+    case "notice":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 4v11M12 18.5h.01"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "welcome":
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="16" cy="10" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+          <path
+            d="M4.5 18.5c.8-2.6 2.8-4 4.5-4s3.6 1.2 4.4 3.4M13.2 14.8c.7-.4 1.6-.6 2.6-.6 1.7 0 3.3 1 4 3.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "pin":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <circle cx="12" cy="11" r="2" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      );
+    case "spark":
+      return (
+        <svg {...common}>
+          <path
+            d="M12 3.5v3.2M12 17.3v3.2M4.8 12H8M16 12h3.2M6.4 6.4l2.2 2.2M15.4 15.4l2.2 2.2M17.6 6.4l-2.2 2.2M8.6 15.4l-2.2 2.2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "golf":
+      return (
+        <svg {...common}>
+          <path
+            d="M8 20.5h8M12 20.5V8.5M12 8.5l6-3v5l-6-2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "dining":
+      return (
+        <svg {...common}>
+          <path
+            d="M7 4v7a2 2 0 0 0 2 2v7M7 4c0 2 .8 3.5 2 4M17 4v16M17 4c-1.5 1.2-2 3-2 5v2h2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "sports":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.6" />
+          <path
+            d="M12 4.5v15M4.5 12h15M7.2 7.2c2.2 1.4 7.4 1.4 9.6 0M7.2 16.8c2.2-1.4 7.4-1.4 9.6 0"
+            stroke="currentColor"
+            strokeWidth="1.35"
+          />
+        </svg>
+      );
+    case "events":
+      return (
+        <svg {...common}>
+          <rect
+            x="4"
+            y="6"
+            width="16"
+            height="14"
+            rx="2"
+            stroke="currentColor"
+            strokeWidth="1.6"
+          />
+          <path
+            d="M8 4v4M16 4v4M4 11h16"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "family":
+      return (
+        <svg {...common}>
+          <circle cx="8.5" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+          <circle cx="15.5" cy="8.5" r="2" stroke="currentColor" strokeWidth="1.6" />
+          <path
+            d="M4.2 18.5c.6-2.4 2.2-3.6 4.3-3.6 1.6 0 2.9.7 3.7 2M12.8 15.4c.6-.3 1.3-.5 2.2-.5 1.8 0 3.3 1 4 3.1"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+    case "chevron":
+      return (
+        <svg {...common} width={14} height={14}>
+          <path
+            d="M9 6l4 4-4 4"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function forYouGlyph(
   kind: "experience" | "local" | "welcome" | "proposal",
-): string {
-  if (kind === "experience") return "✨";
-  if (kind === "welcome") return "👋";
-  if (kind === "proposal") return "📢";
-  return "📍";
+): ReactNode {
+  if (kind === "welcome") return <LineIcon name="welcome" />;
+  if (kind === "proposal") return <LineIcon name="notice" />;
+  if (kind === "local") return <LineIcon name="pin" />;
+  return <LineIcon name="spark" />;
 }
 
-function todayMomentIcon(title: string): string {
-  const t = title.toLowerCase();
-  if (t.includes("vecin") || t.includes("bienven")) return "👋";
-  if (t.includes("ilumin") || t.includes("aviso") || t.includes("actualiz"))
-    return "💡";
-  if (t.includes("convers") || t.includes("chat")) return "💬";
-  if (t.includes("anuncio") || t.includes("comunica")) return "📢";
-  return "🌿";
+function nearDiscoveryReason(place: {
+  recommendedBy?: string;
+  verified?: boolean;
+  areaLabel: string;
+  story: string;
+}): string {
+  if (place.recommendedBy) return `Recomendado por ${place.recommendedBy}`;
+  if (place.verified) return "Popular esta semana";
+  if (place.story?.trim()) {
+    const short = place.story.trim().slice(0, 42);
+    return short.length < place.story.trim().length ? `${short}…` : short;
+  }
+  return `Cerca · ${place.areaLabel}`;
 }
 
-function nearPlaceIcon(kind: string, categoryLabel: string): string {
-  const blob = `${kind} ${categoryLabel}`.toLowerCase();
-  if (blob.includes("restaurant") || blob.includes("cafe") || blob.includes("café"))
-    return "☕";
-  if (blob.includes("service") || blob.includes("servicio") || blob.includes("taller"))
-    return "🛠";
-  if (blob.includes("shop") || blob.includes("negocio") || blob.includes("comer"))
-    return "🏪";
-  return "📍";
-}
-
-/** Experience discovery chips — category signal, not a directory. */
 const DO_TODAY_CHIPS: ReadonlyArray<{
   id: string;
-  icon: string;
+  icon: "golf" | "dining" | "sports" | "events" | "family";
   label: string;
   href: string;
 }> = [
-  { id: "golf", icon: "🏌", label: "Golf", href: "/experiences" },
-  { id: "dining", icon: "🍽", label: "Restaurantes", href: "/near/restaurants" },
-  { id: "sports", icon: "🎾", label: "Deportes", href: "/experiences" },
-  { id: "events", icon: "🎭", label: "Eventos", href: "/community?tab=actualidad" },
-  { id: "family", icon: "👨‍👩‍👧", label: "Familias", href: "/experiences" },
+  { id: "golf", icon: "golf", label: "Golf", href: "/experiences" },
+  { id: "dining", icon: "dining", label: "Restaurantes", href: "/near/restaurants" },
+  { id: "sports", icon: "sports", label: "Deportes", href: "/experiences" },
+  { id: "events", icon: "events", label: "Eventos", href: "/community?tab=actualidad" },
+  { id: "family", icon: "family", label: "Familias", href: "/experiences" },
 ];
 
-/** Shared first-paint options — identical on server and client hydrate. */
 const HYDRATE_SAFE = {
   includeSessionExperiences: false,
   stabilizeTime: true,
@@ -100,9 +252,8 @@ const LIVE_OPTS = {
 } as const;
 
 /**
- * Home = digital plaza of the community.
- * Scan in seconds: title → context → detail on tap.
- * Property / residency / territory stay internal for relevance — not Home UI.
+ * Home = open the window to Panorámica.
+ * Hierarchy: alert → featured moment → secondary previews → photo discovery.
  */
 export function HomeScreen() {
   const router = useRouter();
@@ -135,10 +286,8 @@ export function HomeScreen() {
     theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
     territoryName,
   );
-  /** Soft place line — not residency/property product UI. */
   const areaLine =
     demoMember.areaLabel || theme.identity?.defaultAreaName || undefined;
-  const weatherLabel = theme.identity?.weatherLabel;
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
@@ -152,41 +301,71 @@ export function HomeScreen() {
     return listActiveCommunityAlerts(nowMs);
   }, [live]);
 
+  /** Hide stub weather when an exceptional alert is active — avoid double climate story. */
+  const weatherLabel =
+    alerts.length > 0 ? undefined : theme.identity?.weatherLabel;
+
+  /** Personal relevance only — experiences live in discovery. */
   const forYou = useMemo(
-    () => buildForYouItems(demoMember, { limit: 3, ...frontDoorOpts }),
+    () =>
+      buildForYouItems(demoMember, {
+        limit: 3,
+        excludeKinds: ["experience"],
+        ...frontDoorOpts,
+      }),
     [demoMember, frontDoorOpts],
   );
 
   const todaySquare = useMemo(() => {
-    const moments = buildTodayMoments({ limit: 2, ...frontDoorOpts }).map(
+    const moments = buildTodayMoments({ limit: 3, ...frontDoorOpts }).map(
       (moment) => ({
         id: moment.id,
-        icon: todayMomentIcon(moment.title),
         title: moment.title,
         context: moment.meta,
         href: moment.href,
+        imageUrl: moment.imageUrl,
+        personName: undefined as string | undefined,
+        personAvatarUrl: undefined as string | undefined,
       }),
     );
-    const stories = buildCommunityLifeItems({ limit: 2 }).map((item) => ({
+    const stories = buildCommunityLifeItems({ limit: 3 }).map((item) => ({
       id: item.id,
-      icon: todayMomentIcon(item.narrative),
       title: item.narrative,
       context: item.context ?? item.personName ?? "Comunidad",
       href: item.href,
+      imageUrl: item.imageUrl,
+      personName: item.personName,
+      personAvatarUrl: item.personAvatarUrl,
     }));
-    return [...moments, ...stories].slice(0, 3);
+
+    const merged = [...stories, ...moments];
+    const seen = new Set<string>();
+    const unique = merged.filter((item) => {
+      const key = item.title.slice(0, 48);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const withPhoto = unique.find((item) => item.imageUrl);
+    const featured = withPhoto ?? unique[0] ?? null;
+    const secondary = unique
+      .filter((item) => item.id !== featured?.id)
+      .slice(0, 2);
+
+    return { featured, secondary };
   }, [frontDoorOpts]);
 
-  const experienceHints = useMemo(() => {
+  const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
-    return listUpcomingHomeExperiences({ limit: 4, ...frontDoorOpts });
+    return listUpcomingHomeExperiences({ limit: 5, ...frontDoorOpts });
   }, [isFeatureEnabled, hasCapability, frontDoorOpts]);
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
     return listCuratedNearYou(demoMember, {
-      limit: 4,
+      limit: 3,
       preferredAreaLabels: territoryDiscoveryAreaLabels(demoPersonId),
     });
   }, [canLocal, demoMember, demoPersonId]);
@@ -214,16 +393,16 @@ export function HomeScreen() {
         }
       />
 
-      <div className="space-y-7 pt-0.5 md:space-y-8">
-        {/* ── PARA TI ── */}
-        <HomeSection title="✨ Para ti" subtitle="Lo relevante para tu día.">
+      <div className="space-y-8 pt-0.5 md:space-y-9">
+        {/* ── PARA TI — personal relevance ── */}
+        <HomeSection title="Para ti" subtitle="Lo que importa para ti hoy.">
           {alerts.length === 0 && forYou.length === 0 ? (
             <EmptyState
               title="Tu comunidad empieza aquí."
-              description="Cuando haya avisos o planes para ti, los verás aquí."
+              description="Cuando haya avisos relevantes, los verás aquí."
             />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {alerts.map((alert) => (
                 <button
                   key={alert.id}
@@ -231,24 +410,31 @@ export function HomeScreen() {
                   onClick={() =>
                     router.push(alert.href ?? "/community?tab=actualidad")
                   }
-                  className="flex w-full items-start gap-3 rounded-[16px] border border-[var(--color-warning)]/35 bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface-elevated))] px-3.5 py-3 text-left active:scale-[0.99]"
+                  className="flex w-full items-start gap-3 rounded-[18px] border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[var(--color-warning-subtle,#FBF3DC)] px-3.5 py-3.5 text-left shadow-[0_6px_20px_rgba(184,134,11,0.12)] transition-transform active:scale-[0.985]"
                 >
-                  <span className="mt-0.5 text-[18px] leading-none" aria-hidden>
+                  <span
+                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,white)] text-[17px]"
+                    aria-hidden
+                  >
                     {communityAlertIcon(alert.kind)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--color-warning)]">
-                      {communityAlertKindLabel(alert.kind)}
+                    <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-warning)_16%,white)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--color-warning)]">
+                      Alerta
                     </span>
-                    <span className="mt-0.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                    <span className="mt-1.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
                       {alert.title}
                     </span>
                     <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
                       {alert.contextLabel}
                     </span>
+                    <span className="sr-only">
+                      {communityAlertKindLabel(alert.kind)}
+                    </span>
                   </span>
-                  <span className="mt-1 shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
-                    Ver ›
+                  <span className="mt-2 flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-[var(--color-action-primary)]">
+                    Abrir
+                    <LineIcon name="chevron" />
                   </span>
                 </button>
               ))}
@@ -258,20 +444,27 @@ export function HomeScreen() {
                   key={item.id}
                   type="button"
                   onClick={() => router.push(item.href)}
-                  className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                  className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3 py-2.5 text-left shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.99]"
                 >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[16px]"
-                    aria-hidden
-                  >
-                    {forYouIcon(item.kind)}
-                  </span>
+                  {item.imageUrl ? (
+                    <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
+                      <ZoomableImage
+                        src={item.imageUrl}
+                        alt=""
+                        wrapperClassName="h-full w-full"
+                      />
+                    </span>
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]">
+                      {forYouGlyph(item.kind)}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                    <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
                       {item.title}
                     </span>
                     {item.subtitle ? (
-                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
                         {item.subtitle}
                       </span>
                     ) : null}
@@ -282,14 +475,15 @@ export function HomeScreen() {
           )}
         </HomeSection>
 
-        {/* ── HOY EN {territory} — community square, max 2–3 previews ── */}
+        {/* ── HOY — community square (heart) ── */}
         <HomeSection
+          atmospheric
           title={todayTitle}
-          subtitle="Qué está pasando hoy."
+          subtitle="La plaza de tu comunidad."
           actionLabel="Ver comunidad"
           onAction={() => router.push("/community")}
         >
-          {todaySquare.length === 0 ? (
+          {!todaySquare.featured ? (
             <EmptyState
               title="Hoy está tranquilo por aquí."
               description="Cuando haya planes o historias, aparecerán aquí."
@@ -305,25 +499,84 @@ export function HomeScreen() {
               }
             />
           ) : (
-            <div className="space-y-2">
-              {todaySquare.map((item) => (
+            <div className="space-y-2.5">
+              <button
+                type="button"
+                onClick={() => router.push(todaySquare.featured!.href)}
+                className="group w-full overflow-hidden rounded-[22px] text-left shadow-[0_10px_28px_rgba(26,31,28,0.10)] transition-transform active:scale-[0.985]"
+              >
+                <div className="relative aspect-[16/10] bg-[var(--color-surface-muted)]">
+                  {todaySquare.featured.imageUrl ? (
+                    <ZoomableImage
+                      src={todaySquare.featured.imageUrl}
+                      alt=""
+                      className="transition-transform duration-700 group-active:scale-[1.02]"
+                      wrapperClassName="h-full w-full"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]">
+                      <LineIcon name="spark" className="h-8 w-8" />
+                    </div>
+                  )}
+                  <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(transparent 35%, rgba(20,28,24,0.78))",
+                    }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    {todaySquare.featured.personName ? (
+                      <span className="mb-1.5 flex items-center gap-2">
+                        {todaySquare.featured.personAvatarUrl ? (
+                          <span className="h-6 w-6 overflow-hidden rounded-full">
+                            <ZoomableImage
+                              src={todaySquare.featured.personAvatarUrl}
+                              alt=""
+                              wrapperClassName="h-full w-full"
+                            />
+                          </span>
+                        ) : null}
+                        <span className="text-[12px] font-medium text-white/85">
+                          {todaySquare.featured.personName}
+                        </span>
+                      </span>
+                    ) : null}
+                    <span className="block font-display text-[20px] font-semibold leading-6 text-white sm:text-[22px]">
+                      {todaySquare.featured.title}
+                    </span>
+                    <span className="mt-1 block truncate text-[13px] text-white/80">
+                      {todaySquare.featured.context}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {todaySquare.secondary.map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => router.push(item.href)}
-                  className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                  className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3 py-2.5 text-left shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.99]"
                 >
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[16px]"
-                    aria-hidden
-                  >
-                    {item.icon}
-                  </span>
+                  {item.imageUrl ? (
+                    <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
+                      <ZoomableImage
+                        src={item.imageUrl}
+                        alt=""
+                        wrapperClassName="h-full w-full"
+                      />
+                    </span>
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-surface-muted)] text-[var(--color-action-primary)]">
+                      <LineIcon name="notice" />
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                    <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
                       {item.title}
                     </span>
-                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
                       {item.context}
                     </span>
                   </span>
@@ -333,7 +586,7 @@ export function HomeScreen() {
           )}
         </HomeSection>
 
-        {/* ── QUÉ PUEDES HACER HOY — chips + light hints ── */}
+        {/* ── QUÉ PUEDES HACER HOY — photo discovery ── */}
         {isFeatureEnabled("experiences") ? (
           <HomeSection
             title="Qué puedes hacer hoy"
@@ -347,11 +600,9 @@ export function HomeScreen() {
                   key={chip.id}
                   type="button"
                   onClick={() => router.push(chip.href)}
-                  className="flex shrink-0 items-center gap-2 rounded-full bg-[var(--color-surface-elevated)] px-3.5 py-2.5 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.98]"
+                  className="flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3.5 py-2.5 text-left text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.98]"
                 >
-                  <span className="text-[16px] leading-none" aria-hidden>
-                    {chip.icon}
-                  </span>
+                  <LineIcon name={chip.icon} />
                   <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">
                     {chip.label}
                   </span>
@@ -359,32 +610,34 @@ export function HomeScreen() {
               ))}
             </div>
 
-            {experienceHints.length > 0 ? (
-              <div className="-mx-1 mt-3 flex gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
-                {experienceHints.map((exp) => {
-                  const category = experienceActivityLabel(exp.title).toLowerCase();
-                  const icon = category.includes("golf")
-                    ? "🏌"
-                    : category.includes("padel") || category.includes("pádel")
-                      ? "🎾"
-                      : "✨";
+            {experiences.length > 0 ? (
+              <div className="-mx-1 mt-3.5 flex gap-3.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+                {experiences.map((exp) => {
+                  const remaining = spotsLeft(exp);
                   return (
-                    <button
+                    <div
                       key={exp.id}
-                      type="button"
-                      onClick={() => router.push(`/experiences/${exp.id}`)}
-                      className="w-[148px] shrink-0 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.98]"
+                      className="w-[min(58vw,200px)] shrink-0"
                     >
-                      <span className="text-[15px] leading-none" aria-hidden>
-                        {icon}
-                      </span>
-                      <span className="mt-2 block line-clamp-2 text-[13px] font-semibold leading-4 text-[var(--color-text-primary)]">
-                        {exp.title}
-                      </span>
-                      <span className="mt-1 block truncate text-[11px] text-[var(--color-text-tertiary)]">
-                        {exp.location}
-                      </span>
-                    </button>
+                      <ExperiencePreviewCard
+                        title={exp.title}
+                        when={
+                          live
+                            ? formatExperienceWhen(exp.startsAt)
+                            : experienceActivityLabel(exp.title)
+                        }
+                        where={exp.location}
+                        imageUrl={exp.imageUrl}
+                        categoryLabel={experienceActivityLabel(exp.title)}
+                        peopleLabel={
+                          exp.participantCount > 0
+                            ? `${exp.participantCount} van · ${remaining} plazas`
+                            : `${remaining} plazas`
+                        }
+                        onClick={() => router.push(`/experiences/${exp.id}`)}
+                        ctaLabel={undefined}
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -410,8 +663,8 @@ export function HomeScreen() {
         {/* ── CERCA DE TI — discovery, not directory ── */}
         {canLocal ? (
           <HomeSection
-            title="📍 Cerca de ti"
-            subtitle="Descubre sitios útiles alrededor."
+            title="Cerca de ti"
+            subtitle="Lugares que la comunidad señala."
             actionLabel="Explorar"
             onAction={() => router.push("/near/restaurants")}
           >
@@ -421,7 +674,7 @@ export function HomeScreen() {
                 description="Cuando la comunidad señale lugares, los verás aquí."
               />
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {nearYou.map((place) => (
                   <button
                     key={place.id}
@@ -440,21 +693,25 @@ export function HomeScreen() {
                         router.push("/near/places");
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                    className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] p-2 pr-3 text-left shadow-[0_2px_10px_rgba(26,31,28,0.05)] transition-transform active:scale-[0.99]"
                   >
-                    <span
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[16px]"
-                      aria-hidden
-                    >
-                      {nearPlaceIcon(place.kind, place.categoryLabel)}
+                    <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--color-surface-muted)]">
+                      <ZoomableImage
+                        src={place.imageUrl}
+                        alt=""
+                        wrapperClassName="h-full w-full"
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
                         {place.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
                         {place.categoryLabel}
                         {place.areaLabel ? ` · ${place.areaLabel}` : ""}
+                      </span>
+                      <span className="mt-1 block truncate text-[12px] font-medium text-[var(--color-action-primary)]">
+                        {nearDiscoveryReason(place)}
                       </span>
                     </span>
                   </button>

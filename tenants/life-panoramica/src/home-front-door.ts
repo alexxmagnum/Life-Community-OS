@@ -144,6 +144,11 @@ export type HomeFrontDoorOptions = {
   nowMs?: number;
   /** Drop time-based score variance (stable SSR ranking). */
   stabilizeTime?: boolean;
+  /**
+   * Omit kinds from Para ti (e.g. exclude experience catalogue so discovery
+   * owns experiences and Para ti stays personal relevance).
+   */
+  excludeKinds?: Array<ForYouItem["kind"]>;
 };
 
 export function experienceActivityLabel(title: string): string {
@@ -172,111 +177,122 @@ export function buildForYouItems(
   const includeSession = options.includeSessionExperiences !== false;
   const nowMs = options.nowMs ?? Date.now();
   const tokens = interestTokens(member.interests);
+  const excluded = new Set(options.excludeKinds ?? []);
   const items: ForYouItem[] = [];
 
-  for (const exp of listDiscoverableExperiences({
-    includeSessionCreated: includeSession,
-  })) {
-    const blob = textBlob(exp.title, exp.description, exp.location, exp.areaLabel);
-    const score =
-      20 +
-      interestMatchScore(blob, tokens) +
-      areaMatchScore(blob, member.areaLabel) +
-      (options.stabilizeTime ? 0 : timeRelevanceScore(exp.startsAt, nowMs)) +
-      Math.min(exp.participantCount, 10);
-    const peopleBit =
-      exp.participantCount > 0
-        ? `${exp.participantCount} van`
-        : `${Math.max(0, exp.capacity - exp.participantCount)} plazas`;
-    items.push({
-      id: `foryou-exp-${exp.id}`,
-      kind: "experience",
-      title: exp.title,
-      // Skip clock text while stabilizing — locale/TZ formatting can diverge SSR vs client.
-      subtitle: options.stabilizeTime
-        ? [experienceActivityLabel(exp.title), peopleBit].join(" · ")
-        : [experienceActivityLabel(exp.title), formatTimeLabel(exp.startsAt), peopleBit].join(
-            " · ",
-          ),
-      imageUrl: exp.imageUrl,
-      href: `/experiences/${exp.id}`,
-      score,
-    });
-  }
-
-  for (const place of listNearYou().slice(0, 8)) {
-    const blob = textBlob(
-      place.name,
-      place.categoryLabel,
-      place.areaLabel,
-      place.story,
-    );
-    const score =
-      12 +
-      interestMatchScore(blob, tokens) +
-      areaMatchScore(blob, member.areaLabel) +
-      (place.recommendedBy ? 8 : 0) +
-      (place.verified ? 6 : 0);
-    items.push({
-      id: `foryou-place-${place.id}`,
-      kind: "local",
-      title: place.name,
-      subtitle: `${place.categoryLabel} · ${place.areaLabel}`,
-      imageUrl: place.imageUrl,
-      href: "/near/places",
-      score,
-    });
-  }
-
-  if (member.residencyStatusKind === "pending") {
-    items.push({
-      id: "foryou-welcome-community",
-      kind: "welcome",
-      title: "Termina de activar tu perfil",
-      subtitle: "Así la comunidad puede mostrarte lo más útil para ti",
-      href: "/me",
-      score: 40,
-    });
-  } else if (member.residencyStatusKind === "other_area") {
-    items.push({
-      id: "foryou-welcome-neighbours",
-      kind: "welcome",
-      title: "Descubre lo que ocurre cerca",
-      subtitle: `Planes y vecinos en ${member.areaLabel}`,
-      href: "/community",
-      score: 34,
-    });
-  }
-
-  for (const notice of listOfficialContent().slice(0, 2)) {
-    const blob = textBlob(notice.title, notice.body, notice.areaLabel);
-    items.push({
-      id: `foryou-notice-${notice.id}`,
-      kind: "proposal",
-      title: notice.title,
-      subtitle: notice.areaLabel
-        ? `Aviso · ${notice.areaLabel}`
-        : "Aviso de la comunidad",
-      imageUrl: notice.imageUrl,
-      href: `/community/content/${notice.id}`,
-      score:
-        28 +
+  if (!excluded.has("experience")) {
+    for (const exp of listDiscoverableExperiences({
+      includeSessionCreated: includeSession,
+    })) {
+      const blob = textBlob(exp.title, exp.description, exp.location, exp.areaLabel);
+      const score =
+        20 +
         interestMatchScore(blob, tokens) +
-        areaMatchScore(blob, member.areaLabel),
-    });
+        areaMatchScore(blob, member.areaLabel) +
+        (options.stabilizeTime ? 0 : timeRelevanceScore(exp.startsAt, nowMs)) +
+        Math.min(exp.participantCount, 10);
+      const peopleBit =
+        exp.participantCount > 0
+          ? `${exp.participantCount} van`
+          : `${Math.max(0, exp.capacity - exp.participantCount)} plazas`;
+      items.push({
+        id: `foryou-exp-${exp.id}`,
+        kind: "experience",
+        title: exp.title,
+        // Skip clock text while stabilizing — locale/TZ formatting can diverge SSR vs client.
+        subtitle: options.stabilizeTime
+          ? [experienceActivityLabel(exp.title), peopleBit].join(" · ")
+          : [experienceActivityLabel(exp.title), formatTimeLabel(exp.startsAt), peopleBit].join(
+              " · ",
+            ),
+        imageUrl: exp.imageUrl,
+        href: `/experiences/${exp.id}`,
+        score,
+      });
+    }
   }
 
-  const proposal = listProposals()[0];
-  if (proposal) {
-    items.push({
-      id: `foryou-proposal-${proposal.id}`,
-      kind: "proposal",
-      title: proposal.title,
-      subtitle: "Propuesta comunitaria abierta",
-      imageUrl: proposal.imageUrl,
-      href: `/community/content/${proposal.id}`,
-      score: 16 + areaMatchScore(textBlob(proposal.areaLabel), member.areaLabel),
-    });
+  if (!excluded.has("local")) {
+    for (const place of listNearYou().slice(0, 8)) {
+      const blob = textBlob(
+        place.name,
+        place.categoryLabel,
+        place.areaLabel,
+        place.story,
+      );
+      const score =
+        12 +
+        interestMatchScore(blob, tokens) +
+        areaMatchScore(blob, member.areaLabel) +
+        (place.recommendedBy ? 8 : 0) +
+        (place.verified ? 6 : 0);
+      items.push({
+        id: `foryou-place-${place.id}`,
+        kind: "local",
+        title: place.name,
+        subtitle: place.recommendedBy
+          ? `Recomendado por ${place.recommendedBy}`
+          : `${place.categoryLabel} · ${place.areaLabel}`,
+        imageUrl: place.imageUrl,
+        href: "/near/places",
+        score,
+      });
+    }
+  }
+
+  if (!excluded.has("welcome")) {
+    if (member.residencyStatusKind === "pending") {
+      items.push({
+        id: "foryou-welcome-community",
+        kind: "welcome",
+        title: "Termina de activar tu perfil",
+        subtitle: "Así la comunidad puede mostrarte lo más útil para ti",
+        href: "/me",
+        score: 40,
+      });
+    } else if (member.residencyStatusKind === "other_area") {
+      items.push({
+        id: "foryou-welcome-neighbours",
+        kind: "welcome",
+        title: "Descubre lo que ocurre cerca",
+        subtitle: `Planes y vecinos en ${member.areaLabel}`,
+        href: "/community",
+        score: 34,
+      });
+    }
+  }
+
+  if (!excluded.has("proposal")) {
+    for (const notice of listOfficialContent().slice(0, 2)) {
+      const blob = textBlob(notice.title, notice.body, notice.areaLabel);
+      items.push({
+        id: `foryou-notice-${notice.id}`,
+        kind: "proposal",
+        title: notice.title,
+        subtitle: notice.areaLabel
+          ? `Aviso · ${notice.areaLabel}`
+          : "Aviso de la comunidad",
+        imageUrl: notice.imageUrl,
+        href: `/community/content/${notice.id}`,
+        score:
+          28 +
+          interestMatchScore(blob, tokens) +
+          areaMatchScore(blob, member.areaLabel),
+      });
+    }
+
+    const proposal = listProposals()[0];
+    if (proposal) {
+      items.push({
+        id: `foryou-proposal-${proposal.id}`,
+        kind: "proposal",
+        title: proposal.title,
+        subtitle: "Propuesta comunitaria abierta",
+        imageUrl: proposal.imageUrl,
+        href: `/community/content/${proposal.id}`,
+        score: 16 + areaMatchScore(textBlob(proposal.areaLabel), member.areaLabel),
+      });
+    }
   }
 
   // Deterministic tie-break — unstable Array.sort caused SSR/client hydration mismatches.
@@ -317,9 +333,11 @@ export function buildTodayMoments(
   for (const notice of listOfficialContent().slice(0, 2)) {
     moments.push({
       id: `today-official-${notice.id}`,
-      timeLabel: "Aviso",
+      timeLabel: "Hoy",
       title: notice.title,
-      meta: notice.body.slice(0, 80),
+      meta: notice.areaLabel
+        ? `${notice.areaLabel} · Aviso`
+        : "Aviso de la comunidad",
       href: `/community/content/${notice.id}`,
       imageUrl: notice.imageUrl,
       source: "announcement",
