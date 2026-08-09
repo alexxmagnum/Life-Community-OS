@@ -527,15 +527,22 @@ export function HomeScreen() {
                         >
                           {communityAlertLevelLabel(alert.level)}
                         </span>
-                        <span className="mt-1.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                        <span className="mt-1.5 block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
                           {alert.title}
                         </span>
-                        <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-secondary)]">
-                          {alert.contextLabel}
+                        <span className="mt-0.5 block text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                          {[
+                            alert.areaLabel
+                              ? `Zona · ${alert.areaLabel.replace(/^Zona\s+/i, "")}`
+                              : null,
+                            alert.timeWindowLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || alert.contextLabel}
                         </span>
                       </span>
                       <span className="mt-2 flex shrink-0 items-center gap-0.5 text-[14px] font-semibold text-[var(--color-action-primary)]">
-                        Abrir
+                        {alert.actionLabel ?? "Abrir"}
                         <LineIcon name="chevron" />
                       </span>
                     </button>

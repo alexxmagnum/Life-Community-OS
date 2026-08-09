@@ -329,33 +329,69 @@ export function CommunityHubScreen() {
       </header>
 
       {alerts.length > 0 ? (
-        <section id="plaza-important" className="scroll-mt-3 space-y-1">
+        <section id="plaza-important" className="scroll-mt-3 space-y-2">
           {alerts.map((alert) => {
             const tone = communityAlertTone(alert.level);
             const shell =
               tone === "alert"
-                ? "border-[var(--color-feedback-danger)]"
+                ? "border-[color-mix(in_srgb,#B42318_42%,transparent)] bg-[#F8E8E6]"
                 : tone === "important"
-                  ? "border-[var(--color-feedback-warning)]"
-                  : "border-[var(--color-feedback-info)]";
+                  ? "border-[color-mix(in_srgb,#B8860B_45%,transparent)] bg-[#FBF3DC]"
+                  : "border-[color-mix(in_srgb,#3D6B7A_40%,transparent)] bg-[#E8F1F4]";
+            const area =
+              alert.areaLabel ??
+              alert.contextLabel.split("·").slice(1).join("·").trim();
+            const windowLabel =
+              alert.timeWindowLabel ??
+              alert.contextLabel.split("·")[0]?.trim();
+            const action =
+              alert.actionLabel ??
+              (alert.href ? "Ver detalle" : undefined);
             return (
               <button
                 key={alert.id}
                 type="button"
-                onClick={() =>
-                  router.push(alert.href ?? "/community#plaza-activity")
-                }
-                className={`flex w-full items-baseline gap-2 border-l-[3px] py-1.5 pl-2.5 text-left ${shell}`}
+                onClick={() => {
+                  if (!alert.href) return;
+                  if (alert.href.includes("#plaza-avisos")) {
+                    document
+                      .getElementById("plaza-avisos")
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    return;
+                  }
+                  router.push(alert.href);
+                }}
+                className={`flex w-full items-start gap-3 rounded-[14px] border px-3.5 py-3 text-left ${shell}`}
               >
-                <span className="text-[14px]" aria-hidden>
+                <span
+                  className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/70 text-[22px] leading-none"
+                  aria-hidden
+                >
                   {communityAlertIcon(alert.kind, alert.level)}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-                  {alert.title}
-                  <span className="font-normal text-[var(--color-text-tertiary)]">
-                    {" "}
-                    · {alert.contextLabel}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                    {alert.title}
                   </span>
+                  {(area || windowLabel) ? (
+                    <span className="mt-1 block text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                      {[area ? `Zona · ${area.replace(/^Zona\s+/i, "")}` : null, windowLabel]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-[13px] text-[var(--color-text-secondary)]">
+                      {alert.contextLabel}
+                    </span>
+                  )}
+                  {action ? (
+                    <span className="mt-2 inline-flex text-[14px] font-semibold text-[var(--color-action-primary)]">
+                      {action} →
+                    </span>
+                  ) : null}
                 </span>
               </button>
             );
@@ -366,7 +402,10 @@ export function CommunityHubScreen() {
       )}
 
       {officialNotices.length > 0 ? (
-        <section className="border-b border-[var(--color-border-subtle)] pb-2">
+        <section
+          id="plaza-avisos"
+          className="scroll-mt-3 border-b border-[var(--color-border-subtle)] pb-2"
+        >
           <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
             Avisos
           </p>
@@ -391,6 +430,48 @@ export function CommunityHubScreen() {
             ))}
           </ul>
         </section>
+      ) : (
+        <div id="plaza-avisos" className="scroll-mt-3" />
+      )}
+
+      {groupItems.length > 0 ? (
+        <section
+          className="scroll-mt-3 space-y-2"
+          aria-label="Grupos activos"
+        >
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+              Grupos activos
+            </p>
+            <button
+              type="button"
+              className="text-[13px] font-semibold text-[var(--color-action-primary)]"
+              onClick={() => {
+                setExpandGroups(true);
+                document.getElementById("plaza-people")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+            >
+              Ver todos →
+            </button>
+          </div>
+          <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {groupItems.slice(0, 3).map((group) => (
+              <div key={`peek-${group.id}`} className="w-[112px] shrink-0">
+                <GroupCard
+                  name={group.name}
+                  members={group.memberCount}
+                  imageUrl={group.imageUrl}
+                  onOpen={() =>
+                    router.push(`/community/groups/${group.id}`)
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <section id="plaza-activity" className="scroll-mt-3">
@@ -398,8 +479,21 @@ export function CommunityHubScreen() {
         <CommunityFeed
           empty={
             <EmptyState
-              title="Todavía está tranquilo"
-              description="Cuando alguien comparta algo útil, aparecerá aquí."
+              title="Sé el primero en compartir"
+              description="Cuenta algo útil a tus vecinos: un aviso, una pregunta o una mano."
+              actionLabel={
+                isFeatureEnabled("feed") &&
+                hasCapability(CAPABILITIES.contentCreate)
+                  ? "Escribir en la comunidad"
+                  : undefined
+              }
+              onAction={
+                isFeatureEnabled("feed") &&
+                hasCapability(CAPABILITIES.contentCreate)
+                  ? () =>
+                      window.dispatchEvent(new Event("lcos:open-post"))
+                  : undefined
+              }
             />
           }
         >
@@ -411,13 +505,20 @@ export function CommunityHubScreen() {
         <SectionHeader title="Puedes aportar" />
         <CommunityFeed
           empty={
-            <p className="py-2 text-[13px] text-[var(--color-text-secondary)]">
-              Cuando haya decisiones abiertas, las verás aquí.
+            <p className="py-2 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+              Todavía no hay decisiones abiertas. Cuando la comunidad
+              pida opinión, podrás leer y comentar aquí.
             </p>
           }
         >
           {participation.map((item) => renderPost(item, "proposal"))}
         </CommunityFeed>
+        {participation.length > 0 ? (
+          <p className="mt-1 text-[12px] leading-4 text-[var(--color-text-tertiary)]">
+            Abre una propuesta para leer y comentar. La votación formal
+            aún no está disponible.
+          </p>
+        ) : null}
       </section>
 
       <section id="plaza-people" className="scroll-mt-3 space-y-2">
@@ -437,8 +538,10 @@ export function CommunityHubScreen() {
         />
 
         {groupItems.length === 0 ? (
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Los grupos de vecinos aparecerán aquí.
+          <p className="text-[14px] leading-5 text-[var(--color-text-secondary)]">
+            Únete a vecinos cuando aparezcan grupos aquí. Formar parte de
+            un grupo es la mejor forma de compartir la vida de la
+            comunidad.
           </p>
         ) : (
           <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -492,9 +595,7 @@ export function CommunityHubScreen() {
                   : undefined;
               const openHref = matchedEntity
                 ? `/official/${matchedEntity.slug}`
-                : channel.type === "official"
-                  ? undefined
-                  : `/community?tab=grupos`;
+                : undefined;
               return (
                 <article
                   key={channel.id}
@@ -523,7 +624,13 @@ export function CommunityHubScreen() {
                       >
                         Abrir →
                       </button>
-                    ) : null}
+                    ) : (
+                      <span className="text-[13px] text-[var(--color-text-tertiary)]">
+                        {channel.type === "official"
+                          ? "Canal oficial · sin destino vinculado"
+                          : "Canal de vecinos · sin pantalla propia todavía"}
+                      </span>
+                    )}
                   </div>
                 </article>
               );
@@ -601,9 +708,24 @@ export function CommunityHubScreen() {
             }
           />
           {mascotasItems.length === 0 ? (
-            <p className="text-[15px] text-[var(--color-text-secondary)]">
-              Aquí vivirá lo relacionado con mascotas de la comunidad.
-            </p>
+            <div className="space-y-2">
+              <p className="text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                Todavía no hay nada de mascotas. Comparte un lugar, un
+                aviso o una mano entre vecinos cuando quieras.
+              </p>
+              {isFeatureEnabled("feed") &&
+              hasCapability(CAPABILITIES.contentCreate) ? (
+                <button
+                  type="button"
+                  className="text-[14px] font-semibold text-[var(--color-action-primary)]"
+                  onClick={() =>
+                    window.dispatchEvent(new Event("lcos:open-post"))
+                  }
+                >
+                  Escribir en la comunidad
+                </button>
+              ) : null}
+            </div>
           ) : (
             <div className="space-y-2">
               {(expandPets ? mascotasItems : mascotasItems.slice(0, 2)).map(

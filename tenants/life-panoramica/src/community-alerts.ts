@@ -35,6 +35,12 @@ export type CommunityAlert = {
   publishedAt: string;
   /** Compact Home line: time window · area */
   contextLabel: string;
+  /** Affected area — prefer over parsing contextLabel. */
+  areaLabel?: string;
+  /** Active window (e.g. Hasta 20:00). */
+  timeWindowLabel?: string;
+  /** Next-step label when href is set. */
+  actionLabel?: string;
   href?: string;
 };
 
@@ -72,7 +78,10 @@ export function listActiveCommunityAlerts(
     level: "alert",
     publishedAt: new Date(nowMs - 2 * 60 * 60 * 1000).toISOString(),
     contextLabel: "Hasta 20:00 · Zona Norte",
-    href: "/community?tab=actualidad",
+    areaLabel: "Zona Norte",
+    timeWindowLabel: "Hasta 20:00",
+    actionLabel: "Ver avisos oficiales",
+    href: "/community#plaza-avisos",
   };
 
   return [demoAlert, ...communityAlertCatalog]
