@@ -6,25 +6,19 @@ import {
   buildCommunityLifeItems,
   buildForYouItems,
   buildTodayMoments,
+  communityAlertIcon,
   communityAlertKindLabel,
   experienceActivityLabel,
-  formatExperienceWhen,
   listActiveCommunityAlerts,
   listCuratedNearYou,
   listUpcomingHomeExperiences,
   searchHomeCatalog,
-  spotsLeft,
   territoryDiscoveryAreaLabels,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  AuthorCard,
-  CommunityActivityCard,
   EmptyState,
-  ExperiencePreviewCard,
   GlobalAppSearch,
   HomeSection,
-  LocalLifeRail,
-  LocalPlaceCard,
   TerritoryHero,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -50,14 +44,49 @@ function madridHour(nowMs = Date.now()): number {
   return Number(hourStr);
 }
 
-function forYouCategoryLabel(
+function forYouIcon(
   kind: "experience" | "local" | "welcome" | "proposal",
 ): string {
-  if (kind === "experience") return "Para ti";
-  if (kind === "welcome") return "Bienvenida";
-  if (kind === "proposal") return "Aviso";
-  return "Cerca";
+  if (kind === "experience") return "✨";
+  if (kind === "welcome") return "👋";
+  if (kind === "proposal") return "📢";
+  return "📍";
 }
+
+function todayMomentIcon(title: string): string {
+  const t = title.toLowerCase();
+  if (t.includes("vecin") || t.includes("bienven")) return "👋";
+  if (t.includes("ilumin") || t.includes("aviso") || t.includes("actualiz"))
+    return "💡";
+  if (t.includes("convers") || t.includes("chat")) return "💬";
+  if (t.includes("anuncio") || t.includes("comunica")) return "📢";
+  return "🌿";
+}
+
+function nearPlaceIcon(kind: string, categoryLabel: string): string {
+  const blob = `${kind} ${categoryLabel}`.toLowerCase();
+  if (blob.includes("restaurant") || blob.includes("cafe") || blob.includes("café"))
+    return "☕";
+  if (blob.includes("service") || blob.includes("servicio") || blob.includes("taller"))
+    return "🛠";
+  if (blob.includes("shop") || blob.includes("negocio") || blob.includes("comer"))
+    return "🏪";
+  return "📍";
+}
+
+/** Experience discovery chips — category signal, not a directory. */
+const DO_TODAY_CHIPS: ReadonlyArray<{
+  id: string;
+  icon: string;
+  label: string;
+  href: string;
+}> = [
+  { id: "golf", icon: "🏌", label: "Golf", href: "/experiences" },
+  { id: "dining", icon: "🍽", label: "Restaurantes", href: "/near/restaurants" },
+  { id: "sports", icon: "🎾", label: "Deportes", href: "/experiences" },
+  { id: "events", icon: "🎭", label: "Eventos", href: "/community?tab=actualidad" },
+  { id: "family", icon: "👨‍👩‍👧", label: "Familias", href: "/experiences" },
+];
 
 /** Shared first-paint options — identical on server and client hydrate. */
 const HYDRATE_SAFE = {
@@ -72,8 +101,8 @@ const LIVE_OPTS = {
 
 /**
  * Home = digital plaza of the community.
- * "What is happening today in my community?"
- * Property / residency / territory access stay internal for relevance — not Home UI.
+ * Scan in seconds: title → context → detail on tap.
+ * Property / residency / territory stay internal for relevance — not Home UI.
  */
 export function HomeScreen() {
   const router = useRouter();
@@ -90,9 +119,6 @@ export function HomeScreen() {
     () => `Hola ${demoMember.displayName}`,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  /** Para ti / Hoy start collapsed — peek + expand. */
-  const [forYouOpen, setForYouOpen] = useState(false);
-  const [todayOpen, setTodayOpen] = useState(false);
 
   useEffect(() => {
     setLive(true);
@@ -127,35 +153,34 @@ export function HomeScreen() {
   }, [live]);
 
   const forYou = useMemo(
-    () => buildForYouItems(demoMember, { limit: 5, ...frontDoorOpts }),
+    () => buildForYouItems(demoMember, { limit: 3, ...frontDoorOpts }),
     [demoMember, frontDoorOpts],
   );
-  const forYouPeek = forYou[forYou.length - 1];
 
-  const today = useMemo(
-    () => buildTodayMoments({ limit: 5, ...frontDoorOpts }),
-    [frontDoorOpts],
-  );
+  const todaySquare = useMemo(() => {
+    const moments = buildTodayMoments({ limit: 2, ...frontDoorOpts }).map(
+      (moment) => ({
+        id: moment.id,
+        icon: todayMomentIcon(moment.title),
+        title: moment.title,
+        context: moment.meta,
+        href: moment.href,
+      }),
+    );
+    const stories = buildCommunityLifeItems({ limit: 2 }).map((item) => ({
+      id: item.id,
+      icon: todayMomentIcon(item.narrative),
+      title: item.narrative,
+      context: item.context ?? item.personName ?? "Comunidad",
+      href: item.href,
+    }));
+    return [...moments, ...stories].slice(0, 3);
+  }, [frontDoorOpts]);
 
-  const communityLife = useMemo(
-    () => buildCommunityLifeItems({ limit: 4 }),
-    [],
-  );
-
-  const todaySquareCount = today.length + communityLife.length;
-  const todayPeek = today[0]
-    ? { title: today[0].title, subtitle: today[0].meta }
-    : communityLife[0]
-      ? {
-          title: communityLife[0].narrative,
-          subtitle: communityLife[0].context ?? communityLife[0].personName,
-        }
-      : null;
-
-  const experiences = useMemo(() => {
+  const experienceHints = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
-    return listUpcomingHomeExperiences({ limit: 6, ...frontDoorOpts });
+    return listUpcomingHomeExperiences({ limit: 4, ...frontDoorOpts });
   }, [isFeatureEnabled, hasCapability, frontDoorOpts]);
 
   const nearYou = useMemo(() => {
@@ -167,7 +192,7 @@ export function HomeScreen() {
   }, [canLocal, demoMember, demoPersonId]);
 
   return (
-    <div className="space-y-6 overflow-x-hidden pb-8 md:space-y-8">
+    <div className="space-y-5 overflow-x-hidden pb-8 md:space-y-7">
       <TerritoryHero
         variant="belonging"
         imageUrl={theme.imagery.homeHero}
@@ -189,137 +214,85 @@ export function HomeScreen() {
         }
       />
 
-      <div className="space-y-8 pt-1 md:space-y-10">
-        {/* PARA TI — alerts always visible; personalized list is collapsible */}
-        {forYou.length === 0 && alerts.length === 0 ? (
-          <HomeSection
-            title="Para ti"
-            subtitle="Lo relevante para tu día en la comunidad."
-          >
+      <div className="space-y-7 pt-0.5 md:space-y-8">
+        {/* ── PARA TI ── */}
+        <HomeSection title="✨ Para ti" subtitle="Lo relevante para tu día.">
+          {alerts.length === 0 && forYou.length === 0 ? (
             <EmptyState
               title="Tu comunidad empieza aquí."
-              description="Cuando haya avisos, planes o recomendaciones para ti, los verás aquí."
+              description="Cuando haya avisos o planes para ti, los verás aquí."
             />
-          </HomeSection>
-        ) : (
-          <section className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
-            <button
-              type="button"
-              onClick={() => setForYouOpen((open) => !open)}
-              aria-expanded={forYouOpen}
-              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
-            >
-              <div className="min-w-0">
-                <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
-                  Para ti
-                </h2>
-                <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-                  Lo relevante para tu día en la comunidad.
-                </p>
-              </div>
-              <span
-                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
-                  forYouOpen ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M6 9l6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </button>
-
-            {alerts.length > 0 ? (
-              <div className="space-y-2 border-t border-[var(--color-border-subtle)] px-3 pb-2 pt-2">
-                {alerts.map((alert) => (
-                  <button
-                    key={alert.id}
-                    type="button"
-                    onClick={() =>
-                      router.push(alert.href ?? "/community?tab=actualidad")
-                    }
-                    className="w-full rounded-[var(--radius-lg)] border border-[var(--color-warning)]/40 bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface-elevated))] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
-                  >
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-warning)]">
+          ) : (
+            <div className="space-y-2">
+              {alerts.map((alert) => (
+                <button
+                  key={alert.id}
+                  type="button"
+                  onClick={() =>
+                    router.push(alert.href ?? "/community?tab=actualidad")
+                  }
+                  className="flex w-full items-start gap-3 rounded-[16px] border border-[var(--color-warning)]/35 bg-[color-mix(in_srgb,var(--color-warning)_10%,var(--color-surface-elevated))] px-3.5 py-3 text-left active:scale-[0.99]"
+                >
+                  <span className="mt-0.5 text-[18px] leading-none" aria-hidden>
+                    {communityAlertIcon(alert.kind)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--color-warning)]">
                       {communityAlertKindLabel(alert.kind)}
-                    </p>
-                    <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+                    </span>
+                    <span className="mt-0.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
                       {alert.title}
-                    </p>
-                    <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                      {alert.body}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            ) : null}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                      {alert.contextLabel}
+                    </span>
+                  </span>
+                  <span className="mt-1 shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
+                    Ver ›
+                  </span>
+                </button>
+              ))}
 
-            {/* Collapsed peek — full cards on expand */}
-            {!forYouOpen ? (
-              forYou.length > 0 ? (
-                <div className="border-t border-[var(--color-border-subtle)]">
-                  {forYouPeek ? (
-                    <button
-                      type="button"
-                      onClick={() => setForYouOpen(true)}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
-                          {forYouPeek.title}
-                        </span>
-                        {forYouPeek.subtitle ? (
-                          <span className="mt-0.5 block truncate text-[13px] leading-4 text-[var(--color-text-secondary)]">
-                            {forYouPeek.subtitle}
-                          </span>
-                        ) : null}
+              {forYou.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[16px]"
+                    aria-hidden
+                  >
+                    {forYouIcon(item.kind)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                      {item.title}
+                    </span>
+                    {item.subtitle ? (
+                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                        {item.subtitle}
                       </span>
-                      {forYou.length > 1 ? (
-                        <span className="shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
-                          +{forYou.length - 1}
-                        </span>
-                      ) : null}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null
-            ) : forYou.length > 0 ? (
-              <div className="space-y-3 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
-                {forYou.map((item) => (
-                  <CommunityActivityCard
-                    key={item.id}
-                    variant="compact"
-                    categoryLabel={forYouCategoryLabel(item.kind)}
-                    headline={item.title}
-                    context={item.subtitle}
-                    imageUrl={item.imageUrl}
-                    actionLabel="Abrir"
-                    onClick={() => router.push(item.href)}
-                    onAction={() => router.push(item.href)}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </section>
-        )}
+                    ) : null}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </HomeSection>
 
-        {/* HOY EN {territory} — community square, same collapsible as Para ti */}
-        {todaySquareCount === 0 ? (
-          <HomeSection
-            title={todayTitle}
-            subtitle="Qué está pasando en tu lugar hoy."
-            actionLabel="Ver comunidad"
-            onAction={() => router.push("/community")}
-          >
+        {/* ── HOY EN {territory} — community square, max 2–3 previews ── */}
+        <HomeSection
+          title={todayTitle}
+          subtitle="Qué está pasando hoy."
+          actionLabel="Ver comunidad"
+          onAction={() => router.push("/community")}
+        >
+          {todaySquare.length === 0 ? (
             <EmptyState
               title="Hoy está tranquilo por aquí."
-              description="Cuando haya planes, avisos o historias de vecinos, aparecerán aquí."
+              description="Cuando haya planes o historias, aparecerán aquí."
               actionLabel={
                 hasCapability(CAPABILITIES.experienceCreate)
                   ? "Crear experiencia"
@@ -331,143 +304,94 @@ export function HomeScreen() {
                   : undefined
               }
             />
-          </HomeSection>
-        ) : (
-          <section className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
-            <button
-              type="button"
-              onClick={() => setTodayOpen((open) => !open)}
-              aria-expanded={todayOpen}
-              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
-            >
-              <div className="min-w-0">
-                <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
-                  {todayTitle}
-                </h2>
-                <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-                  Qué está pasando en tu lugar hoy.
-                </p>
-              </div>
-              <span
-                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
-                  todayOpen ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M6 9l6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </button>
-
-            {!todayOpen ? (
-              <div className="border-t border-[var(--color-border-subtle)]">
-                {todayPeek ? (
-                  <button
-                    type="button"
-                    onClick={() => setTodayOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+          ) : (
+            <div className="space-y-2">
+              {todaySquare.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => router.push(item.href)}
+                  className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[16px]"
+                    aria-hidden
                   >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
-                        {todayPeek.title}
-                      </span>
-                      {todayPeek.subtitle ? (
-                        <span className="mt-0.5 block truncate text-[13px] leading-4 text-[var(--color-text-secondary)]">
-                          {todayPeek.subtitle}
-                        </span>
-                      ) : null}
+                    {item.icon}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                      {item.title}
                     </span>
-                    {todaySquareCount > 1 ? (
-                      <span className="shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
-                        +{todaySquareCount - 1}
-                      </span>
-                    ) : null}
-                  </button>
-                ) : null}
-              </div>
-            ) : (
-              <div className="space-y-3 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
-                <div className="flex justify-end px-1">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/community")}
-                    className="text-[13px] font-semibold text-[var(--color-action-primary)]"
-                  >
-                    Ver comunidad
-                  </button>
-                </div>
-                {today.map((moment) => (
-                  <button
-                    key={moment.id}
-                    type="button"
-                    onClick={() => router.push(moment.href)}
-                    className="flex w-full gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-4 py-3.5 text-left"
-                  >
-                    <div className="w-14 shrink-0">
-                      <p className="text-[13px] font-bold text-[var(--color-action-primary)]">
-                        {moment.timeLabel}
-                      </p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-                        {moment.title}
-                      </p>
-                      <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
-                        {moment.meta}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                      {item.context}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </HomeSection>
 
-                {communityLife.map((item) => (
-                  <article
-                    key={item.id}
-                    className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-4 py-3.5"
-                  >
-                    {item.personName ? (
-                      <AuthorCard
-                        name={item.personName}
-                        avatarUrl={item.personAvatarUrl}
-                        meta={item.context}
-                      />
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => router.push(item.href)}
-                      className={`block w-full text-left ${
-                        item.personName ? "mt-2.5" : ""
-                      }`}
-                    >
-                      <p className="text-[15px] font-semibold leading-6 text-[var(--color-text-primary)]">
-                        {item.narrative}
-                      </p>
-                    </button>
-                  </article>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* QUÉ PUEDES HACER HOY — experience discovery */}
+        {/* ── QUÉ PUEDES HACER HOY — chips + light hints ── */}
         {isFeatureEnabled("experiences") ? (
           <HomeSection
             title="Qué puedes hacer hoy"
-            subtitle="Golf, deporte, planes y encuentros en la comunidad."
+            subtitle="Planes y encuentros cerca."
             actionLabel="Ver todas"
             onAction={() => router.push("/experiences")}
           >
-            {experiences.length === 0 ? (
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+              {DO_TODAY_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => router.push(chip.href)}
+                  className="flex shrink-0 items-center gap-2 rounded-full bg-[var(--color-surface-elevated)] px-3.5 py-2.5 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.98]"
+                >
+                  <span className="text-[16px] leading-none" aria-hidden>
+                    {chip.icon}
+                  </span>
+                  <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+                    {chip.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {experienceHints.length > 0 ? (
+              <div className="-mx-1 mt-3 flex gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
+                {experienceHints.map((exp) => {
+                  const category = experienceActivityLabel(exp.title).toLowerCase();
+                  const icon = category.includes("golf")
+                    ? "🏌"
+                    : category.includes("padel") || category.includes("pádel")
+                      ? "🎾"
+                      : "✨";
+                  return (
+                    <button
+                      key={exp.id}
+                      type="button"
+                      onClick={() => router.push(`/experiences/${exp.id}`)}
+                      className="w-[148px] shrink-0 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.98]"
+                    >
+                      <span className="text-[15px] leading-none" aria-hidden>
+                        {icon}
+                      </span>
+                      <span className="mt-2 block line-clamp-2 text-[13px] font-semibold leading-4 text-[var(--color-text-primary)]">
+                        {exp.title}
+                      </span>
+                      <span className="mt-1 block truncate text-[11px] text-[var(--color-text-tertiary)]">
+                        {exp.location}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
               <EmptyState
                 title="Todavía no hay planes abiertos."
-                description="Sé la primera persona en proponer algo para hoy."
+                description="Sé la primera persona en proponer algo."
                 actionLabel={
                   hasCapability(CAPABILITIES.experienceCreate)
                     ? "Crear experiencia"
@@ -479,66 +403,29 @@ export function HomeScreen() {
                     : undefined
                 }
               />
-            ) : (
-              <div className="-mx-2.5 flex gap-3.5 overflow-x-auto px-2.5 pb-2 [scrollbar-width:none]">
-                {experiences.map((exp) => {
-                  const remaining = spotsLeft(exp);
-                  return (
-                    <div
-                      key={exp.id}
-                      className="w-[min(62vw,220px)] shrink-0"
-                    >
-                      <ExperiencePreviewCard
-                        title={exp.title}
-                        when={
-                          live
-                            ? formatExperienceWhen(exp.startsAt)
-                            : experienceActivityLabel(exp.title)
-                        }
-                        where={exp.location}
-                        imageUrl={exp.imageUrl}
-                        categoryLabel={experienceActivityLabel(exp.title)}
-                        peopleLabel={
-                          exp.participantCount > 0
-                            ? `${exp.participantCount} van · ${remaining} plazas`
-                            : `${remaining} plazas`
-                        }
-                        onClick={() => router.push(`/experiences/${exp.id}`)}
-                        onCta={() => router.push(`/experiences/${exp.id}`)}
-                        ctaLabel="Unirme"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
             )}
           </HomeSection>
         ) : null}
 
-        {/* CERCA DE TI — discovery, not directory */}
+        {/* ── CERCA DE TI — discovery, not directory ── */}
         {canLocal ? (
           <HomeSection
-            title="Cerca de ti"
-            subtitle="Sitios y servicios útiles alrededor — descubrimiento, no un directorio."
+            title="📍 Cerca de ti"
+            subtitle="Descubre sitios útiles alrededor."
             actionLabel="Explorar"
             onAction={() => router.push("/near/restaurants")}
           >
             {nearYou.length === 0 ? (
               <EmptyState
-                title="Aún no hay sitios cerca publicados."
+                title="Aún no hay sitios cerca."
                 description="Cuando la comunidad señale lugares, los verás aquí."
               />
             ) : (
-              <LocalLifeRail>
+              <div className="space-y-2">
                 {nearYou.map((place) => (
-                  <LocalPlaceCard
+                  <button
                     key={place.id}
-                    variant="discovery"
-                    name={place.name}
-                    categoryLabel={place.categoryLabel}
-                    areaLabel={place.areaLabel}
-                    imageUrl={place.imageUrl}
-                    recommendedBy={place.recommendedBy}
+                    type="button"
                     onClick={() => {
                       if (
                         place.kind === "restaurant" ||
@@ -553,9 +440,26 @@ export function HomeScreen() {
                         router.push("/near/places");
                       }
                     }}
-                  />
+                    className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)] active:scale-[0.99]"
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] text-[16px]"
+                      aria-hidden
+                    >
+                      {nearPlaceIcon(place.kind, place.categoryLabel)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                        {place.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
+                        {place.categoryLabel}
+                        {place.areaLabel ? ` · ${place.areaLabel}` : ""}
+                      </span>
+                    </span>
+                  </button>
                 ))}
-              </LocalLifeRail>
+              </div>
             )}
           </HomeSection>
         ) : null}

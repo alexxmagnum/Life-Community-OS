@@ -1046,14 +1046,14 @@ export function HomeSection({
   className,
 }: HomeSectionProps) {
   return (
-    <section className={cn("space-y-4", className)}>
+    <section className={cn("space-y-3.5", className)}>
       <div className="flex items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
+        <div className="min-w-0">
+          <h2 className="font-sans text-[20px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[21px]">
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1.5 text-[14px] leading-5 text-[var(--color-text-tertiary)]">
+            <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
               {subtitle}
             </p>
           ) : null}

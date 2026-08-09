@@ -3,6 +3,9 @@
  *
  * Exceptional situations only — visible ≤24h.
  * NOT for pool schedules, maintenance, or routine notices.
+ *
+ * Home shows compact previews only (title + short context).
+ * Full body belongs on detail — never dump on Home.
  */
 
 export type CommunityAlertKind =
@@ -15,14 +18,18 @@ export type CommunityAlertKind =
 export type CommunityAlert = {
   id: string;
   title: string;
+  /** Full copy for detail surfaces — do not render on Home. */
   body: string;
   kind: CommunityAlertKind;
   /** ISO publish time — alert expires 24h after this. */
   publishedAt: string;
+  /** Compact Home line: time window · area */
+  contextLabel: string;
   href?: string;
 };
 
 const ALERT_TTL_MS = 24 * 60 * 60 * 1000;
+const HOME_ALERT_CAP = 2;
 
 /**
  * Static exceptional demos (optional). Prefer listActiveCommunityAlerts()
@@ -43,6 +50,7 @@ export function isCommunityAlertActive(
  * Active alerts for Home.
  * Includes one demo severe-weather alert anchored to `nowMs` so SSR/client match
  * when callers pass a stable clock during first paint.
+ * Caps at 2 — exceptional density only.
  */
 export function listActiveCommunityAlerts(
   nowMs: number = Date.now(),
@@ -53,12 +61,13 @@ export function listActiveCommunityAlerts(
     body: "Se esperan rachas fuertes y posibles inundaciones en zonas bajas esta tarde. Evita desplazamientos no esenciales.",
     kind: "weather",
     publishedAt: new Date(nowMs - 2 * 60 * 60 * 1000).toISOString(),
+    contextLabel: "Hasta 20:00 · Zona Norte",
     href: "/community?tab=actualidad",
   };
 
-  return [demoWeather, ...communityAlertCatalog].filter((alert) =>
-    isCommunityAlertActive(alert, nowMs),
-  );
+  return [demoWeather, ...communityAlertCatalog]
+    .filter((alert) => isCommunityAlertActive(alert, nowMs))
+    .slice(0, HOME_ALERT_CAP);
 }
 
 export function communityAlertKindLabel(kind: CommunityAlertKind): string {
@@ -75,5 +84,23 @@ export function communityAlertKindLabel(kind: CommunityAlertKind): string {
       return "Emergencia";
     default:
       return "Alerta";
+  }
+}
+
+/** Instant category signal for Home previews. */
+export function communityAlertIcon(kind: CommunityAlertKind): string {
+  switch (kind) {
+    case "weather":
+      return "🌧";
+    case "flood":
+      return "⚠️";
+    case "fire":
+      return "🚨";
+    case "security":
+      return "⚠️";
+    case "emergency":
+      return "🚨";
+    default:
+      return "🚨";
   }
 }
