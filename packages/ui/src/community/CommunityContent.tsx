@@ -87,8 +87,50 @@ export function ReactionBar({
   onReport,
   reported,
   commentActionLabel,
+  /** Plaza: text actions only — no pill cluster, no save/report/comment badges. */
+  variant = "full",
   className,
-}: ReactionBarProps) {
+}: ReactionBarProps & { variant?: "full" | "quiet" }) {
+  if (variant === "quiet") {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-4 text-[14px] font-medium",
+          className,
+        )}
+      >
+        <button
+          type="button"
+          disabled={!canReact}
+          onClick={onAcknowledge}
+          className={cn(
+            "min-h-[36px] text-left",
+            myReaction === "acknowledge"
+              ? "font-semibold text-[var(--color-action-primary)]"
+              : "text-[var(--color-text-secondary)]",
+          )}
+          aria-pressed={myReaction === "acknowledge"}
+        >
+          Entendido {acknowledgeCount > 0 ? acknowledgeCount : ""}
+        </button>
+        <button
+          type="button"
+          disabled={!canReact}
+          onClick={onSupport}
+          className={cn(
+            "min-h-[36px] text-left",
+            myReaction === "support"
+              ? "font-semibold text-[var(--color-action-accent)]"
+              : "text-[var(--color-text-secondary)]",
+          )}
+          aria-pressed={myReaction === "support"}
+        >
+          Apoyo {supportCount > 0 ? supportCount : ""}
+        </button>
+      </div>
+    );
+  }
+
   const commentLabel =
     commentActionLabel ??
     (commentCount > 0 ? `Comentar · ${commentCount}` : "Comentar");
@@ -181,19 +223,17 @@ export function CommentPreview({
   className,
 }: CommentPreviewProps) {
   return (
-    <div className={cn("flex gap-3", className)}>
+    <div className={cn("flex gap-2", className)}>
       <Avatar src={avatarUrl} alt={authorName} size="sm" />
-      <div className="min-w-0 flex-1 rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2">
-        <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          {authorName}
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          <span className="font-semibold text-[var(--color-text-primary)]">
+            {authorName}
+          </span>
           {meta ? (
-            <span className="ml-2 font-medium text-[var(--color-text-tertiary)]">
-              {meta}
-            </span>
+            <span className="text-[var(--color-text-tertiary)]"> · {meta}</span>
           ) : null}
-        </p>
-        <p className="mt-0.5 text-[15px] leading-5 text-[var(--color-text-secondary)]">
-          {body}
+          <span className="mt-0.5 block leading-5">{body}</span>
         </p>
       </div>
     </div>
@@ -214,6 +254,8 @@ export type CommunityPostCardProps = {
   official?: boolean;
   /** Visual hierarchy for the town square — not identical cards. */
   tone?: CommunityPostTone;
+  /** Slim plaza density — less chrome, less empty weight. */
+  density?: "default" | "plaza";
   authorName: string;
   authorAvatarUrl?: string;
   meta: string;
@@ -230,13 +272,11 @@ export type CommunityPostCardProps = {
 };
 
 const TONE_SHELL: Record<CommunityPostTone, string> = {
-  official: "border-l-4 border-[var(--color-accent-official)]",
-  neighbour: "border-l-4 border-[var(--color-action-accent)]",
-  proposal:
-    "border-l-4 border-[var(--color-feedback-warning)] bg-[var(--color-feedback-warning-subtle)]/40",
-  discussion: "border-l-4 border-[var(--color-sea)]",
-  alert:
-    "border-l-4 border-[var(--color-feedback-danger)] bg-[var(--color-feedback-danger-subtle)]/50",
+  official: "border-l-[3px] border-[var(--color-accent-official)]",
+  neighbour: "",
+  proposal: "border-l-[3px] border-[var(--color-feedback-warning)]",
+  discussion: "",
+  alert: "border-l-[3px] border-[var(--color-feedback-danger)]",
 };
 
 export function CommunityPostCard({
@@ -245,6 +285,7 @@ export function CommunityPostCard({
   typeLabel,
   official,
   tone,
+  density = "default",
   authorName,
   authorAvatarUrl,
   meta,
@@ -260,6 +301,72 @@ export function CommunityPostCard({
 }: CommunityPostCardProps) {
   const resolvedTone: CommunityPostTone | undefined =
     tone ?? (official ? "official" : undefined);
+  const plaza = density === "plaza";
+
+  if (plaza) {
+    return (
+      <article
+        className={cn(
+          "border-b border-[var(--color-border-subtle)] py-4 last:border-b-0",
+          resolvedTone ? TONE_SHELL[resolvedTone] : undefined,
+          resolvedTone && TONE_SHELL[resolvedTone]
+            ? "pl-3"
+            : undefined,
+          className,
+        )}
+      >
+        <div className="flex items-center gap-2.5">
+          {official ? (
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[13px] font-semibold text-[var(--color-action-primary)]">
+              {authorName.slice(0, 1).toUpperCase()}
+            </span>
+          ) : (
+            <Avatar src={authorAvatarUrl} alt={authorName} size="sm" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
+              {authorName}
+              {official ? (
+                <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
+                  Oficial
+                </span>
+              ) : null}
+            </p>
+            <p className="text-[13px] text-[var(--color-text-tertiary)]">
+              {[meta, areaLabel].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpen}
+          className="mt-2.5 block w-full text-left"
+        >
+          {decisionStatus ? (
+            <span className="mb-1.5 inline-flex text-[12px] font-semibold uppercase tracking-wide text-[var(--color-feedback-warning)]">
+              {decisionStatus}
+            </span>
+          ) : null}
+          <h3 className="text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
+            {title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+            {body}
+          </p>
+          {experienceLinkLabel ? (
+            <p className="mt-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]">
+              {experienceLinkLabel} →
+            </p>
+          ) : null}
+        </button>
+
+        {commentPreview ? <div className="mt-2.5">{commentPreview}</div> : null}
+        {reactionBar ? <div className="mt-2">{reactionBar}</div> : null}
+        {commentComposer ? <div className="mt-2.5">{commentComposer}</div> : null}
+      </article>
+    );
+  }
 
   return (
     <article
@@ -270,7 +377,6 @@ export function CommunityPostCard({
       )}
     >
       <div className="p-4">
-        {/* Author row stays outside the open button — Avatar is interactive. */}
         <AuthorCard
           name={authorName}
           avatarUrl={authorAvatarUrl}
@@ -340,6 +446,8 @@ export type InlineCommentComposerProps = {
   submitLabel?: string;
   disabled?: boolean;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  /** Single-line field + send — plaza default. */
+  compact?: boolean;
   className?: string;
 };
 
@@ -352,9 +460,40 @@ export function InlineCommentComposer({
   submitLabel = "Enviar",
   disabled,
   inputRef,
+  compact = false,
   className,
 }: InlineCommentComposerProps) {
-  const canSend = value.trim().length >= 2 && !disabled;
+  const canSend = value.trim().length >= (compact ? 8 : 2) && !disabled;
+
+  if (compact) {
+    return (
+      <div className={cn("flex items-center gap-2", className)}>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && canSend) {
+              e.preventDefault();
+              onSubmit();
+            }
+          }}
+          placeholder={placeholder}
+          aria-label="Escribir comentario"
+          className="min-h-[40px] min-w-0 flex-1 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 text-[14px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:bg-white"
+        />
+        <button
+          type="button"
+          disabled={!canSend}
+          onClick={onSubmit}
+          className="shrink-0 px-1 text-[14px] font-semibold text-[var(--color-action-primary)] disabled:opacity-40"
+        >
+          {submitLabel}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <textarea

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   communityAlertIcon,
@@ -18,7 +18,6 @@ import {
   listOfficialContent,
   listOfficialEntities,
   listParticipacionContent,
-  listPublishedCommunityContent,
   resolveCommunityHubArea,
   type CommunityHubAreaId,
 } from "@life-community-os/tenant-life-panoramica";
@@ -31,7 +30,6 @@ import {
   InlineCommentComposer,
   MobileScreen,
   ReactionBar,
-  ScreenHeader,
   SectionHeader,
   type CommunityPostTone,
 } from "@life-community-os/ui";
@@ -99,27 +97,19 @@ export function CommunityHubScreen() {
   const {
     feedItems,
     getMyReaction,
-    isSaved,
-    isReported,
     toggleReaction,
-    toggleSave,
-    reportContent,
     addComment,
   } = useCommunityInteractions();
 
-  const [composerForId, setComposerForId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandChannels, setExpandChannels] = useState(false);
   const [expandSpaces, setExpandSpaces] = useState(false);
   const [expandPets, setExpandPets] = useState(false);
-  const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const canView = hasCapability(CAPABILITIES.contentView);
   const canReact = hasCapability(CAPABILITIES.interactionReact);
   const canComment = hasCapability(CAPABILITIES.interactionComment);
-  const canSave = hasCapability(CAPABILITIES.interactionSave);
-  const canReport = hasCapability(CAPABILITIES.interactionReport);
   const canChannels = hasCapability(CAPABILITIES.channelView);
 
   const communityOn = isModuleEnabled("community");
@@ -131,29 +121,18 @@ export function CommunityHubScreen() {
 
   const alerts = useMemo(() => listActiveCommunityAlerts(), []);
 
-  const important = useMemo(() => {
-    const officialIds = new Set(listOfficialContent().map((c) => c.id));
-    const fromOfficial = listOfficialContent()
+  const officialNotices = useMemo(() => {
+    return listOfficialContent()
       .map((c) => feedById.get(c.id))
-      .filter(Boolean) as typeof feedItems;
-    const announcements = listPublishedCommunityContent()
-      .filter((c) => c.type === "announcement" && !officialIds.has(c.id))
-      .map((c) => feedById.get(c.id))
-      .filter(Boolean) as typeof feedItems;
-    return [...fromOfficial, ...announcements].slice(0, 4);
+      .filter(Boolean)
+      .slice(0, 2) as typeof feedItems;
   }, [feedById]);
 
   const neighbourActivity = useMemo(() => {
-    const officialIds = new Set(important.map((i) => i.id));
     return feedItems
-      .filter(
-        (c) =>
-          !c.isOfficial &&
-          c.type !== "proposal" &&
-          !officialIds.has(c.id),
-      )
-      .slice(0, 6);
-  }, [feedItems, important]);
+      .filter((c) => !c.isOfficial && c.type !== "proposal")
+      .slice(0, 8);
+  }, [feedItems]);
 
   const participation = useMemo(() => {
     return listParticipacionContent()
@@ -197,12 +176,6 @@ export function CommunityHubScreen() {
     return () => window.clearTimeout(t);
   }, [resolvedTab, tabParam]);
 
-  useEffect(() => {
-    if (composerForId && composerRef.current) {
-      composerRef.current.focus();
-    }
-  }, [composerForId]);
-
   if (!communityOn) {
     return (
       <EmptyState
@@ -221,52 +194,16 @@ export function CommunityHubScreen() {
     );
   }
 
-  const openComposer = (id: string) => {
-    setComposerForId(id);
-  };
-
   const submitComment = (id: string) => {
     const body = (drafts[id] ?? "").trim();
-    if (body.length < 2) return;
+    if (body.length < 8) return;
     addComment(id, body);
     setDrafts((prev) => ({ ...prev, [id]: "" }));
   };
 
-  const renderReactionBar = (item: (typeof feedItems)[number]) => (
-    <ReactionBar
-      acknowledgeCount={item.reactionCounts.acknowledge}
-      supportCount={item.reactionCounts.support}
-      myReaction={getMyReaction(item.id)}
-      commentCount={item.commentCount}
-      saved={isSaved(item.id)}
-      reported={isReported(item.id)}
-      canReact={canReact}
-      canComment={canComment}
-      canSave={canSave}
-      commentActionLabel={
-        item.commentCount > 0 ? `Comentar · ${item.commentCount}` : "Comentar"
-      }
-      onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
-      onSupport={() => toggleReaction(item.id, "support")}
-      onComment={() => openComposer(item.id)}
-      onSave={() => toggleSave(item.id)}
-      onReport={canReport ? () => reportContent(item.id) : undefined}
-    />
-  );
-
-  const renderComposer = (item: (typeof feedItems)[number]) => {
-    if (!canComment) return null;
-    if (composerForId !== item.id) return null;
-    return (
-      <InlineCommentComposer
-        value={drafts[item.id] ?? ""}
-        onChange={(value) =>
-          setDrafts((prev) => ({ ...prev, [item.id]: value }))
-        }
-        onSubmit={() => submitComment(item.id)}
-        inputRef={composerRef}
-      />
-    );
+  const meaningfulComment = (body: string) => {
+    const t = body.trim();
+    return t.length >= 8;
   };
 
   const renderPost = (
@@ -276,10 +213,18 @@ export function CommunityHubScreen() {
     const linked = item.linkedExperienceId
       ? getExperienceById(item.linkedExperienceId)
       : undefined;
-    const latest = item.comments[item.comments.length - 1];
+    const latest = [...item.comments]
+      .reverse()
+      .find((c) => meaningfulComment(c.body));
+    const zone =
+      item.areaLabel && item.areaLabel !== "Life Panoramica"
+        ? item.areaLabel
+        : undefined;
+
     return (
       <CommunityPostCard
         key={item.id}
+        density="plaza"
         title={item.title}
         body={item.body}
         typeLabel={contentTypeLabel(item.type)}
@@ -288,8 +233,7 @@ export function CommunityHubScreen() {
         authorName={item.author.name}
         authorAvatarUrl={item.author.avatarUrl}
         meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
-        areaLabel={item.areaLabel}
-        imageUrl={item.imageUrl}
+        areaLabel={zone}
         decisionStatus={decisionLabel(item.decisionStatus)}
         experienceLinkLabel={linked?.title}
         onOpen={() => router.push(`/community/content/${item.id}`)}
@@ -303,8 +247,32 @@ export function CommunityHubScreen() {
             />
           ) : null
         }
-        reactionBar={renderReactionBar(item)}
-        commentComposer={renderComposer(item)}
+        reactionBar={
+          <ReactionBar
+            variant="quiet"
+            acknowledgeCount={item.reactionCounts.acknowledge}
+            supportCount={item.reactionCounts.support}
+            myReaction={getMyReaction(item.id)}
+            commentCount={item.commentCount}
+            canReact={canReact}
+            canComment={false}
+            canSave={false}
+            onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
+            onSupport={() => toggleReaction(item.id, "support")}
+          />
+        }
+        commentComposer={
+          canComment ? (
+            <InlineCommentComposer
+              compact
+              value={drafts[item.id] ?? ""}
+              onChange={(value) =>
+                setDrafts((prev) => ({ ...prev, [item.id]: value }))
+              }
+              onSubmit={() => submitComment(item.id)}
+            />
+          ) : null
+        }
       />
     );
   };
@@ -319,99 +287,130 @@ export function CommunityHubScreen() {
 
   return (
     <MobileScreen>
-      <ScreenHeader
-        title="Comunidad"
-        subtitle="Qué está pasando con tus vecinos hoy."
-      />
+      <header className="space-y-1 pt-1">
+        <h1 className="font-sans text-[28px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
+          Comunidad
+        </h1>
+        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+          Qué pasa hoy con tus vecinos.
+        </p>
+      </header>
 
-      {/* 1 — Important */}
-      <section id="plaza-important" className="scroll-mt-4 space-y-3">
-        <SectionHeader title="Importante ahora" />
-        {alerts.length > 0 ? (
-          <ul className="space-y-2">
-            {alerts.map((alert) => {
-              const tone = communityAlertTone(alert.level);
-              const shell =
-                tone === "alert"
-                  ? "border-[var(--color-feedback-danger)] bg-[var(--color-feedback-danger-subtle)]"
-                  : tone === "important"
-                    ? "border-[var(--color-feedback-warning)] bg-[var(--color-feedback-warning-subtle)]"
-                    : "border-[var(--color-feedback-info)] bg-[var(--color-feedback-info-subtle)]";
-              return (
-                <li key={alert.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(alert.href ?? "/community#plaza-important")
-                    }
-                    className={`flex w-full items-start gap-3 rounded-[16px] border-l-4 px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] ${shell}`}
+      {/* Alerts — compact only */}
+      {alerts.length > 0 ? (
+        <section id="plaza-important" className="scroll-mt-4 space-y-2">
+          {alerts.map((alert) => {
+            const tone = communityAlertTone(alert.level);
+            const shell =
+              tone === "alert"
+                ? "border-[var(--color-feedback-danger)] text-[var(--color-feedback-danger)]"
+                : tone === "important"
+                  ? "border-[var(--color-feedback-warning)] text-[var(--color-feedback-warning)]"
+                  : "border-[var(--color-feedback-info)] text-[var(--color-feedback-info)]";
+            return (
+              <button
+                key={alert.id}
+                type="button"
+                onClick={() =>
+                  router.push(alert.href ?? "/community#plaza-activity")
+                }
+                className={`flex w-full items-baseline gap-2 border-l-[3px] py-2 pl-3 text-left ${shell}`}
+              >
+                <span className="text-[15px]" aria-hidden>
+                  {communityAlertIcon(alert.kind, alert.level)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+                    {alert.title}
+                  </span>
+                  <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+                    {communityAlertLevelLabel(alert.level)} ·{" "}
+                    {alert.contextLabel}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      ) : (
+        <div id="plaza-important" className="scroll-mt-4" />
+      )}
+
+      {/* Official — slim lines, not fat cards */}
+      {officialNotices.length > 0 ? (
+        <section className="space-y-1 border-b border-[var(--color-border-subtle)] pb-4">
+          <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Avisos
+          </p>
+          <ul className="space-y-0">
+            {officialNotices.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(`/community/content/${item.id}`)
+                  }
+                  className="flex w-full items-start justify-between gap-3 py-2.5 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-semibold leading-snug text-[var(--color-text-primary)]">
+                      {item.title}
+                    </span>
+                    <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
+                      {item.author.name} ·{" "}
+                      {formatContentWhen(item.publishedAt ?? item.createdAt)}
+                    </span>
+                  </span>
+                  <span
+                    className="shrink-0 text-[var(--color-text-tertiary)]"
+                    aria-hidden
                   >
-                    <span className="text-[22px]" aria-hidden>
-                      {communityAlertIcon(alert.kind, alert.level)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                        {communityAlertLevelLabel(alert.level)}
-                      </span>
-                      <span className="mt-0.5 block text-[16px] font-semibold text-[var(--color-text-primary)]">
-                        {alert.title}
-                      </span>
-                      <span className="mt-1 block text-[14px] text-[var(--color-text-secondary)]">
-                        {alert.contextLabel}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
+                    ›
+                  </span>
+                </button>
+              </li>
+            ))}
           </ul>
-        ) : null}
-        <CommunityFeed
-          empty={
-            alerts.length === 0 ? (
-              <p className="text-[15px] text-[var(--color-text-secondary)]">
-                No hay avisos urgentes. La comunidad está en calma.
+        </section>
+      ) : null}
+
+      {/* Neighbour activity — the plaza */}
+      <section id="plaza-activity" className="scroll-mt-4">
+        <SectionHeader title="Entre vecinos" />
+        <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
+          <CommunityFeed
+            empty={
+              <EmptyState
+                title="Todavía está tranquilo"
+                description="Cuando alguien comparta algo útil, aparecerá aquí."
+              />
+            }
+          >
+            {neighbourActivity.map((item) => renderPost(item))}
+          </CommunityFeed>
+        </div>
+      </section>
+
+      {/* Participation */}
+      <section id="plaza-participate" className="scroll-mt-4">
+        <SectionHeader title="Puedes aportar" />
+        <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
+          <CommunityFeed
+            empty={
+              <p className="py-3 text-[14px] text-[var(--color-text-secondary)]">
+                Cuando haya decisiones abiertas, las verás aquí.
               </p>
-            ) : null
-          }
-        >
-          {important.map((item) => renderPost(item, "official"))}
-        </CommunityFeed>
+            }
+          >
+            {participation.map((item) => renderPost(item, "proposal"))}
+          </CommunityFeed>
+        </div>
       </section>
 
-      {/* 2 — Neighbour activity */}
-      <section id="plaza-activity" className="scroll-mt-4 space-y-3">
-        <SectionHeader title="Actividad de vecinos" />
-        <CommunityFeed
-          empty={
-            <EmptyState
-              title="Todavía está tranquilo"
-              description="Cuando alguien comparta algo útil, aparecerá aquí."
-            />
-          }
-        >
-          {neighbourActivity.map((item) => renderPost(item))}
-        </CommunityFeed>
-      </section>
-
-      {/* 3 — Participation */}
-      <section id="plaza-participate" className="scroll-mt-4 space-y-3">
-        <SectionHeader title="Tu participación" />
-        <CommunityFeed
-          empty={
-            <p className="text-[15px] text-[var(--color-text-secondary)]">
-              Cuando haya decisiones abiertas, las verás aquí.
-            </p>
-          }
-        >
-          {participation.map((item) => renderPost(item, "proposal"))}
-        </CommunityFeed>
-      </section>
-
-      {/* 4 — Groups & conversations */}
+      {/* Groups & conversations */}
       <section id="plaza-people" className="scroll-mt-4 space-y-4">
         <SectionHeader
-          title="Grupos y conversaciones"
+          title="Grupos"
           action={
             groupItems.length > 4 ? (
               <button
@@ -426,13 +425,13 @@ export function CommunityHubScreen() {
         />
 
         {groupItems.length === 0 ? (
-          <p className="text-[15px] text-[var(--color-text-secondary)]">
+          <p className="text-[14px] text-[var(--color-text-secondary)]">
             Los grupos de vecinos aparecerán aquí.
           </p>
         ) : (
           <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleGroups.map((group) => (
-              <div key={group.id} className="w-[148px] shrink-0">
+              <div key={group.id} className="w-[132px] shrink-0">
                 <GroupCard
                   name={group.name}
                   members={group.memberCount}
@@ -444,16 +443,16 @@ export function CommunityHubScreen() {
           </div>
         )}
 
-        <CommunityFeed
-          empty={
-            <p className="text-[15px] text-[var(--color-text-secondary)]">
-              Las conversaciones de la comunidad aparecen aquí — no es un chat
-              privado.
+        {discussions.length > 0 ? (
+          <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
+            <p className="pt-3 text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+              Conversaciones
             </p>
-          }
-        >
-          {discussions.map((item) => renderPost(item, "discussion"))}
-        </CommunityFeed>
+            <CommunityFeed>
+              {discussions.map((item) => renderPost(item, "discussion"))}
+            </CommunityFeed>
+          </div>
+        ) : null}
       </section>
 
       {/* Secondary peeks — reachable from hamburger deep links */}
