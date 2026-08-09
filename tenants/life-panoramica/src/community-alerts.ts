@@ -6,6 +6,11 @@
  *
  * Home shows compact previews only (title + short context).
  * Full body belongs on detail — never dump on Home.
+ *
+ * Colour hierarchy (product):
+ * - alert      → red
+ * - important  → yellow / amber
+ * - info       → celeste (useful information)
  */
 
 export type CommunityAlertKind =
@@ -13,7 +18,11 @@ export type CommunityAlertKind =
   | "flood"
   | "fire"
   | "security"
-  | "emergency";
+  | "emergency"
+  | "notice";
+
+/** Visual severity — drives Home colour, not the domain kind. */
+export type CommunityAlertLevel = "alert" | "important" | "info";
 
 export type CommunityAlert = {
   id: string;
@@ -21,6 +30,7 @@ export type CommunityAlert = {
   /** Full copy for detail surfaces — do not render on Home. */
   body: string;
   kind: CommunityAlertKind;
+  level: CommunityAlertLevel;
   /** ISO publish time — alert expires 24h after this. */
   publishedAt: string;
   /** Compact Home line: time window · area */
@@ -29,7 +39,7 @@ export type CommunityAlert = {
 };
 
 const ALERT_TTL_MS = 24 * 60 * 60 * 1000;
-const HOME_ALERT_CAP = 2;
+const HOME_ALERT_CAP = 3;
 
 /**
  * Static exceptional demos (optional). Prefer listActiveCommunityAlerts()
@@ -48,26 +58,39 @@ export function isCommunityAlertActive(
 
 /**
  * Active alerts for Home.
- * Includes one demo severe-weather alert anchored to `nowMs` so SSR/client match
- * when callers pass a stable clock during first paint.
- * Caps at 2 — exceptional density only.
+ * Demo set anchored to `nowMs` so SSR/client match on first paint.
+ * Caps at 3 — one per colour tier for product clarity.
  */
 export function listActiveCommunityAlerts(
   nowMs: number = Date.now(),
 ): CommunityAlert[] {
-  const demoWeather: CommunityAlert = {
-    id: "alert-storm-demo",
+  const demoAlert: CommunityAlert = {
+    id: "alert-emergency-demo",
     title: "Aviso meteorológico severo",
     body: "Se esperan rachas fuertes y posibles inundaciones en zonas bajas esta tarde. Evita desplazamientos no esenciales.",
     kind: "weather",
+    level: "alert",
     publishedAt: new Date(nowMs - 2 * 60 * 60 * 1000).toISOString(),
     contextLabel: "Hasta 20:00 · Zona Norte",
     href: "/community?tab=actualidad",
   };
 
-  return [demoWeather, ...communityAlertCatalog]
+  return [demoAlert, ...communityAlertCatalog]
     .filter((alert) => isCommunityAlertActive(alert, nowMs))
     .slice(0, HOME_ALERT_CAP);
+}
+
+export function communityAlertLevelLabel(level: CommunityAlertLevel): string {
+  switch (level) {
+    case "alert":
+      return "Alerta";
+    case "important":
+      return "Importante";
+    case "info":
+      return "Información";
+    default:
+      return "Aviso";
+  }
 }
 
 export function communityAlertKindLabel(kind: CommunityAlertKind): string {
@@ -82,25 +105,44 @@ export function communityAlertKindLabel(kind: CommunityAlertKind): string {
       return "Alerta de seguridad";
     case "emergency":
       return "Emergencia";
+    case "notice":
+      return "Información útil";
     default:
       return "Alerta";
   }
 }
 
-/** Instant category signal for Home previews. */
-export function communityAlertIcon(kind: CommunityAlertKind): string {
+/** Instant category signal for Home previews — curated emoji. */
+export function communityAlertIcon(
+  kind: CommunityAlertKind,
+  level?: CommunityAlertLevel,
+): string {
+  // Kind wins when it carries a clear signal (e.g. weather storm).
   switch (kind) {
     case "weather":
-      return "🌧";
+      return "⛈️";
     case "flood":
-      return "⚠️";
+      return "🌊";
     case "fire":
-      return "🚨";
+      return "🔥";
     case "security":
-      return "⚠️";
+      return "🚨";
     case "emergency":
       return "🚨";
+    case "notice":
+      return "ℹ️";
     default:
-      return "🚨";
+      break;
   }
+  if (level === "alert") return "🚨";
+  if (level === "important") return "⚠️";
+  if (level === "info") return "ℹ️";
+  return "🚨";
+}
+
+/** Surface tone — red / yellow / celeste. */
+export function communityAlertTone(
+  level: CommunityAlertLevel,
+): "alert" | "important" | "info" {
+  return level;
 }

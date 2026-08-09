@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   buildCommunityLifeItems,
   buildForYouItems,
   buildTodayMoments,
   communityAlertIcon,
-  communityAlertKindLabel,
+  communityAlertLevelLabel,
+  communityAlertTone,
   experienceActivityLabel,
   formatExperienceWhen,
   listActiveCommunityAlerts,
@@ -204,13 +205,13 @@ function LineIcon({
   }
 }
 
-function forYouGlyph(
+function forYouEmoji(
   kind: "experience" | "local" | "welcome" | "proposal",
-): ReactNode {
-  if (kind === "welcome") return <LineIcon name="welcome" />;
-  if (kind === "proposal") return <LineIcon name="notice" />;
-  if (kind === "local") return <LineIcon name="pin" />;
-  return <LineIcon name="spark" />;
+): string {
+  if (kind === "welcome") return "👋";
+  if (kind === "proposal") return "📢";
+  if (kind === "local") return "📍";
+  return "✨";
 }
 
 function nearDiscoveryReason(place: {
@@ -228,17 +229,47 @@ function nearDiscoveryReason(place: {
   return `Cerca · ${place.areaLabel}`;
 }
 
-const DO_TODAY_CHIPS: ReadonlyArray<{
+/** Three clear discovery doors — curated emoji, tinted cards. */
+const DO_TODAY_DOORS: ReadonlyArray<{
   id: string;
-  icon: "golf" | "dining" | "sports" | "events" | "family";
+  emoji: string;
   label: string;
+  hint: string;
   href: string;
+  tint: string;
+  card: string;
+  shadow: string;
 }> = [
-  { id: "golf", icon: "golf", label: "Golf", href: "/experiences" },
-  { id: "dining", icon: "dining", label: "Restaurantes", href: "/near/restaurants" },
-  { id: "sports", icon: "sports", label: "Deportes", href: "/experiences" },
-  { id: "events", icon: "events", label: "Eventos", href: "/community?tab=actualidad" },
-  { id: "family", icon: "family", label: "Familias", href: "/experiences" },
+  {
+    id: "experiences",
+    emoji: "✨",
+    label: "Experiencias",
+    hint: "Planes y encuentros",
+    href: "/experiences",
+    tint: "bg-[#DCEEE4]",
+    card: "bg-[#F3FAF6] border border-[#C5DED0]",
+    shadow: "shadow-[0_8px_22px_rgba(31,74,60,0.14)]",
+  },
+  {
+    id: "dining",
+    emoji: "🍽️",
+    label: "Restaurantes",
+    hint: "Comer cerca",
+    href: "/near/restaurants",
+    tint: "bg-[#F8E0CC]",
+    card: "bg-[#FFF7F0] border border-[#EED4BC]",
+    shadow: "shadow-[0_8px_22px_rgba(196,122,58,0.16)]",
+  },
+  {
+    id: "sports",
+    emoji: "🎾",
+    label: "Deportes",
+    hint: "Golf, pádel…",
+    href: "/experiences",
+    tint: "bg-[#D7E8F4]",
+    card: "bg-[#F2F8FC] border border-[#C5D9E8]",
+    shadow: "shadow-[0_8px_22px_rgba(61,107,122,0.15)]",
+  },
 ];
 
 const HYDRATE_SAFE = {
@@ -270,11 +301,48 @@ export function HomeScreen() {
     () => `Hola ${demoMember.displayName}`,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  /** Collapsed by default — peek + unwrap rest in batches of 5. */
+  const PAGE = 5;
+  const [forYouOpen, setForYouOpen] = useState(false);
+  const [forYouVisibleCount, setForYouVisibleCount] = useState(PAGE);
+  const [todayOpen, setTodayOpen] = useState(false);
+  const [todayVisibleCount, setTodayVisibleCount] = useState(PAGE);
+  const forYouSectionRef = useRef<HTMLElement | null>(null);
+  const todaySectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setLive(true);
     setGreeting(belongingGreeting(demoMember.displayName, madridHour()));
   }, [demoMember.displayName]);
+
+  /** Collapse open accordions when tapping outside. */
+  useEffect(() => {
+    if (!forYouOpen && !todayOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (
+        forYouOpen &&
+        forYouSectionRef.current &&
+        !forYouSectionRef.current.contains(target)
+      ) {
+        setForYouOpen(false);
+        setForYouVisibleCount(PAGE);
+      }
+      if (
+        todayOpen &&
+        todaySectionRef.current &&
+        !todaySectionRef.current.contains(target)
+      ) {
+        setTodayOpen(false);
+        setTodayVisibleCount(PAGE);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [forYouOpen, todayOpen]);
 
   const searchHits = useMemo(
     () => searchHomeCatalog(searchQuery, 8),
@@ -309,15 +377,18 @@ export function HomeScreen() {
   const forYou = useMemo(
     () =>
       buildForYouItems(demoMember, {
-        limit: 3,
+        limit: 15,
         excludeKinds: ["experience"],
         ...frontDoorOpts,
       }),
     [demoMember, frontDoorOpts],
   );
+  const forYouVisible = forYou.slice(0, forYouVisibleCount);
+  const forYouHiddenCount = Math.max(0, forYou.length - forYouVisibleCount);
+  const forYouPeek = forYou[0];
 
-  const todaySquare = useMemo(() => {
-    const moments = buildTodayMoments({ limit: 3, ...frontDoorOpts }).map(
+  const todayItems = useMemo(() => {
+    const moments = buildTodayMoments({ limit: 8, ...frontDoorOpts }).map(
       (moment) => ({
         id: moment.id,
         title: moment.title,
@@ -328,7 +399,7 @@ export function HomeScreen() {
         personAvatarUrl: undefined as string | undefined,
       }),
     );
-    const stories = buildCommunityLifeItems({ limit: 3 }).map((item) => ({
+    const stories = buildCommunityLifeItems({ limit: 8 }).map((item) => ({
       id: item.id,
       title: item.narrative,
       context: item.context ?? item.personName ?? "Comunidad",
@@ -340,22 +411,20 @@ export function HomeScreen() {
 
     const merged = [...stories, ...moments];
     const seen = new Set<string>();
-    const unique = merged.filter((item) => {
+    return merged.filter((item) => {
       const key = item.title.slice(0, 48);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
-
-    const withPhoto = unique.find((item) => item.imageUrl);
-    const featured = withPhoto ?? unique[0] ?? null;
-    const secondary = unique
-      .filter((item) => item.id !== featured?.id)
-      .slice(0, 2);
-
-    return { featured, secondary };
   }, [frontDoorOpts]);
 
+  const todayVisible = todayItems.slice(0, todayVisibleCount);
+  const todayFeatured =
+    todayVisible.find((item) => item.imageUrl) ?? todayVisible[0] ?? null;
+  const todayRest = todayVisible.filter((item) => item.id !== todayFeatured?.id);
+  const todayHiddenCount = Math.max(0, todayItems.length - todayVisibleCount);
+  const todayPeek = todayItems[0] ?? null;
   const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
@@ -394,96 +463,209 @@ export function HomeScreen() {
       />
 
       <div className="space-y-8 pt-0.5 md:space-y-9">
-        {/* ── PARA TI — personal relevance ── */}
-        <HomeSection title="Para ti" subtitle="Lo que importa para ti hoy.">
-          {alerts.length === 0 && forYou.length === 0 ? (
+        {/* ── PARA TI — accordion; 3 visibles, resto envuelto ── */}
+        {alerts.length === 0 && forYou.length === 0 ? (
+          <HomeSection title="Para ti" subtitle="Lo que importa para ti hoy.">
             <EmptyState
               title="Tu comunidad empieza aquí."
               description="Cuando haya avisos relevantes, los verás aquí."
             />
-          ) : (
-            <div className="space-y-2.5">
-              {alerts.map((alert) => (
-                <button
-                  key={alert.id}
-                  type="button"
-                  onClick={() =>
-                    router.push(alert.href ?? "/community?tab=actualidad")
-                  }
-                  className="flex w-full items-start gap-3 rounded-[18px] border border-[color-mix(in_srgb,var(--color-warning)_45%,transparent)] bg-[var(--color-warning-subtle,#FBF3DC)] px-3.5 py-3.5 text-left shadow-[0_6px_20px_rgba(184,134,11,0.12)] transition-transform active:scale-[0.985]"
-                >
-                  <span
-                    className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-warning)_18%,white)] text-[17px]"
-                    aria-hidden
-                  >
-                    {communityAlertIcon(alert.kind)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="inline-flex items-center rounded-full bg-[color-mix(in_srgb,var(--color-warning)_16%,white)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--color-warning)]">
-                      Alerta
-                    </span>
-                    <span className="mt-1.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
-                      {alert.title}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-secondary)]">
-                      {alert.contextLabel}
-                    </span>
-                    <span className="sr-only">
-                      {communityAlertKindLabel(alert.kind)}
-                    </span>
-                  </span>
-                  <span className="mt-2 flex shrink-0 items-center gap-0.5 text-[12px] font-semibold text-[var(--color-action-primary)]">
-                    Abrir
-                    <LineIcon name="chevron" />
-                  </span>
-                </button>
-              ))}
+          </HomeSection>
+        ) : (
+          <section
+            ref={forYouSectionRef}
+            className="overflow-hidden rounded-[18px] border border-[#E8E2D8] bg-[#FFFCFA] shadow-[0_6px_18px_rgba(26,31,28,0.08)]"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setForYouOpen((open) => {
+                  if (open) setForYouVisibleCount(PAGE);
+                  return !open;
+                })
+              }
+              aria-expanded={forYouOpen}
+              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
+            >
+              <div className="min-w-0">
+                <h2 className="font-sans text-[20px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[21px]">
+                  Para ti
+                </h2>
+                <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-tertiary)]">
+                  Lo que importa para ti hoy.
+                </p>
+              </div>
+              <span
+                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
+                  forYouOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
 
-              {forYou.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => router.push(item.href)}
-                  className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3 py-2.5 text-left shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.99]"
-                >
-                  {item.imageUrl ? (
-                    <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
-                      <ZoomableImage
-                        src={item.imageUrl}
-                        alt=""
-                        wrapperClassName="h-full w-full"
-                      />
+            {alerts.length > 0 ? (
+              <div className="space-y-2 border-t border-[var(--color-border-subtle)] px-3 pb-2 pt-2">
+                {alerts.map((alert) => {
+                  const tone = communityAlertTone(alert.level);
+                  const styles =
+                    tone === "alert"
+                      ? {
+                          card: "border-[color-mix(in_srgb,#B42318_42%,transparent)] bg-[#F8E8E6] shadow-[0_6px_20px_rgba(180,35,24,0.14)]",
+                          emoji: "bg-[#F3D0CC]",
+                          chip: "bg-[#F3D0CC] text-[#B42318]",
+                        }
+                      : tone === "important"
+                        ? {
+                            card: "border-[color-mix(in_srgb,#B8860B_45%,transparent)] bg-[#FBF3DC] shadow-[0_6px_20px_rgba(184,134,11,0.14)]",
+                            emoji: "bg-[#F5E8C8]",
+                            chip: "bg-[#F5E8C8] text-[#9A7209]",
+                          }
+                        : {
+                            card: "border-[color-mix(in_srgb,#3D6B7A_40%,transparent)] bg-[#E8F1F4] shadow-[0_6px_20px_rgba(61,107,122,0.14)]",
+                            emoji: "bg-[#D4E6EC]",
+                            chip: "bg-[#D4E6EC] text-[#2F5562]",
+                          };
+                  return (
+                    <button
+                      key={alert.id}
+                      type="button"
+                      onClick={() =>
+                        router.push(alert.href ?? "/community?tab=actualidad")
+                      }
+                      className={`flex w-full items-start gap-3.5 rounded-[18px] border px-3.5 py-3.5 text-left transition-transform active:scale-[0.985] ${styles.card}`}
+                    >
+                      <span
+                        className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-[28px] leading-none ${styles.emoji}`}
+                        aria-hidden
+                      >
+                        {communityAlertIcon(alert.kind, alert.level)}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[14px] font-bold uppercase tracking-[0.06em] ${styles.chip}`}
+                        >
+                          {communityAlertLevelLabel(alert.level)}
+                        </span>
+                        <span className="mt-1.5 block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+                          {alert.title}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-secondary)]">
+                          {alert.contextLabel}
+                        </span>
+                      </span>
+                      <span className="mt-2 flex shrink-0 items-center gap-0.5 text-[14px] font-semibold text-[var(--color-action-primary)]">
+                        Abrir
+                        <LineIcon name="chevron" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+
+            {!forYouOpen ? (
+              forYouPeek ? (
+                <div className="border-t border-[var(--color-border-subtle)]">
+                  <button
+                    type="button"
+                    onClick={() => setForYouOpen(true)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                        {forYouPeek.title}
+                      </span>
+                      {forYouPeek.subtitle ? (
+                        <span className="mt-0.5 block truncate text-[15px] leading-4 text-[var(--color-text-secondary)]">
+                          {forYouPeek.subtitle}
+                        </span>
+                      ) : null}
                     </span>
-                  ) : (
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]">
-                      {forYouGlyph(item.kind)}
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-                      {item.title}
-                    </span>
-                    {item.subtitle ? (
-                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
-                        {item.subtitle}
+                    {forYou.length > 1 ? (
+                      <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
+                        +{forYou.length - 1}
                       </span>
                     ) : null}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </HomeSection>
+                  </button>
+                </div>
+              ) : null
+            ) : forYou.length > 0 ? (
+              <div className="space-y-2 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
+                {forYouVisible.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    className="flex w-full items-center gap-3 rounded-[14px] border border-[#E8E2D8] bg-white px-3 py-2.5 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
+                  >
+                    {item.imageUrl ? (
+                      <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
+                        <ZoomableImage
+                          src={item.imageUrl}
+                          alt=""
+                          wrapperClassName="h-full w-full"
+                        />
+                      </span>
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[22px] leading-none">
+                        {forYouEmoji(item.kind)}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
+                        {item.title}
+                      </span>
+                      {item.subtitle ? (
+                        <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-tertiary)]">
+                          {item.subtitle}
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                ))}
+                {forYouHiddenCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForYouVisibleCount((n) => n + PAGE)
+                    }
+                    className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Ver {Math.min(PAGE, forYouHiddenCount)} más
+                  </button>
+                ) : forYouVisibleCount > PAGE ? (
+                  <button
+                    type="button"
+                    onClick={() => setForYouVisibleCount(PAGE)}
+                    className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Mostrar menos
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
+        )}
 
-        {/* ── HOY — community square (heart) ── */}
-        <HomeSection
-          atmospheric
-          title={todayTitle}
-          subtitle="La plaza de tu comunidad."
-          actionLabel="Ver comunidad"
-          onAction={() => router.push("/community")}
-        >
-          {!todaySquare.featured ? (
+        {/* ── HOY — accordion; 3 visibles, resto envuelto ── */}
+        {!todayFeatured ? (
+          <HomeSection
+            atmospheric
+            title={todayTitle}
+            subtitle="La plaza de tu comunidad."
+            actionLabel="Ver comunidad"
+            onAction={() => router.push("/community")}
+          >
             <EmptyState
               title="Hoy está tranquilo por aquí."
               description="Cuando haya planes o historias, aparecerán aquí."
@@ -498,93 +680,191 @@ export function HomeScreen() {
                   : undefined
               }
             />
-          ) : (
-            <div className="space-y-2.5">
-              <button
-                type="button"
-                onClick={() => router.push(todaySquare.featured!.href)}
-                className="group w-full overflow-hidden rounded-[22px] text-left shadow-[0_10px_28px_rgba(26,31,28,0.10)] transition-transform active:scale-[0.985]"
+          </HomeSection>
+        ) : (
+          <section
+            ref={todaySectionRef}
+            className="overflow-hidden rounded-[18px] border border-[#E8E2D8] bg-[#FFFCFA] shadow-[0_6px_18px_rgba(26,31,28,0.08)]"
+          >
+            <button
+              type="button"
+              onClick={() =>
+                setTodayOpen((open) => {
+                  if (open) setTodayVisibleCount(PAGE);
+                  return !open;
+                })
+              }
+              aria-expanded={todayOpen}
+              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
+            >
+              <div className="min-w-0">
+                <h2 className="font-sans text-[21px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[22px]">
+                  {todayTitle}
+                </h2>
+                <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-tertiary)]">
+                  La plaza de tu comunidad.
+                </p>
+              </div>
+              <span
+                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
+                  todayOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden
               >
-                <div className="relative aspect-[16/10] bg-[var(--color-surface-muted)]">
-                  {todaySquare.featured.imageUrl ? (
-                    <ZoomableImage
-                      src={todaySquare.featured.imageUrl}
-                      alt=""
-                      className="transition-transform duration-700 group-active:scale-[1.02]"
-                      wrapperClassName="h-full w-full"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]">
-                      <LineIcon name="spark" className="h-8 w-8" />
-                    </div>
-                  )}
-                  <div
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(transparent 35%, rgba(20,28,24,0.78))",
-                    }}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    {todaySquare.featured.personName ? (
-                      <span className="mb-1.5 flex items-center gap-2">
-                        {todaySquare.featured.personAvatarUrl ? (
-                          <span className="h-6 w-6 overflow-hidden rounded-full">
-                            <ZoomableImage
-                              src={todaySquare.featured.personAvatarUrl}
-                              alt=""
-                              wrapperClassName="h-full w-full"
-                            />
-                          </span>
-                        ) : null}
-                        <span className="text-[12px] font-medium text-white/85">
-                          {todaySquare.featured.personName}
-                        </span>
+                </svg>
+              </span>
+            </button>
+
+            {!todayOpen ? (
+              <div className="border-t border-[var(--color-border-subtle)]">
+                {todayPeek ? (
+                  <button
+                    type="button"
+                    onClick={() => setTodayOpen(true)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                        {todayPeek.title}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[15px] leading-4 text-[var(--color-text-secondary)]">
+                        {todayPeek.context}
+                      </span>
+                    </span>
+                    {todayItems.length > 1 ? (
+                      <span className="shrink-0 text-[14px] font-semibold text-[var(--color-action-primary)]">
+                        +{todayItems.length - 1}
                       </span>
                     ) : null}
-                    <span className="block font-display text-[20px] font-semibold leading-6 text-white sm:text-[22px]">
-                      {todaySquare.featured.title}
-                    </span>
-                    <span className="mt-1 block truncate text-[13px] text-white/80">
-                      {todaySquare.featured.context}
-                    </span>
-                  </div>
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-2.5 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
+                <div className="flex justify-end px-1">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/community")}
+                    className="text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Ver comunidad ›
+                  </button>
                 </div>
-              </button>
 
-              {todaySquare.secondary.map((item) => (
                 <button
-                  key={item.id}
                   type="button"
-                  onClick={() => router.push(item.href)}
-                  className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3 py-2.5 text-left shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.99]"
+                  onClick={() => router.push(todayFeatured.href)}
+                  className="group w-full overflow-hidden rounded-[22px] text-left shadow-[0_14px_36px_rgba(26,31,28,0.16)] ring-1 ring-black/5 transition-transform active:scale-[0.985]"
                 >
-                  {item.imageUrl ? (
-                    <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
+                  <div className="relative aspect-[16/10] bg-[var(--color-surface-muted)]">
+                    {todayFeatured.imageUrl ? (
                       <ZoomableImage
-                        src={item.imageUrl}
+                        src={todayFeatured.imageUrl}
                         alt=""
+                        className="transition-transform duration-700 group-active:scale-[1.02]"
                         wrapperClassName="h-full w-full"
                       />
-                    </span>
-                  ) : (
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-surface-muted)] text-[var(--color-action-primary)]">
-                      <LineIcon name="notice" />
-                    </span>
-                  )}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-                      {item.title}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
-                      {item.context}
-                    </span>
-                  </span>
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]">
+                        <LineIcon name="spark" className="h-8 w-8" />
+                      </div>
+                    )}
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(transparent 35%, rgba(20,28,24,0.78))",
+                      }}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      {todayFeatured.personName ? (
+                        <span className="mb-1.5 flex items-center gap-2">
+                          {todayFeatured.personAvatarUrl ? (
+                            <span className="h-6 w-6 overflow-hidden rounded-full">
+                              <ZoomableImage
+                                src={todayFeatured.personAvatarUrl}
+                                alt=""
+                                wrapperClassName="h-full w-full"
+                              />
+                            </span>
+                          ) : null}
+                          <span className="text-[14px] font-medium text-white/85">
+                            {todayFeatured.personName}
+                          </span>
+                        </span>
+                      ) : null}
+                      <span className="block font-sans text-[18px] font-semibold leading-6 tracking-tight text-white sm:text-[20px]">
+                        {todayFeatured.title}
+                      </span>
+                      <span className="mt-1 block truncate text-[15px] text-white/80">
+                        {todayFeatured.context}
+                      </span>
+                    </div>
+                  </div>
                 </button>
-              ))}
-            </div>
-          )}
-        </HomeSection>
+
+                {todayRest.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    className="flex w-full items-center gap-3 rounded-[14px] border border-[#E8E2D8] bg-white px-3 py-2.5 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
+                  >
+                    {item.imageUrl ? (
+                      <span className="h-10 w-10 shrink-0 overflow-hidden rounded-[10px] bg-[var(--color-surface-muted)]">
+                        <ZoomableImage
+                          src={item.imageUrl}
+                          alt=""
+                          wrapperClassName="h-full w-full"
+                        />
+                      </span>
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-surface-muted)] text-[22px] leading-none">
+                        📢
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
+                        {item.title}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-tertiary)]">
+                        {item.context}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+
+                {todayHiddenCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTodayVisibleCount((n) => n + PAGE)
+                    }
+                    className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Ver {Math.min(PAGE, todayHiddenCount)} más
+                  </button>
+                ) : todayVisibleCount > PAGE ? (
+                  <button
+                    type="button"
+                    onClick={() => setTodayVisibleCount(PAGE)}
+                    className="w-full rounded-[12px] py-2 text-center text-[15px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Mostrar menos
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── QUÉ PUEDES HACER HOY — photo discovery ── */}
         {isFeatureEnabled("experiences") ? (
@@ -594,17 +874,27 @@ export function HomeScreen() {
             actionLabel="Ver todas"
             onAction={() => router.push("/experiences")}
           >
-            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
-              {DO_TODAY_CHIPS.map((chip) => (
+            <div className="grid grid-cols-3 gap-2.5">
+              {DO_TODAY_DOORS.map((door) => (
                 <button
-                  key={chip.id}
+                  key={door.id}
                   type="button"
-                  onClick={() => router.push(chip.href)}
-                  className="flex shrink-0 items-center gap-2 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3.5 py-2.5 text-left text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.98]"
+                  onClick={() => router.push(door.href)}
+                  className={`flex flex-col items-center gap-2 rounded-[18px] px-2 py-3.5 text-center transition-transform active:scale-[0.97] ${door.card} ${door.shadow}`}
                 >
-                  <LineIcon name={chip.icon} />
-                  <span className="text-[13px] font-semibold text-[var(--color-text-primary)]">
-                    {chip.label}
+                  <span
+                    className={`flex h-12 w-12 items-center justify-center rounded-full text-[28px] leading-none shadow-[0_2px_8px_rgba(26,31,28,0.08)] ${door.tint}`}
+                    aria-hidden
+                  >
+                    {door.emoji}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-semibold leading-4 text-[var(--color-text-primary)]">
+                      {door.label}
+                    </span>
+                    <span className="mt-0.5 block truncate text-[14px] leading-3 text-[var(--color-text-tertiary)]">
+                      {door.hint}
+                    </span>
                   </span>
                 </button>
               ))}
@@ -693,9 +983,9 @@ export function HomeScreen() {
                         router.push("/near/places");
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] p-2 pr-3 text-left shadow-[0_2px_10px_rgba(26,31,28,0.05)] transition-transform active:scale-[0.99]"
+                    className="flex w-full items-center gap-3 rounded-[16px] border border-[#E8E2D8] bg-[#FFFCFA] p-2 pr-3 text-left shadow-[0_6px_18px_rgba(26,31,28,0.10)] transition-transform active:scale-[0.99]"
                   >
-                    <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--color-surface-muted)]">
+                    <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--color-surface-muted)] shadow-[0_2px_8px_rgba(26,31,28,0.08)]">
                       <ZoomableImage
                         src={place.imageUrl}
                         alt=""
@@ -706,11 +996,11 @@ export function HomeScreen() {
                       <span className="block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
                         {place.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
+                      <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-tertiary)]">
                         {place.categoryLabel}
                         {place.areaLabel ? ` · ${place.areaLabel}` : ""}
                       </span>
-                      <span className="mt-1 block truncate text-[12px] font-medium text-[var(--color-action-primary)]">
+                      <span className="mt-1 block truncate text-[14px] font-medium text-[var(--color-action-primary)]">
                         {nearDiscoveryReason(place)}
                       </span>
                     </span>

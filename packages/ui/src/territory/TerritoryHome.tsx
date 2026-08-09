@@ -111,7 +111,7 @@ export function TerritoryHero({
         />
 
         {isBelonging && weatherText ? (
-          <p className="pointer-events-none absolute right-3 top-3 z-[1] flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-medium tabular-nums text-white backdrop-blur-[2px] sm:right-3.5 sm:top-3.5 sm:text-[13px]">
+          <p className="pointer-events-none absolute right-3 top-3 z-[1] flex items-center gap-1.5 rounded-full bg-black/25 px-2.5 py-1 text-[14px] font-medium tabular-nums text-white backdrop-blur-[2px] sm:right-3.5 sm:top-3.5 sm:text-[15px]">
             <WeatherSunIcon className="shrink-0" />
             <span>{weatherText}</span>
           </p>
@@ -121,7 +121,7 @@ export function TerritoryHero({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-2.5 pt-14 sm:px-5 sm:pb-3">
             {greeting ? (
               <p
-                className="font-display text-[22px] font-light leading-[1.2] tracking-[0.015em] text-white/80 sm:text-[26px]"
+                className="font-sans text-[22px] font-semibold leading-[1.2] tracking-tight text-white sm:text-[26px]"
                 style={{ textShadow: "0 1px 14px rgba(20,28,24,0.32)" }}
                 suppressHydrationWarning
               >
@@ -129,7 +129,7 @@ export function TerritoryHero({
               </p>
             ) : null}
             {areaLabel ? (
-              <p className="mt-0.5 text-[13px] font-light tracking-[0.03em] text-white/65 sm:text-[14px]">
+              <p className="mt-1 text-[15px] font-medium tracking-wide text-white/75 sm:text-[14px]">
                 {areaLabel}
               </p>
             ) : null}
@@ -189,11 +189,11 @@ export function QuickActionBar({ items, className }: QuickActionBarProps) {
             {item.icon}
           </span>
           <span className="w-full text-center">
-            <span className="block text-[11px] font-bold leading-4 tracking-tight">
+            <span className="block text-[15px] font-bold leading-4 tracking-tight">
               {item.label}
             </span>
             {item.hint ? (
-              <span className="mt-0.5 block px-0.5 text-[9px] font-medium leading-[1.2] text-[var(--color-text-tertiary)]">
+              <span className="mt-0.5 block px-0.5 text-[12px] font-medium leading-[1.2] text-[var(--color-text-tertiary)]">
                 {item.hint}
               </span>
             ) : null}
@@ -259,7 +259,7 @@ export function GlobalAppSearch({
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[13px] font-semibold text-[var(--color-text-tertiary)]"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-[15px] font-semibold text-[var(--color-text-tertiary)]"
             aria-label="Limpiar búsqueda"
           >
             ✕
@@ -274,7 +274,7 @@ export function GlobalAppSearch({
               key={chip.id}
               type="button"
               onClick={chip.onClick}
-              className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.05)] active:scale-[0.98]"
+              className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[14px] font-semibold text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.05)] active:scale-[0.98]"
             >
               {chip.label}
             </button>
@@ -306,18 +306,18 @@ export function GlobalAppSearch({
                         />
                       </span>
                     ) : (
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[11px] font-bold text-[var(--color-action-primary)]">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[15px] font-bold text-[var(--color-action-primary)]">
                         {hit.kindLabel.slice(0, 1)}
                       </span>
                     )}
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[11px] font-semibold text-[var(--color-action-primary)]">
+                      <span className="block text-[15px] font-semibold text-[var(--color-action-primary)]">
                         {hit.kindLabel}
                       </span>
                       <span className="mt-0.5 block truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
                         {hit.title}
                       </span>
-                      <span className="mt-0.5 block truncate text-[12px] text-[var(--color-text-tertiary)]">
+                      <span className="mt-0.5 block truncate text-[14px] text-[var(--color-text-tertiary)]">
                         {hit.subtitle}
                       </span>
                     </span>
@@ -377,7 +377,7 @@ export function CommunityPulseMoment({
           <button
             type="button"
             onClick={onAction}
-            className="shrink-0 text-[13px] font-semibold text-[var(--color-action-primary)]"
+            className="shrink-0 text-[15px] font-semibold text-[var(--color-action-primary)]"
           >
             {actionLabel} ›
           </button>
@@ -536,7 +536,7 @@ export function CommunityActivityCard({
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
               {categoryLabel ? (
-                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-white/85">
+                <span className="text-[15px] font-bold uppercase tracking-[0.08em] text-white/85">
                   {categoryLabel}
                   {live ? " · Ahora" : ""}
                 </span>
@@ -545,7 +545,7 @@ export function CommunityActivityCard({
                 {headline}
               </span>
               {context ? (
-                <span className="mt-1 block text-[13px] text-white/80">
+                <span className="mt-1 block text-[15px] text-white/80">
                   {context}
                 </span>
               ) : null}
@@ -564,7 +564,7 @@ export function CommunityActivityCard({
               />
             ) : null}
             {personName ? (
-              <span className="truncate text-[13px] text-[var(--color-text-secondary)]">
+              <span className="truncate text-[15px] text-[var(--color-text-secondary)]">
                 {personName}
               </span>
             ) : null}
@@ -573,7 +573,7 @@ export function CommunityActivityCard({
             <button
               type="button"
               onClick={onAction}
-              className="shrink-0 text-[13px] font-semibold text-[var(--color-action-primary)]"
+              className="shrink-0 text-[15px] font-semibold text-[var(--color-action-primary)]"
             >
               {actionLabel} ›
             </button>
@@ -604,7 +604,7 @@ export function CommunityActivityCard({
               {categoryLabel ? (
                 <span
                   className={cn(
-                    "text-[11px] font-semibold tracking-[0.04em]",
+                    "text-[15px] font-semibold tracking-[0.04em]",
                     categoryAccent(categoryLabel),
                   )}
                 >
@@ -612,7 +612,7 @@ export function CommunityActivityCard({
                 </span>
               ) : null}
               {live ? (
-                <span className="text-[11px] font-semibold text-[var(--color-action-accent)]">
+                <span className="text-[15px] font-semibold text-[var(--color-action-accent)]">
                   Ahora
                 </span>
               ) : null}
@@ -626,7 +626,7 @@ export function CommunityActivityCard({
               {headline}
             </span>
             {context ? (
-              <span className="mt-1 block line-clamp-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+              <span className="mt-1 block line-clamp-2 text-[15px] leading-5 text-[var(--color-text-secondary)]">
                 {context}
               </span>
             ) : null}
@@ -642,12 +642,12 @@ export function CommunityActivityCard({
                   />
                 ) : null}
                 {personName ? (
-                  <span className="text-[12px] text-[var(--color-text-tertiary)]">
+                  <span className="text-[14px] text-[var(--color-text-tertiary)]">
                     {personName}
                   </span>
                 ) : null}
                 {timeLabel ? (
-                  <span className="text-[12px] text-[var(--color-text-tertiary)]">
+                  <span className="text-[14px] text-[var(--color-text-tertiary)]">
                     {timeLabel}
                   </span>
                 ) : null}
@@ -658,7 +658,7 @@ export function CommunityActivityCard({
             <button
               type="button"
               onClick={onAction}
-              className="mt-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
+              className="mt-1.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
             >
               {actionLabel} ›
             </button>
@@ -811,7 +811,7 @@ export function OfficialNoticeCard({
         </div>
       ) : null}
       <div className={cn(imageUrl ? "mt-4" : "", "pl-4 border-l-[3px] border-[var(--color-accent-official)]")}>
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-accent-official)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-accent-official)]">
           {badgeLabel}
           {areaLabel ? ` · ${areaLabel}` : ""}
         </p>
@@ -862,7 +862,7 @@ export function CommunityStory({
         </div>
       ) : null}
       <div className={imageUrl ? "mt-4" : ""}>
-        <p className="text-[13px] font-semibold uppercase tracking-[0.06em] text-[var(--color-accent-community)]">
+        <p className="text-[15px] font-semibold uppercase tracking-[0.06em] text-[var(--color-accent-community)]">
           {eyebrow}
         </p>
         <h3 className="mt-2 font-[family-name:var(--font-display)] text-[24px] font-semibold leading-7 text-[var(--color-text-primary)]">
@@ -889,7 +889,7 @@ export function CommunityStory({
                 </p>
               ) : null}
               {meta ? (
-                <p className="text-[13px] text-[var(--color-text-tertiary)]">
+                <p className="text-[15px] text-[var(--color-text-tertiary)]">
                   {meta}
                 </p>
               ) : null}
@@ -950,17 +950,17 @@ export function ExperiencePreviewCard({
           }}
         >
           {categoryLabel ? (
-            <span className="mb-2 inline-flex w-fit rounded-md bg-[var(--color-action-primary)]/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-text-inverse)]">
+            <span className="mb-2 inline-flex w-fit rounded-md bg-[var(--color-action-primary)]/90 px-2 py-0.5 text-[14px] font-bold uppercase tracking-wide text-[var(--color-text-inverse)]">
               {categoryLabel}
             </span>
           ) : null}
           <h3 className="font-sans text-[18px] font-semibold leading-6 text-[var(--color-text-inverse)]">
             {title}
           </h3>
-          <p className="mt-1.5 text-[13px] text-[var(--color-text-inverse)]/90">
+          <p className="mt-1.5 text-[15px] text-[var(--color-text-inverse)]/90">
             {when}
           </p>
-          <p className="mt-0.5 text-[12px] text-[var(--color-text-inverse)]/75">
+          <p className="mt-0.5 text-[14px] text-[var(--color-text-inverse)]/75">
             {where}
             {peopleLabel ? ` · ${peopleLabel}` : ""}
           </p>
@@ -1019,7 +1019,7 @@ export function PlacePreviewCard({
         <span className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-[var(--color-text-inverse)]">
           {name}
         </span>
-        <span className="mt-1.5 text-[13px] text-[var(--color-text-inverse)]/85">
+        <span className="mt-1.5 text-[15px] text-[var(--color-text-inverse)]/85">
           Libre · {availability}
           {areaLabel ? ` · ${areaLabel}` : ""}
         </span>
@@ -1035,7 +1035,7 @@ export type HomeSectionProps = {
   onAction?: () => void;
   children: ReactNode;
   className?: string;
-  /** Serif atmospheric title — Home plaza moments only. */
+  /** Slightly larger section title — always sans on Home. */
   atmospheric?: boolean;
 };
 
@@ -1054,16 +1054,16 @@ export function HomeSection({
         <div className="min-w-0">
           <h2
             className={cn(
-              "leading-7 tracking-tight text-[var(--color-text-primary)]",
+              "font-sans font-semibold leading-7 tracking-tight text-[var(--color-text-primary)]",
               atmospheric
-                ? "font-display text-[22px] font-semibold sm:text-[24px]"
-                : "font-sans text-[20px] font-semibold sm:text-[21px]",
+                ? "text-[21px] sm:text-[22px]"
+                : "text-[20px] sm:text-[21px]",
             )}
           >
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+            <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-tertiary)]">
               {subtitle}
             </p>
           ) : null}
@@ -1072,7 +1072,7 @@ export function HomeSection({
           <button
             type="button"
             onClick={onAction}
-            className="shrink-0 text-[13px] font-semibold text-[var(--color-action-primary)] transition-opacity active:opacity-70"
+            className="shrink-0 text-[15px] font-semibold text-[var(--color-action-primary)] transition-opacity active:opacity-70"
           >
             {actionLabel} ›
           </button>
