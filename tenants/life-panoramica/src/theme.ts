@@ -30,8 +30,9 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
     bgMuted: "#ECE7E0",
     bgHeroScrim: "rgba(20, 28, 24, 0.42)",
     textPrimary: "#1A1F1C",
-    textSecondary: "#5A635D",
-    textTertiary: "#8A928C",
+    /** Darker secondary — readable for older residents on linen. */
+    textSecondary: "#3E4642",
+    textTertiary: "#5F6762",
     textInverse: "#FFFFFF",
     borderSubtle: "#E2DDD6",
     borderStrong: "#C9C2B8",
