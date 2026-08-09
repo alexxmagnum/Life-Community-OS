@@ -21,6 +21,7 @@ export * from "./official-conversations";
 export * from "./channels";
 export * from "./channel-access";
 export * from "./residency-demo";
+export * from "./property-home-context";
 export * from "./content";
 export * from "./experiences";
 export * from "./experience-conversations";

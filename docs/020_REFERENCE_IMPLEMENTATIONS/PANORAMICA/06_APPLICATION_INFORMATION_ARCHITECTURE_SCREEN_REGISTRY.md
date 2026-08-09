@@ -322,14 +322,16 @@ Cold/warm start brand moment → Welcome, Auth, or Home (`03`).
 
 | Field | Definition |
 |-------|------------|
-| **Purpose** | My presence, attention, stuff, settings; Manage gate |
-| **User goal** | Manage myself in this community |
-| **Roles** | Member+; Manage link if entitled |
+| **Purpose** | My presence, My Home (property context), attention, stuff, settings; Manage gate |
+| **User goal** | Understand who I am and my place in the territory |
+| **Roles** | Member+; Manage link if entitled (independent of Property ownership) |
 | **RBAC** | Edit own Community Profile; Manage entry Permission-gated |
-| **Entry** | Nav; profile deep links |
-| **Components** | `ProfileHeader`, `Avatar`, list rows, notification entry |
+| **My Home** | Property + PropertyPersonRelationship context (D.0.7.2.1) — not a property browser |
+| **Entry** | Nav; profile deep links; hamburger “Mi hogar” → `/me` |
+| **Components** | `ProfileHeader`, `Avatar`, My Home card, list rows, notification entry |
 | **Journeys** | §1 (edit), §5 (saves), §8 (requests), §10 (Manage) |
 | **Children** | NotificationsInbox, MyReservations, MyIncidents, Saves, Settings, Manage entry |
+| **Anti-goal** | Not Idealista / property marketplace / community admin via ownership |
 
 ---
 

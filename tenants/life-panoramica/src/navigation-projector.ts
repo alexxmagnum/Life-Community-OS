@@ -376,7 +376,7 @@ export function projectMemberNavigation(
       },
       {
         id: "p-residency",
-        label: "Mi residencia",
+        label: "Mi hogar",
         icon: "pin",
         href: "/me",
       },

@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import {
+  getMyHomeContext,
   profileShortcuts,
   residencyDemoNarratives,
 } from "@life-community-os/tenant-life-panoramica";
@@ -23,8 +25,8 @@ const roles: { id: DemoRole; label: string }[] = [
 
 /**
  * Mi perfil — personal navigation system (separate from Community Explorer).
- * Answers: "Who am I and what is my relationship with the community?"
- * Navigation IA only — no new domain models.
+ * Answers: "Who am I and what is my place in the territory?" (D.0.7.2.1 My Home).
+ * Property ownership is context — never community administration.
  */
 export function ProfileScreen() {
   const router = useRouter();
@@ -40,28 +42,37 @@ export function ProfileScreen() {
     setDemoPersonId,
   } = useTenant();
 
+  const home = useMemo(() => getMyHomeContext(demoPersonId), [demoPersonId]);
+  const primary = home.primary;
+
   const narrative =
-    residencyDemoNarratives[demoMember.narrativeKey].summary;
+    residencyDemoNarratives[demoMember.narrativeKey]?.summary ??
+    home.emptyMessage;
 
   const residencyTone =
-    demoMember.residencyStatusKind === "verified"
+    primary?.statusKind === "verified"
       ? "text-[var(--color-success)]"
-      : demoMember.residencyStatusKind === "pending"
+      : primary?.statusKind === "pending"
         ? "text-[var(--color-warning)]"
-        : "text-[var(--color-action-primary)]";
+        : demoMember.residencyStatusKind === "verified"
+          ? "text-[var(--color-success)]"
+          : demoMember.residencyStatusKind === "pending"
+            ? "text-[var(--color-warning)]"
+            : "text-[var(--color-action-primary)]";
 
   return (
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Mi perfil"
-        subtitle="Tu identidad y tu relación con la comunidad."
+        subtitle="Tu identidad y tu lugar en el territorio."
       />
 
       <ProfileCard
         name={demoMember.fullName}
         membershipLabel={demoMember.membershipLabel}
         areaLabel={
+          primary?.communityAreaLabel ||
           demoMember.areaLabel ||
           theme.identity?.defaultAreaName ||
           theme.logoText
@@ -84,11 +95,7 @@ export function ProfileScreen() {
           hint={demoMember.fullName}
           onClick={() => undefined}
         />
-        <ExploreLink
-          label="Idioma"
-          hint="Español"
-          onClick={() => undefined}
-        />
+        <ExploreLink label="Idioma" hint="Español" onClick={() => undefined} />
         <ExploreLink
           label="Preferencias de comunicación"
           hint="Cómo y cuándo te avisamos"
@@ -96,30 +103,98 @@ export function ProfileScreen() {
         />
       </section>
 
-      {/* Mi residencia */}
+      {/* Mi hogar — Property + PPR context (D.0.7.2.1) */}
       <section className="space-y-3">
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Mi residencia
+          Mi hogar
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu vínculo verificado con el territorio.
+          Tu vínculo con una propiedad del territorio — no es un catálogo
+          inmobiliario.
         </p>
-        <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-          <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-            Estado de verificación
-          </p>
-          <p className={`mt-1 text-[15px] font-semibold ${residencyTone}`}>
-            {demoMember.residencyStatusLabel}
-          </p>
-          <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-            {narrative}
-          </p>
-          {demoMember.areaLabel ? (
-            <p className="mt-3 text-[13px] font-medium text-[var(--color-text-primary)]">
-              Área · {demoMember.areaLabel}
+        {primary ? (
+          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+              {primary.relationshipLabel}
             </p>
-          ) : null}
-        </div>
+            <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+              {primary.headline}
+            </p>
+            {primary.property.name || primary.address.line1 ? (
+              <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                {primary.property.name ?? primary.address.line1}
+              </p>
+            ) : null}
+            <p className={`mt-3 text-[15px] font-semibold ${residencyTone}`}>
+              {primary.statusLabel}
+            </p>
+            <div className="mt-3 space-y-1 text-[13px] text-[var(--color-text-secondary)]">
+              {primary.communityAreaLabel ? (
+                <p>
+                  Área comunitaria ·{" "}
+                  <span className="font-medium text-[var(--color-text-primary)]">
+                    {primary.communityAreaLabel}
+                  </span>
+                </p>
+              ) : null}
+              <p>
+                Territorio ·{" "}
+                <span className="font-medium text-[var(--color-text-primary)]">
+                  {primary.territoryLabel}
+                </span>
+              </p>
+              {primary.grantsResidencyAccess ? (
+                <p className="text-[var(--color-success)]">
+                  Acceso de residencia activo en tu área.
+                </p>
+              ) : primary.statusKind === "pending" ? (
+                <p className="text-[var(--color-warning)]">
+                  La reclamación no concede acceso restringido hasta
+                  verificarse.
+                </p>
+              ) : null}
+            </div>
+            <p className="mt-3 text-[12px] leading-5 text-[var(--color-text-tertiary)]">
+              Ser propietario o residente no otorga administración de la
+              comunidad.
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+            <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+              Sin hogar vinculado
+            </p>
+            <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+              {home.emptyMessage}
+            </p>
+            <p className={`mt-3 text-[14px] font-semibold ${residencyTone}`}>
+              {demoMember.residencyStatusLabel}
+            </p>
+          </div>
+        )}
+        {home.homes.length > 1 ? (
+          <div className="space-y-2">
+            <p className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
+              Otros vínculos
+            </p>
+            {home.homes.slice(1).map((entry) => (
+              <div
+                key={entry.relationship.id}
+                className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3 shadow-[var(--shadow-elev-1)]"
+              >
+                <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                  {entry.headline}
+                </p>
+                <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
+                  {entry.relationshipLabel} · {entry.statusLabel}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <p className="text-[12px] leading-5 text-[var(--color-text-tertiary)]">
+          {narrative}
+        </p>
       </section>
 
       {/* Mis intereses */}
@@ -250,28 +325,24 @@ export function ProfileScreen() {
           hint="3 sin leer"
           onClick={() => undefined}
         />
-        <ExploreLink
-          label="Idioma"
-          hint="Español"
-          onClick={() => undefined}
-        />
+        <ExploreLink label="Idioma" hint="Español" onClick={() => undefined} />
       </section>
 
       {hasCapability(CAPABILITIES.manageEnter) ? (
         <ExploreLink
           label="Gestionar comunidad"
-          hint="Solo para quien administra"
+          hint="Solo para quien administra — independiente de la propiedad"
           onClick={() => undefined}
         />
       ) : null}
 
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
         <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-          Demo · persona / residencia
+          Demo · persona / Mi hogar
         </p>
         <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
-          Valida acceso a recursos y espacios privados. La reclamación pendiente
-          no otorga acceso.
+          Cambia de persona para ver distintos vínculos Property ↔ Person. La
+          reclamación pendiente no otorga acceso.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {demoMembers.map((m) => (
@@ -296,7 +367,7 @@ export function ProfileScreen() {
           Vista previa de rol (fundación)
         </p>
         <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
-          Simula el futuro RBAC — no es el sistema real.
+          Simula el futuro RBAC — independiente de propiedad / residencia.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {roles.map((r) => (

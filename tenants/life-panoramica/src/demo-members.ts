@@ -7,6 +7,7 @@ import {
   DEMO_PERSON_JOHN,
   DEMO_PERSON_LUCIA,
   DEMO_PERSON_MARTA,
+  DEMO_PERSON_OWNER_ALDEA,
 } from "./demo-ids";
 import { residencyDemoNarratives } from "./residency-demo";
 
@@ -63,6 +64,19 @@ export const demoMemberCatalog: DemoMemberProfile[] = [
     residencyStatusLabel: "Residencia verificada · Zona Verde",
     residencyStatusKind: "other_area",
     narrativeKey: "lucia",
+  },
+  {
+    personId: DEMO_PERSON_OWNER_ALDEA,
+    displayName: "Elena",
+    fullName: "Elena Owner",
+    membershipLabel: "Miembro · propietaria",
+    areaLabel: "Aldea Golf",
+    interests: ["Comunidad", "Golf"],
+    avatarUrl:
+      "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
+    residencyStatusLabel: "Propiedad verificada · Aldea Golf",
+    residencyStatusKind: "verified",
+    narrativeKey: "owner",
   },
 ];
 

@@ -253,4 +253,11 @@ export const residencyDemoNarratives = {
     communityAreaIds: () =>
       getVerifiedCommunityAreaIdsForPerson(DEMO_PERSON_LUCIA),
   },
+  owner: {
+    personId: DEMO_PERSON_OWNER_ALDEA,
+    summary:
+      "Active verified owner of Aldea Golf Unit 2A — property context only; ownership is not community administration.",
+    communityAreaIds: () =>
+      getVerifiedCommunityAreaIdsForPerson(DEMO_PERSON_OWNER_ALDEA),
+  },
 } as const;
