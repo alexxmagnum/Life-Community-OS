@@ -248,6 +248,11 @@ export function ProfileScreen() {
             onClick={() => router.push("/report?view=mine")}
           />
         ) : null}
+        <ExploreLink
+          label="Notificaciones"
+          hint="Lo que necesita tu atención"
+          onClick={() => router.push("/notifications")}
+        />
         {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
           <ExploreLink
             label="Lugares cerca"

@@ -331,6 +331,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"
+            notificationCount={0}
+            onNotifications={() => router.push("/notifications")}
+            notificationsLabel="Notificaciones"
             profileImageUrl={demoMember.avatarUrl}
             profileName={demoMember.displayName}
             profileLabel="Mi perfil"
