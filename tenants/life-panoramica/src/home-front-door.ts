@@ -230,10 +230,10 @@ export function buildForYouItems(
 
   if (member.residencyStatusKind === "pending") {
     items.push({
-      id: "foryou-welcome-verify",
+      id: "foryou-welcome-community",
       kind: "welcome",
-      title: "Completa tu verificación",
-      subtitle: "Así desbloqueas espacios privados de tu zona",
+      title: "Termina de activar tu perfil",
+      subtitle: "Así la comunidad puede mostrarte lo más útil para ti",
       href: "/me",
       score: 40,
     });
@@ -241,10 +241,28 @@ export function buildForYouItems(
     items.push({
       id: "foryou-welcome-neighbours",
       kind: "welcome",
-      title: "Conoce vecinos cerca de ti",
-      subtitle: `Empieza en ${member.areaLabel}`,
-      href: "/community?tab=canales",
+      title: "Descubre lo que ocurre cerca",
+      subtitle: `Planes y vecinos en ${member.areaLabel}`,
+      href: "/community",
       score: 34,
+    });
+  }
+
+  for (const notice of listOfficialContent().slice(0, 2)) {
+    const blob = textBlob(notice.title, notice.body, notice.areaLabel);
+    items.push({
+      id: `foryou-notice-${notice.id}`,
+      kind: "proposal",
+      title: notice.title,
+      subtitle: notice.areaLabel
+        ? `Aviso · ${notice.areaLabel}`
+        : "Aviso de la comunidad",
+      imageUrl: notice.imageUrl,
+      href: `/community/content/${notice.id}`,
+      score:
+        28 +
+        interestMatchScore(blob, tokens) +
+        areaMatchScore(blob, member.areaLabel),
     });
   }
 

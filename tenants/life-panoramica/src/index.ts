@@ -36,6 +36,7 @@ export * from "./groups";
 export * from "./group-conversations";
 export * from "./local-places";
 export * from "./community-pulse";
+export * from "./community-alerts";
 export * from "./home-feed";
 export * from "./home-search";
 export * from "./explorer-nav";

@@ -6,9 +6,10 @@ import {
   buildCommunityLifeItems,
   buildForYouItems,
   buildTodayMoments,
+  communityAlertKindLabel,
   experienceActivityLabel,
   formatExperienceWhen,
-  getTerritoryAccessContext,
+  listActiveCommunityAlerts,
   listCuratedNearYou,
   listUpcomingHomeExperiences,
   searchHomeCatalog,
@@ -26,7 +27,6 @@ import {
   LocalPlaceCard,
   TerritoryHero,
 } from "@life-community-os/ui";
-import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
@@ -55,7 +55,7 @@ function forYouCategoryLabel(
 ): string {
   if (kind === "experience") return "Para ti";
   if (kind === "welcome") return "Bienvenida";
-  if (kind === "proposal") return "Propuesta";
+  if (kind === "proposal") return "Aviso";
   return "Cerca";
 }
 
@@ -71,9 +71,9 @@ const LIVE_OPTS = {
 } as const;
 
 /**
- * Home = digital plaza of Panorámica.
+ * Home = digital plaza of the community.
  * "What is happening today in my community?"
- * Not a dashboard, marketplace, calendar, or admin panel.
+ * Property / residency / territory access stay internal for relevance — not Home UI.
  */
 export function HomeScreen() {
   const router = useRouter();
@@ -85,16 +85,11 @@ export function HomeScreen() {
     demoPersonId,
   } = useTenant();
 
-  /**
-   * First paint always uses HYDRATE_SAFE (no localStorage, stable ranks).
-   * After mount, upgrade to live ranking + session creates + timed greeting.
-   */
   const [live, setLive] = useState(false);
   const [greeting, setGreeting] = useState(
     () => `Hola ${demoMember.displayName}`,
   );
   const [searchQuery, setSearchQuery] = useState("");
-  const [forYouOpen, setForYouOpen] = useState(false);
 
   useEffect(() => {
     setLive(true);
@@ -106,21 +101,14 @@ export function HomeScreen() {
     [searchQuery],
   );
 
-  const territoryAccess = useMemo(
-    () => getTerritoryAccessContext(demoPersonId),
-    [demoPersonId],
-  );
-
   const territoryName = theme.identity?.territoryName ?? theme.logoText;
   const todayTitle = resolveCopyTemplate(
     theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
     territoryName,
   );
+  /** Soft place line — not residency/property product UI. */
   const areaLine =
-    territoryAccess.verifiedAreaLabels[0] ||
-    demoMember.areaLabel ||
-    theme.identity?.defaultAreaName ||
-    undefined;
+    demoMember.areaLabel || theme.identity?.defaultAreaName || undefined;
   const weatherLabel = theme.identity?.weatherLabel;
 
   const canLocal =
@@ -128,15 +116,26 @@ export function HomeScreen() {
 
   const frontDoorOpts = live ? LIVE_OPTS : HYDRATE_SAFE;
 
+  const alerts = useMemo(() => {
+    const nowMs = live
+      ? Date.now()
+      : Date.parse("2026-08-09T12:00:00.000Z");
+    return listActiveCommunityAlerts(nowMs);
+  }, [live]);
+
   const forYou = useMemo(
-    () => buildForYouItems(demoMember, { limit: 4, ...frontDoorOpts }),
+    () => buildForYouItems(demoMember, { limit: 5, ...frontDoorOpts }),
     [demoMember, frontDoorOpts],
   );
-  const forYouPeek = forYou[forYou.length - 1];
 
   const today = useMemo(
     () => buildTodayMoments({ limit: 5, ...frontDoorOpts }),
     [frontDoorOpts],
+  );
+
+  const communityLife = useMemo(
+    () => buildCommunityLifeItems({ limit: 4 }),
+    [],
   );
 
   const experiences = useMemo(() => {
@@ -152,12 +151,6 @@ export function HomeScreen() {
       preferredAreaLabels: territoryDiscoveryAreaLabels(demoPersonId),
     });
   }, [canLocal, demoMember, demoPersonId]);
-
-  // Catalog-only + fixed ids — identical on server and client (no frontDoorOpts).
-  const communityLife = useMemo(
-    () => buildCommunityLifeItems({ limit: 5 }),
-    [],
-  );
 
   return (
     <div className="space-y-6 overflow-x-hidden pb-8 md:space-y-8">
@@ -183,109 +176,71 @@ export function HomeScreen() {
       />
 
       <div className="space-y-8 pt-1 md:space-y-10">
-        <TerritoryBelongingCard access={territoryAccess} compact />
+        {/* PARA TI — first content block; alerts fixed at top */}
+        <HomeSection
+          title="Para ti"
+          subtitle="Lo relevante para tu día en la comunidad."
+        >
+          {alerts.length > 0 ? (
+            <div className="mb-3 space-y-2">
+              {alerts.map((alert) => (
+                <button
+                  key={alert.id}
+                  type="button"
+                  onClick={() =>
+                    router.push(alert.href ?? "/community?tab=actualidad")
+                  }
+                  className="w-full rounded-[var(--radius-lg)] border border-[var(--color-warning)]/40 bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface-elevated))] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
+                >
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-warning)]">
+                    {communityAlertKindLabel(alert.kind)}
+                  </p>
+                  <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+                    {alert.title}
+                  </p>
+                  <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                    {alert.body}
+                  </p>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
-        {forYou.length === 0 ? (
-          <HomeSection
-            title="Para ti"
-            subtitle="Lo que encaja con tu zona e intereses."
-          >
+          {forYou.length === 0 && alerts.length === 0 ? (
             <EmptyState
               title="Tu comunidad empieza aquí."
-              description="Cuando haya planes y sitios para ti, los verás en este apartado."
+              description="Cuando haya avisos, planes o recomendaciones para ti, los verás aquí."
             />
-          </HomeSection>
-        ) : (
-          <section className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
-            <button
-              type="button"
-              onClick={() => setForYouOpen((open) => !open)}
-              aria-expanded={forYouOpen}
-              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
-            >
-              <div className="min-w-0">
-                <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
-                  Para ti
-                </h2>
-                <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-                  Lo que encaja con tu zona e intereses.
-                </p>
-              </div>
-              <span
-                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
-                  forYouOpen ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M6 9l6 6 6-6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </button>
+          ) : (
+            <div className="space-y-3">
+              {forYou.map((item) => (
+                <CommunityActivityCard
+                  key={item.id}
+                  variant="compact"
+                  categoryLabel={forYouCategoryLabel(item.kind)}
+                  headline={item.title}
+                  context={item.subtitle}
+                  imageUrl={item.imageUrl}
+                  actionLabel="Abrir"
+                  onClick={() => router.push(item.href)}
+                  onAction={() => router.push(item.href)}
+                />
+              ))}
+            </div>
+          )}
+        </HomeSection>
 
-            {/* Collapsed peek — title + one context line only; full cards on expand */}
-            {!forYouOpen ? (
-              <div className="border-t border-[var(--color-border-subtle)]">
-                {forYouPeek ? (
-                  <button
-                    type="button"
-                    onClick={() => setForYouOpen(true)}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
-                        {forYouPeek.title}
-                      </span>
-                      {forYouPeek.subtitle ? (
-                        <span className="mt-0.5 block truncate text-[13px] leading-4 text-[var(--color-text-secondary)]">
-                          {forYouPeek.subtitle}
-                        </span>
-                      ) : null}
-                    </span>
-                    {forYou.length > 1 ? (
-                      <span className="shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
-                        +{forYou.length - 1}
-                      </span>
-                    ) : null}
-                  </button>
-                ) : null}
-              </div>
-            ) : (
-              <div className="space-y-3 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
-                {forYou.map((item) => (
-                  <CommunityActivityCard
-                    key={item.id}
-                    variant="compact"
-                    categoryLabel={forYouCategoryLabel(item.kind)}
-                    headline={item.title}
-                    context={item.subtitle}
-                    imageUrl={item.imageUrl}
-                    actionLabel="Abrir"
-                    onClick={() => router.push(item.href)}
-                    onAction={() => router.push(item.href)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
+        {/* HOY EN {territory} — community square */}
         <HomeSection
           title={todayTitle}
-          subtitle="Qué está pasando hoy en tu comunidad."
+          subtitle="Qué está pasando en tu lugar hoy."
           actionLabel="Ver comunidad"
           onAction={() => router.push("/community")}
         >
-          {today.length === 0 ? (
+          {today.length === 0 && communityLife.length === 0 ? (
             <EmptyState
               title="Hoy está tranquilo por aquí."
-              description="Cuando haya planes u avisos de hoy, aparecerán aquí."
+              description="Cuando haya planes, avisos o historias de vecinos, aparecerán aquí."
               actionLabel={
                 hasCapability(CAPABILITIES.experienceCreate)
                   ? "Crear experiencia"
@@ -321,20 +276,48 @@ export function HomeScreen() {
                   </div>
                 </button>
               ))}
+
+              {communityLife.map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]"
+                >
+                  {item.personName ? (
+                    <AuthorCard
+                      name={item.personName}
+                      avatarUrl={item.personAvatarUrl}
+                      meta={item.context}
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    className={`block w-full text-left ${
+                      item.personName ? "mt-2.5" : ""
+                    }`}
+                  >
+                    <p className="text-[15px] font-semibold leading-6 text-[var(--color-text-primary)]">
+                      {item.narrative}
+                    </p>
+                  </button>
+                </article>
+              ))}
             </div>
           )}
         </HomeSection>
 
+        {/* QUÉ PUEDES HACER HOY — experience discovery */}
         {isFeatureEnabled("experiences") ? (
           <HomeSection
-            title="Próximas experiencias"
-            subtitle="Momentos creados por vecinos."
+            title="Qué puedes hacer hoy"
+            subtitle="Golf, deporte, planes y encuentros en la comunidad."
             actionLabel="Ver todas"
             onAction={() => router.push("/experiences")}
           >
             {experiences.length === 0 ? (
               <EmptyState
-                title="No hay experiencias todavía. Sé la primera persona en crear una."
+                title="Todavía no hay planes abiertos."
+                description="Sé la primera persona en proponer algo para hoy."
                 actionLabel={
                   hasCapability(CAPABILITIES.experienceCreate)
                     ? "Crear experiencia"
@@ -382,10 +365,11 @@ export function HomeScreen() {
           </HomeSection>
         ) : null}
 
+        {/* CERCA DE TI — discovery, not directory */}
         {canLocal ? (
           <HomeSection
             title="Cerca de ti"
-            subtitle="Sitios útiles alrededor de tu territorio."
+            subtitle="Sitios y servicios útiles alrededor — descubrimiento, no un directorio."
             actionLabel="Explorar"
             onAction={() => router.push("/near/restaurants")}
           >
@@ -425,48 +409,6 @@ export function HomeScreen() {
             )}
           </HomeSection>
         ) : null}
-
-        <HomeSection
-          title="Vida de comunidad"
-          subtitle="Vecinos que crean vida — no es una red social."
-          actionLabel="Ver más"
-          onAction={() => router.push("/community")}
-        >
-          {communityLife.length === 0 ? (
-            <EmptyState
-              title="Tu comunidad empieza aquí."
-              description="Cuando alguien cree una experiencia o una propuesta, lo verás aquí."
-            />
-          ) : (
-            <div className="space-y-3">
-              {communityLife.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]"
-                >
-                  {item.personName ? (
-                    <AuthorCard
-                      name={item.personName}
-                      avatarUrl={item.personAvatarUrl}
-                      meta={item.context}
-                    />
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={() => router.push(item.href)}
-                    className={`block w-full text-left ${
-                      item.personName ? "mt-2.5" : ""
-                    }`}
-                  >
-                    <p className="text-[15px] font-semibold leading-6 text-[var(--color-text-primary)]">
-                      {item.narrative}
-                    </p>
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </HomeSection>
       </div>
     </div>
   );
