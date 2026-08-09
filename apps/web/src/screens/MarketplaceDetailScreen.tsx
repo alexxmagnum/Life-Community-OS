@@ -56,7 +56,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
         <FlowScreenHeader
           title="Mercado"
           onBack={() => router.push("/marketplace")}
-          onExit={() => router.push("/marketplace")}
+          onExit={() => router.push("/services")}
         />
         <EmptyState title="Sin acceso" />
       </MobileScreen>
@@ -69,7 +69,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
         <FlowScreenHeader
           title="Anuncio"
           onBack={() => router.push("/marketplace")}
-          onExit={() => router.push("/marketplace")}
+          onExit={() => router.push("/services")}
         />
       </MobileScreen>
     );
@@ -81,7 +81,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
         <FlowScreenHeader
           title="Anuncio"
           onBack={() => router.push("/marketplace")}
-          onExit={() => router.push("/marketplace")}
+          onExit={() => router.push("/services")}
         />
         <EmptyState
           title="Anuncio no encontrado"
