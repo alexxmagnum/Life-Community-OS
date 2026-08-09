@@ -9,6 +9,7 @@ import {
   listNearYou,
   listNeighbourRecommendations,
   listTrustedHelp,
+  rankLocalEntitiesForTerritory,
   spotsLeft,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -28,12 +29,11 @@ import { useExperienceParticipation } from "@/providers/ExperienceParticipationP
 
 /**
  * Descubrir = explore life around you.
- * Local life ecosystem via platform Local Entity / Discovery.
- * No entity-module menus — situations and trust signals only.
+ * Territory Access ranks local relevance (D.0.7.2.3).
  */
 export function DiscoverScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const [query, setQuery] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
@@ -47,8 +47,8 @@ export function DiscoverScreen() {
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
-    return listNearYou(query);
-  }, [canLocal, query]);
+    return rankLocalEntitiesForTerritory(listNearYou(query), demoPersonId);
+  }, [canLocal, query, demoPersonId]);
 
   const neighbourTips = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("recommendations")) return [];
@@ -85,8 +85,11 @@ export function DiscoverScreen() {
 
   const trustedHelp = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("services")) return [];
-    return listTrustedHelp(query);
-  }, [canLocal, isFeatureEnabled, query]);
+    return rankLocalEntitiesForTerritory(
+      listTrustedHelp(query),
+      demoPersonId,
+    );
+  }, [canLocal, isFeatureEnabled, query, demoPersonId]);
 
   const hasPlans = experiences.length > 0 || groups.length > 0;
   const hasAnything =

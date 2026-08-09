@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   getNearCategoryBySlug,
   listLocalEntitiesForKinds,
+  rankLocalEntitiesForTerritory,
+  territoryDiscoveryAreaLabels,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
@@ -17,11 +19,11 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
  * Cerca de ti hub — "What exists around me?"
- * LocalEntity discovery only. Not Servicios (needs solved).
+ * Territory Access ranks relevance (D.0.7.2.3). LocalEntity only.
  */
 export function NearbyCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const [query, setQuery] = useState("");
 
   const hub = useMemo(() => getNearCategoryBySlug(category), [category]);
@@ -30,10 +32,18 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
     (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) &&
     hasCapability(CAPABILITIES.localView);
 
+  const areaLabels = useMemo(
+    () => territoryDiscoveryAreaLabels(demoPersonId),
+    [demoPersonId],
+  );
+
   const entities = useMemo(() => {
     if (!hub || !canLocal) return [];
-    return listLocalEntitiesForKinds(hub.entityKinds, query);
-  }, [hub, canLocal, query]);
+    return rankLocalEntitiesForTerritory(
+      listLocalEntitiesForKinds(hub.entityKinds, query),
+      demoPersonId,
+    );
+  }, [hub, canLocal, query, demoPersonId]);
 
   if (!hub) {
     return (
@@ -78,7 +88,9 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
           {hub.problem}
         </p>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          {hub.description}
+          {areaLabels.length > 0
+            ? `Priorizado cerca de ${areaLabels.join(", ")} — relevancia, no un directorio.`
+            : hub.description}
         </p>
       </header>
 

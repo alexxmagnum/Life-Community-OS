@@ -11,6 +11,7 @@ import {
   listRecommendationsForHub,
   listWorkPostsForHub,
   marketplaceKindLabel,
+  rankLocalEntitiesForTerritory,
   workPostTypeLabel,
   type WorkPostListing,
 } from "@life-community-os/tenant-life-panoramica";
@@ -29,12 +30,17 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
  * Servicios hub — "I need something solved."
- * Not a directory; not Cerca de ti.
+ * Territory ranks LocalEntity relevance (D.0.7.2.3) — not a directory.
  */
 export function ServicesCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
-  const { theme, isFeatureEnabled, isModuleEnabled, hasCapability } =
-    useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    demoPersonId,
+  } = useTenant();
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
   const [workPosts, setWorkPosts] = useState<WorkPostListing[]>([]);
@@ -57,8 +63,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const entities = useMemo(() => {
     if (!hub || hub.content.kind !== "local-entities") return [];
     if (!canLocal) return [];
-    return listLocalEntitiesForKinds(hub.content.entityKinds, query);
-  }, [hub, canLocal, query]);
+    return rankLocalEntitiesForTerritory(
+      listLocalEntitiesForKinds(hub.content.entityKinds, query),
+      demoPersonId,
+    );
+  }, [hub, canLocal, query, demoPersonId]);
 
   const neighbourHelp = useMemo(() => {
     if (!hub || hub.content.kind !== "neighbour-help") return [];
