@@ -46,9 +46,9 @@ export function ExperienceRegistrationScreen({
   if (!experience) {
     return (
       <EmptyState
-        title="Actividad no encontrada"
+        title="Experiencia no encontrada"
         actionLabel="Ver experiencias"
-        onAction={() => router.push("/discover")}
+        onAction={() => router.push("/experiences")}
       />
     );
   }
@@ -76,11 +76,11 @@ export function ExperienceRegistrationScreen({
       <EmptyState
         title={
           viewer === "cancelled"
-            ? "Esta actividad se ha cancelado"
-            : "Esta actividad ha finalizado"
+            ? "Esta experiencia se ha cancelado"
+            : "Esta experiencia ha finalizado"
         }
-        actionLabel="Buscar otra cosa"
-        onAction={() => router.push("/discover")}
+        actionLabel="Ver experiencias"
+        onAction={() => router.push("/experiences")}
       />
     );
   }
@@ -138,7 +138,7 @@ export function ExperienceRegistrationScreen({
           />
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
             {confirmed
-              ? "Lo hemos añadido a tu agenda. Lo verás en Mis experiencias."
+              ? "Lo hemos añadido a tu agenda."
               : `Participa en “${experience.title}” con vecinos de ${experience.areaLabel}.`}
           </p>
         </div>

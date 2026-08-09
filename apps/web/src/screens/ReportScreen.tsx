@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   MobileScreen,
   FlowScreenHeader,
 } from "@life-community-os/ui";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { LoadingState } from "@life-community-os/ui";
+import { useTenant } from "@/providers/TenantProvider";
 
 const REPORT_STORAGE_KEY = "lcos:last-incident-report";
 
@@ -16,19 +19,122 @@ type StoredReport = {
   submittedAt: string;
   trackingCode: string;
   photoName?: string;
+  status?: "received" | "in_progress" | "closed";
 };
+
+function readStoredReport(): StoredReport | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(REPORT_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredReport;
+  } catch {
+    return null;
+  }
+}
+
+function statusLabel(status: StoredReport["status"]): string {
+  switch (status) {
+    case "in_progress":
+      return "En revisión";
+    case "closed":
+      return "Cerrado";
+    default:
+      return "Recibido";
+  }
+}
+
+function ReportConfirmation({
+  report,
+  onBack,
+  onExit,
+  onCommunity,
+  onNew,
+}: {
+  report: StoredReport;
+  onBack: () => void;
+  onExit: () => void;
+  onCommunity: () => void;
+  onNew: () => void;
+}) {
+  return (
+    <MobileScreen>
+      <FlowScreenHeader
+        title="Tu aviso"
+        subtitle="Qué enviaste y cómo seguirlo."
+        onBack={onBack}
+        onExit={onExit}
+      />
+      <div className="space-y-3 rounded-[16px] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+        <div>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Código de seguimiento
+          </p>
+          <p className="mt-1 font-mono text-[18px] font-semibold text-[var(--color-action-primary)]">
+            {report.trackingCode}
+          </p>
+          <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+            Estado · {statusLabel(report.status ?? "received")}
+          </p>
+        </div>
+        <div className="border-t border-[var(--color-border-subtle)] pt-3">
+          <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+            Resumen
+          </p>
+          <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
+            <span className="font-semibold text-[var(--color-text-primary)]">
+              Dónde ·{" "}
+            </span>
+            {report.where}
+          </p>
+          <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-secondary)]">
+            {report.description}
+          </p>
+          {report.photoName ? (
+            <p className="mt-2 text-[13px] text-[var(--color-text-tertiary)]">
+              Foto adjunta · {report.photoName}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <Button fullWidth type="button" onClick={onExit}>
+        Volver al inicio
+      </Button>
+      <Button fullWidth variant="ghost" type="button" onClick={onCommunity}>
+        Ir a Comunidad
+      </Button>
+      <Button fullWidth variant="secondary" type="button" onClick={onNew}>
+        Enviar otro aviso
+      </Button>
+    </MobileScreen>
+  );
+}
 
 /**
  * Incident report — create → submit → confirmation → tracking.
- * Demo persistence in sessionStorage until backend incidents exist.
  */
-export function ReportScreen() {
+function ReportScreenBody() {
   const router = useRouter();
-  const [where, setWhere] = useState("Zona norte");
+  const searchParams = useSearchParams();
+  const { demoMember } = useTenant();
+  const viewLast = searchParams.get("view") === "last";
+
+  const [where, setWhere] = useState(
+    demoMember.areaLabel || "Zona norte",
+  );
   const [description, setDescription] = useState("");
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<StoredReport | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const stored = readStoredReport();
+    if (viewLast && stored) {
+      setSubmitted(stored);
+    }
+    setHydrated(true);
+  }, [viewLast]);
 
   const goBack = () => router.back();
   const exitFlow = () => router.push("/");
@@ -46,71 +152,45 @@ export function ReportScreen() {
       submittedAt: new Date().toISOString(),
       trackingCode,
       photoName: photoName ?? undefined,
+      status: "received",
     };
     try {
       sessionStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(payload));
     } catch {
-      /* session may be unavailable — still confirm to the user */
+      /* session may be unavailable — still confirm */
     }
     setError(null);
     setSubmitted(payload);
   };
 
+  if (!hydrated) {
+    return <LoadingState label="Cargando…" />;
+  }
+
   if (submitted) {
     return (
-      <MobileScreen>
-        <FlowScreenHeader
-          title="Aviso enviado"
-          subtitle="Queda registrado. Puedes seguir el código de seguimiento."
-          onBack={exitFlow}
-          onExit={exitFlow}
-        />
-        <div className="space-y-3 rounded-[16px] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-          <div>
-            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              Seguimiento
-            </p>
-            <p className="mt-1 font-mono text-[18px] font-semibold text-[var(--color-action-primary)]">
-              {submitted.trackingCode}
-            </p>
-            <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
-              Estado · Recibido
-            </p>
-          </div>
-          <div className="border-t border-[var(--color-border-subtle)] pt-3">
-            <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-              Resumen
-            </p>
-            <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-              <span className="font-semibold text-[var(--color-text-primary)]">
-                Dónde ·{" "}
-              </span>
-              {submitted.where}
-            </p>
-            <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-secondary)]">
-              {submitted.description}
-            </p>
-            {submitted.photoName ? (
-              <p className="mt-2 text-[13px] text-[var(--color-text-tertiary)]">
-                Foto adjunta · {submitted.photoName}
-              </p>
-            ) : null}
-          </div>
-        </div>
-        <Button fullWidth type="button" onClick={exitFlow}>
-          Volver al inicio
-        </Button>
-        <Button
-          fullWidth
-          variant="ghost"
-          type="button"
-          onClick={() => router.push("/community")}
-        >
-          Ir a Comunidad
-        </Button>
-      </MobileScreen>
+      <ReportConfirmation
+        report={submitted}
+        onBack={() => router.push("/me")}
+        onExit={exitFlow}
+        onCommunity={() => router.push("/community")}
+        onNew={() => {
+          setSubmitted(null);
+          setDescription("");
+          setPhotoName(null);
+          router.replace("/report");
+        }}
+      />
     );
   }
+
+  const zones = Array.from(
+    new Set(
+      [demoMember.areaLabel, "Zona norte", "Centro", "Los pinos"].filter(
+        Boolean,
+      ) as string[],
+    ),
+  );
 
   return (
     <MobileScreen>
@@ -126,9 +206,7 @@ export function ReportScreen() {
           {photoName ? "Foto lista" : "Añadir foto (opcional)"}
         </span>
         <span className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
-          {photoName
-            ? photoName
-            : "Elige una imagen de tu dispositivo"}
+          {photoName ? photoName : "Elige una imagen de tu dispositivo"}
         </span>
         <input
           type="file"
@@ -149,9 +227,9 @@ export function ReportScreen() {
           onChange={(e) => setWhere(e.target.value)}
           className="min-h-[48px] w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] px-3 text-[16px]"
         >
-          <option>Zona norte</option>
-          <option>Centro</option>
-          <option>Los pinos</option>
+          {zones.map((zone) => (
+            <option key={zone}>{zone}</option>
+          ))}
         </select>
       </label>
       <label className="block">
@@ -176,5 +254,13 @@ export function ReportScreen() {
         Enviar aviso
       </Button>
     </MobileScreen>
+  );
+}
+
+export function ReportScreen() {
+  return (
+    <Suspense fallback={<LoadingState label="Cargando…" />}>
+      <ReportScreenBody />
+    </Suspense>
   );
 }

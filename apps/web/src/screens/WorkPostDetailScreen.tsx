@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   expressWorkInterest,
@@ -29,7 +28,6 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     hasCapability,
     demoMember,
   } = useTenant();
-  const [contactNote, setContactNote] = useState<string | null>(null);
 
   const workEnabled =
     isModuleEnabled("services") &&
@@ -101,7 +99,6 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
       workPostId: workPost.id,
       personId: demoMember.personId,
     });
-    setContactNote("Interés registrado. Abriendo conversación…");
     router.push(`/services/work/${workPost.id}/conversation`);
   };
 
@@ -122,9 +119,21 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
           <span className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
             {workPost.categoryLabel}
           </span>
-          <span className="rounded-full bg-[var(--color-success-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-success)]">
-            Abierto
-          </span>
+          {workPost.status !== "open" ? (
+            <span
+              className={
+                workPost.status === "matched"
+                  ? "rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-action-primary)]"
+                  : "rounded-full bg-[var(--color-surface-muted)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-tertiary)]"
+              }
+            >
+              {workPost.status === "matched"
+                ? "En conversación"
+                : workPost.status === "closed"
+                  ? "Cerrado"
+                  : "Retirado"}
+            </span>
+          ) : null}
         </div>
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
           {workPost.description}
@@ -153,7 +162,7 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
         </div>
       </section>
 
-      {showContact ? (
+      {showContact && workPost.status !== "closed" && workPost.status !== "withdrawn" ? (
         <button
           type="button"
           onClick={openConversation}
@@ -161,7 +170,7 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
         >
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold text-white">
-              Contactar
+              {workPost.status === "matched" ? "Abrir conversación" : "Contactar"}
             </span>
             <span className="mt-0.5 block text-[13px] text-white/85">
               Habla con quien publicó el anuncio
@@ -171,17 +180,15 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
             ›
           </span>
         </button>
+      ) : showContact ? (
+        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] text-[var(--color-text-secondary)]">
+          Este anuncio ya no admite nuevos contactos.
+        </p>
       ) : (
         <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] text-[var(--color-text-secondary)]">
           La conversación no está disponible con tu cuenta actual.
         </p>
       )}
-
-      {contactNote ? (
-        <p className="text-[12px] font-medium text-[var(--color-success)]" role="status">
-          {contactNote}
-        </p>
-      ) : null}
     </MobileScreen>
   );
 }

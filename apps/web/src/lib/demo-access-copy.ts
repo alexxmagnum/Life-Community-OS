@@ -1,5 +1,6 @@
 /**
  * Spanish UI copy for demo residency / resource access feedback.
+ * Resident language — no architecture jargon.
  */
 
 export function resourceAccessHint(input: {
@@ -9,25 +10,25 @@ export function resourceAccessHint(input: {
 }): { hint: string; tone: "ok" | "blocked" | "info" } {
   if (input.canReserve) {
     return {
-      hint: "Puedes reservar · residencia verificada en el área",
+      hint: "Puedes reservar · verificado en tu zona",
       tone: "ok",
     };
   }
   if (input.reasons.includes("community_area_not_affiliated")) {
     if (input.canViewPublicInfo) {
       return {
-        hint: "Visible · no puedes reservar (otra zona o sin verificación)",
+        hint: "Visible · reserva disponible tras verificar en esta zona",
         tone: "blocked",
       };
     }
     return {
-      hint: "Sin acceso a este recurso",
+      hint: "No disponible para ti ahora",
       tone: "blocked",
     };
   }
   if (input.reasons.includes("missing_reserve_permission")) {
     return {
-      hint: "Sin permiso de reserva en tu rol",
+      hint: "La reserva no está disponible para tu cuenta",
       tone: "blocked",
     };
   }
@@ -57,10 +58,10 @@ export function channelAccessLabel(input: {
     };
   }
   if (input.allowed) {
-    return { badge: "Privado · acceso verificado", tone: "ok", locked: false };
+    return { badge: "Privado · disponible para ti", tone: "ok", locked: false };
   }
   return {
-    badge: "Privado · requiere residencia verificada",
+    badge: "Privado · verifica tu zona",
     tone: "blocked",
     locked: true,
   };

@@ -106,7 +106,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <FlowScreenHeader
           title="Servicios"
           onBack={() => router.push("/services")}
-          onExit={() => router.push("/services")}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="Servicio no encontrado"
@@ -124,7 +124,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <FlowScreenHeader
           title="Servicios"
           onBack={() => router.push("/services")}
-          onExit={() => router.push("/services")}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="No disponible"
@@ -317,6 +317,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               author={tip.authorName}
               relatedLabel={tip.relatedLabel}
               imageUrl={tip.imageUrl}
+              onClick={
+                tip.relatedEntityId
+                  ? () => router.push(`/near/place/${tip.relatedEntityId}`)
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -332,12 +337,8 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         title={hub.label}
         subtitle={hub.problem}
         onBack={() => router.push("/services")}
-        onExit={() => router.push("/services")}
+        onExit={() => router.push("/")}
       />
-
-      <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-        {hub.description}
-      </p>
 
       {isWorkHub ? (
         <div className="grid grid-cols-2 gap-3">

@@ -78,7 +78,7 @@ export function ResourceAvailabilityScreen({
     return (
       <EmptyState
         title="Reserva no disponible"
-        description={`${demoMember.displayName}: necesitas residencia verificada en el área de este recurso. Puedes ver la información pública, pero no reservar.`}
+        description="Para reservar este espacio necesitas verificar tu zona. Puedes ver la información pública, pero no reservar todavía."
         actionLabel="Volver al lugar"
         onAction={() => router.push(`/resources/${resource.id}`)}
       />

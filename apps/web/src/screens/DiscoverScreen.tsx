@@ -104,7 +104,7 @@ export function DiscoverScreen() {
         title="Descubrir"
         subtitle="Explora la vida a tu alrededor."
         onBack={() => router.push("/")}
-        onExit={() => router.push("/")}
+        onExit={() => router.push("/community")}
       />
 
       <ScreenSearch
@@ -164,6 +164,11 @@ export function DiscoverScreen() {
                     author={tip.authorName}
                     relatedLabel={tip.relatedLabel}
                     imageUrl={tip.imageUrl}
+                    onClick={
+                      tip.relatedEntityId
+                        ? () => router.push(`/near/place/${tip.relatedEntityId}`)
+                        : undefined
+                    }
                   />
                 ))}
               </div>

@@ -98,7 +98,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
       <FlowScreenHeader
         title={marketplaceKindLabel(listing.kind)}
         onBack={() => router.push("/marketplace")}
-        onExit={() => router.push("/marketplace")}
+        onExit={() => router.push("/services")}
       />
 
       <ZoomableImage

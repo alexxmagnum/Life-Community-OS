@@ -192,7 +192,7 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
         title={title}
         subtitle={groupName || "Grupo"}
         onBack={() => router.push(`/community/groups/${groupId}`)}
-        onExit={() => router.push("/community")}
+        onExit={() => router.push("/")}
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">

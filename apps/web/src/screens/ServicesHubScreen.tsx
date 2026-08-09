@@ -74,7 +74,7 @@ export function ServicesHubScreen() {
     if (isModuleEnabled("reservations") && isFeatureEnabled("resources")) {
       const reserveHint =
         territoryAccess.eligibleResourceCount > 0
-          ? `${territoryAccess.eligibleResourceCount} elegibles con tu residencia.`
+          ? `${territoryAccess.eligibleResourceCount} espacios que puedes reservar.`
           : "Instalaciones y espacios compartidos de la comunidad.";
       cards.push({
         id: "community-services",

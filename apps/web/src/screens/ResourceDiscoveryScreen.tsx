@@ -67,7 +67,7 @@ export function ResourceDiscoveryScreen() {
         title="Espacios compartidos"
         subtitle="Pistas, salas y zonas comunes de la comunidad."
         onBack={() => router.push("/services")}
-        onExit={() => router.push("/services")}
+        onExit={() => router.push("/")}
       />
 
       <ScreenSearch

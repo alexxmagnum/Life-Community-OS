@@ -120,7 +120,7 @@ function resolveBelonging(
     return {
       headline: `Perteneces a ${areas}`,
       summary:
-        "Tu residencia verificada abre información y espacios de tu zona — la propiedad no administra la comunidad.",
+        "Con tu zona verificada puedes ver información y reservar espacios cercanos.",
     };
   }
 
@@ -129,7 +129,7 @@ function resolveBelonging(
     return {
       headline: "Tu lugar está pendiente de verificación",
       summary:
-        "Ya tienes un vínculo con una propiedad, pero el acceso de zona se activa solo tras verificar la residencia.",
+        "Ya tienes un hogar vinculado. Cuando se verifique, se abrirán los espacios de tu zona.",
     };
   }
 
@@ -137,14 +137,14 @@ function resolveBelonging(
     return {
       headline: primary.headline,
       summary:
-        "Ves el contexto de tu propiedad. El acceso comunitario de área requiere residencia verificada activa.",
+        "Ves tu hogar en la comunidad. Verifica tu zona para reservar espacios cercanos.",
     };
   }
 
   return {
-    headline: "Eres parte del territorio",
+    headline: "Formas parte de la comunidad",
     summary:
-      "La membresía te une a la comunidad. Vincula y verifica tu hogar para desbloquear espacios de tu zona.",
+      "La membresía te une a tus vecinos. Vincula tu hogar para desbloquear espacios de tu zona.",
   };
 }
 
@@ -173,7 +173,7 @@ function buildInsights(input: {
       id: "area-belonging",
       tone: "ok",
       title: `Tu zona · ${input.verifiedAreaLabels.join(", ")}`,
-      body: "Información y espacios elegibles según tu residencia verificada.",
+      body: "Información y espacios disponibles para ti en tu zona.",
       href: "/community",
     });
   }
@@ -183,7 +183,7 @@ function buildInsights(input: {
       id: "private-channels",
       tone: "ok",
       title: "Canales de tu zona",
-      body: `${input.accessiblePrivateChannelCount} canal(es) privado(s) disponibles con tu residencia.`,
+      body: `${input.accessiblePrivateChannelCount} canal(es) privado(s) disponibles para ti.`,
       href: "/community?tab=canales",
     });
   } else if (input.lockedPrivateChannelCount > 0) {
@@ -191,7 +191,7 @@ function buildInsights(input: {
       id: "locked-channels",
       tone: "info",
       title: "Canales de zona",
-      body: "Hay espacios privados que requieren residencia verificada en su área.",
+      body: "Hay espacios privados que se abren al verificar tu zona.",
       href: "/community?tab=canales",
     });
   }
@@ -201,7 +201,7 @@ function buildInsights(input: {
       id: "eligible-resources",
       tone: "ok",
       title: "Espacios que puedes reservar",
-      body: `${input.eligibleResourceCount} instalación(es) elegible(s) con tu residencia y permisos.`,
+      body: `${input.eligibleResourceCount} espacio(s) disponible(s) para ti.`,
       href: "/resources",
     });
   } else if (input.hasVerifiedResidency) {
@@ -209,7 +209,7 @@ function buildInsights(input: {
       id: "resources-other-area",
       tone: "info",
       title: "Reservas por zona",
-      body: "Algunas instalaciones pertenecen a otras áreas — puedes verlas, pero no siempre reservarlas.",
+      body: "Algunos espacios son de otras zonas — puedes verlos, pero no siempre reservarlos.",
       href: "/resources",
     });
   }

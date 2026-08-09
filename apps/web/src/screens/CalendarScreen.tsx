@@ -81,7 +81,7 @@ export function CalendarScreen() {
         title="Mi agenda"
         subtitle="Lo que tienes apuntado en la comunidad."
         onBack={() => router.push("/")}
-        onExit={() => router.push("/")}
+        onExit={() => router.push("/me")}
       />
 
       <button

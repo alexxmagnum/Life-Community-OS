@@ -76,7 +76,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       <FlowScreenHeader
         title={resource.name}
         onBack={() => router.push("/resources")}
-        onExit={() => router.push("/resources")}
+        onExit={() => router.push("/services")}
       />
 
       <ResourceHero
@@ -143,7 +143,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
         ) : (
           <Button fullWidth disabled>
             {access.canViewPublicInfo
-              ? "Reserva bloqueada · residencia"
+              ? "Necesitas verificar tu zona"
               : "Reserva no disponible"}
           </Button>
         )}

@@ -131,7 +131,7 @@ export function MarketplaceComposerScreen() {
         title="Publicar anuncio"
         subtitle="Entre vecinos · sin tienda"
         onBack={() => router.push("/marketplace")}
-        onExit={() => router.push("/marketplace")}
+        onExit={() => router.push("/services")}
       />
 
       <div className="flex flex-wrap gap-2">

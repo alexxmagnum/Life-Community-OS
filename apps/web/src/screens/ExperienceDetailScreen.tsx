@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
@@ -35,6 +36,7 @@ export function ExperienceDetailScreen({
     hasCapability,
   } = useTenant();
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
@@ -89,12 +91,36 @@ export function ExperienceDetailScreen({
     router.push(`/experiences/${experience.id}/join`);
   };
 
+  const onShare = async () => {
+    const shareData = {
+      title: experience.title,
+      text: experience.description,
+      url: window.location.href,
+    };
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        /* cancelled — try clipboard */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setShareNote("Enlace copiado");
+      window.setTimeout(() => setShareNote(null), 2000);
+    } catch {
+      setShareNote("No se pudo compartir");
+      window.setTimeout(() => setShareNote(null), 2000);
+    }
+  };
+
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={experience.title}
         onBack={() => router.push("/experiences")}
-        onExit={() => router.push("/experiences")}
+        onExit={() => router.push("/")}
       />
 
       <ExperienceHero
@@ -157,11 +183,18 @@ export function ExperienceDetailScreen({
         }
       />
 
-      {/* Clears sticky action bar so neighbours stay fully visible */}
       <div className="h-[132px] shrink-0" aria-hidden />
 
       <div className="fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 px-2.5 md:left-1/2 md:max-w-[960px] md:-translate-x-1/2 md:px-8">
         <div className="space-y-3 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-app)]/95 p-3 shadow-[var(--shadow-elev-2)] backdrop-blur">
+          {shareNote ? (
+            <p
+              className="text-center text-[13px] font-medium text-[var(--color-success)]"
+              role="status"
+            >
+              {shareNote}
+            </p>
+          ) : null}
           <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
           <div className="flex gap-3">
             <Button
@@ -177,26 +210,7 @@ export function ExperienceDetailScreen({
               variant="ghost"
               className="flex-1"
               type="button"
-              onClick={async () => {
-                const shareData = {
-                  title: experience.title,
-                  text: experience.description,
-                  url: window.location.href,
-                };
-                if (typeof navigator !== "undefined" && navigator.share) {
-                  try {
-                    await navigator.share(shareData);
-                    return;
-                  } catch {
-                    /* user cancelled or unsupported — fall through */
-                  }
-                }
-                try {
-                  await navigator.clipboard.writeText(window.location.href);
-                } catch {
-                  /* clipboard unavailable */
-                }
-              }}
+              onClick={onShare}
             >
               Compartir
             </Button>

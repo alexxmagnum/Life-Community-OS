@@ -77,7 +77,7 @@ export const marketplaceCatalog: MarketplaceListing[] = [
     kind: "give",
     title: "Bicicleta infantil",
     description:
-      "La dejamos gratis a una familia del territorio. Ruedines incluidos.",
+      "La dejamos gratis a una familia de la comunidad. Ruedines incluidos.",
     areaLabel: "Los pinos",
     authorName: "Jordi",
     authorPersonId: DEMO_PERSON_JORDI,

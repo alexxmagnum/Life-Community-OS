@@ -230,12 +230,18 @@ export function NeighbourTipCard({
   onClick,
   className,
 }: NeighbourTipCardProps) {
+  const interactive = typeof onClick === "function";
+  const Root = interactive ? "button" : "div";
+  const rootProps = interactive
+    ? { type: "button" as const, onClick }
+    : { role: "group" as const };
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Root
+      {...rootProps}
       className={cn(
         "flex w-full gap-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-4 text-left shadow-[var(--shadow-elev-1)]",
+        interactive ? "transition-transform active:scale-[0.99]" : undefined,
         className,
       )}
     >
@@ -256,7 +262,7 @@ export function NeighbourTipCard({
           {relatedLabel ? ` · ${relatedLabel}` : ""}
         </span>
       </span>
-    </button>
+    </Root>
   );
 }
 

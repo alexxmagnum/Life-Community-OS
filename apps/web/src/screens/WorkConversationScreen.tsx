@@ -251,23 +251,31 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
                     {message.body}
                   </p>
                 ) : null}
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
                   {DEMO_WORK_CONVERSATION_REACTIONS.map((reaction) => {
                     const count = message.reactionSummary?.[reaction] ?? 0;
+                    if (count <= 0) {
+                      return (
+                        <button
+                          key={reaction}
+                          type="button"
+                          onClick={() => onReaction(message.id, reaction)}
+                          className="min-h-[28px] text-[12px] font-medium text-[var(--color-text-tertiary)]"
+                          aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
+                        >
+                          {REACTION_TYPE_GLYPH[reaction]}
+                        </button>
+                      );
+                    }
                     return (
                       <button
                         key={reaction}
                         type="button"
                         onClick={() => onReaction(message.id, reaction)}
-                        className={
-                          count > 0
-                            ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
-                            : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[15px] text-[var(--color-text-tertiary)]"
-                        }
+                        className="min-h-[28px] text-[12px] font-semibold text-[var(--color-action-primary)]"
                         aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
                       >
-                        <span aria-hidden>{REACTION_TYPE_GLYPH[reaction]}</span>
-                        {count > 0 ? <span>{count}</span> : null}
+                        {REACTION_TYPE_GLYPH[reaction]} {count}
                       </button>
                     );
                   })}

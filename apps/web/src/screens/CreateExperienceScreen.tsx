@@ -170,7 +170,7 @@ export function CreateExperienceScreen() {
         title="Crear experiencia"
         subtitle="Tienes una idea: invita a tus vecinos a un momento concreto."
         onBack={() => router.push("/experiences")}
-        onExit={() => router.push("/experiences")}
+        onExit={() => router.push("/")}
       />
 
       <section className="space-y-4">

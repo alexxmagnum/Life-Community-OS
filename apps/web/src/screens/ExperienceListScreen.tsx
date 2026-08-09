@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatExperienceWhen,
   listDiscoverableExperiences,
   spotsLeft,
+  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   ExperienceCard,
   FilterChipRow,
-  FlowScreenHeader,
+  LoadingState,
   MobileScreen,
+  ScreenHeader,
+  ScreenPrimaryAction,
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -32,10 +35,36 @@ function statusLabelFor(
   return "Abierto";
 }
 
-export function ExperienceListScreen() {
+function matchesChip(experience: Experience, chip: string): boolean {
+  if (chip === "all") return true;
+  if (chip === "week") {
+    const start = new Date(experience.startsAt).getTime();
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    return start >= now - 60_000 && start <= now + weekMs;
+  }
+  const hay =
+    `${experience.title} ${experience.description} ${experience.location}`.toLowerCase();
+  if (chip === "outdoor") {
+    return /paseo|exterior|aire libre|camino|golf|naturaleza|campo|outdoor|atardecer/.test(
+      hay,
+    );
+  }
+  if (chip === "wellness") {
+    return /estiramiento|bienestar|yoga|stretch|medit|relax|wellness|salud|cuerpo/.test(
+      hay,
+    );
+  }
+  return true;
+}
+
+function ExperienceListBody() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const savedOnly = searchParams.get("saved") === "1";
   const { isFeatureEnabled, hasCapability } = useTenant();
-  const { getViewerState } = useExperienceParticipation();
+  const { getViewerState, savedExperiences, isSaved } =
+    useExperienceParticipation();
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
   const [sessionReady, setSessionReady] = useState(false);
@@ -45,9 +74,13 @@ export function ExperienceListScreen() {
   }, []);
 
   const items = useMemo(() => {
-    return listDiscoverableExperiences({
-      includeSessionCreated: sessionReady,
-    }).filter((e) => {
+    const source = savedOnly
+      ? savedExperiences
+      : listDiscoverableExperiences({
+          includeSessionCreated: sessionReady,
+        });
+    return source.filter((e) => {
+      if (!matchesChip(e, chip)) return false;
       if (!query) return true;
       const q = query.toLowerCase();
       return (
@@ -56,7 +89,7 @@ export function ExperienceListScreen() {
         e.areaLabel.toLowerCase().includes(q)
       );
     });
-  }, [query, sessionReady]);
+  }, [query, sessionReady, chip, savedOnly, savedExperiences]);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -76,14 +109,28 @@ export function ExperienceListScreen() {
     );
   }
 
+  const canCreate = hasCapability(CAPABILITIES.experienceCreate);
+
   return (
     <MobileScreen>
-      <FlowScreenHeader
-        title="Experiencias"
-        subtitle="Encuentra algo en lo que participar cerca de ti."
-        onBack={() => router.push("/")}
-        onExit={() => router.push("/")}
+      <ScreenHeader
+        title={savedOnly ? "Guardadas" : "Experiencias"}
+        subtitle={
+          savedOnly
+            ? "Experiencias que has marcado para volver."
+            : "Encuentra algo en lo que participar cerca de ti."
+        }
       />
+
+      {savedOnly ? (
+        <button
+          type="button"
+          onClick={() => router.push("/experiences")}
+          className="text-left text-[14px] font-semibold text-[var(--color-action-primary)]"
+        >
+          ← Ver todas
+        </button>
+      ) : null}
 
       <ScreenSearch
         value={query}
@@ -92,23 +139,44 @@ export function ExperienceListScreen() {
         label="Buscar experiencias"
       />
 
-      <FilterChipRow
-        items={[
-          { id: "all", label: "Todas" },
-          { id: "week", label: "Esta semana" },
-          { id: "outdoor", label: "Exterior" },
-          { id: "wellness", label: "Bienestar" },
-        ]}
-        activeId={chip}
-        onChange={setChip}
-      />
+      {!savedOnly ? (
+        <FilterChipRow
+          items={[
+            { id: "all", label: "Todas" },
+            { id: "week", label: "Esta semana" },
+            { id: "outdoor", label: "Exterior" },
+            { id: "wellness", label: "Bienestar" },
+          ]}
+          activeId={chip}
+          onChange={setChip}
+        />
+      ) : null}
 
       {items.length === 0 ? (
         <EmptyState
-          title="Sin resultados"
-          description="Prueba otra búsqueda o vuelve más tarde."
-          actionLabel="Limpiar búsqueda"
-          onAction={() => setQuery("")}
+          title={savedOnly ? "Nada guardado todavía" : "Sin resultados"}
+          description={
+            savedOnly
+              ? "Cuando guardes una experiencia, aparecerá aquí."
+              : "Prueba otra búsqueda o filtro."
+          }
+          actionLabel={
+            savedOnly
+              ? "Ver experiencias"
+              : query || chip !== "all"
+                ? "Limpiar"
+                : undefined
+          }
+          onAction={
+            savedOnly
+              ? () => router.push("/experiences")
+              : query || chip !== "all"
+                ? () => {
+                    setQuery("");
+                    setChip("all");
+                  }
+                : undefined
+          }
         />
       ) : (
         <div className="flex flex-col gap-4">
@@ -122,11 +190,11 @@ export function ExperienceListScreen() {
                 title={exp.title}
                 when={formatExperienceWhen(exp.startsAt)}
                 where={exp.location}
-                meta={`${exp.participantCount} van · ${remaining} plazas`}
+                meta={`${exp.participantCount} van · ${remaining} plazas${isSaved(exp.id) ? " · Guardada" : ""}`}
                 imageUrl={exp.imageUrl}
                 organizerName={exp.organizer.name}
                 statusLabel={statusLabelFor(viewer, remaining)}
-                ctaLabel={viewer === "joined" ? "Ver" : "Ver y participar"}
+                ctaLabel="Ver"
                 onClick={() => router.push(href)}
                 onCta={() => router.push(href)}
               />
@@ -134,6 +202,21 @@ export function ExperienceListScreen() {
           })}
         </div>
       )}
+
+      {!savedOnly && canCreate ? (
+        <ScreenPrimaryAction
+          label="Proponer experiencia"
+          onClick={() => router.push("/experiences/create")}
+        />
+      ) : null}
     </MobileScreen>
+  );
+}
+
+export function ExperienceListScreen() {
+  return (
+    <Suspense fallback={<LoadingState label="Cargando…" />}>
+      <ExperienceListBody />
+    </Suspense>
   );
 }

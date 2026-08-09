@@ -51,7 +51,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
         <FlowScreenHeader
           title="Cerca de ti"
           onBack={() => router.push("/")}
-          onExit={() => router.push("/")}
+          onExit={() => router.push("/discover")}
         />
         <EmptyState
           title="Categoría no encontrada"
@@ -69,7 +69,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
         <FlowScreenHeader
           title={hub.label}
           onBack={() => router.push("/")}
-          onExit={() => router.push("/")}
+          onExit={() => router.push("/discover")}
         />
         <EmptyState
           title="No disponible"
@@ -87,7 +87,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
         title={hub.label}
         subtitle={hub.problem}
         onBack={() => router.push("/")}
-        onExit={() => router.push("/")}
+        onExit={() => router.push("/discover")}
       />
 
       <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">

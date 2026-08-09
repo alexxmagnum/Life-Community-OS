@@ -136,7 +136,7 @@ export function CommunityContentDetailScreen({
       <FlowScreenHeader
         title={detailChromeTitle(content.type, content.isOfficial)}
         onBack={() => router.push("/community")}
-        onExit={() => router.push("/community")}
+        onExit={() => router.push("/")}
       />
 
       {content.imageUrl ? (

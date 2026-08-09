@@ -38,7 +38,7 @@ export function MyReservationsScreen() {
         title="Mis reservas"
         subtitle="Espacios que has reservado en la comunidad."
         onBack={() => router.push("/resources")}
-        onExit={() => router.push("/resources")}
+        onExit={() => router.push("/")}
       />
 
       <section className="space-y-4">
@@ -75,7 +75,15 @@ export function MyReservationsScreen() {
                   <Button
                     variant="ghost"
                     className="flex-1"
-                    onClick={() => cancel(r.id)}
+                    onClick={() => {
+                      if (
+                        window.confirm(
+                          "¿Cancelar esta reserva? Quedará libre para otros vecinos.",
+                        )
+                      ) {
+                        cancel(r.id);
+                      }
+                    }}
                   >
                     Cancelar
                   </Button>

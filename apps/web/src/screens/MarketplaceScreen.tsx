@@ -72,7 +72,7 @@ export function MarketplaceScreen() {
         title="Mercado"
         subtitle="¿Qué ofrecen o necesitan tus vecinos?"
         onBack={() => router.push("/services")}
-        onExit={() => router.push("/services")}
+        onExit={() => router.push("/")}
       />
 
       {hasCapability(CAPABILITIES.marketplaceCreate) ? (

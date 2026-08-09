@@ -263,8 +263,8 @@ const DO_TODAY_DOORS: ReadonlyArray<{
   {
     id: "sports",
     emoji: "🎾",
-    label: "Deportes",
-    hint: "Golf, pádel…",
+    label: "Golf",
+    hint: "Club y actividad",
     href: "/activities/golf",
     tint: "bg-[#D7E8F4]",
     card: "bg-[#F2F8FC] border border-[#C5D9E8]",

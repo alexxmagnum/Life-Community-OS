@@ -118,7 +118,7 @@ export function ProfileScreen() {
           Mi hogar
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu vínculo con la comunidad — no es un catálogo inmobiliario.
+          Tu vínculo con la comunidad — no es un catálogo de viviendas.
         </p>
         {primary ? (
           <div className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]">
@@ -153,12 +153,11 @@ export function ProfileScreen() {
               </p>
               {primary.grantsResidencyAccess ? (
                 <p className="text-[var(--color-success)]">
-                  Acceso de residencia activo en tu zona.
+                  Zona verificada · disponible para ti.
                 </p>
               ) : primary.statusKind === "pending" ? (
                 <p className="text-[var(--color-warning)]">
-                  Pendiente de verificación — el acceso restringido aún no
-                  aplica.
+                  Pendiente de verificación — aún no se abren espacios de zona.
                 </p>
               ) : null}
             </div>
@@ -238,8 +237,15 @@ export function ProfileScreen() {
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
             label="Experiencias guardadas"
-            hint={`${profileShortcuts.saves} guardadas`}
-            onClick={() => router.push("/experiences")}
+            hint="Las que has marcado"
+            onClick={() => router.push("/experiences?saved=1")}
+          />
+        ) : null}
+        {isFeatureEnabled("incidents") ? (
+          <ExploreLink
+            label="Mis avisos"
+            hint="Seguimiento de lo que has enviado"
+            onClick={() => router.push("/report?view=last")}
           />
         ) : null}
         {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
@@ -288,7 +294,7 @@ export function ProfileScreen() {
           Demo · rol
         </p>
         <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-          Simula permisos futuros — independiente de la residencia.
+          Simula permisos futuros — independiente de tu hogar.
         </p>
         <div className="mt-2.5 flex flex-wrap gap-2">
           {roles.map((r) => (

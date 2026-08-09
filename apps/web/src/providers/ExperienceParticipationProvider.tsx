@@ -42,6 +42,7 @@ type ExperienceParticipationContextValue = {
   leave: (experienceId: string) => void;
   setReminders: (experienceId: string, reminders: boolean) => void;
   joinedExperiences: Experience[];
+  savedExperiences: Experience[];
   isSaved: (experienceId: string) => boolean;
   toggleSave: (experienceId: string) => void;
 };
@@ -200,6 +201,12 @@ export function ExperienceParticipationProvider({
     );
   }, []);
 
+  const savedExperiences = useMemo(() => {
+    return savedIds
+      .map((id) => getExperienceById(id))
+      .filter((e): e is Experience => Boolean(e));
+  }, [savedIds]);
+
   const value = useMemo(
     () => ({
       records,
@@ -209,6 +216,7 @@ export function ExperienceParticipationProvider({
       leave,
       setReminders,
       joinedExperiences,
+      savedExperiences,
       isSaved,
       toggleSave,
     }),
@@ -220,6 +228,7 @@ export function ExperienceParticipationProvider({
       leave,
       setReminders,
       joinedExperiences,
+      savedExperiences,
       isSaved,
       toggleSave,
     ],
