@@ -145,7 +145,13 @@ export function CommunityHubScreen() {
     [demoPersonId],
   );
   const espacios = useMemo(() => listEspaciosComunitarios(), []);
-  const mascotasItems = useMemo(() => listMascotasHubItems(), []);
+  const mascotasItems = useMemo(() => {
+    try {
+      return listMascotasHubItems();
+    } catch {
+      return [];
+    }
+  }, []);
 
   const tabParam = searchParams.get("tab");
   const resolvedTab = resolveCommunityHubArea(tabParam);
@@ -295,7 +301,9 @@ export function CommunityHubScreen() {
     isFeatureEnabled("officialChannels");
   const showSpaces =
     isModuleEnabled("reservations") || isModuleEnabled("community");
-  const showPets = isModuleEnabled("community.pets");
+  /** Keep section mountable for ?tab=mascotas even if module flag drifts. */
+  const showPets =
+    isModuleEnabled("community.pets") || resolvedTab === "mascotas";
 
   return (
     <MobileScreen dense>
@@ -603,9 +611,11 @@ export function CommunityHubScreen() {
                         <button
                           type="button"
                           className="mt-2 text-[14px] font-semibold text-[var(--color-action-primary)]"
-                          onClick={() => router.push("/near/services")}
+                          onClick={() =>
+                            router.push(`/near/place/${item.place.id}`)
+                          }
                         >
-                          Ver en Cerca →
+                          Ver lugar →
                         </button>
                       </article>
                     );
