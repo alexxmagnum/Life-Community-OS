@@ -11,12 +11,15 @@ export type MobileScreenProps = {
   children: ReactNode;
   /** Full-bleed (e.g. Home hero). Removes horizontal padding on the root. */
   bleed?: boolean;
+  /** Tighter vertical rhythm — list-heavy screens. */
+  dense?: boolean;
   className?: string;
 };
 
 export function MobileScreen({
   children,
   bleed = false,
+  dense = false,
   className,
 }: MobileScreenProps) {
   return (
@@ -29,7 +32,8 @@ export function MobileScreen({
     >
       <div
         className={cn(
-          "flex flex-col gap-8 pb-2",
+          "flex flex-col pb-2",
+          dense ? "gap-4" : "gap-8",
           bleed ? "px-0" : "",
         )}
       >

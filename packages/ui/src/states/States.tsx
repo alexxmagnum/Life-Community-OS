@@ -105,8 +105,8 @@ export function SectionHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-3 flex items-end justify-between gap-3", className)}>
-      <h2 className="text-[18px] font-semibold leading-6 text-[var(--color-text-primary)]">
+    <div className={cn("mb-1.5 flex items-end justify-between gap-3", className)}>
+      <h2 className="text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
         {title}
       </h2>
       {action}

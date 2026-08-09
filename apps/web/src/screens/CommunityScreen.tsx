@@ -4,14 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   communityAlertIcon,
-  communityAlertLevelLabel,
   communityAlertTone,
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
   listAccessibleChannels,
   listActiveCommunityAlerts,
-  listCommunityDiscussionContent,
   listEspaciosComunitarios,
   listGroups,
   listMascotasHubItems,
@@ -22,7 +20,6 @@ import {
   type CommunityHubAreaId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  CommentPreview,
   CommunityFeed,
   CommunityPostCard,
   EmptyState,
@@ -102,6 +99,7 @@ export function CommunityHubScreen() {
   } = useCommunityInteractions();
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [composerForId, setComposerForId] = useState<string | null>(null);
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandChannels, setExpandChannels] = useState(false);
   const [expandSpaces, setExpandSpaces] = useState(false);
@@ -136,12 +134,6 @@ export function CommunityHubScreen() {
 
   const participation = useMemo(() => {
     return listParticipacionContent()
-      .map((c) => feedById.get(c.id))
-      .filter(Boolean) as typeof feedItems;
-  }, [feedById]);
-
-  const discussions = useMemo(() => {
-    return listCommunityDiscussionContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
   }, [feedById]);
@@ -199,11 +191,7 @@ export function CommunityHubScreen() {
     if (body.length < 8) return;
     addComment(id, body);
     setDrafts((prev) => ({ ...prev, [id]: "" }));
-  };
-
-  const meaningfulComment = (body: string) => {
-    const t = body.trim();
-    return t.length >= 8;
+    setComposerForId(null);
   };
 
   const renderPost = (
@@ -213,9 +201,6 @@ export function CommunityHubScreen() {
     const linked = item.linkedExperienceId
       ? getExperienceById(item.linkedExperienceId)
       : undefined;
-    const latest = [...item.comments]
-      .reverse()
-      .find((c) => meaningfulComment(c.body));
     const zone =
       item.areaLabel && item.areaLabel !== "Life Panoramica"
         ? item.areaLabel
@@ -237,16 +222,6 @@ export function CommunityHubScreen() {
         decisionStatus={decisionLabel(item.decisionStatus)}
         experienceLinkLabel={linked?.title}
         onOpen={() => router.push(`/community/content/${item.id}`)}
-        commentPreview={
-          latest ? (
-            <CommentPreview
-              authorName={latest.author.name}
-              body={latest.body}
-              avatarUrl={latest.author.avatarUrl}
-              meta={formatContentWhen(latest.createdAt)}
-            />
-          ) : null
-        }
         reactionBar={
           <ReactionBar
             variant="quiet"
@@ -255,14 +230,22 @@ export function CommunityHubScreen() {
             myReaction={getMyReaction(item.id)}
             commentCount={item.commentCount}
             canReact={canReact}
-            canComment={false}
+            canComment={canComment}
             canSave={false}
             onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
             onSupport={() => toggleReaction(item.id, "support")}
+            onComment={
+              canComment
+                ? () =>
+                    setComposerForId((current) =>
+                      current === item.id ? null : item.id,
+                    )
+                : undefined
+            }
           />
         }
         commentComposer={
-          canComment ? (
+          canComment && composerForId === item.id ? (
             <InlineCommentComposer
               compact
               value={drafts[item.id] ?? ""}
@@ -286,27 +269,26 @@ export function CommunityHubScreen() {
   const showPets = isModuleEnabled("community.pets");
 
   return (
-    <MobileScreen>
-      <header className="space-y-1 pt-1">
-        <h1 className="font-sans text-[28px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
+    <MobileScreen dense>
+      <header className="pt-0.5">
+        <h1 className="font-sans text-[24px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
           Comunidad
         </h1>
-        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
           Qué pasa hoy con tus vecinos.
         </p>
       </header>
 
-      {/* Alerts — compact only */}
       {alerts.length > 0 ? (
-        <section id="plaza-important" className="scroll-mt-4 space-y-2">
+        <section id="plaza-important" className="scroll-mt-3 space-y-1">
           {alerts.map((alert) => {
             const tone = communityAlertTone(alert.level);
             const shell =
               tone === "alert"
-                ? "border-[var(--color-feedback-danger)] text-[var(--color-feedback-danger)]"
+                ? "border-[var(--color-feedback-danger)]"
                 : tone === "important"
-                  ? "border-[var(--color-feedback-warning)] text-[var(--color-feedback-warning)]"
-                  : "border-[var(--color-feedback-info)] text-[var(--color-feedback-info)]";
+                  ? "border-[var(--color-feedback-warning)]"
+                  : "border-[var(--color-feedback-info)]";
             return (
               <button
                 key={alert.id}
@@ -314,18 +296,16 @@ export function CommunityHubScreen() {
                 onClick={() =>
                   router.push(alert.href ?? "/community#plaza-activity")
                 }
-                className={`flex w-full items-baseline gap-2 border-l-[3px] py-2 pl-3 text-left ${shell}`}
+                className={`flex w-full items-baseline gap-2 border-l-[3px] py-1.5 pl-2.5 text-left ${shell}`}
               >
-                <span className="text-[15px]" aria-hidden>
+                <span className="text-[14px]" aria-hidden>
                   {communityAlertIcon(alert.kind, alert.level)}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
-                    {alert.title}
-                  </span>
-                  <span className="block text-[13px] text-[var(--color-text-tertiary)]">
-                    {communityAlertLevelLabel(alert.level)} ·{" "}
-                    {alert.contextLabel}
+                <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
+                  {alert.title}
+                  <span className="font-normal text-[var(--color-text-tertiary)]">
+                    {" "}
+                    · {alert.contextLabel}
                   </span>
                 </span>
               </button>
@@ -333,16 +313,15 @@ export function CommunityHubScreen() {
           })}
         </section>
       ) : (
-        <div id="plaza-important" className="scroll-mt-4" />
+        <div id="plaza-important" className="scroll-mt-3" />
       )}
 
-      {/* Official — slim lines, not fat cards */}
       {officialNotices.length > 0 ? (
-        <section className="space-y-1 border-b border-[var(--color-border-subtle)] pb-4">
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <section className="border-b border-[var(--color-border-subtle)] pb-2">
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
             Avisos
           </p>
-          <ul className="space-y-0">
+          <ul>
             {officialNotices.map((item) => (
               <li key={item.id}>
                 <button
@@ -350,22 +329,13 @@ export function CommunityHubScreen() {
                   onClick={() =>
                     router.push(`/community/content/${item.id}`)
                   }
-                  className="flex w-full items-start justify-between gap-3 py-2.5 text-left"
+                  className="flex w-full items-center justify-between gap-2 py-1.5 text-left"
                 >
-                  <span className="min-w-0">
-                    <span className="block text-[15px] font-semibold leading-snug text-[var(--color-text-primary)]">
-                      {item.title}
-                    </span>
-                    <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
-                      {item.author.name} ·{" "}
-                      {formatContentWhen(item.publishedAt ?? item.createdAt)}
-                    </span>
+                  <span className="min-w-0 truncate text-[14px] font-medium text-[var(--color-text-primary)]">
+                    {item.title}
                   </span>
-                  <span
-                    className="shrink-0 text-[var(--color-text-tertiary)]"
-                    aria-hidden
-                  >
-                    ›
+                  <span className="shrink-0 text-[12px] text-[var(--color-text-tertiary)]">
+                    {formatContentWhen(item.publishedAt ?? item.createdAt)}
                   </span>
                 </button>
               </li>
@@ -374,48 +344,41 @@ export function CommunityHubScreen() {
         </section>
       ) : null}
 
-      {/* Neighbour activity — the plaza */}
-      <section id="plaza-activity" className="scroll-mt-4">
+      <section id="plaza-activity" className="scroll-mt-3">
         <SectionHeader title="Entre vecinos" />
-        <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
-          <CommunityFeed
-            empty={
-              <EmptyState
-                title="Todavía está tranquilo"
-                description="Cuando alguien comparta algo útil, aparecerá aquí."
-              />
-            }
-          >
-            {neighbourActivity.map((item) => renderPost(item))}
-          </CommunityFeed>
-        </div>
+        <CommunityFeed
+          empty={
+            <EmptyState
+              title="Todavía está tranquilo"
+              description="Cuando alguien comparta algo útil, aparecerá aquí."
+            />
+          }
+        >
+          {neighbourActivity.map((item) => renderPost(item))}
+        </CommunityFeed>
       </section>
 
-      {/* Participation */}
-      <section id="plaza-participate" className="scroll-mt-4">
+      <section id="plaza-participate" className="scroll-mt-3">
         <SectionHeader title="Puedes aportar" />
-        <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
-          <CommunityFeed
-            empty={
-              <p className="py-3 text-[14px] text-[var(--color-text-secondary)]">
-                Cuando haya decisiones abiertas, las verás aquí.
-              </p>
-            }
-          >
-            {participation.map((item) => renderPost(item, "proposal"))}
-          </CommunityFeed>
-        </div>
+        <CommunityFeed
+          empty={
+            <p className="py-2 text-[13px] text-[var(--color-text-secondary)]">
+              Cuando haya decisiones abiertas, las verás aquí.
+            </p>
+          }
+        >
+          {participation.map((item) => renderPost(item, "proposal"))}
+        </CommunityFeed>
       </section>
 
-      {/* Groups & conversations */}
-      <section id="plaza-people" className="scroll-mt-4 space-y-4">
+      <section id="plaza-people" className="scroll-mt-3 space-y-2">
         <SectionHeader
           title="Grupos"
           action={
             groupItems.length > 4 ? (
               <button
                 type="button"
-                className="text-[14px] font-semibold text-[var(--color-action-primary)]"
+                className="text-[13px] font-semibold text-[var(--color-action-primary)]"
                 onClick={() => setExpandGroups((v) => !v)}
               >
                 {expandGroups ? "Ver menos" : "Ver todos →"}
@@ -425,13 +388,13 @@ export function CommunityHubScreen() {
         />
 
         {groupItems.length === 0 ? (
-          <p className="text-[14px] text-[var(--color-text-secondary)]">
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
             Los grupos de vecinos aparecerán aquí.
           </p>
         ) : (
-          <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {visibleGroups.map((group) => (
-              <div key={group.id} className="w-[132px] shrink-0">
+              <div key={group.id} className="w-[112px] shrink-0">
                 <GroupCard
                   name={group.name}
                   members={group.memberCount}
@@ -442,17 +405,6 @@ export function CommunityHubScreen() {
             ))}
           </div>
         )}
-
-        {discussions.length > 0 ? (
-          <div className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 shadow-[0_1px_2px_rgba(26,31,28,0.04)]">
-            <p className="pt-3 text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              Conversaciones
-            </p>
-            <CommunityFeed>
-              {discussions.map((item) => renderPost(item, "discussion"))}
-            </CommunityFeed>
-          </div>
-        ) : null}
       </section>
 
       {/* Secondary peeks — reachable from hamburger deep links */}

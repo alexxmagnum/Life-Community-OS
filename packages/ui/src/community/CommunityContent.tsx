@@ -95,7 +95,7 @@ export function ReactionBar({
     return (
       <div
         className={cn(
-          "flex items-center gap-4 text-[14px] font-medium",
+          "flex flex-wrap items-center gap-x-3 gap-y-0 text-[12px] font-medium",
           className,
         )}
       >
@@ -104,29 +104,38 @@ export function ReactionBar({
           disabled={!canReact}
           onClick={onAcknowledge}
           className={cn(
-            "min-h-[36px] text-left",
+            "min-h-[32px]",
             myReaction === "acknowledge"
               ? "font-semibold text-[var(--color-action-primary)]"
-              : "text-[var(--color-text-secondary)]",
+              : "text-[var(--color-text-tertiary)]",
           )}
           aria-pressed={myReaction === "acknowledge"}
         >
-          Entendido {acknowledgeCount > 0 ? acknowledgeCount : ""}
+          Entendido{acknowledgeCount > 0 ? ` ${acknowledgeCount}` : ""}
         </button>
         <button
           type="button"
           disabled={!canReact}
           onClick={onSupport}
           className={cn(
-            "min-h-[36px] text-left",
+            "min-h-[32px]",
             myReaction === "support"
               ? "font-semibold text-[var(--color-action-accent)]"
-              : "text-[var(--color-text-secondary)]",
+              : "text-[var(--color-text-tertiary)]",
           )}
           aria-pressed={myReaction === "support"}
         >
-          Apoyo {supportCount > 0 ? supportCount : ""}
+          Apoyo{supportCount > 0 ? ` ${supportCount}` : ""}
         </button>
+        {onComment && canComment ? (
+          <button
+            type="button"
+            onClick={onComment}
+            className="min-h-[32px] text-[var(--color-action-primary)]"
+          >
+            Responder
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -307,63 +316,64 @@ export function CommunityPostCard({
     return (
       <article
         className={cn(
-          "border-b border-[var(--color-border-subtle)] py-4 last:border-b-0",
-          resolvedTone ? TONE_SHELL[resolvedTone] : undefined,
+          "border-b border-[var(--color-border-subtle)] py-2.5 last:border-b-0",
           resolvedTone && TONE_SHELL[resolvedTone]
-            ? "pl-3"
+            ? cn(TONE_SHELL[resolvedTone], "pl-2.5")
             : undefined,
           className,
         )}
       >
-        <div className="flex items-center gap-2.5">
-          {official ? (
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[13px] font-semibold text-[var(--color-action-primary)]">
-              {authorName.slice(0, 1).toUpperCase()}
-            </span>
-          ) : (
-            <Avatar src={authorAvatarUrl} alt={authorName} size="sm" />
-          )}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-semibold text-[var(--color-text-primary)]">
-              {authorName}
-              {official ? (
-                <span className="ml-1.5 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
-                  Oficial
-                </span>
-              ) : null}
-            </p>
-            <p className="text-[13px] text-[var(--color-text-tertiary)]">
-              {[meta, areaLabel].filter(Boolean).join(" · ")}
-            </p>
-          </div>
-        </div>
-
         <button
           type="button"
           onClick={onOpen}
-          className="mt-2.5 block w-full text-left"
+          className="block w-full text-left"
         >
+          <div className="flex items-center gap-2">
+            {official ? (
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[12px] font-semibold text-[var(--color-action-primary)]">
+                {authorName.slice(0, 1).toUpperCase()}
+              </span>
+            ) : (
+              <Avatar src={authorAvatarUrl} alt={authorName} size="sm" />
+            )}
+            <p className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-tertiary)]">
+              <span className="font-semibold text-[var(--color-text-primary)]">
+                {authorName}
+              </span>
+              {official ? (
+                <span className="text-[var(--color-accent-official)]">
+                  {" "}
+                  · Oficial
+                </span>
+              ) : null}
+              <span>
+                {" "}
+                · {[meta, areaLabel].filter(Boolean).join(" · ")}
+              </span>
+            </p>
+          </div>
+
           {decisionStatus ? (
-            <span className="mb-1.5 inline-flex text-[12px] font-semibold uppercase tracking-wide text-[var(--color-feedback-warning)]">
+            <span className="mt-1 inline-flex text-[11px] font-semibold uppercase tracking-wide text-[var(--color-feedback-warning)]">
               {decisionStatus}
             </span>
           ) : null}
-          <h3 className="text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
+          <h3 className="mt-1 text-[15px] font-semibold leading-snug text-[var(--color-text-primary)]">
             {title}
           </h3>
-          <p className="mt-1 line-clamp-2 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+          <p className="mt-0.5 line-clamp-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
             {body}
           </p>
           {experienceLinkLabel ? (
-            <p className="mt-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]">
+            <p className="mt-0.5 text-[12px] font-semibold text-[var(--color-action-primary)]">
               {experienceLinkLabel} →
             </p>
           ) : null}
         </button>
 
-        {commentPreview ? <div className="mt-2.5">{commentPreview}</div> : null}
-        {reactionBar ? <div className="mt-2">{reactionBar}</div> : null}
-        {commentComposer ? <div className="mt-2.5">{commentComposer}</div> : null}
+        {commentPreview ? <div className="mt-1.5">{commentPreview}</div> : null}
+        {reactionBar ? <div className="mt-1">{reactionBar}</div> : null}
+        {commentComposer ? <div className="mt-1.5">{commentComposer}</div> : null}
       </article>
     );
   }
@@ -530,7 +540,7 @@ export function CommunityFeed({
 }: CommunityFeedProps) {
   const count = Children.count(children);
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-0", className)}>
       {count > 0 ? children : empty}
     </div>
   );
