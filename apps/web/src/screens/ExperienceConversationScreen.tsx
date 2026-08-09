@@ -126,7 +126,7 @@ export function ExperienceConversationScreen({
         <FlowScreenHeader
           title="Conversación"
           onBack={() => router.push(`/experiences/${experienceId}`)}
-          onExit={() => router.push("/experiences")}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="Conversación no disponible"

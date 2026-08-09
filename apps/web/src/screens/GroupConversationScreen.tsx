@@ -122,7 +122,7 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
         <FlowScreenHeader
           title="Conversación"
           onBack={() => router.push("/community")}
-          onExit={() => router.push("/community")}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="No disponible"
@@ -140,7 +140,7 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
         <FlowScreenHeader
           title="Conversación"
           onBack={() => router.push(`/community/groups/${groupId}`)}
-          onExit={() => router.push("/community")}
+          onExit={() => router.push("/")}
         />
         <EmptyState
           title="Conversación no disponible"
