@@ -22,6 +22,7 @@ export * from "./channels";
 export * from "./channel-access";
 export * from "./residency-demo";
 export * from "./property-home-context";
+export * from "./territory-access-context";
 export * from "./content";
 export * from "./experiences";
 export * from "./experience-conversations";

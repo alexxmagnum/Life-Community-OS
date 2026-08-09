@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import {
   getMyHomeContext,
+  getTerritoryAccessContext,
   profileShortcuts,
   residencyDemoNarratives,
 } from "@life-community-os/tenant-life-panoramica";
@@ -14,6 +15,7 @@ import {
   ScreenHeader,
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
+import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 const roles: { id: DemoRole; label: string }[] = [
@@ -44,6 +46,10 @@ export function ProfileScreen() {
 
   const home = useMemo(() => getMyHomeContext(demoPersonId), [demoPersonId]);
   const primary = home.primary;
+  const territoryAccess = useMemo(
+    () => getTerritoryAccessContext(demoPersonId),
+    [demoPersonId],
+  );
 
   const narrative =
     residencyDemoNarratives[demoMember.narrativeKey]?.summary ??
@@ -196,6 +202,8 @@ export function ProfileScreen() {
           {narrative}
         </p>
       </section>
+
+      <TerritoryBelongingCard access={territoryAccess} />
 
       {/* Mis intereses */}
       <section className="space-y-3">

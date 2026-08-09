@@ -8,10 +8,12 @@ import {
   buildTodayMoments,
   experienceActivityLabel,
   formatExperienceWhen,
+  getTerritoryAccessContext,
   listCuratedNearYou,
   listUpcomingHomeExperiences,
   searchHomeCatalog,
   spotsLeft,
+  territoryDiscoveryAreaLabels,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   AuthorCard,
@@ -24,6 +26,7 @@ import {
   LocalPlaceCard,
   TerritoryHero,
 } from "@life-community-os/ui";
+import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
@@ -74,7 +77,13 @@ const LIVE_OPTS = {
  */
 export function HomeScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    hasCapability,
+    demoMember,
+    demoPersonId,
+  } = useTenant();
 
   /**
    * First paint always uses HYDRATE_SAFE (no localStorage, stable ranks).
@@ -97,13 +106,21 @@ export function HomeScreen() {
     [searchQuery],
   );
 
+  const territoryAccess = useMemo(
+    () => getTerritoryAccessContext(demoPersonId),
+    [demoPersonId],
+  );
+
   const territoryName = theme.identity?.territoryName ?? theme.logoText;
   const todayTitle = resolveCopyTemplate(
     theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
     territoryName,
   );
   const areaLine =
-    demoMember.areaLabel || theme.identity?.defaultAreaName || undefined;
+    territoryAccess.verifiedAreaLabels[0] ||
+    demoMember.areaLabel ||
+    theme.identity?.defaultAreaName ||
+    undefined;
   const weatherLabel = theme.identity?.weatherLabel;
 
   const canLocal =
@@ -130,8 +147,11 @@ export function HomeScreen() {
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
-    return listCuratedNearYou(demoMember, { limit: 4 });
-  }, [canLocal, demoMember]);
+    return listCuratedNearYou(demoMember, {
+      limit: 4,
+      preferredAreaLabels: territoryDiscoveryAreaLabels(demoPersonId),
+    });
+  }, [canLocal, demoMember, demoPersonId]);
 
   // Catalog-only + fixed ids — identical on server and client (no frontDoorOpts).
   const communityLife = useMemo(
@@ -163,6 +183,8 @@ export function HomeScreen() {
       />
 
       <div className="space-y-8 pt-1 md:space-y-10">
+        <TerritoryBelongingCard access={territoryAccess} compact />
+
         {forYou.length === 0 ? (
           <HomeSection
             title="Para ti"

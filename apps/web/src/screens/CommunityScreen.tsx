@@ -7,6 +7,7 @@ import {
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
+  getTerritoryAccessContext,
   listAccessibleChannels,
   listActualidadContent,
   listCommunityDiscussionContent,
@@ -31,6 +32,7 @@ import {
   ReactionBar,
   ScreenHeader,
 } from "@life-community-os/ui";
+import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
@@ -59,6 +61,11 @@ export function CommunityHubScreen() {
     toggleSave,
     reportContent,
   } = useCommunityInteractions();
+
+  const territoryAccess = useMemo(
+    () => getTerritoryAccessContext(demoPersonId),
+    [demoPersonId],
+  );
 
   const accessibleChannels = useMemo(
     () => listAccessibleChannels(demoPersonId),
@@ -238,6 +245,8 @@ export function CommunityHubScreen() {
         title="Comunidad"
         subtitle="El lugar donde viven los vecinos del territorio."
       />
+
+      <TerritoryBelongingCard access={territoryAccess} compact />
 
       <FilterChipRow
         items={chips}

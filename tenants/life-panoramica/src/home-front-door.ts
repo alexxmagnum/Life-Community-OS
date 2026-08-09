@@ -349,10 +349,11 @@ export function listUpcomingHomeExperiences(
 /** Curated near-you — one of each vibe when possible, not a dump. */
 export function listCuratedNearYou(
   member: DemoMemberProfile,
-  options: { limit?: number } = {},
+  options: { limit?: number; preferredAreaLabels?: string[] } = {},
 ): LocalEntity[] {
   const limit = options.limit ?? 4;
   const tokens = interestTokens(member.interests);
+  const preferred = options.preferredAreaLabels ?? [];
   const ranked = listNearYou()
     .map((place) => {
       const blob = textBlob(
@@ -361,9 +362,15 @@ export function listCuratedNearYou(
         place.areaLabel,
         place.story,
       );
+      const preferredBoost = preferred.some((label) =>
+        normalizeToken(place.areaLabel).includes(normalizeToken(label)),
+      )
+        ? 14
+        : 0;
       const score =
         interestMatchScore(blob, tokens) +
         areaMatchScore(blob, member.areaLabel) +
+        preferredBoost +
         (place.recommendedBy ? 10 : 0) +
         (place.verified ? 4 : 0);
       return { place, score };

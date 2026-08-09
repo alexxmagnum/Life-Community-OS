@@ -2,9 +2,13 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { servicesCategoryHubs } from "@life-community-os/tenant-life-panoramica";
+import {
+  getTerritoryAccessContext,
+  servicesCategoryHubs,
+} from "@life-community-os/tenant-life-panoramica";
 import { MobileScreen } from "@life-community-os/ui";
-import { useTenant } from "@/providers/TenantProvider";
+import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 type ServiceEntry = {
   id: string;
@@ -17,10 +21,24 @@ type ServiceEntry = {
 /**
  * Servicios landing — community utility hub (not a marketplace).
  * Cards are projected from existing service / module configuration.
+ * Residency shapes nearby relevance — not admin rights.
  */
 export function ServicesHubScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, isModuleEnabled } = useTenant();
+  const {
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    demoPersonId,
+  } = useTenant();
+
+  const territoryAccess = useMemo(
+    () =>
+      getTerritoryAccessContext(demoPersonId, {
+        canReservePermission: hasCapability(CAPABILITIES.resourceReserve),
+      }),
+    [demoPersonId, hasCapability],
+  );
 
   const entries = useMemo((): ServiceEntry[] => {
     const cards: ServiceEntry[] = [];
@@ -50,17 +68,25 @@ export function ServicesHubScreen() {
     }
 
     if (isModuleEnabled("reservations") && isFeatureEnabled("resources")) {
+      const reserveHint =
+        territoryAccess.eligibleResourceCount > 0
+          ? `${territoryAccess.eligibleResourceCount} elegibles con tu residencia.`
+          : "Instalaciones y espacios compartidos de la comunidad.";
       cards.push({
         id: "community-services",
         title: "Servicios comunitarios",
-        description: "Instalaciones y espacios compartidos de la comunidad.",
+        description: reserveHint,
         href: "/resources",
         icon: "🏘",
       });
     }
 
     return cards;
-  }, [isFeatureEnabled, isModuleEnabled]);
+  }, [
+    isFeatureEnabled,
+    isModuleEnabled,
+    territoryAccess.eligibleResourceCount,
+  ]);
 
   return (
     <MobileScreen>
@@ -75,6 +101,10 @@ export function ServicesHubScreen() {
           Soluciones y ayuda cerca de ti
         </p>
       </header>
+
+      <div className="mt-4">
+        <TerritoryBelongingCard access={territoryAccess} compact />
+      </div>
 
       {entries.length === 0 ? (
         <p className="mt-10 text-[15px] text-[var(--color-text-secondary)]">
