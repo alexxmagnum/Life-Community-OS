@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   evaluateDemoResourceAccessForPerson,
-  getTerritoryAccessContext,
   listResources,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -15,7 +14,6 @@ import {
   ScreenHeader,
   ScreenSearch,
 } from "@life-community-os/ui";
-import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { resourceAccessHint } from "@/lib/demo-access-copy";
 
@@ -31,14 +29,6 @@ export function ResourceDiscoveryScreen() {
   const [loading] = useState(false);
 
   const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
-
-  const territoryAccess = useMemo(
-    () =>
-      getTerritoryAccessContext(demoPersonId, {
-        canReservePermission: roleCanReserve,
-      }),
-    [demoPersonId, roleCanReserve],
-  );
 
   const items = useMemo(() => {
     return listResources().filter((r) => {
@@ -77,10 +67,8 @@ export function ResourceDiscoveryScreen() {
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Espacios compartidos"
-        subtitle="Pistas, salas y zonas. El acceso depende de tu residencia verificada."
+        subtitle="Pistas, salas y zonas comunes de la comunidad."
       />
-
-      <TerritoryBelongingCard access={territoryAccess} />
 
       <ScreenSearch
         value={query}

@@ -7,7 +7,6 @@ import {
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
-  getTerritoryAccessContext,
   listAccessibleChannels,
   listActualidadContent,
   listCommunityDiscussionContent,
@@ -32,15 +31,13 @@ import {
   ReactionBar,
   ScreenHeader,
 } from "@life-community-os/ui";
-import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
 /**
- * Community Hub (D.0.7.1.1) — belonging root for the territory.
- * Areas come from the canonical community-hub model (same as hamburger + registry).
- * Communication Layer conversations remain contextual (Group / Experience / Work / Official).
+ * Community Hub — neighbour life areas.
+ * Territory/residency stay internal for ranking — not hub chrome.
  */
 export function CommunityHubScreen() {
   const router = useRouter();
@@ -61,11 +58,6 @@ export function CommunityHubScreen() {
     toggleSave,
     reportContent,
   } = useCommunityInteractions();
-
-  const territoryAccess = useMemo(
-    () => getTerritoryAccessContext(demoPersonId),
-    [demoPersonId],
-  );
 
   const accessibleChannels = useMemo(
     () => listAccessibleChannels(demoPersonId),
@@ -243,10 +235,8 @@ export function CommunityHubScreen() {
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Comunidad"
-        subtitle="El lugar donde viven los vecinos del territorio."
+        subtitle="El lugar donde viven los vecinos."
       />
-
-      <TerritoryBelongingCard access={territoryAccess} compact />
 
       <FilterChipRow
         items={chips}
@@ -268,7 +258,7 @@ export function CommunityHubScreen() {
         ? renderContentRows(
             actualidad,
             "Todavía no hay actualidad",
-            "Cuando haya novedades del territorio, las verás aquí.",
+            "Cuando haya novedades de la comunidad, las verás aquí.",
           )
         : null}
 
@@ -385,7 +375,7 @@ export function CommunityHubScreen() {
         <div className="space-y-4">
           <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
             <h2 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-              Participa en tu territorio
+              Participa en tu comunidad
             </h2>
             <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
               Decisiones abiertas, propuestas en curso y formas de aportar —
@@ -432,7 +422,7 @@ export function CommunityHubScreen() {
         espacios.length === 0 ? (
           <EmptyState
             title="Aún no hay espacios listados"
-            description="Los espacios compartidos del territorio aparecerán aquí."
+            description="Los espacios compartidos de la comunidad aparecerán aquí."
           />
         ) : (
           <div className="space-y-3">
@@ -474,7 +464,7 @@ export function CommunityHubScreen() {
         mascotasItems.length === 0 ? (
           <EmptyState
             title="Mascotas en la comunidad"
-            description="Aquí vivirá lo relacionado con mascotas del territorio — vecinos, lugares y cuidados."
+            description="Aquí vivirá lo relacionado con mascotas de la comunidad — vecinos, lugares y cuidados."
           />
         ) : (
           <div className="space-y-3">

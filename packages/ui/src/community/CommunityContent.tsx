@@ -352,9 +352,19 @@ export function CommunityConversationRow({
         <span className="min-w-0 flex-1">
           {typeLabel || official ? (
             <span className="mb-0.5 block text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              {[official ? "Oficial" : null, typeLabel]
-                .filter(Boolean)
-                .join(" · ")}
+              {(() => {
+                const bits = [official ? "Oficial" : null, typeLabel].filter(
+                  Boolean,
+                ) as string[];
+                // Avoid "Oficial · Oficial" when typeLabel already says Oficial.
+                const unique = bits.filter(
+                  (bit, index) =>
+                    bits.findIndex(
+                      (b) => b.toLowerCase() === bit.toLowerCase(),
+                    ) === index,
+                );
+                return unique.join(" · ");
+              })()}
             </span>
           ) : null}
           <span className="block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
