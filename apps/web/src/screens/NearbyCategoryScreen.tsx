@@ -78,7 +78,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
       <ScreenBack label="Cerca de ti" onClick={() => router.back()} />
 
       <header className="space-y-2">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText} · Cerca de ti
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -87,7 +87,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
           {hub.problem}
         </p>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           {areaLabels.length > 0
             ? `Priorizado cerca de ${areaLabels.join(", ")} — relevancia, no un directorio.`
             : hub.description}

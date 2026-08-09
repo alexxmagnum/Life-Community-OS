@@ -169,7 +169,7 @@ export function CreateExperienceScreen() {
       <ScreenBack label="Cancelar" onClick={() => router.back()} />
 
       <header className="space-y-2">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText}
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -181,11 +181,11 @@ export function CreateExperienceScreen() {
       </header>
 
       <section className="space-y-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Información básica
         </h2>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Título
           </span>
           <input
@@ -196,7 +196,7 @@ export function CreateExperienceScreen() {
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Descripción
           </span>
           <textarea
@@ -210,10 +210,10 @@ export function CreateExperienceScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Actividad relacionada
         </h2>
-        <p className="text-[13px] text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] text-[var(--color-text-tertiary)]">
           Opcional — ayuda a que la gente la encuentre en el hub correcto.
         </p>
         <label className="block space-y-1.5">
@@ -237,11 +237,11 @@ export function CreateExperienceScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Fecha y hora
         </h2>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Fecha
           </span>
           <input
@@ -253,7 +253,7 @@ export function CreateExperienceScreen() {
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block space-y-1.5">
-            <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
               Inicio
             </span>
             <input
@@ -264,7 +264,7 @@ export function CreateExperienceScreen() {
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
               Fin (opcional)
             </span>
             <input
@@ -278,11 +278,11 @@ export function CreateExperienceScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Lugar
         </h2>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Punto de encuentro
           </span>
           <input
@@ -294,7 +294,7 @@ export function CreateExperienceScreen() {
         </label>
         {resources.length > 0 ? (
           <label className="block space-y-1.5">
-            <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
               Recurso relacionado (opcional)
             </span>
             <select
@@ -319,11 +319,11 @@ export function CreateExperienceScreen() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Capacidad
         </h2>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Máximo de participantes
           </span>
           <input
@@ -338,13 +338,13 @@ export function CreateExperienceScreen() {
       </section>
 
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]">
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Organizador
         </p>
         <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
           Organizado por {demoMember.displayName}
         </p>
-        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+        <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
           Como vecino de la comunidad — no hace falta ser administrador.
         </p>
       </section>

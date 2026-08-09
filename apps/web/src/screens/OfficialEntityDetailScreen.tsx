@@ -155,7 +155,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
               }}
             />
             <div className="absolute inset-x-0 bottom-0 p-4">
-              <p className="text-[13px] font-semibold text-white/80">
+              <p className="text-[15px] font-semibold text-white/80">
                 {theme.logoText} · Oficial
               </p>
               <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-white">
@@ -165,7 +165,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           </div>
         ) : (
           <div className="space-y-2 px-4 pt-4">
-            <p className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
+            <p className="text-[15px] font-semibold text-[var(--color-text-tertiary)]">
               {theme.logoText} · Oficial
             </p>
             <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -174,7 +174,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           </div>
         )}
         <div className="space-y-2 px-4 py-4">
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
+          <p className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
             {officialEntityKindLabel(entity.kind)}
           </p>
           <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
@@ -198,7 +198,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
             <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
               {conversationCtaLabel}
             </span>
-            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
               {conversationCtaHint}
               {noticeBundle
                 ? ` · ${officialInteractionModeLabel(noticeBundle.snapshot.interactionMode)}`
@@ -217,7 +217,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
             Información
           </h2>
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">
             Avisos y comunicaciones de esta entidad.
           </p>
           {communications.length === 0 ? (
@@ -255,7 +255,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           <div className="space-y-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]">
             {contact?.hours ? (
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Horario
                 </p>
                 <p className="mt-0.5 text-[15px] text-[var(--color-text-primary)]">
@@ -265,7 +265,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
             ) : null}
             {contact?.phone ? (
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Teléfono
                 </p>
                 <a
@@ -278,7 +278,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
             ) : null}
             {contact?.email ? (
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Email
                 </p>
                 <a
@@ -291,7 +291,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
             ) : null}
             {contact?.website ? (
               <div>
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   Web
                 </p>
                 <a
@@ -315,7 +315,7 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
             Canales
           </h2>
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">
             Canales vinculados a esta entidad.
           </p>
           {channels.length === 0 ? (
@@ -336,18 +336,18 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
                     onClick={() => router.push("/community?tab=canales")}
                     className="w-full rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
                   >
-                    <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
+                    <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
                       {ch.type === "official" ? "Canal oficial" : "Espacio"}
                     </p>
                     <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
                       {ch.name}
                     </p>
                     {ch.description ? (
-                      <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+                      <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
                         {ch.description}
                       </p>
                     ) : null}
-                    <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
+                    <p className="mt-2 text-[14px] text-[var(--color-text-tertiary)]">
                       {label.badge}
                     </p>
                   </button>

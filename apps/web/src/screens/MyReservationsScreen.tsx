@@ -105,7 +105,7 @@ export function MyReservationsScreen() {
                 <span className="block text-[16px] font-semibold">
                   {r.resourceName}
                 </span>
-                <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+                <span className="block text-[15px] text-[var(--color-text-tertiary)]">
                   {formatResourceDate(r.date)} · {r.start}–{r.end}
                 </span>
               </span>

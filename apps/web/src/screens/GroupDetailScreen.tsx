@@ -103,7 +103,7 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
       </div>
 
       <header className="space-y-2">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText} · Grupo
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -113,10 +113,10 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
           {group.description}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
             {group.categoryLabel}
           </span>
-          <span className="text-[13px] text-[var(--color-text-tertiary)]">
+          <span className="text-[15px] text-[var(--color-text-tertiary)]">
             {group.memberCount} miembros
             {group.areaLabel ? ` · ${group.areaLabel}` : ""}
           </span>
@@ -138,7 +138,7 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
             <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
               Conversación
             </span>
-            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
               Habla con los miembros del grupo
             </span>
           </span>

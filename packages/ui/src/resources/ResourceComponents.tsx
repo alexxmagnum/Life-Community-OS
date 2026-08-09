@@ -39,7 +39,7 @@ export function ResourceHero({
         }}
       >
         {overline ? (
-          <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-inverse)]/90">
+          <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-inverse)]/90">
             {overline}
           </p>
         ) : null}
@@ -74,7 +74,7 @@ export function AvailabilityPicker({
             type="button"
             onClick={() => onSelect(d.value)}
             className={cn(
-              "min-h-[52px] min-w-[108px] shrink-0 rounded-[var(--radius-lg)] px-3 py-2 text-left text-[13px] font-semibold",
+              "min-h-[52px] min-w-[108px] shrink-0 rounded-[var(--radius-lg)] px-3 py-2 text-left text-[15px] font-semibold",
               active
                 ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
                 : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] shadow-[var(--shadow-elev-1)]",
@@ -138,7 +138,7 @@ export function TimeSlotSelector({
           >
             {slot.start}–{slot.end}
             {occupied ? (
-              <span className="mt-0.5 block text-[11px] font-medium no-underline">
+              <span className="mt-0.5 block text-[15px] font-medium no-underline">
                 Ocupado
               </span>
             ) : null}
@@ -198,7 +198,7 @@ export function ReservationStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex min-h-[32px] items-center rounded-full px-3 text-[13px] font-semibold",
+        "inline-flex min-h-[32px] items-center rounded-full px-3 text-[15px] font-semibold",
         s.className,
         className,
       )}
@@ -251,7 +251,7 @@ export function ReservationSummary({
         </h2>
         <dl className="grid gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            <dt className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               When
             </dt>
             <dd className="mt-1 text-[16px] font-semibold">
@@ -262,7 +262,7 @@ export function ReservationSummary({
             </dd>
           </div>
           <div>
-            <dt className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            <dt className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               Where
             </dt>
             <dd className="mt-1 text-[16px] font-semibold">{location}</dd>
@@ -314,13 +314,13 @@ export function CalendarReservationCard({
         />
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold text-[var(--color-text-secondary)]">
+        <span className="block text-[15px] font-semibold text-[var(--color-text-secondary)]">
           {time}
         </span>
         <span className="block truncate text-[16px] font-semibold">
           {title}
         </span>
-        <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+        <span className="block text-[15px] text-[var(--color-text-tertiary)]">
           {place} · {statusLabel}
         </span>
       </span>
@@ -395,7 +395,7 @@ export function ResourceDiscoveryCard({
             ) : null}
           </p>
           {accessHint ? (
-            <p className={cn("mt-2 text-[13px] font-semibold leading-5", hintClass)}>
+            <p className={cn("mt-2 text-[15px] font-semibold leading-5", hintClass)}>
               {accessHint}
             </p>
           ) : null}

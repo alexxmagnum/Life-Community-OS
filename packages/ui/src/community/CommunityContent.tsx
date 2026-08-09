@@ -35,13 +35,13 @@ export function AuthorCard({
         <p className="truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
           {name}
           {official ? (
-            <span className="ml-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
+            <span className="ml-2 text-[14px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
               Oficial
             </span>
           ) : null}
         </p>
         {meta ? (
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">{meta}</p>
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">{meta}</p>
         ) : null}
       </div>
     </div>
@@ -95,7 +95,7 @@ export function ReactionBar({
         disabled={!canReact}
         onClick={onAcknowledge}
         className={cn(
-          "min-h-[40px] rounded-full px-3 text-[13px] font-semibold",
+          "min-h-[40px] rounded-full px-3 text-[15px] font-semibold",
           myReaction === "acknowledge"
             ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
             : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
@@ -109,7 +109,7 @@ export function ReactionBar({
         disabled={!canReact}
         onClick={onSupport}
         className={cn(
-          "min-h-[40px] rounded-full px-3 text-[13px] font-semibold",
+          "min-h-[40px] rounded-full px-3 text-[15px] font-semibold",
           myReaction === "support"
             ? "bg-[var(--color-action-accent-subtle)] text-[var(--color-action-accent)]"
             : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
@@ -122,7 +122,7 @@ export function ReactionBar({
         type="button"
         disabled={!canComment}
         onClick={onComment}
-        className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+        className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
       >
         Comentarios · {commentCount}
       </button>
@@ -131,7 +131,7 @@ export function ReactionBar({
           type="button"
           onClick={onSave}
           className={cn(
-            "min-h-[40px] rounded-full px-3 text-[13px] font-semibold",
+            "min-h-[40px] rounded-full px-3 text-[15px] font-semibold",
             saved
               ? "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]"
               : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)]",
@@ -146,7 +146,7 @@ export function ReactionBar({
           type="button"
           onClick={onReport}
           disabled={reported}
-          className="min-h-[40px] rounded-full px-3 text-[13px] font-semibold text-[var(--color-text-tertiary)]"
+          className="min-h-[40px] rounded-full px-3 text-[15px] font-semibold text-[var(--color-text-tertiary)]"
         >
           {reported ? "Avisado" : "Avisar"}
         </button>
@@ -174,7 +174,7 @@ export function CommentPreview({
     <div className={cn("flex gap-3", className)}>
       <Avatar src={avatarUrl} alt={authorName} size="sm" />
       <div className="min-w-0 flex-1 rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2">
-        <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
+        <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           {authorName}
           {meta ? (
             <span className="ml-2 font-medium text-[var(--color-text-tertiary)]">
@@ -247,7 +247,7 @@ export function CommunityPostCard({
           className="mt-3 block w-full text-left"
         >
           {decisionStatus ? (
-            <span className="inline-flex rounded-full bg-[var(--color-feedback-warning-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-feedback-warning)]">
+            <span className="inline-flex rounded-full bg-[var(--color-feedback-warning-subtle)] px-3 py-1 text-[14px] font-semibold text-[var(--color-feedback-warning)]">
               {decisionStatus}
             </span>
           ) : null}
@@ -351,7 +351,7 @@ export function CommunityConversationRow({
       >
         <span className="min-w-0 flex-1">
           {typeLabel || official ? (
-            <span className="mb-0.5 block text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            <span className="mb-0.5 block text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               {[official ? "Oficial" : null, typeLabel]
                 .filter(Boolean)
                 .join(" · ")}
@@ -383,7 +383,7 @@ export function CommunityConversationRow({
       {open ? (
         <div className="space-y-3 px-4 pb-3.5 pt-0">
           {meta ? (
-            <p className="text-[12px] text-[var(--color-text-tertiary)]">
+            <p className="text-[14px] text-[var(--color-text-tertiary)]">
               {meta}
             </p>
           ) : null}
@@ -394,7 +394,7 @@ export function CommunityConversationRow({
             <button
               type="button"
               onClick={onOpen}
-              className="text-[13px] font-semibold text-[var(--color-action-primary)]"
+              className="text-[15px] font-semibold text-[var(--color-action-primary)]"
             >
               Abrir conversación ›
             </button>

@@ -42,7 +42,7 @@ export function MarketplaceItemCard({
         <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
       </div>
       <span className="block space-y-3 p-4">
-        <span className="inline-flex rounded-full bg-[var(--color-action-accent-subtle)] px-3 py-1 text-[12px] font-semibold text-[var(--color-action-accent)]">
+        <span className="inline-flex rounded-full bg-[var(--color-action-accent-subtle)] px-3 py-1 text-[14px] font-semibold text-[var(--color-action-accent)]">
           {kindLabel}
         </span>
         <span className="block font-[family-name:var(--font-display)] text-[22px] font-semibold leading-7 text-[var(--color-text-primary)]">
@@ -63,7 +63,7 @@ export function MarketplaceItemCard({
               wrapperClassName="h-9 w-9 shrink-0 rounded-full"
             />
           ) : authorName ? (
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[13px] font-semibold text-[var(--color-action-primary)]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[15px] font-semibold text-[var(--color-action-primary)]">
               {authorName.slice(0, 1)}
             </span>
           ) : null}
@@ -73,7 +73,7 @@ export function MarketplaceItemCard({
                 {authorName}
               </span>
             ) : null}
-            <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+            <span className="block text-[15px] text-[var(--color-text-tertiary)]">
               {meta}
             </span>
           </span>
@@ -128,12 +128,12 @@ export function LocalPlaceCard({
           <span className="font-display block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
             {name}
           </span>
-          <span className="block truncate text-[11px] text-[var(--color-text-tertiary)]">
+          <span className="block truncate text-[15px] text-[var(--color-text-tertiary)]">
             {categoryLabel}
             {areaLabel ? ` · ${areaLabel}` : ""}
           </span>
           {recommendedBy ? (
-            <span className="block text-[11px] leading-4 text-[var(--color-text-secondary)]">
+            <span className="block text-[15px] leading-4 text-[var(--color-text-secondary)]">
               Por {recommendedBy}
             </span>
           ) : null}
@@ -160,24 +160,24 @@ export function LocalPlaceCard({
               "linear-gradient(transparent 40%, rgba(20,28,24,0.72))",
           }}
         >
-          <span className="text-[12px] font-semibold text-[var(--color-text-inverse)]/80">
+          <span className="text-[14px] font-semibold text-[var(--color-text-inverse)]/80">
             {categoryLabel}
             {verified ? " · Verificado" : ""}
           </span>
           <span className="mt-1 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-[var(--color-text-inverse)]">
             {name}
           </span>
-          <span className="mt-1 text-[13px] text-[var(--color-text-inverse)]/85">
+          <span className="mt-1 text-[15px] text-[var(--color-text-inverse)]/85">
             {areaLabel}
             {recommendedBy ? ` · Recomendado por ${recommendedBy}` : ""}
           </span>
           {blurb ? (
-            <span className="mt-2 line-clamp-2 text-[13px] leading-5 text-[var(--color-text-inverse)]/75">
+            <span className="mt-2 line-clamp-2 text-[15px] leading-5 text-[var(--color-text-inverse)]/75">
               {blurb}
             </span>
           ) : null}
           {trustNote ? (
-            <span className="mt-2 text-[12px] font-medium text-[var(--color-text-inverse)]/90">
+            <span className="mt-2 text-[14px] font-medium text-[var(--color-text-inverse)]/90">
               {trustNote}
             </span>
           ) : null}
@@ -239,13 +239,13 @@ export function NeighbourTipCard({
         </div>
       ) : null}
       <span className="min-w-0">
-        <span className="block text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
+        <span className="block text-[14px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
           Vecino
         </span>
         <span className="mt-1 block text-[16px] leading-6 text-[var(--color-text-primary)]">
           &ldquo;{quote}&rdquo;
         </span>
-        <span className="mt-2 block text-[13px] text-[var(--color-text-secondary)]">
+        <span className="mt-2 block text-[15px] text-[var(--color-text-secondary)]">
           {author}
           {relatedLabel ? ` · ${relatedLabel}` : ""}
         </span>
@@ -296,7 +296,7 @@ export function ActivityCard({
             {when} · {where}
           </p>
           {peopleLabel ? (
-            <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+            <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
               {peopleLabel}
             </p>
           ) : null}

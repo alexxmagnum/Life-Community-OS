@@ -202,7 +202,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
           {theme.logoText} · Oficial
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight text-[var(--color-text-primary)]">
@@ -212,10 +212,10 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
           {entityName}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
             {modeLabel}
           </span>
-          <span className="text-[13px] text-[var(--color-text-tertiary)]">
+          <span className="text-[15px] text-[var(--color-text-tertiary)]">
             {statusLabel}
           </span>
         </div>
@@ -229,7 +229,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
               setOfficialConversationStatus({ noticeId, status: "locked" });
               refresh();
             }}
-            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
+            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[15px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
           >
             Bloquear
           </button>
@@ -239,7 +239,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
               setOfficialConversationStatus({ noticeId, status: "archived" });
               refresh();
             }}
-            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
+            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[15px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
           >
             Archivar
           </button>
@@ -249,7 +249,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
               setOfficialConversationStatus({ noticeId, status: "active" });
               refresh();
             }}
-            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
+            className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[15px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)]"
           >
             Reactivar
           </button>
@@ -274,13 +274,13 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
                     {mine ? "Tú" : message.author.displayName}
                   </span>
                   {official ? (
-                    <span className="rounded-full bg-[var(--color-accent-official)]/15 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-accent-official)]">
+                    <span className="rounded-full bg-[var(--color-accent-official)]/15 px-2 py-0.5 text-[15px] font-semibold text-[var(--color-accent-official)]">
                       Oficial
                     </span>
                   ) : null}
                   {message.quickActionKind &&
                   OFFICIAL_QUICK_ACTION_LABELS[message.quickActionKind] ? (
-                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]">
+                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-text-secondary)]">
                       {OFFICIAL_QUICK_ACTION_LABELS[message.quickActionKind]}
                     </span>
                   ) : null}
@@ -291,7 +291,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
                   </p>
                 ) : null}
                 {message.mediaRefs?.length ? (
-                  <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+                  <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                     Adjunto preparado (mediaRefs)
                   </p>
                 ) : null}
@@ -306,8 +306,8 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
                           onClick={() => onReaction(message.id, reaction)}
                           className={
                             count > 0
-                              ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
-                              : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[13px] text-[var(--color-text-tertiary)]"
+                              ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
+                              : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[15px] text-[var(--color-text-tertiary)]"
                           }
                           aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
                         >
@@ -328,7 +328,7 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
 
       {canReply ? (
         <section className="mt-6 space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
-          <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Respuestas
           </p>
           <div className="flex flex-wrap gap-2">

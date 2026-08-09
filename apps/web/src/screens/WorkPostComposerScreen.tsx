@@ -108,7 +108,7 @@ export function WorkPostComposerScreen() {
         <ScreenBack label="Cancelar" onClick={() => router.back()} />
 
         <header className="space-y-2">
-          <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
             {theme.logoText} · Trabajo
           </p>
           <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -171,7 +171,7 @@ export function WorkPostComposerScreen() {
       />
 
       <header className="space-y-2">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText} · Trabajo
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -186,7 +186,7 @@ export function WorkPostComposerScreen() {
 
       <div className="space-y-4">
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Título
           </span>
           <input
@@ -203,7 +203,7 @@ export function WorkPostComposerScreen() {
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Categoría
           </span>
           <select
@@ -220,7 +220,7 @@ export function WorkPostComposerScreen() {
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Descripción
           </span>
           <textarea
@@ -237,7 +237,7 @@ export function WorkPostComposerScreen() {
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Disponibilidad
           </span>
           <input
@@ -250,7 +250,7 @@ export function WorkPostComposerScreen() {
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
             Zona
           </span>
           <input

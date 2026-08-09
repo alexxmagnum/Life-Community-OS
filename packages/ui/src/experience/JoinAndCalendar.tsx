@@ -55,7 +55,7 @@ export function ParticipationStatus({
   return (
     <span
       className={cn(
-        "inline-flex min-h-[32px] items-center rounded-full px-3 text-[13px] font-semibold",
+        "inline-flex min-h-[32px] items-center rounded-full px-3 text-[15px] font-semibold",
         copy.tone,
         className,
       )}
@@ -172,13 +172,13 @@ export function CalendarEventCard({
         />
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-semibold text-[var(--color-text-secondary)]">
+        <span className="block text-[15px] font-semibold text-[var(--color-text-secondary)]">
           {time}
         </span>
         <span className="block truncate text-[16px] font-semibold text-[var(--color-text-primary)]">
           {title}
         </span>
-        <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+        <span className="block text-[15px] text-[var(--color-text-tertiary)]">
           {place} · {statusLabel}
         </span>
       </span>

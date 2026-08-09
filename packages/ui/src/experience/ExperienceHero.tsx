@@ -38,7 +38,7 @@ export function ExperienceHero({
         }}
       >
         {brandOverline ? (
-          <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-inverse)]/90">
+          <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-inverse)]/90">
             {brandOverline}
           </p>
         ) : null}
@@ -73,7 +73,7 @@ export function ExperienceMeta({
       )}
     >
       <div>
-        <dt className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <dt className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           When
         </dt>
         <dd className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
@@ -81,7 +81,7 @@ export function ExperienceMeta({
         </dd>
       </div>
       <div>
-        <dt className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <dt className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Where
         </dt>
         <dd className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
@@ -95,7 +95,7 @@ export function ExperienceMeta({
       </div>
       {capacityLabel ? (
         <div className="sm:col-span-2">
-          <dt className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          <dt className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
             Spots
           </dt>
           <dd className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">

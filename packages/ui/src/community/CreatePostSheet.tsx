@@ -57,7 +57,7 @@ export function CreatePostSheet({
           Útil, local y de vecinos — no es una red social.
         </p>
         <label className="mt-4 block">
-          <span className="mb-1 block text-[13px] font-semibold">Título</span>
+          <span className="mb-1 block text-[15px] font-semibold">Título</span>
           <input
             value={postTitle}
             onChange={(e) => setPostTitle(e.target.value)}
@@ -66,7 +66,7 @@ export function CreatePostSheet({
           />
         </label>
         <label className="mt-3 block">
-          <span className="mb-1 block text-[13px] font-semibold">Detalle</span>
+          <span className="mb-1 block text-[15px] font-semibold">Detalle</span>
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
@@ -75,7 +75,7 @@ export function CreatePostSheet({
             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] p-3 text-[16px] leading-6 outline-none focus:ring-2 focus:ring-[var(--color-action-primary)]"
           />
         </label>
-        <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
+        <p className="mt-2 text-[14px] text-[var(--color-text-tertiary)]">
           Consejo: menciona a alguien con @Nombre (solo interfaz por ahora).
         </p>
         <div className="mt-5 flex gap-3">

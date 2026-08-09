@@ -47,7 +47,7 @@ export function ExperienceCard({
         <div className="relative aspect-[16/10] overflow-hidden bg-[var(--color-surface-muted)]">
           <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
           {statusLabel ? (
-            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-[var(--color-surface-elevated)]/95 px-3 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-[var(--color-surface-elevated)]/95 px-3 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
               {statusLabel}
             </span>
           ) : null}
@@ -60,7 +60,7 @@ export function ExperienceCard({
             {when} · {where}
           </p>
           {(meta || organizerName) && (
-            <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+            <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
               {[organizerName ? `Organizado por ${organizerName}` : null, meta]
                 .filter(Boolean)
                 .join(" · ")}
@@ -111,7 +111,7 @@ export function CommunityCard({
       )}
     >
       {author ? (
-        <p className="text-[13px] font-semibold text-[var(--color-accent-community)]">
+        <p className="text-[15px] font-semibold text-[var(--color-accent-community)]">
           {author} · Neighbours
         </p>
       ) : null}
@@ -121,7 +121,7 @@ export function CommunityCard({
       <p className="mt-1 text-[16px] leading-6 text-[var(--color-text-secondary)]">
         {body}
       </p>
-      <div className="mt-3 flex items-center gap-4 text-[13px] text-[var(--color-text-tertiary)]">
+      <div className="mt-3 flex items-center gap-4 text-[15px] text-[var(--color-text-tertiary)]">
         <span>{meta}</span>
         {typeof reactions === "number" ? <span>{reactions} reactions</span> : null}
         {typeof comments === "number" ? <span>{comments} comments</span> : null}
@@ -162,7 +162,7 @@ export function AnnouncementCard({
         </div>
       ) : null}
       <div className="border-l-4 border-[var(--color-accent-official)] p-4">
-        <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
+        <p className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-accent-official)]">
           Official
         </p>
         <h3 className="mt-1 text-[18px] font-semibold text-[var(--color-text-primary)]">
@@ -172,7 +172,7 @@ export function AnnouncementCard({
           {preview}
         </p>
         {area ? (
-          <p className="mt-2 text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="mt-2 text-[15px] text-[var(--color-text-tertiary)]">
             {area}
           </p>
         ) : null}
@@ -213,14 +213,14 @@ export function DiscoveryCard({
       </div>
       <div className="p-3">
         {badge ? (
-          <p className="mb-1 text-[12px] font-semibold text-[var(--color-sea)]">
+          <p className="mb-1 text-[14px] font-semibold text-[var(--color-sea)]">
             {badge}
           </p>
         ) : null}
         <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
           {title}
         </h3>
-        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+        <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
           {subtitle}
         </p>
       </div>
@@ -309,13 +309,13 @@ export function RecommendationCard({
         </div>
       ) : null}
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
+        <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-accent-community)]">
           Consejo de vecinos
         </p>
         <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-primary)]">
           &ldquo;{quote}&rdquo;
         </p>
-        <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
+        <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
           {author}
         </p>
       </div>
@@ -354,7 +354,7 @@ export function GroupCard({
         <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
           {name}
         </h3>
-        <p className="text-[13px] text-[var(--color-text-secondary)]">
+        <p className="text-[15px] text-[var(--color-text-secondary)]">
           {members} miembros
         </p>
       </div>

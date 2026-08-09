@@ -83,7 +83,7 @@ export function BottomNavigation({
                   onNavigate(item);
                 }}
                 className={cn(
-                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] text-[10px] font-semibold",
+                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] text-[14px] font-semibold",
                   active
                     ? "text-[var(--color-action-primary)]"
                     : "text-[var(--color-text-tertiary)]",

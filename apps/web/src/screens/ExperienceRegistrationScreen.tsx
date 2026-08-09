@@ -164,7 +164,7 @@ export function ExperienceRegistrationScreen({
           />
           <span className="text-[16px]">
             Avísame antes de que empiece
-            <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+            <span className="block text-[15px] text-[var(--color-text-tertiary)]">
               Las notificaciones se conectarán más adelante
             </span>
           </span>

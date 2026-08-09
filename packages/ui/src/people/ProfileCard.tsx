@@ -36,20 +36,20 @@ export function ProfileCard({
       <h1 className="mt-4 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-7 text-[var(--color-text-primary)]">
         {name}
       </h1>
-      <p className="mt-1 text-[13px] font-medium text-[var(--color-text-secondary)]">
+      <p className="mt-1 text-[15px] font-medium text-[var(--color-text-secondary)]">
         {membershipLabel}
       </p>
       {(areaLabel || interests.length > 0) && (
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {areaLabel ? (
-            <span className="rounded-[var(--radius-sm)] bg-[var(--color-action-primary-subtle)] px-3 py-1 text-[13px] font-semibold text-[var(--color-action-primary)]">
+            <span className="rounded-[var(--radius-sm)] bg-[var(--color-action-primary-subtle)] px-3 py-1 text-[15px] font-semibold text-[var(--color-action-primary)]">
               {areaLabel}
             </span>
           ) : null}
           {interests.map((interest) => (
             <span
               key={interest}
-              className="rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] px-3 py-1 text-[13px] font-medium text-[var(--color-text-secondary)]"
+              className="rounded-[var(--radius-sm)] bg-[var(--color-surface-muted)] px-3 py-1 text-[15px] font-medium text-[var(--color-text-secondary)]"
             >
               {interest}
             </span>

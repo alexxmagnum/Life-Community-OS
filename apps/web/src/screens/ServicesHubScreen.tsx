@@ -117,7 +117,7 @@ export function ServicesHubScreen() {
   return (
     <MobileScreen>
       <header className="pt-1">
-        <p className="text-[13px] font-medium uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-medium uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
           En tu comunidad
         </p>
         <h1 className="mt-1 font-[family-name:var(--font-brand)] text-[28px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-text-primary)]">
@@ -143,7 +143,7 @@ export function ServicesHubScreen() {
           <h2 className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
             Cerca de tu lugar
           </h2>
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">
             Sitios del territorio — no un directorio público.
           </p>
           <div className="flex flex-wrap gap-2">
@@ -152,7 +152,7 @@ export function ServicesHubScreen() {
                 key={entry.id}
                 type="button"
                 onClick={() => router.push(entry.href)}
-                className="min-h-[44px] rounded-full bg-[var(--color-action-primary-subtle)] px-4 text-[13px] font-semibold text-[var(--color-action-primary)]"
+                className="min-h-[44px] rounded-full bg-[var(--color-action-primary-subtle)] px-4 text-[15px] font-semibold text-[var(--color-action-primary)]"
               >
                 {entry.title}
               </button>

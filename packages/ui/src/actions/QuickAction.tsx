@@ -25,7 +25,7 @@ export function QuickAction({
       <span className="text-xl" aria-hidden>
         {icon}
       </span>
-      <span className="text-[13px] font-semibold leading-4">{label}</span>
+      <span className="text-[15px] font-semibold leading-4">{label}</span>
     </button>
   );
 }

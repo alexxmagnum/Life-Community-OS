@@ -83,7 +83,7 @@ export function CreateSheet({
             {resolvedSections.map((section) => (
               <section key={section.id} aria-label={section.title || title}>
                 {section.title ? (
-                  <h3 className="px-1 pb-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
+                  <h3 className="px-1 pb-1.5 text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
                     {section.title}
                   </h3>
                 ) : null}

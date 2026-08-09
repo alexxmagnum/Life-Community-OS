@@ -127,7 +127,7 @@ export function ResourceAvailabilityScreen({
         />
       </section>
 
-      <p className="text-[13px] text-[var(--color-text-tertiary)]">
+      <p className="text-[15px] text-[var(--color-text-tertiary)]">
         Duración · {resource.slotMinutes} minutos
         {resource.requiresApproval
           ? " · Puede requerir confirmación"

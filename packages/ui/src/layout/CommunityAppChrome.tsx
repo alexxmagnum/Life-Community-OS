@@ -124,7 +124,7 @@ export function CommunityAppHeader({
                   />
                 </svg>
                 {notificationCount > 0 ? (
-                  <span className="absolute right-0 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[#E53935] px-1 text-[9px] font-bold leading-none text-white">
+                  <span className="absolute right-0 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E53935] px-1 text-[12px] font-bold leading-none text-white">
                     {notificationCount > 9 ? "9+" : notificationCount}
                   </span>
                 ) : null}
@@ -145,7 +145,7 @@ export function CommunityAppHeader({
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-[13px] font-semibold">
+                  <span className="text-[15px] font-semibold">
                     {(profileName ?? "?").slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -813,7 +813,7 @@ export function AppMenuSheet({
                         {category.label}
                       </span>
                       {category.description ? (
-                        <span className="mt-0.5 block text-[12px] leading-snug text-[var(--color-text-tertiary)]">
+                        <span className="mt-0.5 block text-[14px] leading-snug text-[var(--color-text-tertiary)]">
                           {category.description}
                         </span>
                       ) : null}
@@ -940,7 +940,7 @@ export function HomeFeedCard({
           {title}
         </span>
         {meta ? (
-          <span className="mt-1 block text-[13px] text-[var(--color-text-secondary)]">
+          <span className="mt-1 block text-[15px] text-[var(--color-text-secondary)]">
             {meta}
           </span>
         ) : null}
@@ -974,14 +974,14 @@ export function SponsoredFeedCard({
   const body = (
     <span className="flex w-full items-center gap-3 py-4 text-left">
       <span className="min-w-0 flex-1">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+        <span className="text-[15px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
           {badgeLabel}
         </span>
         <span className="mt-1 block text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
           {title}
         </span>
         {authorName ? (
-          <span className="mt-1 block text-[12px] text-[var(--color-text-tertiary)]">
+          <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
             {authorName}
           </span>
         ) : null}

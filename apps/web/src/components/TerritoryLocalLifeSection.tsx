@@ -24,7 +24,7 @@ export function TerritoryLocalLifeSection({
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold text-[var(--color-text-primary)]">
           Qué puede ayudarte aquí
         </h2>
-        <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="mt-1 text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           {localLife.belongingLine}
         </p>
       </div>
@@ -49,12 +49,12 @@ export function TerritoryLocalLifeSection({
                     {item.entity.name}
                   </span>
                   {item.inYourArea ? (
-                    <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-action-primary)]">
+                    <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-action-primary)]">
                       Tu zona
                     </span>
                   ) : null}
                 </span>
-                <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+                <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
                   {item.entity.categoryLabel} · {item.entity.areaLabel}
                 </span>
               </span>
@@ -69,7 +69,7 @@ export function TerritoryLocalLifeSection({
             key={group.id}
             type="button"
             onClick={() => router.push(group.href)}
-            className="min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+            className="min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[15px] font-semibold text-[var(--color-text-secondary)]"
           >
             {group.title}
           </button>

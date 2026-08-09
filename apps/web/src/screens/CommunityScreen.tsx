@@ -259,7 +259,7 @@ export function CommunityHubScreen() {
       />
 
       {activeDefinition ? (
-        <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-secondary)]">
           {activeDefinition.purpose}
         </p>
       ) : null}
@@ -332,7 +332,7 @@ export function CommunityHubScreen() {
                     className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
                   >
                     <div className="min-w-0">
-                      <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                      <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                         {channel.type}
                       </p>
                       <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -344,7 +344,7 @@ export function CommunityHubScreen() {
                         </p>
                       ) : null}
                     </div>
-                    <p className={`mt-3 text-[13px] font-semibold ${toneClass}`}>
+                    <p className={`mt-3 text-[15px] font-semibold ${toneClass}`}>
                       {label.badge}
                     </p>
                   </article>
@@ -441,7 +441,7 @@ export function CommunityHubScreen() {
                 key={space.id}
                 className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
               >
-                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                   {space.type === "space" ? "Espacio" : "Amenidad"}
                 </p>
                 <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -450,7 +450,7 @@ export function CommunityHubScreen() {
                 <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
                   {space.description}
                 </p>
-                <p className="mt-2 text-[13px] text-[var(--color-text-tertiary)]">
+                <p className="mt-2 text-[15px] text-[var(--color-text-tertiary)]">
                   {[space.areaLabel, space.location, space.availabilityPreview]
                     .filter(Boolean)
                     .join(" · ")}
@@ -485,7 +485,7 @@ export function CommunityHubScreen() {
                     key={`place-${item.place.id}`}
                     className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
                   >
-                    <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                       Lugar · {item.place.categoryLabel}
                     </p>
                     <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -510,7 +510,7 @@ export function CommunityHubScreen() {
                     key={`work-${item.post.id}`}
                     className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
                   >
-                    <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                       Trabajo · {item.post.categoryLabel}
                     </p>
                     <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -536,7 +536,7 @@ export function CommunityHubScreen() {
                   key={`group-${item.group.id}`}
                   className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
                 >
-                  <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                     Grupo
                   </p>
                   <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">

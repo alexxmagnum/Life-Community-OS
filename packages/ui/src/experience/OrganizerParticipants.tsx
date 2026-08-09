@@ -23,7 +23,7 @@ export function OrganizerCard({
     >
       <Avatar src={avatarUrl} alt={name} size="lg" />
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           {roleLabel}
         </p>
         <p className="text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -55,7 +55,7 @@ export function ParticipantList({
         className,
       )}
     >
-      <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+      <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
         Van a ir
       </p>
       <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -74,12 +74,12 @@ export function ParticipantList({
               </span>
             ))}
             {extra > 0 ? (
-              <span className="ml-2 text-[13px] font-semibold text-[var(--color-text-secondary)]">
+              <span className="ml-2 text-[15px] font-semibold text-[var(--color-text-secondary)]">
                 +{extra}
               </span>
             ) : null}
           </div>
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
+          <p className="text-[15px] text-[var(--color-text-secondary)]">
             {shown.map((p) => p.name).join(", ")}
             {extra > 0 ? ` y ${extra} más` : ""}
           </p>

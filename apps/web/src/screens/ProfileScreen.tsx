@@ -93,7 +93,7 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Mi identidad
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Cómo apareces en la comunidad.
         </p>
         <ExploreLink
@@ -114,13 +114,13 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Mi hogar
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Tu vínculo con una propiedad del territorio — no es un catálogo
           inmobiliario.
         </p>
         {primary ? (
           <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               {primary.relationshipLabel}
             </p>
             <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -134,7 +134,7 @@ export function ProfileScreen() {
             <p className={`mt-3 text-[15px] font-semibold ${residencyTone}`}>
               {primary.statusLabel}
             </p>
-            <div className="mt-3 space-y-1 text-[13px] text-[var(--color-text-secondary)]">
+            <div className="mt-3 space-y-1 text-[15px] text-[var(--color-text-secondary)]">
               {primary.communityAreaLabel ? (
                 <p>
                   Área comunitaria ·{" "}
@@ -160,7 +160,7 @@ export function ProfileScreen() {
                 </p>
               ) : null}
             </div>
-            <p className="mt-3 text-[12px] leading-5 text-[var(--color-text-tertiary)]">
+            <p className="mt-3 text-[14px] leading-5 text-[var(--color-text-tertiary)]">
               Ser propietario o residente no otorga administración de la
               comunidad.
             </p>
@@ -170,7 +170,7 @@ export function ProfileScreen() {
             <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
               Sin hogar vinculado
             </p>
-            <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+            <p className="mt-2 text-[15px] leading-5 text-[var(--color-text-secondary)]">
               {home.emptyMessage}
             </p>
             <p className={`mt-3 text-[14px] font-semibold ${residencyTone}`}>
@@ -180,7 +180,7 @@ export function ProfileScreen() {
         )}
         {home.homes.length > 1 ? (
           <div className="space-y-2">
-            <p className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
+            <p className="text-[15px] font-semibold text-[var(--color-text-tertiary)]">
               Otros vínculos
             </p>
             {home.homes.slice(1).map((entry) => (
@@ -191,14 +191,14 @@ export function ProfileScreen() {
                 <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
                   {entry.headline}
                 </p>
-                <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
+                <p className="mt-0.5 text-[14px] text-[var(--color-text-secondary)]">
                   {entry.relationshipLabel} · {entry.statusLabel}
                 </p>
               </div>
             ))}
           </div>
         ) : null}
-        <p className="text-[12px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] leading-5 text-[var(--color-text-tertiary)]">
           {narrative}
         </p>
       </section>
@@ -210,7 +210,7 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Mis intereses
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Para recibir contenido más relevante.
         </p>
         {demoMember.interests.length > 0 ? (
@@ -218,7 +218,7 @@ export function ProfileScreen() {
             {demoMember.interests.map((interest) => (
               <span
                 key={interest}
-                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
+                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
               >
                 {interest}
               </span>
@@ -243,7 +243,7 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Mi actividad
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Tu participación en la comunidad.
         </p>
         {isFeatureEnabled("experiences") ? (
@@ -275,7 +275,7 @@ export function ProfileScreen() {
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
             Mis reservas
           </h2>
-          <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
             Acceso rápido a tus reservas.
           </p>
           <ExploreLink
@@ -296,7 +296,7 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Mis guardados
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Para volver a lo que te interesa.
         </p>
         {isFeatureEnabled("experiences") ? (
@@ -320,7 +320,7 @@ export function ProfileScreen() {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Configuración
         </h2>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           Gestiona tu cuenta.
         </p>
         <ExploreLink
@@ -345,10 +345,10 @@ export function ProfileScreen() {
       ) : null}
 
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
-        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
           Demo · persona / Mi hogar
         </p>
-        <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+        <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
           Cambia de persona para ver distintos vínculos Property ↔ Person. La
           reclamación pendiente no otorga acceso.
         </p>
@@ -360,8 +360,8 @@ export function ProfileScreen() {
               onClick={() => setDemoPersonId(m.personId)}
               className={
                 demoPersonId === m.personId
-                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[15px] font-semibold text-white"
+                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
               }
             >
               {m.displayName}
@@ -371,10 +371,10 @@ export function ProfileScreen() {
       </section>
 
       <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
-        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
           Vista previa de rol (fundación)
         </p>
-        <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+        <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
           Simula el futuro RBAC — independiente de propiedad / residencia.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -385,8 +385,8 @@ export function ProfileScreen() {
               onClick={() => setRole(r.id)}
               className={
                 role === r.id
-                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[15px] font-semibold text-white"
+                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
               }
             >
               {r.label}

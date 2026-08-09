@@ -61,7 +61,7 @@ export function ScreenHeader({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+            <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
               {eyebrow}
             </p>
           ) : null}
@@ -236,7 +236,7 @@ export function ExploreLink({
           {label}
         </span>
         {hint ? (
-          <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+          <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
             {hint}
           </span>
         ) : null}

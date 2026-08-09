@@ -99,14 +99,14 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
       />
 
       <header className="space-y-3">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText} · Trabajo
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-primary)]">
+          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[14px] font-semibold text-[var(--color-text-primary)]">
             {workPostTypeLabel(workPost.type)}
           </span>
-          <span className="text-[12px] font-medium text-[var(--color-text-tertiary)]">
+          <span className="text-[14px] font-medium text-[var(--color-text-tertiary)]">
             {workPost.categoryLabel}
           </span>
         </div>
@@ -128,12 +128,12 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
           <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
             {workPost.authorName}
           </p>
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
+          <p className="text-[15px] text-[var(--color-text-secondary)]">
             {[workPost.location, workPost.availability]
               .filter(Boolean)
               .join(" · ") || "Vecino de la comunidad"}
           </p>
-          <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
+          <p className="mt-0.5 text-[14px] text-[var(--color-text-tertiary)]">
             {formatContentWhen(workPost.createdAt)}
           </p>
         </div>
@@ -152,7 +152,7 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
             <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
               Contactar
             </span>
-            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
               Habla con quien publicó el anuncio
             </span>
           </span>

@@ -131,7 +131,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
             }}
           />
           <div className="absolute inset-x-0 bottom-0 p-4">
-            <p className="text-[13px] font-semibold text-white/80">
+            <p className="text-[15px] font-semibold text-white/80">
               {theme.logoText} · Actividad
             </p>
             <h1 className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-white">
@@ -144,7 +144,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
             {hub.description}
           </p>
           {participantHint ? (
-            <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+            <p className="text-[15px] font-medium text-[var(--color-text-tertiary)]">
               {participantHint} vecinos en grupos relacionados
             </p>
           ) : null}
@@ -156,7 +156,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
         <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
           Comunidad
         </h2>
-        <p className="text-[13px] text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] text-[var(--color-text-tertiary)]">
           Canales y grupos alrededor de {hub.label.toLowerCase()}.
         </p>
         {channels.length === 0 && groups.length === 0 ? (
@@ -180,18 +180,18 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
                   onClick={() => router.push("/community?tab=canales")}
                   className="w-full rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
                 >
-                  <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-action-primary)]">
+                  <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-action-primary)]">
                     Canal
                   </p>
                   <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
                     {ch.name}
                   </p>
                   {ch.description ? (
-                    <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+                    <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
                       {ch.description}
                     </p>
                   ) : null}
-                  <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
+                  <p className="mt-2 text-[14px] text-[var(--color-text-tertiary)]">
                     {label.badge}
                   </p>
                 </button>
@@ -216,7 +216,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
             Próximas experiencias
           </h2>
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">
             Momentos concretos relacionados con {hub.label.toLowerCase()}.
           </p>
           {experiences.length === 0 ? (
@@ -257,7 +257,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
             Recursos relacionados
           </h2>
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+          <p className="text-[15px] text-[var(--color-text-tertiary)]">
             Espacios e instalaciones útiles para esta actividad.
           </p>
           {resources.length === 0 ? (

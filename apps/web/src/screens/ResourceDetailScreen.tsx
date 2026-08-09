@@ -90,7 +90,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       </div>
 
       <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2.5">
-        <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] font-semibold text-[var(--color-text-tertiary)]">
           Acceso · {demoMember.displayName}
         </p>
         <p className={`mt-0.5 text-[14px] font-semibold ${hintClass}`}>
@@ -103,7 +103,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       </p>
 
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Dónde
         </h2>
         <p className="mt-1 text-[17px] font-semibold">{resource.location}</p>
@@ -113,7 +113,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       </section>
 
       <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-        <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           Normas de la comunidad
         </h2>
         <ul className="mt-3 space-y-2">

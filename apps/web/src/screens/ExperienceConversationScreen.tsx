@@ -176,7 +176,7 @@ export function ExperienceConversationScreen({
       />
 
       <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
+        <p className="text-[14px] font-semibold uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
           {theme.logoText} · Evento
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight text-[var(--color-text-primary)]">
@@ -186,10 +186,10 @@ export function ExperienceConversationScreen({
           {experienceTitle || "Actividad"}
         </p>
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-action-primary)]">
+          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
             Experiencia
           </span>
-          <span className="text-[13px] text-[var(--color-text-tertiary)]">
+          <span className="text-[15px] text-[var(--color-text-tertiary)]">
             {participantCount} personas preparándose
           </span>
         </div>
@@ -212,7 +212,7 @@ export function ExperienceConversationScreen({
                     {mine ? "Tú" : message.author.displayName}
                   </span>
                   {message.quickActionKind ? (
-                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-text-secondary)]">
+                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-text-secondary)]">
                       {QUICK_ACTION_LABELS[message.quickActionKind]}
                     </span>
                   ) : null}
@@ -223,7 +223,7 @@ export function ExperienceConversationScreen({
                   </p>
                 ) : null}
                 {message.mediaRefs?.length ? (
-                  <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+                  <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                     Adjunto preparado (mediaRefs)
                   </p>
                 ) : null}
@@ -237,8 +237,8 @@ export function ExperienceConversationScreen({
                         onClick={() => onReaction(message.id, reaction)}
                         className={
                           count > 0
-                            ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
-                            : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[13px] text-[var(--color-text-tertiary)]"
+                            ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
+                            : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[15px] text-[var(--color-text-tertiary)]"
                         }
                         aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
                       >
@@ -255,7 +255,7 @@ export function ExperienceConversationScreen({
       </ul>
 
       <section className="mt-6 space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
-        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
           Respuestas rápidas
         </p>
         <div className="flex flex-wrap gap-2">

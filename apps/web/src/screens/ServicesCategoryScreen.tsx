@@ -192,10 +192,10 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
                 className="w-full rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-primary)]">
+                  <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[14px] font-semibold text-[var(--color-text-primary)]">
                     {workPostTypeLabel(item.type)}
                   </span>
-                  <span className="text-[12px] font-medium text-[var(--color-text-tertiary)]">
+                  <span className="text-[14px] font-medium text-[var(--color-text-tertiary)]">
                     {item.categoryLabel}
                   </span>
                 </div>
@@ -205,12 +205,12 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
                 <p className="mt-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
                   {item.description}
                 </p>
-                <p className="mt-2 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                <p className="mt-2 text-[15px] leading-5 text-[var(--color-text-secondary)]">
                   {item.authorName}
                   {item.location ? ` · ${item.location}` : ""}
                   {item.availability ? ` · ${item.availability}` : ""}
                 </p>
-                <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+                <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                   {formatContentWhen(item.createdAt)}
                 </p>
               </button>
@@ -321,7 +321,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       <ScreenBack label="Servicios" onClick={() => router.push("/services")} />
 
       <header className="space-y-2">
-        <p className="text-[13px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] font-semibold tracking-wide text-[var(--color-text-tertiary)]">
           {theme.logoText} · Servicios
         </p>
         <h1 className="font-[family-name:var(--font-display)] text-[28px] font-semibold leading-8 text-[var(--color-text-primary)]">
@@ -330,7 +330,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
           {hub.problem}
         </p>
-        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
           {hub.description}
         </p>
       </header>
@@ -354,7 +354,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
             <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
               Busco trabajo
             </span>
-            <span className="mt-1 block text-[12px] leading-snug text-[var(--color-text-secondary)]">
+            <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
               Quiero trabajar cerca de casa
             </span>
           </button>
@@ -375,7 +375,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
             <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
               Ofrezco trabajo
             </span>
-            <span className="mt-1 block text-[12px] leading-snug text-[var(--color-text-secondary)]">
+            <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
               Necesito a alguien para un trabajo
             </span>
           </button>

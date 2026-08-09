@@ -130,7 +130,7 @@ export function ExperienceDetailScreen({
             <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
               Conversación
             </span>
-            <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
               Coordina con quienes van a la actividad
             </span>
           </span>

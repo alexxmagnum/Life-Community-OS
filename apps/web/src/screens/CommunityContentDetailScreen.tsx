@@ -197,7 +197,7 @@ export function CommunityContentDetailScreen({
         {canComment ? (
           <div className="space-y-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
             <label className="block">
-              <span className="mb-1 block text-[13px] font-semibold">
+              <span className="mb-1 block text-[15px] font-semibold">
                 Añadir un comentario
               </span>
               <textarea
