@@ -3,11 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  communityHubHref,
   contentTypeLabel,
   formatContentWhen,
   getExperienceById,
   listAccessibleChannels,
+  listActualidadContent,
+  listCommunityDiscussionContent,
+  listEspaciosComunitarios,
   listGroups,
+  listMascotasHubItems,
+  listParticipacionContent,
+  listPropuestaContent,
+  listVisibleCommunityHubAreas,
+  resolveCommunityHubArea,
+  type CommunityHubAreaId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CommunityConversationList,
@@ -26,40 +36,11 @@ import { useCommunityInteractions } from "@/providers/CommunityInteractionProvid
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
 /**
- * Comunidad answers: "Who is here and what are people doing?"
- * Plans appear as community life in Descubrir — not as a Comunidad module.
+ * Community Hub (D.0.7.1.1) — belonging root for the territory.
+ * Areas come from the canonical community-hub model (same as hamburger + registry).
+ * Communication Layer conversations remain contextual (Group / Experience / Work / Official).
  */
-type Chip = "conversaciones" | "grupos" | "propuestas" | "canales";
-
-function decisionLabel(status?: string) {
-  if (status === "closing_soon") return "Cierra pronto";
-  if (status === "closed") return "Cerrada";
-  if (status === "open") return "Abierta";
-  return undefined;
-}
-
-function resolveChip(raw: string | null): Chip | null {
-  if (!raw) return null;
-  if (
-    raw === "conversaciones" ||
-    raw === "grupos" ||
-    raw === "propuestas" ||
-    raw === "canales"
-  ) {
-    return raw;
-  }
-  const legacy: Record<string, Chip> = {
-    feed: "conversaciones",
-    talk: "conversaciones",
-    groups: "grupos",
-    decide: "propuestas",
-    experiences: "conversaciones",
-    channels: "canales",
-  };
-  return legacy[raw] ?? null;
-}
-
-export function CommunityScreen() {
+export function CommunityHubScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const {
@@ -84,40 +65,23 @@ export function CommunityScreen() {
     [demoPersonId],
   );
 
-  const chips = (
-    [
-      {
-        id: "conversaciones" as const,
-        label: "Conversaciones",
-        enabled: isFeatureEnabled("feed") || isFeatureEnabled("interactions"),
-      },
-      {
-        id: "grupos" as const,
-        label: "Grupos",
-        enabled:
-          isFeatureEnabled("groups") && isModuleEnabled("community.groups"),
-      },
-      {
-        id: "canales" as const,
-        label: "Canales",
-        enabled:
-          isFeatureEnabled("communityChannels") ||
-          isFeatureEnabled("officialChannels"),
-      },
-      {
-        id: "propuestas" as const,
-        label: "Propuestas",
-        enabled: isFeatureEnabled("decide"),
-      },
-    ] satisfies { id: Chip; label: string; enabled: boolean }[]
-  ).filter((c) => c.enabled);
+  const areas = useMemo(
+    () =>
+      listVisibleCommunityHubAreas({
+        isModuleEnabled,
+        isFeatureEnabled,
+      }),
+    [isModuleEnabled, isFeatureEnabled],
+  );
+
+  const chips = areas.map((a) => ({ id: a.id, label: a.label }));
 
   const tabParam = searchParams.get("tab");
-  const initial = resolveChip(tabParam);
-  const [chip, setChip] = useState<Chip>(
+  const initial = resolveCommunityHubArea(tabParam);
+  const [area, setArea] = useState<CommunityHubAreaId>(
     initial && chips.some((c) => c.id === initial)
       ? initial
-      : chips[0]?.id ?? "conversaciones",
+      : chips[0]?.id ?? "actualidad",
   );
   /** One open conversation row at a time — keeps the list compact. */
   const [openConversationId, setOpenConversationId] = useState<string | null>(
@@ -125,15 +89,19 @@ export function CommunityScreen() {
   );
 
   useEffect(() => {
-    const next = resolveChip(tabParam);
+    const next = resolveCommunityHubArea(tabParam);
     if (next && chips.some((c) => c.id === next)) {
-      setChip(next);
+      setArea(next);
     }
     // chips length/ids only change with feature flags
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
 
-  const active = chips.some((c) => c.id === chip) ? chip : chips[0]?.id;
+  const active: CommunityHubAreaId | undefined = chips.some((c) => c.id === area)
+    ? area
+    : chips[0]?.id;
+
+  const activeDefinition = areas.find((a) => a.id === active);
 
   const canView = hasCapability(CAPABILITIES.contentView);
   const canReact = hasCapability(CAPABILITIES.interactionReact);
@@ -141,17 +109,38 @@ export function CommunityScreen() {
   const canSave = hasCapability(CAPABILITIES.interactionSave);
   const canReport = hasCapability(CAPABILITIES.interactionReport);
 
-  const conversations = useMemo(
-    () => feedItems.filter((c) => c.type !== "proposal"),
-    [feedItems],
-  );
+  const feedById = useMemo(() => {
+    const map = new Map(feedItems.map((item) => [item.id, item]));
+    return map;
+  }, [feedItems]);
 
-  const proposals = useMemo(
-    () => feedItems.filter((c) => c.type === "proposal"),
-    [feedItems],
-  );
+  const actualidad = useMemo(() => {
+    return listActualidadContent()
+      .map((c) => feedById.get(c.id))
+      .filter(Boolean) as typeof feedItems;
+  }, [feedById]);
+
+  const discussions = useMemo(() => {
+    return listCommunityDiscussionContent()
+      .map((c) => feedById.get(c.id))
+      .filter(Boolean) as typeof feedItems;
+  }, [feedById]);
+
+  const proposals = useMemo(() => {
+    return listPropuestaContent()
+      .map((c) => feedById.get(c.id))
+      .filter(Boolean) as typeof feedItems;
+  }, [feedById]);
+
+  const participation = useMemo(() => {
+    return listParticipacionContent()
+      .map((c) => feedById.get(c.id))
+      .filter(Boolean) as typeof feedItems;
+  }, [feedById]);
 
   const groupItems = listGroups();
+  const espacios = listEspaciosComunitarios();
+  const mascotasItems = listMascotasHubItems();
 
   if (!active) {
     return (
@@ -162,7 +151,10 @@ export function CommunityScreen() {
     );
   }
 
-  if (!canView && active === "conversaciones") {
+  if (
+    !canView &&
+    (active === "actualidad" || active === "conversaciones")
+  ) {
     return (
       <EmptyState
         title="Sin acceso"
@@ -196,67 +188,88 @@ export function CommunityScreen() {
     />
   );
 
+  const renderContentRows = (
+    items: typeof feedItems,
+    emptyTitle: string,
+    emptyDescription: string,
+  ) => (
+    <CommunityConversationList
+      empty={
+        <EmptyState title={emptyTitle} description={emptyDescription} />
+      }
+    >
+      {items.map((item) => {
+        const linked = item.linkedExperienceId
+          ? getExperienceById(item.linkedExperienceId)
+          : undefined;
+        const when = formatContentWhen(item.publishedAt ?? item.createdAt);
+        const metaBits = [
+          item.author.name,
+          when,
+          item.areaLabel,
+          linked ? `Actividad · ${linked.title}` : null,
+        ].filter(Boolean);
+        return (
+          <CommunityConversationRow
+            key={item.id}
+            title={item.title}
+            body={item.body}
+            typeLabel={contentTypeLabel(item.type)}
+            official={item.isOfficial}
+            meta={metaBits.join(" · ")}
+            open={openConversationId === item.id}
+            onToggle={() =>
+              setOpenConversationId((current) =>
+                current === item.id ? null : item.id,
+              )
+            }
+            onOpen={() => router.push(`/community/content/${item.id}`)}
+            reactionBar={renderReactionBar(item)}
+          />
+        );
+      })}
+    </CommunityConversationList>
+  );
+
   return (
     <MobileScreen>
       <ScreenHeader
         eyebrow={theme.logoText}
         title="Comunidad"
-        subtitle="Pregunta, comparte y decide con tus vecinos."
+        subtitle="El lugar donde viven los vecinos del territorio."
       />
 
       <FilterChipRow
-        items={chips.map((c) => ({ id: c.id, label: c.label }))}
+        items={chips}
         activeId={active}
         onChange={(id) => {
-          const next = id as Chip;
-          setChip(next);
-          router.replace(`/community?tab=${next}`);
+          const next = id as CommunityHubAreaId;
+          setArea(next);
+          router.replace(communityHubHref(next));
         }}
       />
 
-      {active === "conversaciones" ? (
-        <CommunityConversationList
-          empty={
-            <EmptyState
-              title="Todavía no hay conversaciones"
-              description="Pregunta algo útil o comparte una actualización: aquí vive la conversación del barrio."
-            />
-          }
-        >
-          {conversations.map((item) => {
-            const linked = item.linkedExperienceId
-              ? getExperienceById(item.linkedExperienceId)
-              : undefined;
-            const when = formatContentWhen(
-              item.publishedAt ?? item.createdAt,
-            );
-            const metaBits = [
-              item.author.name,
-              when,
-              item.areaLabel,
-              linked ? `Actividad · ${linked.title}` : null,
-            ].filter(Boolean);
-            return (
-              <CommunityConversationRow
-                key={item.id}
-                title={item.title}
-                body={item.body}
-                typeLabel={contentTypeLabel(item.type)}
-                official={item.isOfficial}
-                meta={metaBits.join(" · ")}
-                open={openConversationId === item.id}
-                onToggle={() =>
-                  setOpenConversationId((current) =>
-                    current === item.id ? null : item.id,
-                  )
-                }
-                onOpen={() => router.push(`/community/content/${item.id}`)}
-                reactionBar={renderReactionBar(item)}
-              />
-            );
-          })}
-        </CommunityConversationList>
+      {activeDefinition ? (
+        <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">
+          {activeDefinition.purpose}
+        </p>
       ) : null}
+
+      {active === "actualidad"
+        ? renderContentRows(
+            actualidad,
+            "Todavía no hay actualidad",
+            "Cuando haya novedades del territorio, las verás aquí.",
+          )
+        : null}
+
+      {active === "conversaciones"
+        ? renderContentRows(
+            discussions,
+            "Todavía no hay conversaciones",
+            "Las discusiones de la comunidad aparecen aquí — no es un chat privado.",
+          )
+        : null}
 
       {active === "grupos" ? (
         groupItems.length === 0 ? (
@@ -287,13 +300,9 @@ export function CommunityScreen() {
           />
         ) : (
           <div className="space-y-3">
-            <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">
-              Organización de la información — no es un chat. Solo ves los
-              espacios a los que tienes acceso.
-            </p>
             {accessibleChannels.length === 0 ? (
               <EmptyState
-                title="No hay espacios disponibles"
+                title="No hay canales disponibles"
                 description="Cuando tengas acceso a un canal de tu comunidad, aparecerá aquí."
               />
             ) : (
@@ -362,6 +371,196 @@ export function CommunityScreen() {
           ))}
         </CommunityFeed>
       ) : null}
+
+      {active === "participacion" ? (
+        <div className="space-y-4">
+          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+            <h2 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
+              Participa en tu territorio
+            </h2>
+            <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+              Decisiones abiertas, propuestas en curso y formas de aportar —
+              sin convertir Comunidad en un chat.
+            </p>
+            <button
+              type="button"
+              className="mt-3 min-h-[44px] text-[14px] font-semibold text-[var(--color-action-primary)]"
+              onClick={() => {
+                setArea("propuestas");
+                router.replace(communityHubHref("propuestas"));
+              }}
+            >
+              Ver todas las propuestas →
+            </button>
+          </div>
+          <CommunityFeed
+            empty={
+              <EmptyState
+                title="Nada pendiente de tu participación"
+                description="Cuando haya decisiones abiertas, aparecerán aquí."
+              />
+            }
+          >
+            {participation.map((item) => (
+              <CommunityPostCard
+                key={item.id}
+                title={item.title}
+                body={item.body}
+                typeLabel="Participación"
+                authorName={item.author.name}
+                authorAvatarUrl={item.author.avatarUrl}
+                meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
+                decisionStatus={decisionLabel(item.decisionStatus)}
+                onOpen={() => router.push(`/community/content/${item.id}`)}
+                reactionBar={renderReactionBar(item)}
+              />
+            ))}
+          </CommunityFeed>
+        </div>
+      ) : null}
+
+      {active === "espacios" ? (
+        espacios.length === 0 ? (
+          <EmptyState
+            title="Aún no hay espacios listados"
+            description="Los espacios compartidos del territorio aparecerán aquí."
+          />
+        ) : (
+          <div className="space-y-3">
+            {espacios.map((space) => (
+              <article
+                key={space.id}
+                className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
+              >
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  {space.type === "space" ? "Espacio" : "Amenidad"}
+                </p>
+                <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                  {space.name}
+                </h3>
+                <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                  {space.description}
+                </p>
+                <p className="mt-2 text-[13px] text-[var(--color-text-tertiary)]">
+                  {[space.areaLabel, space.location, space.availabilityPreview]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+                {space.bookable ? (
+                  <button
+                    type="button"
+                    className="mt-3 min-h-[44px] text-[14px] font-semibold text-[var(--color-action-primary)]"
+                    onClick={() => router.push(`/resources/${space.id}`)}
+                  >
+                    Ver espacio →
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {active === "mascotas" ? (
+        mascotasItems.length === 0 ? (
+          <EmptyState
+            title="Mascotas en la comunidad"
+            description="Aquí vivirá lo relacionado con mascotas del territorio — vecinos, lugares y cuidados."
+          />
+        ) : (
+          <div className="space-y-3">
+            {mascotasItems.map((item) => {
+              if (item.kind === "place") {
+                return (
+                  <article
+                    key={`place-${item.place.id}`}
+                    className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
+                  >
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                      Lugar · {item.place.categoryLabel}
+                    </p>
+                    <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                      {item.place.name}
+                    </h3>
+                    <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                      {item.place.story}
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-3 min-h-[44px] text-[14px] font-semibold text-[var(--color-action-primary)]"
+                      onClick={() => router.push("/near/services")}
+                    >
+                      Ver en Cerca →
+                    </button>
+                  </article>
+                );
+              }
+              if (item.kind === "work") {
+                return (
+                  <article
+                    key={`work-${item.post.id}`}
+                    className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
+                  >
+                    <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                      Trabajo · {item.post.categoryLabel}
+                    </p>
+                    <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                      {item.post.title}
+                    </h3>
+                    <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                      {item.post.description}
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-3 min-h-[44px] text-[14px] font-semibold text-[var(--color-action-primary)]"
+                      onClick={() =>
+                        router.push(`/services/work/${item.post.id}`)
+                      }
+                    >
+                      Ver anuncio →
+                    </button>
+                  </article>
+                );
+              }
+              return (
+                <article
+                  key={`group-${item.group.id}`}
+                  className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]"
+                >
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                    Grupo
+                  </p>
+                  <h3 className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                    {item.group.name}
+                  </h3>
+                  <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+                    {item.group.description}
+                  </p>
+                  <button
+                    type="button"
+                    className="mt-3 min-h-[44px] text-[14px] font-semibold text-[var(--color-action-primary)]"
+                    onClick={() =>
+                      router.push(`/community/groups/${item.group.id}`)
+                    }
+                  >
+                    Abrir grupo →
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        )
+      ) : null}
     </MobileScreen>
   );
 }
+
+function decisionLabel(status?: string) {
+  if (status === "closing_soon") return "Cierra pronto";
+  if (status === "closed") return "Cerrada";
+  if (status === "open") return "Abierta";
+  return undefined;
+}
+
+/** @deprecated Use CommunityHubScreen — kept for existing imports. */
+export const CommunityScreen = CommunityHubScreen;

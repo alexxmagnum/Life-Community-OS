@@ -157,12 +157,12 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
           Comunidad
         </h2>
         <p className="text-[13px] text-[var(--color-text-tertiary)]">
-          Espacios y grupos alrededor de {hub.label.toLowerCase()}.
+          Canales y grupos alrededor de {hub.label.toLowerCase()}.
         </p>
         {channels.length === 0 && groups.length === 0 ? (
           <EmptyState
             title="Aún no hay comunidad aquí"
-            description={`Cuando haya un espacio o grupo de ${hub.label.toLowerCase()}, lo verás en este apartado.`}
+            description={`Cuando haya un canal o grupo de ${hub.label.toLowerCase()}, lo verás en este apartado.`}
           />
         ) : (
           <div className="space-y-3">
@@ -181,7 +181,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
                   className="w-full rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
                 >
                   <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-action-primary)]">
-                    Espacio
+                    Canal
                   </p>
                   <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
                     {ch.name}

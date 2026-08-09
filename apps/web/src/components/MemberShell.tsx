@@ -83,7 +83,7 @@ function buildNav(flags: {
   services: boolean;
   showCreate: boolean;
 }): NavItem[] {
-  /** High-frequency destinations — not a second explorer. */
+  /** High-frequency destinations — Comunidad opens Community Hub (/community). */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
     {

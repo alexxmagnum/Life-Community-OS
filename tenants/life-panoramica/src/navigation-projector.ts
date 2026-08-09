@@ -14,6 +14,9 @@ import { isTenantModuleEnabled } from "@life-community-os/types";
 
 import { CAPABILITIES } from "./capabilities";
 import {
+  listCommunityHubNavLeaves,
+} from "./community-hub";
+import {
   listExplorerActivities,
   type ExplorerNavLeaf,
 } from "./explorer-nav";
@@ -173,56 +176,28 @@ export function projectMemberNavigation(
   // ── AREA 1 — Community Explorer ─────────────────────────────
 
   if (moduleOn(configuration, "community")) {
-    const children: ProjectedNavLeaf[] = [
-      {
-        id: "c-news",
-        label: "Actualidad",
-        icon: "info",
-        href: "/community?tab=conversaciones",
-      },
-    ];
-    if (moduleOn(configuration, "community.proposals")) {
-      children.push({
-        id: "c-proposals",
-        label: "Propuestas",
-        icon: "proposal",
-        href: "/community?tab=propuestas",
-      });
-      if (isFeatureEnabled("decide")) {
-        children.push({
-          id: "c-participation",
-          label: "Participación",
-          icon: "help",
-          href: "/community?tab=propuestas",
-        });
-      }
-    }
-    if (moduleOn(configuration, "community.channels")) {
-      children.push({
-        id: "c-spaces",
-        label: "Espacios comunitarios",
-        icon: "people",
-        href: "/community?tab=canales",
+    /** Canonical Community Hub areas (D.0.7.1.1) — same model as Community Hub chips. */
+    const children: ProjectedNavLeaf[] = listCommunityHubNavLeaves(
+      configuration,
+      isFeatureEnabled,
+    ).map((leaf) => ({
+      id: leaf.id,
+      label: leaf.label,
+      icon: leaf.icon as ProjectedNavIcon,
+      href: leaf.href,
+    }));
+    if (children.length > 0) {
+      categories.push({
+        id: "community",
+        area: "explorer",
+        moduleId: "community",
+        tone: "community",
+        glyph: "🏡",
+        label: "Comunidad",
+        description: "La vida del territorio — vecinos, actividad y participación",
+        children,
       });
     }
-    if (moduleOn(configuration, "community.pets")) {
-      children.push({
-        id: "c-pets",
-        label: "Mascotas",
-        icon: "family",
-        href: "/community?tab=conversaciones",
-      });
-    }
-    categories.push({
-      id: "community",
-      area: "explorer",
-      moduleId: "community",
-      tone: "community",
-      glyph: "🏡",
-      label: "Comunidad",
-      description: "Comunicación y participación vecinal",
-      children,
-    });
   }
 
   if (moduleOn(configuration, "activities")) {

@@ -36,6 +36,7 @@ export * from "./community-pulse";
 export * from "./home-feed";
 export * from "./home-search";
 export * from "./explorer-nav";
+export * from "./community-hub";
 export * from "./service-near-hubs";
 export * from "./home-front-door";
 export {

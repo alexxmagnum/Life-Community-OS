@@ -161,6 +161,13 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
         dependencies: ["community"],
         featureFlagKeys: ["communityChannels", "officialChannels"],
         capabilityKeys: [CAP.channelView, CAP.channelCreate, CAP.channelPublish],
+        navigation: {
+          menuGroup: "community",
+          label: "Canales",
+          href: "/community?tab=canales",
+          order: 14,
+          icon: "public",
+        },
         configurationSchema: {},
       }),
       mod({
@@ -173,6 +180,13 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
         dependencies: ["community"],
         featureFlagKeys: ["groups"],
         capabilityKeys: [CAP.groupCreate],
+        navigation: {
+          menuGroup: "community",
+          label: "Grupos",
+          href: "/community?tab=grupos",
+          order: 11,
+          icon: "people",
+        },
         configurationSchema: {},
       }),
       mod({
@@ -188,7 +202,7 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
         navigation: {
           menuGroup: "community",
           label: "Propuestas",
-          href: "/community?tab=decidir",
+          href: "/community?tab=propuestas",
           order: 12,
           icon: "proposal",
         },
@@ -204,6 +218,13 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
         dependencies: ["community"],
         featureFlagKeys: [],
         capabilityKeys: [CAP.contentView, CAP.contentCreate],
+        navigation: {
+          menuGroup: "community",
+          label: "Mascotas",
+          href: "/community?tab=mascotas",
+          order: 18,
+          icon: "family",
+        },
         configurationSchema: {},
       }),
     ],

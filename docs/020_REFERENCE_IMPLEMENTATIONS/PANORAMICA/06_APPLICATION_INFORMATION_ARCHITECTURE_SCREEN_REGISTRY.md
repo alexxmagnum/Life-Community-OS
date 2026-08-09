@@ -92,7 +92,7 @@ Authenticated Person with active Membership (ADR-011). Five-destination IA.
 | Pulse | HomeScreen |
 | Explore | DiscoverScreen (+ segments) |
 | When | CalendarScreen |
-| Belong / talk / decide | CommunityScreen (+ chips) |
+| Belong / talk / decide | CommunityHubScreen (+ canonical areas) |
 | Self | ProfileScreen (Me) |
 
 ### Layer 3 — Create Experience
@@ -302,18 +302,21 @@ Cold/warm start brand moment → Welcome, Auth, or Home (`03`).
 | **Mobile** | Agenda default |
 | **Desktop** | Week/month optional split |
 
-#### CommunityScreen
+#### CommunityScreen / CommunityHubScreen
 
 | Field | Definition |
 |-------|------------|
-| **Purpose** | Belonging hub — news, groups, talk, decide |
-| **User goal** | Participate in community life |
+| **Purpose** | Belonging hub — territory life for neighbours (D.0.7.1.1) |
+| **User goal** | Enter the community and navigate its areas |
 | **Roles** | Member+ |
-| **Config** | Decide chip if proposals/polls enabled |
-| **Entry** | Nav |
-| **Components** | Chip tabs, feed cards, `GroupCard` |
+| **Config** | Areas gated by Module Registry + Tenant Configuration + features |
+| **Entry** | Bottom nav Comunidad; hamburger Comunidad leaves (same hub) |
+| **Canonical areas** | Actualidad · Grupos · Conversaciones · Canales · Propuestas · Participación · Espacios comunitarios · Mascotas |
+| **Source of truth** | `tenants/life-panoramica/src/community-hub.ts` |
+| **Components** | Chip tabs (`FilterChipRow`), feed cards, `GroupCard`, area surfaces |
 | **Journeys** | §5, §6 |
-| **Children** | CommunityFeed, GroupList, Conversation, Decide surfaces |
+| **Children** | Area surfaces; contextual Conversation screens remain under Group / Experience / Work / Official |
+| **Anti-goal** | Not a chat app / global inbox |
 
 #### ProfileScreen *(Me)*
 

@@ -308,12 +308,12 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
         )}
       </section>
 
-      {/* 4. Related community spaces (channels) */}
+      {/* 4. Related community channels */}
       {isFeatureEnabled("officialChannels") ||
       isFeatureEnabled("communityChannels") ? (
         <section className="space-y-3">
           <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-            Espacios comunitarios
+            Canales
           </h2>
           <p className="text-[13px] text-[var(--color-text-tertiary)]">
             Canales vinculados a esta entidad.
