@@ -90,6 +90,9 @@ export function HomeScreen() {
     () => `Hola ${demoMember.displayName}`,
   );
   const [searchQuery, setSearchQuery] = useState("");
+  /** Para ti / Hoy start collapsed — peek + expand. */
+  const [forYouOpen, setForYouOpen] = useState(false);
+  const [todayOpen, setTodayOpen] = useState(false);
 
   useEffect(() => {
     setLive(true);
@@ -127,6 +130,7 @@ export function HomeScreen() {
     () => buildForYouItems(demoMember, { limit: 5, ...frontDoorOpts }),
     [demoMember, frontDoorOpts],
   );
+  const forYouPeek = forYou[forYou.length - 1];
 
   const today = useMemo(
     () => buildTodayMoments({ limit: 5, ...frontDoorOpts }),
@@ -137,6 +141,16 @@ export function HomeScreen() {
     () => buildCommunityLifeItems({ limit: 4 }),
     [],
   );
+
+  const todaySquareCount = today.length + communityLife.length;
+  const todayPeek = today[0]
+    ? { title: today[0].title, subtitle: today[0].meta }
+    : communityLife[0]
+      ? {
+          title: communityLife[0].narrative,
+          subtitle: communityLife[0].context ?? communityLife[0].personName,
+        }
+      : null;
 
   const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
@@ -176,68 +190,133 @@ export function HomeScreen() {
       />
 
       <div className="space-y-8 pt-1 md:space-y-10">
-        {/* PARA TI — first content block; alerts fixed at top */}
-        <HomeSection
-          title="Para ti"
-          subtitle="Lo relevante para tu día en la comunidad."
-        >
-          {alerts.length > 0 ? (
-            <div className="mb-3 space-y-2">
-              {alerts.map((alert) => (
-                <button
-                  key={alert.id}
-                  type="button"
-                  onClick={() =>
-                    router.push(alert.href ?? "/community?tab=actualidad")
-                  }
-                  className="w-full rounded-[var(--radius-lg)] border border-[var(--color-warning)]/40 bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface-elevated))] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
-                >
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-warning)]">
-                    {communityAlertKindLabel(alert.kind)}
-                  </p>
-                  <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
-                    {alert.title}
-                  </p>
-                  <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                    {alert.body}
-                  </p>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {forYou.length === 0 && alerts.length === 0 ? (
+        {/* PARA TI — alerts always visible; personalized list is collapsible */}
+        {forYou.length === 0 && alerts.length === 0 ? (
+          <HomeSection
+            title="Para ti"
+            subtitle="Lo relevante para tu día en la comunidad."
+          >
             <EmptyState
               title="Tu comunidad empieza aquí."
               description="Cuando haya avisos, planes o recomendaciones para ti, los verás aquí."
             />
-          ) : (
-            <div className="space-y-3">
-              {forYou.map((item) => (
-                <CommunityActivityCard
-                  key={item.id}
-                  variant="compact"
-                  categoryLabel={forYouCategoryLabel(item.kind)}
-                  headline={item.title}
-                  context={item.subtitle}
-                  imageUrl={item.imageUrl}
-                  actionLabel="Abrir"
-                  onClick={() => router.push(item.href)}
-                  onAction={() => router.push(item.href)}
-                />
-              ))}
-            </div>
-          )}
-        </HomeSection>
+          </HomeSection>
+        ) : (
+          <section className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
+            <button
+              type="button"
+              onClick={() => setForYouOpen((open) => !open)}
+              aria-expanded={forYouOpen}
+              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
+            >
+              <div className="min-w-0">
+                <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
+                  Para ti
+                </h2>
+                <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+                  Lo relevante para tu día en la comunidad.
+                </p>
+              </div>
+              <span
+                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
+                  forYouOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
 
-        {/* HOY EN {territory} — community square */}
-        <HomeSection
-          title={todayTitle}
-          subtitle="Qué está pasando en tu lugar hoy."
-          actionLabel="Ver comunidad"
-          onAction={() => router.push("/community")}
-        >
-          {today.length === 0 && communityLife.length === 0 ? (
+            {alerts.length > 0 ? (
+              <div className="space-y-2 border-t border-[var(--color-border-subtle)] px-3 pb-2 pt-2">
+                {alerts.map((alert) => (
+                  <button
+                    key={alert.id}
+                    type="button"
+                    onClick={() =>
+                      router.push(alert.href ?? "/community?tab=actualidad")
+                    }
+                    className="w-full rounded-[var(--radius-lg)] border border-[var(--color-warning)]/40 bg-[color-mix(in_srgb,var(--color-warning)_12%,var(--color-surface-elevated))] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
+                  >
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--color-warning)]">
+                      {communityAlertKindLabel(alert.kind)}
+                    </p>
+                    <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+                      {alert.title}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+                      {alert.body}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+
+            {/* Collapsed peek — full cards on expand */}
+            {!forYouOpen ? (
+              forYou.length > 0 ? (
+                <div className="border-t border-[var(--color-border-subtle)]">
+                  {forYouPeek ? (
+                    <button
+                      type="button"
+                      onClick={() => setForYouOpen(true)}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                          {forYouPeek.title}
+                        </span>
+                        {forYouPeek.subtitle ? (
+                          <span className="mt-0.5 block truncate text-[13px] leading-4 text-[var(--color-text-secondary)]">
+                            {forYouPeek.subtitle}
+                          </span>
+                        ) : null}
+                      </span>
+                      {forYou.length > 1 ? (
+                        <span className="shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
+                          +{forYou.length - 1}
+                        </span>
+                      ) : null}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null
+            ) : forYou.length > 0 ? (
+              <div className="space-y-3 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
+                {forYou.map((item) => (
+                  <CommunityActivityCard
+                    key={item.id}
+                    variant="compact"
+                    categoryLabel={forYouCategoryLabel(item.kind)}
+                    headline={item.title}
+                    context={item.subtitle}
+                    imageUrl={item.imageUrl}
+                    actionLabel="Abrir"
+                    onClick={() => router.push(item.href)}
+                    onAction={() => router.push(item.href)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </section>
+        )}
+
+        {/* HOY EN {territory} — community square, same collapsible as Para ti */}
+        {todaySquareCount === 0 ? (
+          <HomeSection
+            title={todayTitle}
+            subtitle="Qué está pasando en tu lugar hoy."
+            actionLabel="Ver comunidad"
+            onAction={() => router.push("/community")}
+          >
             <EmptyState
               title="Hoy está tranquilo por aquí."
               description="Cuando haya planes, avisos o historias de vecinos, aparecerán aquí."
@@ -252,59 +331,130 @@ export function HomeScreen() {
                   : undefined
               }
             />
-          ) : (
-            <div className="space-y-3">
-              {today.map((moment) => (
-                <button
-                  key={moment.id}
-                  type="button"
-                  onClick={() => router.push(moment.href)}
-                  className="flex w-full gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
-                >
-                  <div className="w-14 shrink-0">
-                    <p className="text-[13px] font-bold text-[var(--color-action-primary)]">
-                      {moment.timeLabel}
-                    </p>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
-                      {moment.title}
-                    </p>
-                    <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
-                      {moment.meta}
-                    </p>
-                  </div>
-                </button>
-              ))}
+          </HomeSection>
+        ) : (
+          <section className="overflow-hidden rounded-[18px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
+            <button
+              type="button"
+              onClick={() => setTodayOpen((open) => !open)}
+              aria-expanded={todayOpen}
+              className="flex w-full items-start justify-between gap-3 px-4 pb-2 pt-3.5 text-left"
+            >
+              <div className="min-w-0">
+                <h2 className="font-display text-[22px] font-semibold leading-7 tracking-tight text-[var(--color-text-primary)] sm:text-[24px]">
+                  {todayTitle}
+                </h2>
+                <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+                  Qué está pasando en tu lugar hoy.
+                </p>
+              </div>
+              <span
+                className={`mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)] transition-transform duration-200 ${
+                  todayOpen ? "rotate-180" : ""
+                }`}
+                aria-hidden
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M6 9l6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+            </button>
 
-              {communityLife.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]"
-                >
-                  {item.personName ? (
-                    <AuthorCard
-                      name={item.personName}
-                      avatarUrl={item.personAvatarUrl}
-                      meta={item.context}
-                    />
-                  ) : null}
+            {!todayOpen ? (
+              <div className="border-t border-[var(--color-border-subtle)]">
+                {todayPeek ? (
                   <button
                     type="button"
-                    onClick={() => router.push(item.href)}
-                    className={`block w-full text-left ${
-                      item.personName ? "mt-2.5" : ""
-                    }`}
+                    onClick={() => setTodayOpen(true)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.02]"
                   >
-                    <p className="text-[15px] font-semibold leading-6 text-[var(--color-text-primary)]">
-                      {item.narrative}
-                    </p>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[15px] font-semibold leading-5 text-[var(--color-text-primary)]">
+                        {todayPeek.title}
+                      </span>
+                      {todayPeek.subtitle ? (
+                        <span className="mt-0.5 block truncate text-[13px] leading-4 text-[var(--color-text-secondary)]">
+                          {todayPeek.subtitle}
+                        </span>
+                      ) : null}
+                    </span>
+                    {todaySquareCount > 1 ? (
+                      <span className="shrink-0 text-[12px] font-semibold text-[var(--color-action-primary)]">
+                        +{todaySquareCount - 1}
+                      </span>
+                    ) : null}
                   </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </HomeSection>
+                ) : null}
+              </div>
+            ) : (
+              <div className="space-y-3 border-t border-[var(--color-border-subtle)] px-3 pb-3.5 pt-2">
+                <div className="flex justify-end px-1">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/community")}
+                    className="text-[13px] font-semibold text-[var(--color-action-primary)]"
+                  >
+                    Ver comunidad
+                  </button>
+                </div>
+                {today.map((moment) => (
+                  <button
+                    key={moment.id}
+                    type="button"
+                    onClick={() => router.push(moment.href)}
+                    className="flex w-full gap-3 rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-4 py-3.5 text-left"
+                  >
+                    <div className="w-14 shrink-0">
+                      <p className="text-[13px] font-bold text-[var(--color-action-primary)]">
+                        {moment.timeLabel}
+                      </p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[16px] font-semibold text-[var(--color-text-primary)]">
+                        {moment.title}
+                      </p>
+                      <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+                        {moment.meta}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+
+                {communityLife.map((item) => (
+                  <article
+                    key={item.id}
+                    className="rounded-[var(--radius-lg)] bg-[var(--color-surface)] px-4 py-3.5"
+                  >
+                    {item.personName ? (
+                      <AuthorCard
+                        name={item.personName}
+                        avatarUrl={item.personAvatarUrl}
+                        meta={item.context}
+                      />
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => router.push(item.href)}
+                      className={`block w-full text-left ${
+                        item.personName ? "mt-2.5" : ""
+                      }`}
+                    >
+                      <p className="text-[15px] font-semibold leading-6 text-[var(--color-text-primary)]">
+                        {item.narrative}
+                      </p>
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* QUÉ PUEDES HACER HOY — experience discovery */}
         {isFeatureEnabled("experiences") ? (
