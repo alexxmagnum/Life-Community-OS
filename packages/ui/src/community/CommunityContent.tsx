@@ -334,7 +334,12 @@ export function CommunityPostCard({
                 {authorName.slice(0, 1).toUpperCase()}
               </span>
             ) : (
-              <Avatar src={authorAvatarUrl} alt={authorName} size="sm" />
+              <Avatar
+                src={authorAvatarUrl}
+                alt={authorName}
+                size="sm"
+                zoomable={false}
+              />
             )}
             <p className="min-w-0 flex-1 truncate text-[13px] text-[var(--color-text-tertiary)]">
               <span className="font-semibold text-[var(--color-text-primary)]">
