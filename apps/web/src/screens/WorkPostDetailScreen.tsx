@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   expressWorkInterest,
@@ -17,7 +18,7 @@ import { canOpenWorkConversation } from "@/lib/work-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Work post detail — contextual entry to Communication Layer (D.0.6.1).
+ * Work post detail — Need → Request → Responses → Conversation.
  */
 export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   const router = useRouter();
@@ -28,6 +29,7 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     hasCapability,
     demoMember,
   } = useTenant();
+  const [contactNote, setContactNote] = useState<string | null>(null);
 
   const workEnabled =
     isModuleEnabled("services") &&
@@ -99,11 +101,12 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
       workPostId: workPost.id,
       personId: demoMember.personId,
     });
+    setContactNote("Interés registrado. Abriendo conversación…");
     router.push(`/services/work/${workPost.id}/conversation`);
   };
 
   return (
-    <MobileScreen>
+    <MobileScreen dense>
       <FlowScreenHeader
         title={workPost.title}
         subtitle={workPostTypeLabel(workPost.type)}
@@ -111,36 +114,40 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
         onExit={() => router.push("/services")}
       />
 
-      <header className="space-y-3">
+      <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[14px] font-semibold text-[var(--color-text-primary)]">
+          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[13px] font-semibold text-[var(--color-text-primary)]">
             {workPostTypeLabel(workPost.type)}
           </span>
-          <span className="text-[14px] font-medium text-[var(--color-text-tertiary)]">
+          <span className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
             {workPost.categoryLabel}
           </span>
+          <span className="rounded-full bg-[var(--color-success-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-success)]">
+            Abierto
+          </span>
         </div>
-        <p className="text-[16px] leading-7 text-[var(--color-text-secondary)]">
+        <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
           {workPost.description}
         </p>
       </header>
 
-      <section className="flex items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]">
+      <section className="flex items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3.5 py-3 shadow-[var(--shadow-elev-1)]">
         <Avatar
           src={workPost.authorAvatarUrl}
           alt={workPost.authorName}
           size="md"
+          zoomable={false}
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+          <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
             {workPost.authorName}
           </p>
-          <p className="text-[15px] text-[var(--color-text-secondary)]">
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
             {[workPost.location, workPost.availability]
               .filter(Boolean)
               .join(" · ") || "Vecino de la comunidad"}
           </p>
-          <p className="mt-0.5 text-[14px] text-[var(--color-text-tertiary)]">
+          <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
             {formatContentWhen(workPost.createdAt)}
           </p>
         </div>
@@ -150,23 +157,30 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
         <button
           type="button"
           onClick={openConversation}
-          className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+          className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-action-primary)] px-4 py-3.5 text-left transition-transform active:scale-[0.99]"
         >
-          <span className="text-[22px]" aria-hidden>
-            💬
-          </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
+            <span className="block text-[15px] font-semibold text-white">
               Contactar
             </span>
-            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
+            <span className="mt-0.5 block text-[13px] text-white/85">
               Habla con quien publicó el anuncio
             </span>
           </span>
-          <span className="text-[var(--color-text-tertiary)]" aria-hidden>
+          <span className="text-white" aria-hidden>
             ›
           </span>
         </button>
+      ) : (
+        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] text-[var(--color-text-secondary)]">
+          La conversación no está disponible con tu cuenta actual.
+        </p>
+      )}
+
+      {contactNote ? (
+        <p className="text-[12px] font-medium text-[var(--color-success)]" role="status">
+          {contactNote}
+        </p>
       ) : null}
     </MobileScreen>
   );

@@ -78,7 +78,7 @@ export function CalendarScreen() {
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Mis actividades"
+        title="Mi agenda"
         subtitle="Lo que tienes apuntado en la comunidad."
         onBack={() => router.push("/")}
         onExit={() => router.push("/")}
@@ -105,8 +105,7 @@ export function CalendarScreen() {
         <div className="rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-elev-1)]">
           <p className="text-[17px] font-semibold">Este mes</p>
           <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-secondary)]">
-            Tus actividades aparecen en la lista. Mantén el día a día claro y
-            calmado.
+            Tus experiencias y reservas aparecen en la lista.
           </p>
         </div>
       ) : null}
@@ -115,9 +114,9 @@ export function CalendarScreen() {
         allItems.length === 0 ? (
           <EmptyState
             title="Tu semana está libre"
-            description="Únete a un plan o reserva un espacio y aparecerá aquí."
-            actionLabel="Descubrir lugares"
-            onAction={() => router.push("/resources")}
+            description="Únete a una experiencia o reserva un espacio y aparecerá aquí."
+            actionLabel="Ver experiencias"
+            onAction={() => router.push("/experiences")}
           />
         ) : (
           <div className="space-y-6">

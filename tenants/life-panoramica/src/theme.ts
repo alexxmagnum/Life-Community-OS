@@ -10,9 +10,10 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
   logoText: "Life Panoramica",
   tagline: "Tu comunidad, viva",
   identity: {
-    territoryName: "Panorámica Golf",
+    /** Resident-facing place name — match chrome brand (Life Panoramica). */
+    territoryName: "Life Panoramica",
     defaultAreaName: "Aldea Golf",
-    homeCallout: "Hoy en Panorámica Golf",
+    homeCallout: "Hoy en Life Panoramica",
     pulseTitleTemplate: "Hoy en {territory}",
     weatherLabel: "24° · Soleado",
   },

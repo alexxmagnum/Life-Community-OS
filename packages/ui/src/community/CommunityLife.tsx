@@ -111,13 +111,19 @@ export function LocalPlaceCard({
   onClick,
   className,
 }: LocalPlaceCardProps) {
+  const interactive = typeof onClick === "function";
+  const Root = interactive ? "button" : "div";
+  const rootProps = interactive
+    ? { type: "button" as const, onClick }
+    : { role: "group" as const };
+
   if (variant === "discovery") {
     return (
-      <button
-        type="button"
-        onClick={onClick}
+      <Root
+        {...rootProps}
         className={cn(
           "w-[148px] shrink-0 overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] text-left shadow-[0_4px_16px_rgba(26,31,28,0.06)]",
+          interactive ? "transition-transform active:scale-[0.99]" : undefined,
           className,
         )}
       >
@@ -138,16 +144,16 @@ export function LocalPlaceCard({
             </span>
           ) : null}
         </span>
-      </button>
+      </Root>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Root
+      {...rootProps}
       className={cn(
         "w-[min(78vw,280px)] shrink-0 overflow-hidden rounded-[24px] text-left shadow-[0_8px_24px_rgba(26,31,28,0.08)]",
+        interactive ? "transition-transform active:scale-[0.99]" : undefined,
         className,
       )}
     >
@@ -183,7 +189,7 @@ export function LocalPlaceCard({
           ) : null}
         </div>
       </div>
-    </button>
+    </Root>
   );
 }
 

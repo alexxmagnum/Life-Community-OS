@@ -18,6 +18,7 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 
 const STORAGE_KEY = "lcos:experience-participations";
+const SAVED_STORAGE_KEY = "lcos:experience-saves";
 
 export type ParticipationRecord = {
   experienceId: string;
@@ -41,6 +42,8 @@ type ExperienceParticipationContextValue = {
   leave: (experienceId: string) => void;
   setReminders: (experienceId: string, reminders: boolean) => void;
   joinedExperiences: Experience[];
+  isSaved: (experienceId: string) => boolean;
+  toggleSave: (experienceId: string) => void;
 };
 
 const ExperienceParticipationContext =
@@ -62,16 +65,35 @@ function writeStorage(map: ParticipationMap) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
 }
 
+function readSavedIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(SAVED_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as string[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedIds(ids: string[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(ids));
+}
+
 export function ExperienceParticipationProvider({
   children,
 }: {
   children: ReactNode;
 }) {
   const [records, setRecords] = useState<ParticipationMap>({});
+  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setRecords(readStorage());
+    setSavedIds(readSavedIds());
     setHydrated(true);
   }, []);
 
@@ -79,6 +101,11 @@ export function ExperienceParticipationProvider({
     if (!hydrated) return;
     writeStorage(records);
   }, [records, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeSavedIds(savedIds);
+  }, [savedIds, hydrated]);
 
   const getParticipation = useCallback(
     (experienceId: string) => records[experienceId],
@@ -160,6 +187,19 @@ export function ExperienceParticipationProvider({
       );
   }, [records]);
 
+  const isSaved = useCallback(
+    (experienceId: string) => savedIds.includes(experienceId),
+    [savedIds],
+  );
+
+  const toggleSave = useCallback((experienceId: string) => {
+    setSavedIds((prev) =>
+      prev.includes(experienceId)
+        ? prev.filter((id) => id !== experienceId)
+        : [...prev, experienceId],
+    );
+  }, []);
+
   const value = useMemo(
     () => ({
       records,
@@ -169,6 +209,8 @@ export function ExperienceParticipationProvider({
       leave,
       setReminders,
       joinedExperiences,
+      isSaved,
+      toggleSave,
     }),
     [
       records,
@@ -178,6 +220,8 @@ export function ExperienceParticipationProvider({
       leave,
       setReminders,
       joinedExperiences,
+      isSaved,
+      toggleSave,
     ],
   );
 

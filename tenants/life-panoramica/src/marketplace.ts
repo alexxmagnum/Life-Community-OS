@@ -1,6 +1,6 @@
 /**
  * Neighbour-to-neighbour exchange — community life layer (not commercial marketplace).
- * Tenant mock catalog; same shape for any tenant. Ready for future API.
+ * Tenant mock catalog + session creates. Ready for future API.
  */
 
 import {
@@ -30,6 +30,24 @@ export type MarketplaceListing = {
   imageUrl: string;
   publishedAt: string;
 };
+
+export type CreateMarketplaceListingInput = {
+  kind: MarketplaceListingKind;
+  title: string;
+  description: string;
+  priceLabel?: string;
+  areaLabel?: string;
+  authorName: string;
+  authorPersonId?: string;
+  authorAvatarUrl?: string;
+  imageUrl?: string;
+};
+
+const CREATED_STORAGE_KEY =
+  "lcos.life-panoramica.marketplace.created.v1";
+
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=80";
 
 function hoursAgo(hours: number): string {
   const d = new Date();
@@ -98,11 +116,71 @@ export const marketplaceCatalog: MarketplaceListing[] = [
   },
 ];
 
-export function listMarketplaceListings(): MarketplaceListing[] {
-  return [...marketplaceCatalog].sort(
+function readCreatedListings(): MarketplaceListing[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CREATED_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as MarketplaceListing[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeCreatedListings(items: MarketplaceListing[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CREATED_STORAGE_KEY, JSON.stringify(items));
+}
+
+export function listMarketplaceListings(options?: {
+  includeSessionCreated?: boolean;
+}): MarketplaceListing[] {
+  const includeSession =
+    options?.includeSessionCreated ?? typeof window !== "undefined";
+  const created = includeSession ? readCreatedListings() : [];
+  const seen = new Set<string>();
+  const merged: MarketplaceListing[] = [];
+  for (const item of [...created, ...marketplaceCatalog]) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    merged.push(item);
+  }
+  return merged.sort(
     (a, b) =>
       new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
+}
+
+export function getMarketplaceListingById(
+  listingId: string,
+  options?: { includeSessionCreated?: boolean },
+): MarketplaceListing | undefined {
+  const target = listingId.trim();
+  if (!target) return undefined;
+  return listMarketplaceListings(options).find((item) => item.id === target);
+}
+
+export function createMarketplaceListing(
+  input: CreateMarketplaceListingInput,
+): MarketplaceListing {
+  const id = `mp-created-${Date.now().toString(36)}`;
+  const listing: MarketplaceListing = {
+    id,
+    kind: input.kind,
+    title: input.title.trim(),
+    description: input.description.trim(),
+    priceLabel: input.priceLabel?.trim() || undefined,
+    areaLabel: input.areaLabel?.trim() || "Life Panoramica",
+    authorName: input.authorName.trim() || "Vecino",
+    authorPersonId: input.authorPersonId,
+    authorAvatarUrl: input.authorAvatarUrl,
+    imageUrl: input.imageUrl?.trim() || DEFAULT_IMAGE,
+    publishedAt: new Date().toISOString(),
+  };
+  const existing = readCreatedListings();
+  writeCreatedListings([listing, ...existing.filter((i) => i.id !== id)]);
+  return listing;
 }
 
 export function marketplaceKindLabel(kind: MarketplaceListingKind): string {

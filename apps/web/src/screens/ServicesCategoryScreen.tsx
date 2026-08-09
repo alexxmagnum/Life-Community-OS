@@ -168,6 +168,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               verified={place.verified}
               trustNote={place.trustNote}
               className="w-full max-w-none"
+              onClick={() => router.push(`/near/place/${place.id}`)}
             />
           ))}
         </div>
@@ -186,6 +187,8 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <EmptyState
           title={hub.emptyTitle}
           description={hub.emptyDescription}
+          actionLabel="Publicar anuncio"
+          onAction={() => router.push("/services/work/create")}
         />
       );
     } else {
@@ -239,8 +242,8 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <EmptyState
           title={hub.emptyTitle}
           description={hub.emptyDescription}
-          actionLabel="Ver compra y venta"
-          onAction={() => router.push("/marketplace")}
+          actionLabel="Publicar petición"
+          onAction={() => router.push("/marketplace/create?kind=request")}
         />
       );
     } else {
@@ -256,7 +259,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               authorAvatarUrl={item.authorAvatarUrl}
               imageUrl={item.imageUrl}
               meta={`${item.areaLabel} · ${formatContentWhen(item.publishedAt)}`}
-              onClick={() => router.push("/marketplace")}
+              onClick={() => router.push(`/marketplace/${item.id}`)}
             />
           ))}
         </div>
@@ -283,7 +286,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               authorAvatarUrl={item.authorAvatarUrl}
               imageUrl={item.imageUrl}
               meta={`${item.areaLabel} · ${formatContentWhen(item.publishedAt)}`}
-              onClick={() => router.push("/marketplace")}
+              onClick={() => router.push(`/marketplace/${item.id}`)}
             />
           ))}
         </div>
@@ -400,6 +403,13 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         <ScreenPrimaryAction
           label="Publicar anuncio"
           onClick={() => router.push("/services/work/create")}
+        />
+      ) : null}
+
+      {hub.content.kind === "neighbour-help" && canMarket ? (
+        <ScreenPrimaryAction
+          label="Pedir u ofrecer ayuda"
+          onClick={() => router.push("/marketplace/create?kind=request")}
         />
       ) : null}
     </MobileScreen>

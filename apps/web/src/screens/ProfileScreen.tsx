@@ -26,9 +26,8 @@ const roles: { id: DemoRole; label: string }[] = [
 ];
 
 /**
- * Mi perfil — personal navigation system (separate from Community Explorer).
- * Answers: "Who am I and what is my place in the territory?" (D.0.7.2.1 My Home).
- * Property ownership is context — never community administration.
+ * Mi perfil — identity, preferences, personal context.
+ * Property info only where useful for belonging — never real-estate catalog.
  */
 export function ProfileScreen() {
   const router = useRouter();
@@ -66,11 +65,14 @@ export function ProfileScreen() {
             ? "text-[var(--color-warning)]"
             : "text-[var(--color-action-primary)]";
 
+  const placeName =
+    theme.identity?.territoryName ?? theme.logoText ?? "Life Panoramica";
+
   return (
-    <MobileScreen>
+    <MobileScreen dense>
       <ScreenHeader
         title="Mi perfil"
-        subtitle="Tu identidad en la comunidad."
+        subtitle="Quién eres en la comunidad."
       />
 
       <ProfileCard
@@ -80,63 +82,64 @@ export function ProfileScreen() {
           primary?.communityAreaLabel ||
           demoMember.areaLabel ||
           theme.identity?.defaultAreaName ||
-          theme.logoText
+          placeName
         }
         interests={demoMember.interests}
         avatarUrl={demoMember.avatarUrl}
-        onEdit={() => undefined}
       />
 
-      {/* Mi identidad */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+      <section className="space-y-2">
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           Mi identidad
         </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Cómo apareces en la comunidad.
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          {demoMember.fullName} · Español
         </p>
-        <ExploreLink
-          label="Nombre y foto"
-          hint={demoMember.fullName}
-          onClick={() => undefined}
-        />
-        <ExploreLink label="Idioma" hint="Español" onClick={() => undefined} />
-        <ExploreLink
-          label="Preferencias de comunicación"
-          hint="Cómo y cuándo te avisamos"
-          onClick={() => undefined}
-        />
+        {demoMember.interests.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {demoMember.interests.map((interest) => (
+              <span
+                key={interest}
+                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
+              >
+                {interest}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Aún no has marcado intereses.
+          </p>
+        )}
       </section>
 
-      {/* Mi hogar — Property + PPR context (D.0.7.2.1) */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+      <section className="space-y-2">
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           Mi hogar
         </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu vínculo con tu hogar en la comunidad — no es un catálogo
-          inmobiliario.
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Tu vínculo con la comunidad — no es un catálogo inmobiliario.
         </p>
         {primary ? (
-          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-            <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          <div className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               {primary.relationshipLabel}
             </p>
-            <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+            <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
               {primary.headline}
             </p>
             {primary.property.name || primary.address.line1 ? (
-              <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-secondary)]">
+              <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
                 {primary.property.name ?? primary.address.line1}
               </p>
             ) : null}
-            <p className={`mt-3 text-[15px] font-semibold ${residencyTone}`}>
+            <p className={`mt-2 text-[14px] font-semibold ${residencyTone}`}>
               {primary.statusLabel}
             </p>
-            <div className="mt-3 space-y-1 text-[15px] text-[var(--color-text-secondary)]">
+            <div className="mt-2 space-y-0.5 text-[13px] text-[var(--color-text-secondary)]">
               {primary.communityAreaLabel ? (
                 <p>
-                  Área comunitaria ·{" "}
+                  Zona ·{" "}
                   <span className="font-medium text-[var(--color-text-primary)]">
                     {primary.communityAreaLabel}
                   </span>
@@ -145,109 +148,68 @@ export function ProfileScreen() {
               <p>
                 Comunidad ·{" "}
                 <span className="font-medium text-[var(--color-text-primary)]">
-                  {primary.territoryLabel}
+                  {placeName}
                 </span>
               </p>
               {primary.grantsResidencyAccess ? (
                 <p className="text-[var(--color-success)]">
-                  Acceso de residencia activo en tu área.
+                  Acceso de residencia activo en tu zona.
                 </p>
               ) : primary.statusKind === "pending" ? (
                 <p className="text-[var(--color-warning)]">
-                  La reclamación no concede acceso restringido hasta
-                  verificarse.
+                  Pendiente de verificación — el acceso restringido aún no
+                  aplica.
                 </p>
               ) : null}
             </div>
-            <p className="mt-3 text-[14px] leading-5 text-[var(--color-text-tertiary)]">
-              Ser propietario o residente no otorga administración de la
-              comunidad.
-            </p>
           </div>
         ) : (
-          <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-            <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+          <div className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]">
+            <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
               Sin hogar vinculado
             </p>
-            <p className="mt-2 text-[15px] leading-5 text-[var(--color-text-secondary)]">
+            <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
               {home.emptyMessage}
             </p>
-            <p className={`mt-3 text-[14px] font-semibold ${residencyTone}`}>
+            <p className={`mt-2 text-[13px] font-semibold ${residencyTone}`}>
               {demoMember.residencyStatusLabel}
             </p>
           </div>
         )}
         {home.homes.length > 1 ? (
           <div className="space-y-2">
-            <p className="text-[15px] font-semibold text-[var(--color-text-tertiary)]">
+            <p className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
               Otros vínculos
             </p>
             {home.homes.slice(1).map((entry) => (
               <div
                 key={entry.relationship.id}
-                className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3 shadow-[var(--shadow-elev-1)]"
+                className="rounded-[14px] bg-[var(--color-surface-elevated)] px-3.5 py-2.5 shadow-[var(--shadow-elev-1)]"
               >
-                <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+                <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
                   {entry.headline}
                 </p>
-                <p className="mt-0.5 text-[14px] text-[var(--color-text-secondary)]">
+                <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
                   {entry.relationshipLabel} · {entry.statusLabel}
                 </p>
               </div>
             ))}
           </div>
         ) : null}
-        <p className="text-[14px] leading-5 text-[var(--color-text-tertiary)]">
+        <p className="text-[12px] leading-5 text-[var(--color-text-tertiary)]">
           {narrative}
         </p>
       </section>
 
       <TerritoryBelongingCard access={territoryAccess} />
 
-      {/* Mis intereses */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Mis intereses
-        </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Para recibir contenido más relevante.
-        </p>
-        {demoMember.interests.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {demoMember.interests.map((interest) => (
-              <span
-                key={interest}
-                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
-              >
-                {interest}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <ExploreLink
-            label="Elegir intereses"
-            hint="Golf, pádel, gastronomía…"
-            onClick={() => undefined}
-          />
-        )}
-        <ExploreLink
-          label="Editar intereses"
-          hint="Ajusta lo que te importa"
-          onClick={() => undefined}
-        />
-      </section>
-
-      {/* Mi actividad */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
+      <section className="space-y-2">
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           Mi actividad
         </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu participación en la comunidad.
-        </p>
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
-            label="Experiencias creadas y unidas"
+            label="Experiencias"
             hint={`${profileShortcuts.going} próximas`}
             onClick={() => router.push("/calendar")}
           />
@@ -261,43 +223,18 @@ export function ProfileScreen() {
         ) : null}
         {isFeatureEnabled("feed") || isFeatureEnabled("decide") ? (
           <ExploreLink
-            label="Participación comunitaria"
-            hint="Propuestas, encuestas y aportaciones"
+            label="Comunidad"
+            hint="Publicaciones y propuestas"
             onClick={() => router.push("/community")}
           />
         ) : null}
-      </section>
-
-      {/* Mis reservas */}
-      {isFeatureEnabled("resources") ? (
-        <section className="space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-            Mis reservas
-          </h2>
-          <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-            Acceso rápido a tus reservas.
-          </p>
+        {isFeatureEnabled("resources") ? (
           <ExploreLink
-            label="Próximas reservas"
+            label="Mis reservas"
             hint={`${profileShortcuts.reservations} activas`}
             onClick={() => router.push("/reservations")}
           />
-          <ExploreLink
-            label="Historial"
-            hint="Reservas anteriores"
-            onClick={() => router.push("/reservations")}
-          />
-        </section>
-      ) : null}
-
-      {/* Mis guardados */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Mis guardados
-        </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Para volver a lo que te interesa.
-        </p>
+        ) : null}
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
             label="Experiencias guardadas"
@@ -307,51 +244,28 @@ export function ProfileScreen() {
         ) : null}
         {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
           <ExploreLink
-            label="Lugares guardados"
-            hint="Sitios cerca de ti"
+            label="Lugares cerca"
+            hint="Sitios del barrio"
             onClick={() => router.push("/discover")}
           />
         ) : null}
       </section>
 
-      {/* Configuración */}
-      <section className="space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[20px] font-semibold">
-          Configuración
-        </h2>
-        <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-          Gestiona tu cuenta.
-        </p>
-        <ExploreLink
-          label="Privacidad"
-          hint="Quién ve tu información"
-          onClick={() => undefined}
-        />
-        <ExploreLink
-          label="Notificaciones"
-          hint="3 sin leer"
-          onClick={() => undefined}
-        />
-        <ExploreLink label="Idioma" hint="Español" onClick={() => undefined} />
-      </section>
-
       {hasCapability(CAPABILITIES.manageEnter) ? (
-        <ExploreLink
-          label="Gestionar comunidad"
-          hint="Solo para quien administra — independiente de la propiedad"
-          onClick={() => undefined}
-        />
+        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+          Tienes permisos de administración. La gestión avanzada se conectará
+          aquí cuando esté disponible.
+        </p>
       ) : null}
 
-      <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
-        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-          Demo · persona / Mi hogar
+      <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
+        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          Demo · persona
         </p>
-        <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
-          Cambia de persona para ver distintos vínculos Property ↔ Person. La
-          reclamación pendiente no otorga acceso.
+        <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+          Cambia de persona para ver distintos vínculos de hogar.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {demoMembers.map((m) => (
             <button
               key={m.personId}
@@ -359,8 +273,8 @@ export function ProfileScreen() {
               onClick={() => setDemoPersonId(m.personId)}
               className={
                 demoPersonId === m.personId
-                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[15px] font-semibold text-white"
-                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
+                  ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                  : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
               }
             >
               {m.displayName}
@@ -369,14 +283,14 @@ export function ProfileScreen() {
         </div>
       </section>
 
-      <section className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-border-strong)] p-4">
-        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-          Vista previa de rol (fundación)
+      <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
+        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          Demo · rol
         </p>
-        <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
-          Simula el futuro RBAC — independiente de propiedad / residencia.
+        <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+          Simula permisos futuros — independiente de la residencia.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-2.5 flex flex-wrap gap-2">
           {roles.map((r) => (
             <button
               key={r.id}
@@ -384,8 +298,8 @@ export function ProfileScreen() {
               onClick={() => setRole(r.id)}
               className={
                 role === r.id
-                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3 text-[15px] font-semibold text-white"
-                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[15px] font-semibold text-[var(--color-text-secondary)]"
+                  ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                  : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
               }
             >
               {r.label}

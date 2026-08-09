@@ -198,19 +198,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
-    if (
-      isModuleEnabled("services") &&
-      (isFeatureEnabled("services") || isFeatureEnabled("marketplace"))
-    ) {
-      share.push({
-        id: "neighbour-help",
-        title: "Pedir u ofrecer ayuda",
-        description: "Una mano entre vecinos",
-        icon: "🤝",
-        onSelect: () => router.push("/services/neighbour-help"),
-      });
-    }
-
     if (isModuleEnabled("services") && isFeatureEnabled("work")) {
       share.push({
         id: "work-post",
@@ -225,12 +212,19 @@ export function MemberShell({ children }: { children: ReactNode }) {
       isModuleEnabled("marketplace") &&
       hasCapability(CAPABILITIES.marketplaceCreate)
     ) {
+      share.push({
+        id: "neighbour-help",
+        title: "Pedir u ofrecer ayuda",
+        description: "Una mano entre vecinos",
+        icon: "🤝",
+        onSelect: () => router.push("/marketplace/create?kind=request"),
+      });
       practical.push({
         id: "marketplace",
         title: "Compra y venta",
         description: "Vende, regala o pide entre vecinos",
         icon: "🛒",
-        onSelect: () => router.push("/marketplace"),
+        onSelect: () => router.push("/marketplace/create"),
       });
     }
 

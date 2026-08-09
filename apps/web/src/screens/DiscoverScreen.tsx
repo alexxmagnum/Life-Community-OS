@@ -110,7 +110,7 @@ export function DiscoverScreen() {
       <ScreenSearch
         value={query}
         onChange={setQuery}
-        placeholder="Buscar planes, sitios, ayuda…"
+        placeholder="Buscar experiencias, sitios, ayuda…"
         label="Buscar"
       />
 
@@ -144,6 +144,7 @@ export function DiscoverScreen() {
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
+                    onClick={() => router.push(`/near/place/${place.id}`)}
                   />
                 ))}
               </LocalLifeRail>
@@ -190,7 +191,7 @@ export function DiscoverScreen() {
                           : `${exp.participantCount} van · ${remaining} plazas`
                       }
                       imageUrl={exp.imageUrl}
-                      ctaLabel={viewer === "joined" ? "Ver plan" : "Apuntarme"}
+                      ctaLabel={viewer === "joined" ? "Ver" : "Apuntarme"}
                       onClick={() => router.push(`/experiences/${exp.id}`)}
                       onCta={() => router.push(`/experiences/${exp.id}`)}
                     />

@@ -202,6 +202,12 @@ export function listLocalEntities(kind?: LocalEntityKind): LocalEntity[] {
   return localEntityCatalog.filter((p) => p.kind === kind);
 }
 
+export function getLocalEntityById(id: string): LocalEntity | undefined {
+  const target = id.trim();
+  if (!target) return undefined;
+  return localEntityCatalog.find((entity) => entity.id === target);
+}
+
 export function listLocalPlaces(kind?: LocalEntityKind): LocalPlace[] {
   return listLocalEntities(kind).map(asPlace);
 }

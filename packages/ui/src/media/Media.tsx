@@ -1,14 +1,13 @@
 /**
- * ADR-020 media UI preparation — no storage implementation.
- * Presentational placeholders for capture / preview / gallery patterns.
+ * ADR-020 media UI preparation — capture / preview / gallery patterns.
+ * Prefer real file input in product flows (see ReportScreen) over disabled CTAs.
  */
 
-import { Button } from "../actions/Button";
 import { cn } from "../lib/cn";
 
 export function MediaCapturePlaceholder({
-  label = "Haz una foto",
-  hint = "La cámara se abrirá aquí cuando esté conectada",
+  label = "Añadir foto (opcional)",
+  hint = "La captura en vivo se conectará aquí; mientras tanto usa el selector de archivos en el flujo de aviso.",
   className,
 }: {
   label?: string;
@@ -28,9 +27,6 @@ export function MediaCapturePlaceholder({
       <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
         {hint}
       </p>
-      <Button variant="secondary" className="mt-4" type="button" disabled>
-        Abrir cámara
-      </Button>
     </div>
   );
 }

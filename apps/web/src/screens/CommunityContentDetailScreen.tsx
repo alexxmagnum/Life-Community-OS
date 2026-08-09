@@ -45,6 +45,8 @@ export function CommunityContentDetailScreen({
     addComment,
   } = useCommunityInteractions();
   const [draft, setDraft] = useState("");
+  const [commentHint, setCommentHint] = useState<string | null>(null);
+  const [reportNote, setReportNote] = useState<string | null>(null);
 
   if (!isFeatureEnabled("feed") && !isFeatureEnabled("interactions")) {
     return (
@@ -120,9 +122,13 @@ export function CommunityContentDetailScreen({
   const submitComment = () => {
     if (!canComment) return;
     const body = draft.trim();
-    if (body.length < 8) return;
+    if (body.length < 8) {
+      setCommentHint("Escribe al menos unas palabras (8 caracteres).");
+      return;
+    }
     addComment(content.id, body);
     setDraft("");
+    setCommentHint(null);
   };
 
   return (
@@ -224,7 +230,10 @@ export function CommunityContentDetailScreen({
           {canReport ? (
             <button
               type="button"
-              onClick={() => reportContent(content.id)}
+              onClick={() => {
+                reportContent(content.id);
+                setReportNote("Gracias. Hemos recibido tu aviso.");
+              }}
               disabled={isReported(content.id)}
               className="min-h-[32px] text-[12px] font-medium text-[var(--color-text-tertiary)] disabled:opacity-50"
             >
@@ -232,6 +241,11 @@ export function CommunityContentDetailScreen({
             </button>
           ) : null}
         </div>
+        {reportNote ? (
+          <p className="text-[12px] font-medium text-[var(--color-success)]" role="status">
+            {reportNote}
+          </p>
+        ) : null}
       </article>
 
       <section className="space-y-2 border-t border-[var(--color-border-subtle)] pt-3">
@@ -263,13 +277,26 @@ export function CommunityContentDetailScreen({
         )}
 
         {canComment ? (
-          <InlineCommentComposer
-            compact
-            value={draft}
-            onChange={setDraft}
-            onSubmit={submitComment}
-            placeholder="Escribe un comentario…"
-          />
+          <div className="space-y-1">
+            <InlineCommentComposer
+              compact
+              value={draft}
+              onChange={(value) => {
+                setDraft(value);
+                if (commentHint) setCommentHint(null);
+              }}
+              onSubmit={submitComment}
+              placeholder="Escribe un comentario…"
+            />
+            {commentHint ? (
+              <p
+                className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
+                role="alert"
+              >
+                {commentHint}
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </section>
     </MobileScreen>

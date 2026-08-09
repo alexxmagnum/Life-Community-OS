@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatContentWhen,
@@ -32,12 +32,19 @@ export function MarketplaceScreen() {
   const router = useRouter();
   const { isFeatureEnabled, hasCapability } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    setSessionReady(true);
+  }, []);
 
   const items = useMemo(() => {
-    const all = listMarketplaceListings();
+    const all = listMarketplaceListings({
+      includeSessionCreated: sessionReady,
+    });
     if (filter === "all") return all;
     return all.filter((i) => i.kind === filter);
-  }, [filter]);
+  }, [filter, sessionReady]);
 
   if (!isFeatureEnabled("marketplace")) {
     return (
@@ -71,7 +78,7 @@ export function MarketplaceScreen() {
       {hasCapability(CAPABILITIES.marketplaceCreate) ? (
         <ScreenPrimaryAction
           label="Publicar anuncio"
-          onClick={() => undefined}
+          onClick={() => router.push("/marketplace/create")}
         />
       ) : null}
 
@@ -85,6 +92,16 @@ export function MarketplaceScreen() {
         <EmptyState
           title="No hay anuncios todavía"
           description="Sé la primera persona en publicar algo útil para el barrio."
+          actionLabel={
+            hasCapability(CAPABILITIES.marketplaceCreate)
+              ? "Publicar anuncio"
+              : undefined
+          }
+          onAction={
+            hasCapability(CAPABILITIES.marketplaceCreate)
+              ? () => router.push("/marketplace/create")
+              : undefined
+          }
         />
       ) : (
         <div className="space-y-4">
@@ -98,6 +115,7 @@ export function MarketplaceScreen() {
               imageUrl={item.imageUrl}
               authorName={item.authorName}
               authorAvatarUrl={item.authorAvatarUrl}
+              onClick={() => router.push(`/marketplace/${item.id}`)}
             />
           ))}
         </div>

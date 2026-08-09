@@ -131,7 +131,7 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
-              Conversación
+              Abrir conversación
             </span>
             <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
               Habla con los miembros del grupo
@@ -141,7 +141,12 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
             ›
           </span>
         </button>
-      ) : null}
+      ) : (
+        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+          Puedes seguir el grupo desde Comunidad. La conversación se abrirá
+          cuando tengas acceso.
+        </p>
+      )}
     </MobileScreen>
   );
 }

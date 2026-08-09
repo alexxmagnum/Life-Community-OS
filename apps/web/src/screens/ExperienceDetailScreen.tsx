@@ -34,13 +34,13 @@ export function ExperienceDetailScreen({
     isModuleEnabled,
     hasCapability,
   } = useTenant();
-  const { getViewerState } = useExperienceParticipation();
+  const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
 
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
       <EmptyState
-        title="Las actividades no están disponibles"
-        description="Esta comunidad aún no ha activado las actividades."
+        title="Las experiencias no están disponibles"
+        description="Esta comunidad aún no ha activado las experiencias."
         actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
@@ -52,10 +52,10 @@ export function ExperienceDetailScreen({
   if (!experience) {
     return (
       <EmptyState
-        title="Actividad no encontrada"
+        title="Experiencia no encontrada"
         description="Puede haberse eliminado o el enlace no es válido."
-        actionLabel="Ver actividades"
-        onAction={() => router.push("/discover")}
+        actionLabel="Ver experiencias"
+        onAction={() => router.push("/experiences")}
       />
     );
   }
@@ -64,7 +64,7 @@ export function ExperienceDetailScreen({
     return (
       <EmptyState
         title="Sin acceso"
-        description="No puedes ver esta actividad ahora mismo."
+        description="No puedes ver esta experiencia ahora mismo."
       />
     );
   }
@@ -133,7 +133,7 @@ export function ExperienceDetailScreen({
               Conversación
             </span>
             <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
-              Coordina con quienes van a la actividad
+              Coordina con quienes van
             </span>
           </span>
           <span className="text-[var(--color-text-tertiary)]" aria-hidden>
@@ -164,24 +164,37 @@ export function ExperienceDetailScreen({
         <div className="space-y-3 rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-app)]/95 p-3 shadow-[var(--shadow-elev-2)] backdrop-blur">
           <JoinButton status={viewer} canJoin={canJoin} onClick={goJoin} />
           <div className="flex gap-3">
-            <Button variant="secondary" className="flex-1" type="button">
-              Guardar
+            <Button
+              variant="secondary"
+              className="flex-1"
+              type="button"
+              onClick={() => toggleSave(experience.id)}
+              aria-pressed={isSaved(experience.id)}
+            >
+              {isSaved(experience.id) ? "Guardada" : "Guardar"}
             </Button>
             <Button
               variant="ghost"
               className="flex-1"
               type="button"
               onClick={async () => {
+                const shareData = {
+                  title: experience.title,
+                  text: experience.description,
+                  url: window.location.href,
+                };
                 if (typeof navigator !== "undefined" && navigator.share) {
                   try {
-                    await navigator.share({
-                      title: experience.title,
-                      text: experience.description,
-                      url: window.location.href,
-                    });
+                    await navigator.share(shareData);
+                    return;
                   } catch {
-                    /* user cancelled */
+                    /* user cancelled or unsupported — fall through */
                   }
+                }
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                } catch {
+                  /* clipboard unavailable */
                 }
               }}
             >

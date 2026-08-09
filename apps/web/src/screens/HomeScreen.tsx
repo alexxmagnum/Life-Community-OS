@@ -244,7 +244,7 @@ const DO_TODAY_DOORS: ReadonlyArray<{
     id: "experiences",
     emoji: "✨",
     label: "Experiencias",
-    hint: "Encuentros y planes",
+    hint: "Encuentros y actividades",
     href: "/experiences",
     tint: "bg-[#DCEEE4]",
     card: "bg-[#F3FAF6] border border-[#C5DED0]",
@@ -265,7 +265,7 @@ const DO_TODAY_DOORS: ReadonlyArray<{
     emoji: "🎾",
     label: "Deportes",
     hint: "Golf, pádel…",
-    href: "/experiences",
+    href: "/activities/golf",
     tint: "bg-[#D7E8F4]",
     card: "bg-[#F2F8FC] border border-[#C5D9E8]",
     shadow: "shadow-[0_8px_22px_rgba(61,107,122,0.15)]",
@@ -668,7 +668,7 @@ export function HomeScreen() {
           >
             <EmptyState
               title="Hoy está tranquilo por aquí."
-              description="Cuando haya planes o historias, aparecerán aquí."
+              description="Cuando haya experiencias o historias, aparecerán aquí."
               actionLabel={
                 hasCapability(CAPABILITIES.experienceCreate)
                   ? "Crear experiencia"
@@ -933,7 +933,7 @@ export function HomeScreen() {
               </div>
             ) : (
               <EmptyState
-                title="Todavía no hay planes abiertos."
+                title="Todavía no hay experiencias abiertas."
                 description="Sé la primera persona en proponer algo."
                 actionLabel={
                   hasCapability(CAPABILITIES.experienceCreate)
@@ -969,20 +969,7 @@ export function HomeScreen() {
                   <button
                     key={place.id}
                     type="button"
-                    onClick={() => {
-                      if (
-                        place.kind === "restaurant" ||
-                        place.kind === "cafe"
-                      ) {
-                        router.push("/near/restaurants");
-                      } else if (place.kind === "shop") {
-                        router.push("/near/businesses");
-                      } else if (place.kind === "service") {
-                        router.push("/near/services");
-                      } else {
-                        router.push("/near/places");
-                      }
-                    }}
+                    onClick={() => router.push(`/near/place/${place.id}`)}
                     className="flex w-full items-center gap-3 rounded-[16px] border border-[#E8E2D8] bg-[#FFFCFA] p-2 pr-3 text-left shadow-[0_6px_18px_rgba(26,31,28,0.10)] transition-transform active:scale-[0.99]"
                   >
                     <span className="h-14 w-14 shrink-0 overflow-hidden rounded-[12px] bg-[var(--color-surface-muted)] shadow-[0_2px_8px_rgba(26,31,28,0.08)]">

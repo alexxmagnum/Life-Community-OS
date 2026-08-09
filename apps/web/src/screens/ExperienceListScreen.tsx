@@ -61,8 +61,8 @@ export function ExperienceListScreen() {
   if (!isFeatureEnabled("experiences")) {
     return (
       <EmptyState
-        title="Las actividades no están disponibles"
-        description="Esta comunidad aún no ha activado las actividades."
+        title="Las experiencias no están disponibles"
+        description="Esta comunidad aún no ha activado las experiencias."
       />
     );
   }
@@ -71,7 +71,7 @@ export function ExperienceListScreen() {
     return (
       <EmptyState
         title="Sin acceso"
-        description="Las actividades no están disponibles para tu cuenta ahora mismo."
+        description="Las experiencias no están disponibles para tu cuenta ahora mismo."
       />
     );
   }

@@ -6,7 +6,10 @@ import {
   getTerritoryAccessContext,
   servicesCategoryHubs,
 } from "@life-community-os/tenant-life-panoramica";
-import { MobileScreen } from "@life-community-os/ui";
+import {
+  EmptyState,
+  MobileScreen,
+} from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 type ServiceEntry = {
@@ -102,9 +105,12 @@ export function ServicesHubScreen() {
       </header>
 
       {entries.length === 0 ? (
-        <p className="mt-10 text-[15px] text-[var(--color-text-secondary)]">
-          Los servicios de tu comunidad aparecerán aquí cuando estén activos.
-        </p>
+        <EmptyState
+          title="Servicios en silencio"
+          description="Cuando tu comunidad active ayuda, trabajo o profesionales, los verás aquí."
+          actionLabel="Volver al inicio"
+          onAction={() => router.push("/")}
+        />
       ) : (
         <ul className="mt-6 space-y-3">
           {entries.map((entry) => (

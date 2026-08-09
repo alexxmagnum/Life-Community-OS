@@ -99,6 +99,7 @@ export function CommunityHubScreen() {
   } = useCommunityInteractions();
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [commentHints, setCommentHints] = useState<Record<string, string>>({});
   const [composerForId, setComposerForId] = useState<string | null>(null);
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandChannels, setExpandChannels] = useState(false);
@@ -188,9 +189,20 @@ export function CommunityHubScreen() {
 
   const submitComment = (id: string) => {
     const body = (drafts[id] ?? "").trim();
-    if (body.length < 8) return;
+    if (body.length < 8) {
+      setCommentHints((prev) => ({
+        ...prev,
+        [id]: "Escribe al menos unas palabras (8 caracteres).",
+      }));
+      return;
+    }
     addComment(id, body);
     setDrafts((prev) => ({ ...prev, [id]: "" }));
+    setCommentHints((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     setComposerForId(null);
   };
 
@@ -246,14 +258,31 @@ export function CommunityHubScreen() {
         }
         commentComposer={
           canComment && composerForId === item.id ? (
-            <InlineCommentComposer
-              compact
-              value={drafts[item.id] ?? ""}
-              onChange={(value) =>
-                setDrafts((prev) => ({ ...prev, [item.id]: value }))
-              }
-              onSubmit={() => submitComment(item.id)}
-            />
+            <div className="space-y-1">
+              <InlineCommentComposer
+                compact
+                value={drafts[item.id] ?? ""}
+                onChange={(value) => {
+                  setDrafts((prev) => ({ ...prev, [item.id]: value }));
+                  if (commentHints[item.id]) {
+                    setCommentHints((prev) => {
+                      const next = { ...prev };
+                      delete next[item.id];
+                      return next;
+                    });
+                  }
+                }}
+                onSubmit={() => submitComment(item.id)}
+              />
+              {commentHints[item.id] ? (
+                <p
+                  className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
+                  role="alert"
+                >
+                  {commentHints[item.id]}
+                </p>
+              ) : null}
+            </div>
           ) : null
         }
       />
@@ -443,11 +472,13 @@ export function CommunityHubScreen() {
                   : undefined;
               const openHref = matchedEntity
                 ? `/official/${matchedEntity.slug}`
-                : undefined;
+                : channel.type === "official"
+                  ? undefined
+                  : `/community?tab=grupos`;
               return (
                 <article
                   key={channel.id}
-                  className="rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]"
+                  className="rounded-[14px] border-b border-[var(--color-border-subtle)] px-1 py-3 last:border-b-0"
                 >
                   <p className="text-[13px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
                     {channel.type === "official" ? "Oficial" : "Comunidad"}

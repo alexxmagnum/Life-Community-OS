@@ -92,7 +92,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
 
       <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
         {areaLabels.length > 0
-          ? `Priorizado cerca de ${areaLabels.join(", ")} — relevancia, no un directorio.`
+          ? `Lo más relevante cerca de ${areaLabels.join(", ")}.`
           : hub.description}
       </p>
 
@@ -124,6 +124,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
               verified={place.verified}
               trustNote={place.trustNote}
               className="w-full max-w-none"
+              onClick={() => router.push(`/near/place/${place.id}`)}
             />
           ))}
         </div>

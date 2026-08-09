@@ -34,7 +34,7 @@ export function ExperienceRegistrationScreen({
   if (!isFeatureEnabled("experiences")) {
     return (
       <EmptyState
-        title="Las actividades no están disponibles"
+        title="Las experiencias no están disponibles"
         actionLabel="Volver al inicio"
         onAction={() => router.push("/")}
       />
@@ -47,7 +47,7 @@ export function ExperienceRegistrationScreen({
     return (
       <EmptyState
         title="Actividad no encontrada"
-        actionLabel="Ver actividades"
+        actionLabel="Ver experiencias"
         onAction={() => router.push("/discover")}
       />
     );
@@ -138,7 +138,7 @@ export function ExperienceRegistrationScreen({
           />
           <p className="text-[16px] leading-6 text-[var(--color-text-secondary)]">
             {confirmed
-              ? "Lo hemos añadido a tu agenda. Lo verás en Mis actividades."
+              ? "Lo hemos añadido a tu agenda. Lo verás en Mis experiencias."
               : `Participa en “${experience.title}” con vecinos de ${experience.areaLabel}.`}
           </p>
         </div>
@@ -164,9 +164,9 @@ export function ExperienceRegistrationScreen({
             className="h-5 w-5 accent-[var(--color-action-primary)]"
           />
           <span className="text-[16px]">
-            Avísame antes de que empiece
+            Recordarme en la app cuando se acerque
             <span className="block text-[15px] text-[var(--color-text-tertiary)]">
-              Las notificaciones se conectarán más adelante
+              Guarda la preferencia ahora; avisos push más adelante
             </span>
           </span>
         </label>
