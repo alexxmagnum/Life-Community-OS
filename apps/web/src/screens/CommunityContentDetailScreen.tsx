@@ -116,14 +116,14 @@ export function CommunityContentDetailScreen({
       : undefined;
 
   const visibleComments = content.comments.filter(
-    (c) => c.body.trim().length >= 8,
+    (c) => c.body.trim().length > 0,
   );
 
   const submitComment = () => {
     if (!canComment) return;
     const body = draft.trim();
-    if (body.length < 8) {
-      setCommentHint("Escribe al menos unas palabras (8 caracteres).");
+    if (!body) {
+      setCommentHint("Escribe al menos una letra.");
       return;
     }
     addComment(content.id, body);
@@ -258,46 +258,47 @@ export function CommunityContentDetailScreen({
           ) : null}
         </h2>
 
-        {visibleComments.length === 0 ? (
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Sé el primero en responder.
-          </p>
-        ) : (
-          <div className="space-y-2.5">
-            {visibleComments.map((c) => (
-              <CommentPreview
-                key={c.id}
-                authorName={c.author.name}
-                body={c.body}
-                avatarUrl={c.author.avatarUrl}
-                meta={formatContentWhen(c.createdAt)}
-              />
-            ))}
-          </div>
-        )}
-
-        {canComment ? (
-          <div className="space-y-1">
-            <InlineCommentComposer
-              compact
-              value={draft}
-              onChange={(value) => {
-                setDraft(value);
-                if (commentHint) setCommentHint(null);
-              }}
-              onSubmit={submitComment}
-              placeholder="Escribe un comentario…"
-            />
-            {commentHint ? (
-              <p
-                className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
-                role="alert"
-              >
-                {commentHint}
+        <div className="overflow-hidden rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)]">
+          <div className="max-h-[280px] space-y-2.5 overflow-y-auto overscroll-contain p-3">
+            {visibleComments.length === 0 ? (
+              <p className="text-[13px] text-[var(--color-text-secondary)]">
+                Sé el primero en responder.
               </p>
-            ) : null}
+            ) : (
+              visibleComments.map((c) => (
+                <CommentPreview
+                  key={c.id}
+                  authorName={c.author.name}
+                  body={c.body}
+                  avatarUrl={c.author.avatarUrl}
+                  meta={formatContentWhen(c.createdAt)}
+                />
+              ))
+            )}
           </div>
-        ) : null}
+          {canComment ? (
+            <div className="space-y-1 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-3">
+              <InlineCommentComposer
+                compact
+                value={draft}
+                onChange={(value) => {
+                  setDraft(value);
+                  if (commentHint) setCommentHint(null);
+                }}
+                onSubmit={submitComment}
+                placeholder="Escribe un comentario…"
+              />
+              {commentHint ? (
+                <p
+                  className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
+                  role="alert"
+                >
+                  {commentHint}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
       </section>
     </MobileScreen>
   );

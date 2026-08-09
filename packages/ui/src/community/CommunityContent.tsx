@@ -560,7 +560,10 @@ export type CommunityConversationRowProps = {
   open: boolean;
   onToggle: () => void;
   onOpen?: () => void;
+  openLabel?: string;
   reactionBar?: ReactNode;
+  /** Scrollable comments + composer — rendered inside the expanded window. */
+  conversation?: ReactNode;
   className?: string;
 };
 
@@ -577,7 +580,9 @@ export function CommunityConversationRow({
   open,
   onToggle,
   onOpen,
+  openLabel = "Abrir completo ›",
   reactionBar,
+  conversation,
   className,
 }: CommunityConversationRowProps) {
   return (
@@ -645,16 +650,21 @@ export function CommunityConversationRow({
           <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
             {body}
           </p>
+          {reactionBar ? <div>{reactionBar}</div> : null}
+          {conversation ? (
+            <div className="overflow-hidden rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)]">
+              {conversation}
+            </div>
+          ) : null}
           {onOpen ? (
             <button
               type="button"
               onClick={onOpen}
               className="text-[15px] font-semibold text-[var(--color-action-primary)]"
             >
-              Abrir conversación ›
+              {openLabel}
             </button>
           ) : null}
-          {reactionBar ? <div>{reactionBar}</div> : null}
         </div>
       ) : null}
     </div>

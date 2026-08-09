@@ -43,7 +43,7 @@ export const groupCatalog: CommunityGroup[] = [
     description: "Friendly weekday matches. All levels.",
     memberCount: 28,
     imageUrl:
-      "https://images.unsplash.com/photo-1626224582411-c8120bdb77e2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&w=800&q=80",
     areaLabel: "Panoramica Golf",
     categoryLabel: "Sport",
     tenantId: DEMO_TENANT_ID,

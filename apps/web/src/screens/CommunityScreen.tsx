@@ -7,7 +7,6 @@ import {
   communityAlertTone,
   contentTypeLabel,
   formatContentWhen,
-  getExperienceById,
   listAccessibleChannels,
   listActiveCommunityAlerts,
   listEspaciosComunitarios,
@@ -20,15 +19,14 @@ import {
   type CommunityHubAreaId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  CommunityFeed,
-  CommunityPostCard,
+  CommentPreview,
+  CommunityConversationList,
+  CommunityConversationRow,
   EmptyState,
-  GroupCard,
   InlineCommentComposer,
   MobileScreen,
   ReactionBar,
   SectionHeader,
-  type CommunityPostTone,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -71,16 +69,6 @@ function decisionLabel(status?: string) {
   return undefined;
 }
 
-function toneForItem(item: {
-  isOfficial: boolean;
-  type: string;
-}): CommunityPostTone {
-  if (item.isOfficial) return "official";
-  if (item.type === "proposal") return "proposal";
-  if (item.type === "discussion") return "discussion";
-  return "neighbour";
-}
-
 /**
  * Community Hub — digital town square.
  * One living plaza: important → neighbour activity → participate → people.
@@ -93,6 +81,7 @@ export function CommunityHubScreen() {
     useTenant();
   const {
     feedItems,
+    getContent,
     getMyReaction,
     toggleReaction,
     addComment,
@@ -100,7 +89,9 @@ export function CommunityHubScreen() {
 
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [commentHints, setCommentHints] = useState<Record<string, string>>({});
-  const [composerForId, setComposerForId] = useState<string | null>(null);
+  const [openConversationId, setOpenConversationId] = useState<string | null>(
+    null,
+  );
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandChannels, setExpandChannels] = useState(false);
   const [expandSpaces, setExpandSpaces] = useState(false);
@@ -195,10 +186,10 @@ export function CommunityHubScreen() {
 
   const submitComment = (id: string) => {
     const body = (drafts[id] ?? "").trim();
-    if (body.length < 8) {
+    if (!body) {
       setCommentHints((prev) => ({
         ...prev,
-        [id]: "Escribe al menos unas palabras (8 caracteres).",
+        [id]: "Escribe al menos una letra.",
       }));
       return;
     }
@@ -209,91 +200,141 @@ export function CommunityHubScreen() {
       delete next[id];
       return next;
     });
-    setComposerForId(null);
   };
 
-  const renderPost = (
+  const renderConversation = (
     item: (typeof feedItems)[number],
-    tone?: CommunityPostTone,
+    options?: { typeLabel?: string },
   ) => {
-    const linked = item.linkedExperienceId
-      ? getExperienceById(item.linkedExperienceId)
-      : undefined;
+    const live = getContent(item.id) ?? item;
     const zone =
-      item.areaLabel && item.areaLabel !== "Life Panoramica"
-        ? item.areaLabel
+      live.areaLabel && live.areaLabel !== "Life Panoramica"
+        ? live.areaLabel
         : undefined;
+    const status = decisionLabel(live.decisionStatus);
+    const meta = [
+      live.author.name,
+      formatContentWhen(live.publishedAt ?? live.createdAt),
+      zone,
+      status,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const open = openConversationId === live.id;
+    const comments = live.comments.filter((c) => c.body.trim().length > 0);
 
     return (
-      <CommunityPostCard
-        key={item.id}
-        density="plaza"
-        title={item.title}
-        body={item.body}
-        typeLabel={contentTypeLabel(item.type)}
-        official={item.isOfficial}
-        tone={tone ?? toneForItem(item)}
-        authorName={item.author.name}
-        authorAvatarUrl={item.author.avatarUrl}
-        meta={formatContentWhen(item.publishedAt ?? item.createdAt)}
-        areaLabel={zone}
-        decisionStatus={decisionLabel(item.decisionStatus)}
-        experienceLinkLabel={linked?.title}
-        onOpen={() => router.push(`/community/content/${item.id}`)}
+      <CommunityConversationRow
+        key={live.id}
+        title={live.title}
+        body={live.body}
+        meta={meta}
+        official={live.isOfficial}
+        typeLabel={
+          options?.typeLabel ??
+          (live.type === "proposal" ? contentTypeLabel(live.type) : undefined)
+        }
+        open={open}
+        onToggle={() =>
+          setOpenConversationId((current) =>
+            current === live.id ? null : live.id,
+          )
+        }
+        onOpen={() => router.push(`/community/content/${live.id}`)}
         reactionBar={
           <ReactionBar
             variant="quiet"
-            acknowledgeCount={item.reactionCounts.acknowledge}
-            supportCount={item.reactionCounts.support}
-            myReaction={getMyReaction(item.id)}
-            commentCount={item.commentCount}
+            acknowledgeCount={live.reactionCounts.acknowledge}
+            supportCount={live.reactionCounts.support}
+            myReaction={getMyReaction(live.id)}
+            commentCount={live.commentCount}
             canReact={canReact}
-            canComment={canComment}
+            canComment={false}
             canSave={false}
-            onAcknowledge={() => toggleReaction(item.id, "acknowledge")}
-            onSupport={() => toggleReaction(item.id, "support")}
-            onComment={
-              canComment
-                ? () =>
-                    setComposerForId((current) =>
-                      current === item.id ? null : item.id,
-                    )
-                : undefined
-            }
+            onAcknowledge={() => toggleReaction(live.id, "acknowledge")}
+            onSupport={() => toggleReaction(live.id, "support")}
           />
         }
-        commentComposer={
-          canComment && composerForId === item.id ? (
-            <div className="space-y-1">
-              <InlineCommentComposer
-                compact
-                value={drafts[item.id] ?? ""}
-                onChange={(value) => {
-                  setDrafts((prev) => ({ ...prev, [item.id]: value }));
-                  if (commentHints[item.id]) {
-                    setCommentHints((prev) => {
-                      const next = { ...prev };
-                      delete next[item.id];
-                      return next;
-                    });
-                  }
-                }}
-                onSubmit={() => submitComment(item.id)}
-              />
-              {commentHints[item.id] ? (
-                <p
-                  className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
-                  role="alert"
-                >
-                  {commentHints[item.id]}
+        conversation={
+          <div className="space-y-2 p-3">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+              Comentarios
+              {comments.length > 0 ? ` · ${comments.length}` : ""}
+            </p>
+            <div className="max-h-[220px] space-y-2.5 overflow-y-auto overscroll-contain pr-1">
+              {comments.length === 0 ? (
+                <p className="text-[13px] text-[var(--color-text-secondary)]">
+                  Sé el primero en responder.
                 </p>
-              ) : null}
+              ) : (
+                comments.map((c) => (
+                  <CommentPreview
+                    key={c.id}
+                    authorName={c.author.name}
+                    body={c.body}
+                    avatarUrl={c.author.avatarUrl}
+                    meta={formatContentWhen(c.createdAt)}
+                  />
+                ))
+              )}
             </div>
-          ) : null
+            {canComment ? (
+              <div className="space-y-1 border-t border-[var(--color-border-subtle)] pt-2">
+                <InlineCommentComposer
+                  compact
+                  value={drafts[live.id] ?? ""}
+                  onChange={(value) => {
+                    setDrafts((prev) => ({ ...prev, [live.id]: value }));
+                    if (commentHints[live.id]) {
+                      setCommentHints((prev) => {
+                        const next = { ...prev };
+                        delete next[live.id];
+                        return next;
+                      });
+                    }
+                  }}
+                  onSubmit={() => submitComment(live.id)}
+                />
+                {commentHints[live.id] ? (
+                  <p
+                    className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
+                    role="alert"
+                  >
+                    {commentHints[live.id]}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         }
       />
     );
   };
+
+  const renderGroupDoor = (group: (typeof groupItems)[number]) => (
+    <button
+      key={group.id}
+      type="button"
+      onClick={() => router.push(`/community/groups/${group.id}`)}
+      className="flex w-full min-h-[52px] items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-semibold text-[var(--color-text-primary)]">
+          {group.name}
+        </span>
+        <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
+          {group.memberCount} miembros
+          {group.categoryLabel ? ` · ${group.categoryLabel}` : ""}
+        </span>
+      </span>
+      <span
+        className="shrink-0 text-[18px] text-[var(--color-action-primary)]"
+        aria-hidden
+      >
+        ›
+      </span>
+    </button>
+  );
 
   const visibleGroups = expandGroups ? groupItems : groupItems.slice(0, 4);
   const showChannels =
@@ -457,26 +498,15 @@ export function CommunityHubScreen() {
               Ver todos →
             </button>
           </div>
-          <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {groupItems.slice(0, 3).map((group) => (
-              <div key={`peek-${group.id}`} className="w-[112px] shrink-0">
-                <GroupCard
-                  name={group.name}
-                  members={group.memberCount}
-                  imageUrl={group.imageUrl}
-                  onOpen={() =>
-                    router.push(`/community/groups/${group.id}`)
-                  }
-                />
-              </div>
-            ))}
+          <div className="space-y-2">
+            {groupItems.slice(0, 3).map((group) => renderGroupDoor(group))}
           </div>
         </section>
       ) : null}
 
       <section id="plaza-activity" className="scroll-mt-3">
         <SectionHeader title="Entre vecinos" />
-        <CommunityFeed
+        <CommunityConversationList
           empty={
             <EmptyState
               title="Sé el primero en compartir"
@@ -497,13 +527,13 @@ export function CommunityHubScreen() {
             />
           }
         >
-          {neighbourActivity.map((item) => renderPost(item))}
-        </CommunityFeed>
+          {neighbourActivity.map((item) => renderConversation(item))}
+        </CommunityConversationList>
       </section>
 
       <section id="plaza-participate" className="scroll-mt-3">
         <SectionHeader title="Puedes aportar" />
-        <CommunityFeed
+        <CommunityConversationList
           empty={
             <p className="py-2 text-[14px] leading-5 text-[var(--color-text-secondary)]">
               Todavía no hay decisiones abiertas. Cuando la comunidad
@@ -511,12 +541,16 @@ export function CommunityHubScreen() {
             </p>
           }
         >
-          {participation.map((item) => renderPost(item, "proposal"))}
-        </CommunityFeed>
+          {participation.map((item) =>
+            renderConversation(item, {
+              typeLabel: contentTypeLabel(item.type),
+            }),
+          )}
+        </CommunityConversationList>
         {participation.length > 0 ? (
-          <p className="mt-1 text-[12px] leading-4 text-[var(--color-text-tertiary)]">
-            Abre una propuesta para leer y comentar. La votación formal
-            aún no está disponible.
+          <p className="mt-2 text-[12px] leading-4 text-[var(--color-text-tertiary)]">
+            Despliega una propuesta para leer y comentar. La votación
+            formal aún no está disponible.
           </p>
         ) : null}
       </section>
@@ -544,17 +578,8 @@ export function CommunityHubScreen() {
             comunidad.
           </p>
         ) : (
-          <div className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {visibleGroups.map((group) => (
-              <div key={group.id} className="w-[112px] shrink-0">
-                <GroupCard
-                  name={group.name}
-                  members={group.memberCount}
-                  imageUrl={group.imageUrl}
-                  onOpen={() => router.push(`/community/groups/${group.id}`)}
-                />
-              </div>
-            ))}
+          <div className="space-y-2">
+            {visibleGroups.map((group) => renderGroupDoor(group))}
           </div>
         )}
       </section>
