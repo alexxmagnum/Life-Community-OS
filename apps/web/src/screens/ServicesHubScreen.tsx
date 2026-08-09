@@ -4,13 +4,9 @@ import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   getTerritoryAccessContext,
-  getTerritoryLocalLife,
-  nearCategoryHubs,
   servicesCategoryHubs,
 } from "@life-community-os/tenant-life-panoramica";
 import { MobileScreen } from "@life-community-os/ui";
-import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
-import { TerritoryLocalLifeSection } from "@/components/TerritoryLocalLifeSection";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 type ServiceEntry = {
@@ -19,11 +15,12 @@ type ServiceEntry = {
   description: string;
   href: string;
   icon: string;
+  tint: string;
 };
 
 /**
- * Servicios landing — community utility hub (not a marketplace).
- * Territory Access connects local life relevance (D.0.7.2.3).
+ * Servicios nav hub — “Necesito resolver algo”.
+ * Category doors only. Territory/local-life discovery does not belong here.
  */
 export function ServicesHubScreen() {
   const router = useRouter();
@@ -42,21 +39,6 @@ export function ServicesHubScreen() {
     [demoPersonId, hasCapability],
   );
 
-  const canLocal =
-    (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) &&
-    hasCapability(CAPABILITIES.localView);
-
-  const localLife = useMemo(
-    () =>
-      canLocal
-        ? getTerritoryLocalLife(demoPersonId, {
-            limitPerGroup: 2,
-            highlightLimit: 3,
-          })
-        : null,
-    [canLocal, demoPersonId],
-  );
-
   const entries = useMemo((): ServiceEntry[] => {
     const cards: ServiceEntry[] = [];
 
@@ -71,6 +53,7 @@ export function ServicesHubScreen() {
         description: copyForServiceSlug(hub.slug, hub.description),
         href: `/services/${hub.slug}`,
         icon: iconForServiceSlug(hub.slug),
+        tint: tintForServiceSlug(hub.slug),
       });
     }
 
@@ -81,6 +64,7 @@ export function ServicesHubScreen() {
         description: "Vende, regala o pide entre vecinos.",
         href: "/marketplace",
         icon: "🛒",
+        tint: "bg-[#ECE7E0]",
       });
     }
 
@@ -95,6 +79,7 @@ export function ServicesHubScreen() {
         description: reserveHint,
         href: "/resources",
         icon: "🏘",
+        tint: "bg-[#E8E2D8]",
       });
     }
 
@@ -105,105 +90,52 @@ export function ServicesHubScreen() {
     territoryAccess.eligibleResourceCount,
   ]);
 
-  const nearEntries = useMemo(() => {
-    if (!canLocal) return [];
-    return nearCategoryHubs.map((hub) => ({
-      id: hub.slug,
-      title: hub.label,
-      href: `/near/${hub.slug}`,
-    }));
-  }, [canLocal]);
-
   return (
     <MobileScreen>
       <header className="pt-1">
-        <p className="text-[15px] font-medium uppercase tracking-[0.06em] text-[var(--color-text-tertiary)]">
-          En tu comunidad
-        </p>
-        <h1 className="mt-1 font-[family-name:var(--font-brand)] text-[28px] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-text-primary)]">
-          Servicios
+        <h1 className="font-sans text-[28px] font-semibold leading-tight tracking-tight text-[var(--color-text-primary)]">
+          Necesito resolver algo
         </h1>
-        <p className="mt-2 max-w-[34ch] text-[16px] leading-snug text-[var(--color-text-secondary)]">
-          Lo que necesita tu lugar en el territorio
-        </p>
       </header>
 
-      <div className="mt-4">
-        <TerritoryBelongingCard access={territoryAccess} compact />
-      </div>
-
-      {localLife ? (
-        <div className="mt-6">
-          <TerritoryLocalLifeSection localLife={localLife} />
-        </div>
-      ) : null}
-
-      {nearEntries.length > 0 ? (
-        <section className="mt-8 space-y-3">
-          <h2 className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-            Cerca de tu lugar
-          </h2>
-          <p className="text-[15px] text-[var(--color-text-tertiary)]">
-            Sitios del territorio — no un directorio público.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {nearEntries.map((entry) => (
+      {entries.length === 0 ? (
+        <p className="mt-10 text-[15px] text-[var(--color-text-secondary)]">
+          Los servicios de tu comunidad aparecerán aquí cuando estén activos.
+        </p>
+      ) : (
+        <ul className="mt-6 space-y-3">
+          {entries.map((entry) => (
+            <li key={entry.id}>
               <button
-                key={entry.id}
                 type="button"
                 onClick={() => router.push(entry.href)}
-                className="min-h-[44px] rounded-full bg-[var(--color-action-primary-subtle)] px-4 text-[15px] font-semibold text-[var(--color-action-primary)]"
+                className="flex w-full items-start gap-3.5 rounded-[16px] border border-[#E8E2D8] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
               >
-                {entry.title}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="mt-8 space-y-3">
-        <h2 className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-          Necesito resolver algo
-        </h2>
-        {entries.length === 0 ? (
-          <p className="text-[15px] text-[var(--color-text-secondary)]">
-            Los servicios de tu comunidad aparecerán aquí cuando estén activos.
-          </p>
-        ) : (
-          <ul className="space-y-3">
-            {entries.map((entry) => (
-              <li key={entry.id}>
-                <button
-                  type="button"
-                  onClick={() => router.push(entry.href)}
-                  className="flex w-full items-start gap-3.5 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+                <span
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-[22px] ${entry.tint}`}
+                  aria-hidden
                 >
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-action-primary-subtle)] text-[22px]"
-                    aria-hidden
-                  >
-                    {entry.icon}
+                  {entry.icon}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[17px] font-semibold text-[var(--color-text-primary)]">
+                    {entry.title}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[17px] font-semibold text-[var(--color-text-primary)]">
-                      {entry.title}
-                    </span>
-                    <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
-                      {entry.description}
-                    </span>
+                  <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                    {entry.description}
                   </span>
-                  <span
-                    className="mt-1 shrink-0 text-[var(--color-text-tertiary)]"
-                    aria-hidden
-                  >
-                    ›
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                </span>
+                <span
+                  className="mt-1 shrink-0 text-[var(--color-text-tertiary)]"
+                  aria-hidden
+                >
+                  ›
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </MobileScreen>
   );
 }
@@ -215,13 +147,30 @@ function iconForServiceSlug(slug: string): string {
     case "work":
       return "💼";
     case "neighbour-help":
-      return "🤝";
+      return "💛";
     case "mobility":
       return "🚗";
     case "recommendations":
       return "⭐";
     default:
       return "•";
+  }
+}
+
+function tintForServiceSlug(slug: string): string {
+  switch (slug) {
+    case "professionals":
+      return "bg-[#F8E0CC]";
+    case "work":
+      return "bg-[#E8D9C8]";
+    case "neighbour-help":
+      return "bg-[#F5E8C8]";
+    case "mobility":
+      return "bg-[#F3D0CC]";
+    case "recommendations":
+      return "bg-[#F5E8C8]";
+    default:
+      return "bg-[var(--color-action-primary-subtle)]";
   }
 }
 
