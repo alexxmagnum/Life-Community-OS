@@ -3,44 +3,76 @@
 @tailwind utilities;
 
 :root {
-  /* Fallbacks before TenantProvider hydrates — Life Panoramica defaults */
-  --color-surface-app: #f6f3ee;
-  --color-surface-elevated: #ffffff;
-  --color-surface-muted: #ece7e0;
-  --color-text-primary: #1a1f1c;
-  --color-text-secondary: #3e4642;
-  --color-text-tertiary: #5f6762;
+  /* First paint — Life Premium Night editorial (#001219) */
+  color-scheme: dark;
+  --life-bg: #001219;
+  --life-surface: #071d25;
+  --life-surface-raised: #0b252d;
+  --life-text: #f7fafa;
+  --life-text-secondary: #b8c5c8;
+  --life-cyan: #00d8e8;
+  --life-turquoise: #00c8b4;
+  --life-lime: #b7f22a;
+  --color-surface-app: #001219;
+  --color-surface-elevated: #0b252d;
+  --color-surface-muted: #071d25;
+  --color-surface-glass: rgba(7, 29, 37, 0.86);
+  --color-surface-glass-strong: rgba(11, 37, 45, 0.92);
+  --color-chrome-surface: rgba(0, 18, 25, 0.78);
+  --gradient-surface-app: radial-gradient(
+      circle at 50% 18%,
+      rgba(0, 216, 232, 0.035),
+      transparent 32rem
+    ),
+    #001219;
+  --gradient-brand: linear-gradient(
+    135deg,
+    #00d8e8 0%,
+    #00c8b4 52%,
+    #b7f22a 100%
+  );
+  --color-text-primary: #f7fafa;
+  --color-text-secondary: #b8c5c8;
+  --color-text-tertiary: #7a8a8a;
   --color-text-inverse: #ffffff;
-  --color-border-subtle: #e2ddd6;
-  --color-border-strong: #c9c2b8;
-  --color-action-primary: #1f4a3c;
-  --color-action-primary-hover: #183a30;
-  --color-action-primary-subtle: #e7f0ec;
-  --color-action-secondary: #5c6b63;
-  --color-action-accent: #c47a3a;
-  --color-action-accent-subtle: #f8efe6;
-  --color-action-destructive: #b42318;
-  --color-feedback-success: #2f6f4e;
-  --color-feedback-success-subtle: #e6f4ec;
-  --color-feedback-warning: #b8860b;
-  --color-feedback-warning-subtle: #fbf3dc;
-  --color-feedback-danger: #b42318;
-  --color-feedback-danger-subtle: #f8e8e6;
-  --color-feedback-info: #3d6b7a;
-  --color-feedback-info-subtle: #e8f1f4;
-  --color-accent-community: #c47a3a;
-  --color-accent-official: #1f4a3c;
-  --color-hero-scrim: rgba(20, 28, 24, 0.42);
-  --color-sea: #3d6b7a;
-  --color-sea-subtle: #e8f1f4;
+  --color-text-on-action: #001219;
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-border-glass: rgba(255, 255, 255, 0.1);
+  --color-action-primary: #00d8e8;
+  --color-action-primary-hover: #00c8b4;
+  --color-action-primary-subtle: rgba(0, 216, 232, 0.16);
+  --color-action-secondary: #b8c5c8;
+  --color-action-accent: #b7f22a;
+  --color-action-accent-subtle: rgba(183, 242, 42, 0.16);
+  --color-action-destructive: #ff5c5c;
+  --color-feedback-success: #56d93a;
+  --color-feedback-success-subtle: rgba(86, 217, 58, 0.16);
+  --color-feedback-warning: #e4f224;
+  --color-feedback-warning-subtle: rgba(228, 242, 36, 0.16);
+  --color-feedback-danger: #ff5c5c;
+  --color-feedback-danger-subtle: rgba(255, 92, 92, 0.18);
+  --color-feedback-info: #00d8e8;
+  --color-feedback-info-subtle: rgba(0, 216, 232, 0.16);
+  --color-accent-community: #b7f22a;
+  --color-accent-official: #00d8e8;
+  --color-accent-cyan: #00d8e8;
+  --color-accent-cyan-subtle: rgba(0, 216, 232, 0.16);
+  --color-accent-turquoise: #00c8b4;
+  --color-accent-lime: #b7f22a;
+  --color-accent-lime-subtle: rgba(183, 242, 42, 0.16);
+  --color-hero-scrim: rgba(0, 18, 25, 0.55);
+  --color-sea: #00c8b4;
+  --color-sea-subtle: rgba(0, 200, 180, 0.16);
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 22px;
   --radius-xl: 28px;
-  --shadow-elev-1: 0 1px 2px rgba(26, 31, 28, 0.06),
-    0 4px 16px rgba(26, 31, 28, 0.04);
-  --shadow-elev-2: 0 8px 28px rgba(26, 31, 28, 0.12),
-    0 2px 8px rgba(26, 31, 28, 0.06);
+  --shadow-elev-1: 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 8px 24px rgba(0, 18, 25, 0.55);
+  --shadow-elev-2: 0 14px 38px rgba(0, 0, 0, 0.6),
+    0 0 28px rgba(0, 216, 232, 0.12);
+  --chrome-height: 72px;
   --motion-fast: 140ms;
   --motion-base: 220ms;
   --motion-slow: 360ms;
@@ -49,7 +81,9 @@
 
 @layer base {
   body {
-    background: var(--color-surface-app);
+    background: var(--gradient-surface-app);
+    background-color: var(--life-bg, var(--color-surface-app));
+    background-attachment: fixed;
     color: var(--color-text-primary);
   }
 
@@ -65,18 +99,13 @@
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--font-display), ui-serif, Georgia, "Times New Roman", serif;
+  .surface-glass {
+    background: var(--color-surface-glass);
+    border: 1px solid var(--color-border-glass);
+    backdrop-filter: blur(18px);
   }
 
-  .font-brand {
-    font-family: var(--font-brand), "Cormorant Garamond", ui-serif, Georgia, serif;
-  }
-
-  .line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  .gradient-brand {
+    background-image: var(--gradient-brand);
   }
 }

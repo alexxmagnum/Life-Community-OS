@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { LifeLogo } from "../brand/LifeLogo";
 import { cn } from "../lib/cn";
 import { useMediaLightbox, ZoomableImage } from "../media/MediaLightbox";
 
@@ -16,8 +17,23 @@ import { useMediaLightbox, ZoomableImage } from "../media/MediaLightbox";
  */
 export type CommunityAppHeaderProps = {
   brandName: string;
+  /** Second wordmark line under the brand name (e.g. “PANORÁMICA”). */
+  brandSubName?: string;
   /** Tenant brand mark — replaces text when provided. */
   brandLogoUrl?: string;
+  /** Float over the page photography with no chrome surface. */
+  transparent?: boolean;
+  /**
+   * Immersive Home chrome — always transparent, glass weather pill only,
+   * 44px touch targets, no solid bar.
+   */
+  heroOverlay?: boolean;
+  /** Current temperature, already formatted by the caller (e.g. “24°”). */
+  weatherTemperature?: string;
+  /** Short sky condition shown under the temperature. */
+  weatherCondition?: string;
+  /** Municipality the weather belongs to. */
+  placeLabel?: string;
   onBrandClick?: () => void;
   brandLabel?: string;
   onMenuOpen?: () => void;
@@ -35,13 +51,38 @@ export type CommunityAppHeaderProps = {
   territoryName?: string;
   /** @deprecated Place context moved to TerritoryHero — ignored */
   areaLabel?: string;
-  /** @deprecated Weather moved to TerritoryHero — ignored */
+  /** @deprecated Superseded by weatherTemperature / weatherCondition */
   weatherLabel?: string;
 };
 
+/** Sun behind cloud — the chrome weather cluster glyph. */
+function WeatherGlyph() {
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="9" cy="8.6" r="3.4" fill="var(--color-feedback-warning)" />
+      <path
+        d="M9 2.6v1.4M9 13.2v1.4M2.6 8.6H4M14 8.6h1.4M4.5 4.1l1 1M12.5 12.1l1 1M13.5 4.1l-1 1M5.5 12.1l-1 1"
+        stroke="var(--color-feedback-warning)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9.6 19.4a3 3 0 0 1 .3-6 4.3 4.3 0 0 1 8.2 1.1 2.5 2.5 0 0 1-.5 4.9H9.6Z"
+        fill="var(--color-text-primary)"
+      />
+    </svg>
+  );
+}
+
 export function CommunityAppHeader({
   brandName,
+  brandSubName,
+  transparent = false,
+  heroOverlay = false,
   brandLogoUrl,
+  weatherTemperature,
+  weatherCondition,
+  placeLabel,
   onBrandClick,
   brandLabel = "Ir al inicio",
   onMenuOpen,
@@ -56,59 +97,132 @@ export function CommunityAppHeader({
   className,
 }: CommunityAppHeaderProps) {
   const lightbox = useMediaLightbox();
+  /** Transparent chrome only holds while the hero is under it. */
+  const [atTop, setAtTop] = useState(true);
+
+  useEffect(() => {
+    if (!transparent || heroOverlay) return;
+    const onScroll = () => setAtTop(window.scrollY < 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [transparent, heroOverlay]);
+
+  const floating = heroOverlay || (transparent && atTop);
+  const overHero = heroOverlay || floating;
 
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-40 bg-white md:hidden",
+        "life-hero__header fixed inset-x-0 top-0 z-40 md:hidden",
+        overHero
+          ? "border-0 bg-transparent shadow-none"
+          : "border-b border-[var(--color-border-glass)] bg-[var(--color-chrome-surface)] backdrop-blur-2xl transition-colors duration-200",
         className,
       )}
     >
-      <div className="pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto flex h-[52px] w-full max-w-none items-center gap-2 px-2.5">
-          <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+      <div
+        className={cn(
+          overHero
+            ? "px-3.5 pb-2 pt-[calc(env(safe-area-inset-top)+10px)] max-[390px]:px-3"
+            : "pt-[env(safe-area-inset-top)]",
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto flex w-full max-w-none items-center justify-between gap-1.5",
+            overHero ? "min-h-[56px]" : "h-[62px] px-3",
+          )}
+        >
+          <div className="relative z-10 flex shrink-0 items-center">
             {brandLogoUrl ? (
               <button
                 type="button"
                 onClick={() =>
                   lightbox?.open(brandLogoUrl, `Logo ${brandName}`)
                 }
-                className="shrink-0 rounded-full active:opacity-80"
-                aria-label={`Ver logo de ${brandName}`}
+                className="life-logo flex h-12 shrink-0 items-center gap-2.5 text-left active:opacity-80"
+                aria-label={brandLabel ?? `Ver logo de ${brandName}`}
               >
                 <img
                   src={brandLogoUrl}
                   alt=""
                   data-brand-logo
-                  className="h-12 w-12 object-contain"
+                  className="life-logo__symbol h-9 w-9 shrink-0 object-contain"
                 />
-              </button>
-            ) : null}
-            {onBrandClick ? (
-              <button
-                type="button"
-                onClick={onBrandClick}
-                className="min-w-0 truncate text-left font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)] active:opacity-80"
-                aria-label={brandLabel}
-              >
-                {brandName}
+                <span className="min-w-0">
+                  <span className="life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[20px] font-normal uppercase leading-none tracking-[0.22em] text-[#F7FAFA]">
+                    {brandName}
+                  </span>
+                  {brandSubName ? (
+                    <span className="life-logo__location mt-1.5 block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[9px] font-semibold uppercase leading-none tracking-[0.16em] text-[#F7FAFA]">
+                      {brandSubName}
+                    </span>
+                  ) : null}
+                </span>
               </button>
             ) : (
-              <p className="min-w-0 truncate font-[family-name:var(--font-brand)] text-[21px] font-semibold leading-none tracking-[-0.01em] text-[var(--color-action-primary)]">
-                {brandName}
-              </p>
+              <LifeLogo
+                primary={brandName}
+                secondary={brandSubName}
+                onClick={onBrandClick}
+                label={brandLabel}
+                compact={overHero}
+              />
             )}
           </div>
 
-          <div className="relative z-10 flex shrink-0 items-center gap-0.5">
+          <div className="relative z-10 flex min-w-0 shrink items-center justify-end gap-0.5">
+            {weatherTemperature ? (
+              <div
+                className={cn(
+                  "flex shrink-0 items-center gap-1",
+                  overHero
+                    ? "rounded-full border border-white/[0.16] bg-[rgba(5,22,29,0.45)] px-2 py-1 backdrop-blur-[16px] backdrop-saturate-[130%]"
+                    : "pr-0.5",
+                )}
+              >
+                <WeatherGlyph />
+                <span className="min-w-0">
+                  <span
+                    className={cn(
+                      "block font-bold leading-none",
+                      overHero
+                        ? "text-[13px] text-[#F7FAFA]"
+                        : "text-[14px] text-[var(--color-text-primary)]",
+                    )}
+                  >
+                    {weatherTemperature}
+                  </span>
+                  {placeLabel || weatherCondition ? (
+                    <span
+                      className={cn(
+                        "mt-[2px] block max-w-[64px] truncate leading-none",
+                        overHero
+                          ? "text-[8px] text-[rgba(247,250,250,0.72)]"
+                          : "text-[8.5px] text-[var(--color-text-tertiary)]",
+                      )}
+                    >
+                      {placeLabel ?? weatherCondition}
+                    </span>
+                  ) : null}
+                </span>
+              </div>
+            ) : null}
+
             {onNotifications ? (
               <button
                 type="button"
                 onClick={onNotifications}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full text-[var(--color-text-primary)] transition-colors active:bg-black/[0.04]"
+                className={cn(
+                  "relative flex shrink-0 items-center justify-center rounded-full transition-colors active:bg-white/10",
+                  overHero
+                    ? "h-10 w-10 text-[#F7FAFA]"
+                    : "h-8 w-8 text-[var(--color-text-primary)]",
+                )}
                 aria-label={notificationsLabel}
               >
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path
                     d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"
                     stroke="currentColor"
@@ -124,9 +238,10 @@ export function CommunityAppHeader({
                   />
                 </svg>
                 {notificationCount > 0 ? (
-                  <span className="absolute right-0 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#E53935] px-1 text-[12px] font-bold leading-none text-white">
-                    {notificationCount > 9 ? "9+" : notificationCount}
-                  </span>
+                  <span
+                    className="absolute right-2 top-2 h-[7px] w-[7px] rounded-full bg-[#B7F22A] shadow-[0_0_12px_rgba(183,242,42,0.45)]"
+                    aria-hidden
+                  />
                 ) : null}
               </button>
             ) : null}
@@ -135,17 +250,22 @@ export function CommunityAppHeader({
               <button
                 type="button"
                 onClick={onProfileClick}
-                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-muted)] text-[var(--color-text-primary)] transition-colors active:bg-black/[0.04]"
+                className={cn(
+                  "flex shrink-0 items-center justify-center overflow-hidden rounded-full transition-colors active:opacity-90",
+                  overHero
+                    ? "h-9 w-9 border-2 border-[#00D8E8] shadow-[0_0_18px_rgba(0,216,232,0.22)]"
+                    : "ml-0.5 h-[30px] w-[30px] bg-[var(--color-surface-glass-strong)] text-[var(--color-text-primary)] ring-1 ring-white/25",
+                )}
                 aria-label={profileLabel}
               >
                 {profileImageUrl ? (
                   <img
                     src={profileImageUrl}
                     alt=""
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-[15px] font-semibold">
+                  <span className="text-[14px] font-semibold text-[#F7FAFA]">
                     {(profileName ?? "?").slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -156,14 +276,19 @@ export function CommunityAppHeader({
               <button
                 type="button"
                 onClick={onMenuOpen}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--color-text-primary)] transition-colors active:bg-black/[0.04]"
+                className={cn(
+                  "flex shrink-0 items-center justify-center rounded-full transition-colors active:bg-white/10",
+                  overHero
+                    ? "h-10 w-10 text-[#F7FAFA]"
+                    : "-mr-0.5 h-8 w-7 text-[var(--color-text-primary)]",
+                )}
                 aria-label={menuLabel}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path
                     d="M4 7h16M4 12h16M4 17h16"
                     stroke="currentColor"
-                    strokeWidth="1.85"
+                    strokeWidth="1.9"
                     strokeLinecap="round"
                   />
                 </svg>
@@ -274,14 +399,20 @@ export type AppMenuSheetProps = {
 };
 
 const TONE_TILE: Record<AppMenuCategoryTone, string> = {
-  community: "bg-[#E7F0EC] text-[#1F4A3C]",
-  activities: "bg-[#E8F1F4] text-[#3D6B7A]",
-  experiences: "bg-[#FBF3DC] text-[#B8860B]",
-  reservations: "bg-[#E8F0F4] text-[#3D5A6B]",
-  exchange: "bg-[#F8EFE6] text-[#C47A3A]",
-  local: "bg-[#EFE8F4] text-[#6B4F8A]",
-  official: "bg-[#E8EAF4] text-[#3A4570]",
-  profile: "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
+  community:
+    "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
+  activities: "bg-[var(--color-sea-subtle)] text-[var(--color-sea)]",
+  experiences:
+    "bg-[var(--color-feedback-warning-subtle)] text-[var(--color-feedback-warning)]",
+  reservations:
+    "bg-[var(--color-feedback-info-subtle)] text-[var(--color-feedback-info)]",
+  exchange:
+    "bg-[var(--color-action-accent-subtle)] text-[var(--color-action-accent)]",
+  local: "bg-[var(--color-accent-lime-subtle)] text-[var(--color-accent-lime)]",
+  official:
+    "bg-[var(--color-action-primary-subtle)] text-[var(--color-accent-official)]",
+  profile:
+    "bg-[var(--color-action-primary-subtle)] text-[var(--color-action-primary)]",
 };
 
 function BrandMark({ className }: { className?: string }) {
@@ -704,13 +835,13 @@ export function AppMenuSheet({
         aria-modal="true"
         aria-label={brandName}
         className={cn(
-          "absolute left-[3%] top-[4%] z-10 flex h-[92vh] w-[min(84vw,22.5rem)] flex-col overflow-hidden rounded-[1.5rem] bg-[#F7F4EF] shadow-[0_18px_50px_rgba(26,31,28,0.22)] transition-transform duration-300 ease-out",
+          "absolute left-[3%] top-[4%] z-10 flex h-[92vh] w-[min(84vw,22.5rem)] flex-col overflow-hidden rounded-[1.5rem] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-2)] transition-transform duration-300 ease-out",
           entered ? "translate-x-0" : "-translate-x-[112%]",
         )}
       >
         <div className="shrink-0 px-4 pb-3 pt-4">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2.5 text-[var(--color-action-primary)]">
+            <div className="flex min-w-0 items-center gap-2.5 text-[var(--color-text-primary)]">
               {brandLogoUrl ? (
                 <button
                   type="button"
@@ -750,7 +881,7 @@ export function AppMenuSheet({
             </button>
           </div>
 
-          <label className="mt-4 flex min-h-[44px] items-center gap-2.5 rounded-full bg-white px-3.5 shadow-[0_1px_2px_rgba(26,31,28,0.06)] ring-1 ring-[var(--color-border-subtle)]">
+          <label className="mt-4 flex min-h-[44px] items-center gap-2.5 rounded-full bg-[var(--color-surface-glass)] px-3.5 ring-1 ring-[var(--color-border-glass)]">
             <span className="text-[var(--color-text-tertiary)]" aria-hidden>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.6" />

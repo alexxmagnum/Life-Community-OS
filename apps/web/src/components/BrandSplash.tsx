@@ -10,8 +10,10 @@ let splashFinishedThisDocument = false;
  * Position is fixed at the header slot; only `transform` animates (no left/top jump).
  */
 export function BrandSplash() {
-  const { theme } = useTenant();
-  const logoUrl = theme.imagery.logo;
+  const { theme, themeMode } = useTenant();
+  /** Night uses the Motans SVG mark — skip the raster splash card. */
+  const logoUrl =
+    themeMode === "night" ? theme.imagery.logoLight : theme.imagery.logo;
   const [visible, setVisible] = useState(false);
   const [leave, setLeave] = useState(false);
 
@@ -79,7 +81,7 @@ export function BrandSplash() {
           transformOrigin: "center center",
           transform: leave
             ? "translate(0px, 0px) scale(1)"
-            : "translate(calc(50vw - 34px), calc(50vh - env(safe-area-inset-top, 0px) - 26px)) scale(8.6)",
+            : "translate(calc(50vw - 34px), calc(50vh - env(safe-area-inset-top, 0px) - 26px)) scale(3.2)",
           opacity: leave ? 0 : 1,
           boxShadow: leave ? "none" : "0 24px 80px rgba(0,0,0,0.5)",
           transition: leave

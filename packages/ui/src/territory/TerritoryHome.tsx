@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { cn } from "../lib/cn";
 import { ZoomableImage } from "../media/MediaLightbox";
@@ -195,6 +195,277 @@ export function TerritoryHero({
   );
 }
 
+export type HomeHeroSlide = {
+  id: string;
+  imageUrl: string;
+  alt?: string;
+};
+
+export type HomeHeroPillIcon = "sun" | "spark" | "pin";
+
+export type HomeHeroPill = {
+  id: string;
+  label: string;
+  /** Second line of the pill, as in the reference stage. */
+  sublabel?: string;
+  icon?: HomeHeroPillIcon;
+  onClick?: () => void;
+};
+
+function HeroPillGlyph({ kind }: { kind?: HomeHeroPillIcon }) {
+  const common = {
+    width: 15,
+    height: 15,
+    viewBox: "0 0 24 24",
+    fill: "none" as const,
+    "aria-hidden": true as const,
+  };
+  const stroke = {
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  if (kind === "pin") {
+    return (
+      <svg {...common}>
+        <path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z" {...stroke} />
+        <circle cx="12" cy="11" r="2" {...stroke} />
+      </svg>
+    );
+  }
+  if (kind === "spark") {
+    return (
+      <svg {...common}>
+        <path
+          d="M3.5 12h3.2l1.4-3.2L10.4 15l1.6-6.2L13.8 12H20.5"
+          {...stroke}
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <circle cx="12" cy="12" r="4" {...stroke} />
+      <path
+        d="M12 4v2M12 18v2M4 12h2M18 12h2M6.3 6.3l1.4 1.4M16.3 16.3l1.4 1.4M17.7 6.3l-1.4 1.4M7.7 16.3l-1.4 1.4"
+        {...stroke}
+      />
+    </svg>
+  );
+}
+
+export type HomeHeroStageProps = {
+  slides: ReadonlyArray<HomeHeroSlide>;
+  greeting: string;
+  /** Emotional second line ("Panorámica está viva hoy."). */
+  tagline?: string;
+  /** Invitation line under the tagline. */
+  description?: string;
+  /** Live context pills over the photography. */
+  pills?: ReadonlyArray<HomeHeroPill>;
+  /** Open on the slide that matches the current time window. */
+  initialIndex?: number;
+  /**
+   * Extend the photo under the fixed app header so chrome + hero share
+   * one photographic surface. Prefer pairing with AppShell flushTop.
+   */
+  underChrome?: boolean;
+  /** Optional desktop/mobile alternate sources per slide (falls back to imageUrl). */
+  className?: string;
+};
+
+/**
+ * Home opening stage — editorial full-bleed photography.
+ * Header chrome floats over the same media; the bottom fades into --life-bg.
+ */
+export function HomeHeroStage({
+  slides,
+  greeting,
+  tagline,
+  description,
+  pills = [],
+  initialIndex = 0,
+  underChrome = true,
+  className,
+}: HomeHeroStageProps) {
+  const count = slides.length;
+  const safeInitial =
+    count === 0 ? 0 : ((initialIndex % count) + count) % count;
+  const [index, setIndex] = useState(safeInitial);
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    setIndex(safeInitial);
+  }, [safeInitial]);
+
+  useEffect(() => {
+    if (count <= 1) return;
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % count);
+    }, 6500);
+    return () => window.clearInterval(timer);
+  }, [count]);
+
+  useEffect(() => {
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setEntered(true);
+      return;
+    }
+    const id = window.requestAnimationFrame(() => setEntered(true));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+
+  if (count === 0) return null;
+
+  return (
+    <section
+      className={cn(
+        "life-hero relative isolate w-full overflow-hidden rounded-b-[24px] bg-[var(--life-bg,#001219)]",
+        "min-h-[clamp(320px,40svh,380px)]",
+        className,
+      )}
+      style={{
+        marginTop: underChrome
+          ? "calc(-1 * (var(--chrome-height) + env(safe-area-inset-top)))"
+          : undefined,
+      }}
+    >
+      <div className="life-hero__media pointer-events-none absolute inset-0 z-0">
+        {slides.map((slide, slideIndex) => (
+          <img
+            key={slide.id}
+            src={slide.imageUrl}
+            alt={slideIndex === index ? (slide.alt ?? "") : ""}
+            className={cn(
+              "absolute inset-0 h-full w-full object-cover object-[50%_40%] transition-[opacity,transform] duration-[700ms] ease-out",
+              slideIndex === index ? "opacity-100" : "opacity-0",
+              slideIndex === index && entered ? "scale-100" : "scale-[1.03]",
+            )}
+            aria-hidden={slideIndex === index ? undefined : true}
+          />
+        ))}
+      </div>
+
+      <div
+        className="life-hero__overlay pointer-events-none absolute inset-0 z-[1]"
+        style={{
+          background: `
+            linear-gradient(
+              90deg,
+              rgba(0, 10, 15, 0.68) 0%,
+              rgba(0, 12, 18, 0.36) 36%,
+              rgba(0, 12, 18, 0.06) 70%,
+              transparent 100%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(0, 10, 15, 0.28) 0%,
+              rgba(0, 12, 18, 0.02) 40%,
+              rgba(0, 12, 18, 0.28) 78%,
+              var(--life-bg, #001219) 100%
+            )
+          `,
+        }}
+      />
+
+      <div
+        className={cn(
+          "life-hero__content relative z-[5] flex min-h-[inherit] flex-col justify-end px-4 pb-11 max-[375px]:px-3.5",
+          "pt-[calc(env(safe-area-inset-top)+72px)]",
+          "transition-[opacity,transform] duration-[600ms] ease-out",
+          entered ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+        )}
+      >
+        <p
+          className="mb-1.5 text-[14px] font-normal leading-[1.3] text-[rgba(247,250,250,0.92)]"
+          suppressHydrationWarning
+        >
+          {greeting}
+        </p>
+        {tagline ? (
+          <h1
+            className="max-w-[16ch] whitespace-pre-line font-sans text-[clamp(22px,5.6vw,26px)] font-medium leading-[1.12] tracking-[-0.02em] text-[#F7FAFA]"
+            style={{ textShadow: "0 1px 12px rgba(0,0,0,0.25)" }}
+          >
+            {tagline}
+          </h1>
+        ) : null}
+        {description ? (
+          <p className="mt-2.5 max-w-[30ch] text-[13px] font-normal leading-[1.4] text-[rgba(247,250,250,0.88)]">
+            {description}
+          </p>
+        ) : null}
+
+        {pills.length > 0 ? (
+          <div className="life-hero__signals mt-4 flex gap-2">
+            {pills.map((pill) => {
+              const label = pill.sublabel
+                ? `${pill.label} ${pill.sublabel}`
+                : pill.label;
+              const content = (
+                <>
+                  <span
+                    className={cn(
+                      "shrink-0 [&_svg]:h-3.5 [&_svg]:w-3.5",
+                      pill.icon === "sun" ? "text-[#F5D90A]" : "text-[#00D8E8]",
+                    )}
+                    aria-hidden
+                  >
+                    <HeroPillGlyph kind={pill.icon} />
+                  </span>
+                  <span className="min-w-0 text-[11px] font-semibold leading-[1.2] text-[#F7FAFA]">
+                    {label}
+                  </span>
+                </>
+              );
+              const shape =
+                "life-hero__signal flex min-h-[40px] min-w-0 flex-1 items-center gap-1.5 rounded-[12px] border border-white/[0.16] bg-[rgba(3,18,24,0.55)] px-2.5 py-1.5 text-left shadow-[0_8px_20px_rgba(0,0,0,0.16)] backdrop-blur-[14px] backdrop-saturate-[130%]";
+              return pill.onClick ? (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={pill.onClick}
+                  className={cn(shape, "transition-transform active:scale-[0.97]")}
+                >
+                  {content}
+                </button>
+              ) : (
+                <span key={pill.id} className={shape}>
+                  {content}
+                </span>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+
+      {count > 1 ? (
+        <div className="life-hero__pagination absolute bottom-3.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5">
+          {slides.map((slide, slideIndex) => (
+            <button
+              key={slide.id}
+              type="button"
+              onClick={() => setIndex(slideIndex)}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                slideIndex === index
+                  ? "h-1.5 w-2.5 bg-[#00D8E8] shadow-[0_0_10px_rgba(0,216,232,0.4)]"
+                  : "h-1.5 w-1.5 bg-white/40",
+              )}
+              aria-label={`Imagen ${slideIndex + 1} de ${count}`}
+              aria-current={slideIndex === index ? "true" : undefined}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export type QuickActionBarItem = {
   id: string;
   label: string;
@@ -229,7 +500,7 @@ export function QuickActionBar({ items, className }: QuickActionBarProps) {
           key={item.id}
           type="button"
           onClick={item.onClick}
-          className="flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-[16px] bg-white px-1 py-2.5 text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.04)] transition-transform active:scale-[0.97]"
+          className="flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-1 py-2.5 text-[var(--color-action-primary)] backdrop-blur-md transition-transform active:scale-[0.97]"
         >
           <span className="flex h-8 w-8 items-center justify-center" aria-hidden>
             {item.icon}
@@ -299,7 +570,7 @@ export function GlobalAppSearch({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete="off"
-          className="min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-subtle)] bg-white py-2.5 pl-11 pr-10 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] shadow-[0_1px_3px_rgba(26,31,28,0.05)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
+          className="min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] py-2.5 pl-11 pr-10 text-[15px] text-[var(--color-text-primary)] outline-none backdrop-blur-md placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
         />
         {value ? (
           <button
@@ -320,7 +591,7 @@ export function GlobalAppSearch({
               key={chip.id}
               type="button"
               onClick={chip.onClick}
-              className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[14px] font-semibold text-[var(--color-action-primary)] shadow-[0_1px_2px_rgba(26,31,28,0.05)] active:scale-[0.98]"
+              className="shrink-0 rounded-full border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3 py-1.5 text-[14px] font-semibold text-[var(--color-action-primary)] active:scale-[0.98]"
             >
               {chip.label}
             </button>
@@ -329,7 +600,7 @@ export function GlobalAppSearch({
       ) : null}
 
       {open ? (
-        <div className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-[18px] bg-white shadow-[0_12px_40px_rgba(26,31,28,0.14)]">
+        <div className="absolute inset-x-0 top-[calc(100%+0.5rem)] z-30 overflow-hidden rounded-[18px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-2)]">
           {hits.length === 0 ? (
             <p className="px-4 py-5 text-[14px] text-[var(--color-text-secondary)]">
               Sin resultados para “{value.trim()}”
@@ -476,12 +747,20 @@ export type CommunityActivityCardProps = {
 
 function categoryAccent(label?: string): string {
   const key = (label ?? "").toLowerCase();
-  if (key.includes("aviso")) return "text-[#3D6B7A]";
-  if (key.includes("activ") || key.includes("plan")) return "text-[#2F6F4E]";
-  if (key.includes("deport") || key.includes("espacio")) return "text-[#5B4B8A]";
-  if (key.includes("mercado")) return "text-[#C47A3A]";
-  if (key.includes("consejo") || key.includes("recom")) return "text-[#9A7A18]";
-  if (key.includes("cerca") || key.includes("grupo")) return "text-[#C47A3A]";
+  if (key.includes("aviso")) return "text-[var(--color-sea)]";
+  if (key.includes("activ") || key.includes("plan")) {
+    return "text-[var(--color-feedback-success)]";
+  }
+  if (key.includes("deport") || key.includes("espacio")) {
+    return "text-[var(--color-accent-cyan)]";
+  }
+  if (key.includes("mercado")) return "text-[var(--color-action-accent)]";
+  if (key.includes("consejo") || key.includes("recom")) {
+    return "text-[var(--color-feedback-warning)]";
+  }
+  if (key.includes("cerca") || key.includes("grupo")) {
+    return "text-[var(--color-accent-lime)]";
+  }
   return "text-[var(--color-action-primary)]";
 }
 
@@ -635,7 +914,7 @@ export function CommunityActivityCard({
         {!imageUrl ? (
           <span
             className={cn(
-              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white",
+              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-glass)]",
               categoryAccent(categoryLabel),
             )}
             aria-hidden
@@ -996,17 +1275,17 @@ export function ExperiencePreviewCard({
           }}
         >
           {categoryLabel ? (
-            <span className="mb-2 inline-flex w-fit rounded-md bg-[var(--color-action-primary)]/90 px-2 py-0.5 text-[14px] font-bold uppercase tracking-wide text-[var(--color-text-inverse)]">
+            <span className="mb-2 inline-flex w-fit rounded-md bg-[var(--color-action-primary)] px-2 py-0.5 text-[14px] font-bold uppercase tracking-wide text-[var(--color-text-on-action)]">
               {categoryLabel}
             </span>
           ) : null}
-          <h3 className="font-sans text-[18px] font-semibold leading-6 text-[var(--color-text-inverse)]">
+          <h3 className="font-sans text-[18px] font-semibold leading-6 text-white">
             {title}
           </h3>
-          <p className="mt-1.5 text-[15px] text-[var(--color-text-inverse)]/90">
+          <p className="mt-1.5 text-[15px] text-white/90">
             {when}
           </p>
-          <p className="mt-0.5 text-[14px] text-[var(--color-text-inverse)]/75">
+          <p className="mt-0.5 text-[14px] text-white/75">
             {where}
             {peopleLabel ? ` · ${peopleLabel}` : ""}
           </p>
@@ -1016,7 +1295,7 @@ export function ExperiencePreviewCard({
         <button
           type="button"
           onClick={onCta}
-          className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[15px] font-semibold text-[var(--color-text-inverse)]"
+          className="mt-3 flex min-h-[48px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[15px] font-semibold text-[var(--color-text-on-action)]"
         >
           {ctaLabel}
         </button>
@@ -1062,10 +1341,10 @@ export function PlacePreviewCard({
             "linear-gradient(transparent 45%, rgba(20,28,24,0.7))",
         }}
       >
-        <span className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-[var(--color-text-inverse)]">
+        <span className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-white">
           {name}
         </span>
-        <span className="mt-1.5 text-[15px] text-[var(--color-text-inverse)]/85">
+        <span className="mt-1.5 text-[15px] text-white/85">
           Libre · {availability}
           {areaLabel ? ` · ${areaLabel}` : ""}
         </span>

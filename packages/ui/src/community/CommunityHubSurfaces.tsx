@@ -16,19 +16,19 @@ import { cn } from "../lib/cn";
  */
 
 const CARD =
-  "rounded-[18px] border border-[#E8E2D8] bg-[#FFFCFA] shadow-[0_6px_18px_rgba(26,31,28,0.08)]";
+  "rounded-[18px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] shadow-[var(--shadow-elev-1)] backdrop-blur-md";
 const ROW =
-  "rounded-[14px] border border-[#E8E2D8] bg-white shadow-[0_4px_14px_rgba(26,31,28,0.08)]";
+  "rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] shadow-[var(--shadow-elev-1)] backdrop-blur-md";
 const PRESS = "transition-transform active:scale-[0.99]";
 
 export type HubAttentionTone = "alert" | "important" | "info";
 
 const ATTENTION_SHELL: Record<HubAttentionTone, string> = {
   alert:
-    "border-[color-mix(in_srgb,#B42318_38%,transparent)] bg-[#FBEDEB] shadow-[0_6px_18px_rgba(180,35,24,0.10)]",
+    "border-[var(--color-feedback-danger)] bg-[var(--color-feedback-danger-subtle)] shadow-[var(--shadow-elev-1)]",
   important:
-    "border-[color-mix(in_srgb,#B8860B_40%,transparent)] bg-[#FCF6E4] shadow-[0_6px_18px_rgba(184,134,11,0.10)]",
-  info: "border-[color-mix(in_srgb,#3D6B7A_34%,transparent)] bg-[#EBF3F6] shadow-[0_6px_18px_rgba(61,107,122,0.10)]",
+    "border-[var(--color-feedback-warning)] bg-[var(--color-feedback-warning-subtle)] shadow-[var(--shadow-elev-1)]",
+  info: "border-[var(--color-feedback-info)] bg-[var(--color-feedback-info-subtle)] shadow-[var(--shadow-elev-1)]",
 };
 
 export type HubAttentionCardProps = {
@@ -64,7 +64,7 @@ export function HubAttentionCard({
       )}
     >
       <span
-        className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/75 text-[24px] leading-none"
+        className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-glass-strong)] text-[24px] leading-none"
         aria-hidden
       >
         {glyph}
@@ -88,6 +88,12 @@ export function HubAttentionCard({
   );
 }
 
+export type HubRowTone = "default" | "quiet";
+
+/** Institutional rows stay calm: no elevation, muted surface. */
+const ROW_QUIET =
+  "rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)]";
+
 export type HubRowProps = {
   title: string;
   meta?: string;
@@ -96,6 +102,8 @@ export type HubRowProps = {
   glyph?: string;
   /** Right-aligned quiet label (e.g. relative time). */
   trailingLabel?: string;
+  /** `quiet` marks reference information (official board) over live content. */
+  tone?: HubRowTone;
   onClick?: () => void;
   className?: string;
 };
@@ -107,16 +115,18 @@ export function HubRow({
   imageUrl,
   glyph,
   trailingLabel,
+  tone = "default",
   onClick,
   className,
 }: HubRowProps) {
   const Tag = onClick ? "button" : "div";
+  const quiet = tone === "quiet";
   return (
     <Tag
       {...(onClick ? { type: "button" as const, onClick } : {})}
       className={cn(
         "flex w-full items-center gap-3 px-3 py-2.5 text-left",
-        ROW,
+        quiet ? ROW_QUIET : ROW,
         onClick ? PRESS : "",
         className,
       )}
@@ -127,7 +137,12 @@ export function HubRow({
         </span>
       ) : glyph ? (
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[var(--color-action-primary-subtle)] text-[20px] leading-none"
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] text-[20px] leading-none",
+            quiet
+              ? "bg-[var(--color-surface-glass)] text-[var(--color-text-secondary)]"
+              : "bg-[var(--color-action-primary-subtle)]",
+          )}
           aria-hidden
         >
           {glyph}
@@ -149,7 +164,12 @@ export function HubRow({
         </span>
       ) : onClick ? (
         <span
-          className="shrink-0 text-[17px] text-[var(--color-action-primary)]"
+          className={cn(
+            "shrink-0 text-[17px]",
+            quiet
+              ? "text-[var(--color-text-tertiary)]"
+              : "text-[var(--color-action-primary)]",
+          )}
           aria-hidden
         >
           ›
@@ -230,6 +250,8 @@ export function HubRailCard({
 export type HubDoorCardProps = {
   title: string;
   meta?: string;
+  /** Social signals (support, comments) — keeps the plaza feeling alive. */
+  signals?: string;
   imageUrl?: string;
   /** Initial shown when there is no photo. */
   fallbackInitial?: string;
@@ -239,10 +261,11 @@ export type HubDoorCardProps = {
   className?: string;
 };
 
-/** Full-width door into a conversation (group, neighbour). */
+/** Full-width door into community content or a conversation. */
 export function HubDoorCard({
   title,
   meta,
+  signals,
   imageUrl,
   fallbackInitial,
   imageSide = "start",
@@ -250,7 +273,7 @@ export function HubDoorCard({
   className,
 }: HubDoorCardProps) {
   const photo = (
-    <span className="relative h-[72px] w-[88px] shrink-0 overflow-hidden bg-[var(--color-surface-muted)]">
+    <span className="relative min-h-[72px] w-[88px] shrink-0 self-stretch overflow-hidden bg-[var(--color-surface-muted)]">
       {imageUrl ? (
         <img src={imageUrl} alt="" className="h-full w-full object-cover" />
       ) : (
@@ -287,6 +310,11 @@ export function HubDoorCard({
             {meta}
           </span>
         ) : null}
+        {signals ? (
+          <span className="mt-1 block truncate text-[12px] font-medium leading-4 text-[var(--color-action-primary)]">
+            {signals}
+          </span>
+        ) : null}
       </span>
       <span
         className={cn(
@@ -310,6 +338,8 @@ export type HubTileProps = {
   /** Tint classes for the glyph circle. */
   tint?: string;
   active?: boolean;
+  /** True when the tile expands a panel in place instead of navigating away. */
+  expandable?: boolean;
   onSelect: () => void;
   className?: string;
 };
@@ -321,6 +351,7 @@ export function HubTile({
   meta,
   tint = "bg-[var(--color-action-primary-subtle)]",
   active = false,
+  expandable = false,
   onSelect,
   className,
 }: HubTileProps) {
@@ -328,20 +359,20 @@ export function HubTile({
     <button
       type="button"
       onClick={onSelect}
-      aria-pressed={active}
+      {...(expandable ? { "aria-expanded": active } : {})}
       className={cn(
         "flex flex-col items-center gap-2 rounded-[18px] border px-2 py-3.5 text-center",
         active
-          ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary-subtle)] shadow-[0_6px_18px_rgba(31,74,60,0.14)]"
-          : "border-[#E8E2D8] bg-[#FFFCFA] shadow-[0_6px_18px_rgba(26,31,28,0.08)]",
+          ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary-subtle)] shadow-[var(--shadow-elev-1)]"
+          : "border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] shadow-[var(--shadow-elev-1)] backdrop-blur-md",
         "transition-transform active:scale-[0.97]",
         className,
       )}
     >
       <span
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full text-[26px] leading-none shadow-[0_2px_8px_rgba(26,31,28,0.08)]",
-          active ? "bg-white" : tint,
+          "flex h-12 w-12 items-center justify-center rounded-full text-[26px] leading-none",
+          active ? "bg-[var(--color-surface-glass-strong)]" : tint,
         )}
         aria-hidden
       >

@@ -76,7 +76,7 @@ export function AvailabilityPicker({
             className={cn(
               "min-h-[52px] min-w-[108px] shrink-0 rounded-[var(--radius-lg)] px-3 py-2 text-left text-[15px] font-semibold",
               active
-                ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
+                ? "bg-[var(--color-action-primary)] text-[var(--color-text-on-action)]"
                 : "bg-[var(--color-surface-elevated)] text-[var(--color-text-secondary)] shadow-[var(--shadow-elev-1)]",
             )}
           >

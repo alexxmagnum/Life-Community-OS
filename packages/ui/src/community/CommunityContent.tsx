@@ -495,7 +495,7 @@ export function InlineCommentComposer({
           }}
           placeholder={placeholder}
           aria-label="Escribir comentario"
-          className="min-h-[40px] min-w-0 flex-1 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 text-[14px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:bg-white"
+          className="min-h-[40px] min-w-0 flex-1 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 text-[14px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:bg-[var(--color-surface-glass)]"
         />
         <button
           type="button"
@@ -518,13 +518,13 @@ export function InlineCommentComposer({
         rows={2}
         placeholder={placeholder}
         aria-label="Escribir comentario"
-        className="min-h-[72px] w-full resize-none rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 py-2.5 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
+        className="min-h-[72px] w-full resize-none rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 py-2.5 text-[15px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
       />
       <button
         type="button"
         disabled={!canSend}
         onClick={onSubmit}
-        className="flex min-h-[44px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[15px] font-semibold text-[var(--color-text-inverse)] disabled:opacity-45"
+        className="flex min-h-[44px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[15px] font-semibold text-[var(--color-text-on-action)] disabled:opacity-45"
       >
         {submitLabel}
       </button>

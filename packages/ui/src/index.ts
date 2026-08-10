@@ -57,6 +57,12 @@ export {
   type CategoryFilterOption,
 } from "./layout/CommunityAppChrome";
 export {
+  LifeLogo,
+  LifeLogoSymbol,
+  type LifeLogoProps,
+  type LifeLogoSymbolProps,
+} from "./brand/LifeLogo";
+export {
   MediaCapturePlaceholder,
   MediaPreviewPlaceholder,
 } from "./media/Media";
@@ -103,6 +109,7 @@ export {
   type HubAttentionCardProps,
   type HubAttentionTone,
   type HubRowProps,
+  type HubRowTone,
   type HubRailProps,
   type HubRailCardProps,
   type HubDoorCardProps,
@@ -125,6 +132,9 @@ export {
 } from "./resources/ResourceComponents";
 export {
   TerritoryHero,
+  HomeHeroStage,
+  type HomeHeroSlide,
+  type HomeHeroPill,
   CommunityPulseCard,
   CommunityPulseMoment,
   CommunityActivityCard,
@@ -138,6 +148,22 @@ export {
   HomeSection,
   type GlobalAppSearchHit,
 } from "./territory/TerritoryHome";
+export {
+  HomeGlyph,
+  HomeSectionHead,
+  HomeRail,
+  HomeMomentCard,
+  HomeMoveCard,
+  HomeIntentCard,
+  HomeNearbyCard,
+  type HomeGlyphName,
+  type HomeMomentTone,
+  type HomeMomentCardProps,
+  type HomeMoveCardProps,
+  type HomeIntentTone,
+  type HomeIntentCardProps,
+  type HomeNearbyCardProps,
+} from "./home/HomePremium";
 export {
   MarketplaceItemCard,
   LocalPlaceCard,

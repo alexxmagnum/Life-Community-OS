@@ -21,11 +21,18 @@ export type AppShellProps = {
   showCreateFab?: boolean;
   /** Persistent mobile app header (fixed). */
   header?: ReactNode;
+  /** Live notice carried by the floating tab bar. */
+  navNotice?: ReactNode;
   /**
    * Full-screen messaging mode: hide app header + bottom nav.
    * Conversation chrome owns the viewport.
    */
   immersive?: boolean;
+  /**
+   * Let the first child (Home hero) own the top edge — no main top padding.
+   * Pair with a transparent fixed header floating over photography.
+   */
+  flushTop?: boolean;
   children: ReactNode;
   className?: string;
 };
@@ -39,14 +46,16 @@ export function AppShell({
   onCreate,
   showCreateFab = false,
   header,
+  navNotice,
   immersive = false,
+  flushTop = false,
   children,
   className,
 }: AppShellProps) {
   const showHeader = Boolean(header) && !immersive;
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-surface-app)] text-[var(--color-text-primary)]">
+    <div className="flex min-h-screen bg-[var(--life-bg,var(--color-surface-app))] [background:var(--gradient-surface-app)] text-[var(--color-text-primary)]">
       {!immersive ? (
         <DesktopNavigation
           brandName={brandName}
@@ -65,10 +74,15 @@ export function AppShell({
             immersive
               ? "max-w-none px-0 pb-0 pt-0 md:max-w-none md:px-0 md:pb-0 md:pt-0"
               : cn(
-                  "px-2.5 pb-[calc(88px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
-                  showHeader
-                    ? "pt-[calc(52px+env(safe-area-inset-top))] md:pt-8"
-                    : "pt-3",
+                  "pb-[calc(94px+env(safe-area-inset-bottom))] md:max-w-[960px] md:px-8 md:pb-10 md:pt-8",
+                  flushTop
+                    ? "px-0 pt-0 md:pt-8"
+                    : cn(
+                        "px-2.5",
+                        showHeader
+                          ? "pt-[calc(var(--chrome-height)+env(safe-area-inset-top))] md:pt-8"
+                          : "pt-3",
+                      ),
                 ),
             className,
           )}
@@ -79,7 +93,7 @@ export function AppShell({
           <button
             type="button"
             onClick={onCreate}
-            className="fixed bottom-[76px] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-2xl text-[var(--color-text-inverse)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95 md:hidden"
+            className="fixed bottom-[76px] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-2xl text-[var(--color-text-on-action)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95 md:hidden"
             aria-label="Añadir algo"
           >
             +
@@ -90,6 +104,7 @@ export function AppShell({
             items={items}
             activeId={activeId}
             onNavigate={onNavigate}
+            notice={navNotice}
           />
         ) : null}
       </div>

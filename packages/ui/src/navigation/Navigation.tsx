@@ -27,86 +27,100 @@ export type BottomNavigationProps = {
   items: NavItem[];
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
+  /** Live community notice carried inside the floating bar. */
+  notice?: ReactNode;
   className?: string;
 };
 
+/**
+ * Floating glass tab bar. The bar detaches from the screen edge and, when the
+ * community has something urgent to say, carries it as a first row.
+ */
 export function BottomNavigation({
   items,
   activeId,
   onNavigate,
+  notice,
   className,
 }: BottomNavigationProps) {
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] pb-[env(safe-area-inset-bottom)] md:hidden",
+        "fixed inset-x-0 bottom-0 z-40 px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] md:hidden",
         className,
       )}
       aria-label="Principal"
     >
-      <ul className="mx-auto flex w-full max-w-none items-end justify-between gap-0.5 px-1 pt-1.5">
-        {items.map((item) => {
-          const active = item.id === activeId;
-          const isCreate = item.id === "create";
+      <div className="overflow-visible rounded-[22px] border border-[var(--color-border-glass)] bg-[var(--color-chrome-surface)] shadow-[var(--shadow-elev-2)] backdrop-blur-2xl">
+        {notice ? (
+          <div className="border-b border-[var(--color-border-glass)] px-3 py-1.5">
+            {notice}
+          </div>
+        ) : null}
+        <ul className="flex w-full items-end justify-between gap-0.5 px-1.5 pb-1 pt-1.5">
+          {items.map((item) => {
+            const active = item.id === activeId;
+            const isCreate = item.id === "create";
 
-          if (isCreate) {
+            if (isCreate) {
+              return (
+                <li key={item.id} className="flex flex-1 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(item)}
+                    className="-mt-6 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[image:var(--gradient-brand)] text-[24px] leading-none text-[var(--color-text-on-action)] shadow-[0_0_24px_rgba(0,212,229,0.55),0_8px_20px_rgba(0,0,0,0.45)] ring-[3px] ring-[var(--color-surface-app)]/70 transition-transform active:scale-95"
+                    aria-label={item.label}
+                  >
+                    <span aria-hidden>+</span>
+                  </button>
+                </li>
+              );
+            }
+
             return (
-              <li key={item.id} className="flex flex-1 justify-center pb-1">
-                <button
-                  type="button"
-                  onClick={() => onNavigate(item)}
-                  className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-[28px] leading-none text-[var(--color-text-inverse)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95"
-                  aria-label={item.label}
-                >
-                  <span aria-hidden>+</span>
-                </button>
-              </li>
-            );
-          }
-
-          return (
-            <li key={item.id} className="flex-1">
-              <a
-                href={item.href}
-                onClick={(e) => {
-                  if (
-                    e.defaultPrevented ||
-                    e.button !== 0 ||
-                    e.metaKey ||
-                    e.altKey ||
-                    e.ctrlKey ||
-                    e.shiftKey
-                  ) {
-                    return;
-                  }
-                  e.preventDefault();
-                  onNavigate(item);
-                }}
-                className={cn(
-                  "flex min-h-[56px] w-full flex-col items-center justify-center gap-1 rounded-[var(--radius-md)] text-[14px] font-semibold",
-                  active
-                    ? "text-[var(--color-action-primary)]"
-                    : "text-[var(--color-text-tertiary)]",
-                )}
-                aria-current={active ? "page" : undefined}
-              >
-                <span
+              <li key={item.id} className="flex-1">
+                <a
+                  href={item.href}
+                  onClick={(e) => {
+                    if (
+                      e.defaultPrevented ||
+                      e.button !== 0 ||
+                      e.metaKey ||
+                      e.altKey ||
+                      e.ctrlKey ||
+                      e.shiftKey
+                    ) {
+                      return;
+                    }
+                    e.preventDefault();
+                    onNavigate(item);
+                  }}
                   className={cn(
-                    "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                    "flex w-full flex-col items-center justify-center gap-[3px] py-0.5 text-[9.5px] font-semibold",
                     active
-                      ? "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
+                      ? "text-[var(--color-accent-cyan)]"
                       : "text-[var(--color-text-tertiary)]",
                   )}
-                  aria-hidden
+                  aria-current={active ? "page" : undefined}
                 >
-                  {item.icon}
-                </span>
-                <span className="truncate px-0.5">{item.label}</span>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+                  <span
+                    className={cn(
+                      "flex h-7 w-7 items-center justify-center rounded-[10px] transition-colors [&_svg]:h-[17px] [&_svg]:w-[17px]",
+                      active
+                        ? "bg-[image:var(--gradient-brand)] text-[var(--color-text-on-action)]"
+                        : "text-[var(--color-text-tertiary)]",
+                    )}
+                    aria-hidden
+                  >
+                    {item.icon}
+                  </span>
+                  <span className="truncate px-0.5">{item.label}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }
@@ -192,7 +206,7 @@ export function DesktopNavigation({
         <button
           type="button"
           onClick={onCreate}
-          className="mt-auto flex min-h-[48px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
+          className="mt-auto flex min-h-[48px] items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-on-action)]"
         >
           {createLabel}
         </button>

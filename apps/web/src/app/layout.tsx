@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Cormorant_Garamond, Fraunces, Plus_Jakarta_Sans } from "next/font/google";
+import { Fraunces, Montserrat, Plus_Jakarta_Sans } from "next/font/google";
 import { MediaLightboxProvider } from "@life-community-os/ui";
 
 import { TenantProvider } from "@/providers/TenantProvider";
@@ -23,10 +23,10 @@ const display = Fraunces({
   display: "swap",
 });
 
-/** Wordmark only — distinct from editorial Fraunces headings. */
-const brand = Cormorant_Garamond({
+/** Wordmark only — Motans luxury lockup (LIFE / PANORÁMICA). */
+const brand = Montserrat({
   subsets: ["latin"],
-  weight: ["600", "700"],
+  weight: ["400", "600"],
   variable: "--font-brand",
   display: "swap",
 });
@@ -38,6 +38,16 @@ export const metadata: Metadata = {
   },
   description: "Tu comunidad, viva.",
   applicationName: "Life Panoramica",
+  appleWebApp: {
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#001219",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

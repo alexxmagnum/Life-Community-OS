@@ -81,7 +81,7 @@ export const localEntityCatalog: LocalEntity[] = [
   },
   {
     id: "lp-path",
-    name: "Camino de pinos",
+    name: "Camino de los Pinos",
     kind: "place",
     categoryLabel: "Paseo",
     areaLabel: "Los pinos",
@@ -89,6 +89,29 @@ export const localEntityCatalog: LocalEntity[] = [
     imageUrl:
       "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=80",
     recommendedBy: "Ana",
+  },
+  {
+    id: "lp-ikon",
+    name: "IKON Sports & Lounge",
+    kind: "restaurant",
+    categoryLabel: "Deporte y ocio",
+    areaLabel: "Aldea Golf",
+    story: "Terraza, música en vivo y pantallas de deporte junto al club.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=900&q=80",
+    recommendedBy: "Tom",
+    trustNote: "Ambiente tranquilo entre semana",
+  },
+  {
+    id: "lp-golf-club",
+    name: "Club de Golf",
+    kind: "place",
+    categoryLabel: "Golf",
+    areaLabel: "Aldea Golf",
+    story: "Campo, casa club y salidas abiertas para vecinos.",
+    imageUrl:
+      "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=900&q=80",
+    recommendedBy: "Luis",
   },
   {
     id: "lp-pool",

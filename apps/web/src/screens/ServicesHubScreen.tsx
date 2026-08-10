@@ -67,7 +67,7 @@ export function ServicesHubScreen() {
         description: "Vende, regala o pide entre vecinos.",
         href: "/marketplace",
         icon: "🛒",
-        tint: "bg-[#ECE7E0]",
+        tint: "bg-[var(--color-surface-glass-strong)]",
       });
     }
 
@@ -82,7 +82,7 @@ export function ServicesHubScreen() {
         description: reserveHint,
         href: "/resources",
         icon: "🏘",
-        tint: "bg-[#E8E2D8]",
+        tint: "bg-[var(--color-surface-glass-strong)]",
       });
     }
 
@@ -118,7 +118,7 @@ export function ServicesHubScreen() {
               <button
                 type="button"
                 onClick={() => router.push(entry.href)}
-                className="flex w-full items-start gap-3.5 rounded-[16px] border border-[#E8E2D8] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[0_4px_14px_rgba(26,31,28,0.08)] transition-transform active:scale-[0.99]"
+                className="flex w-full items-start gap-3.5 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] backdrop-blur-md transition-transform active:scale-[0.99]"
               >
                 <span
                   className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-[22px] ${entry.tint}`}
@@ -169,15 +169,15 @@ function iconForServiceSlug(slug: string): string {
 function tintForServiceSlug(slug: string): string {
   switch (slug) {
     case "professionals":
-      return "bg-[#F8E0CC]";
+      return "bg-[var(--color-action-accent-subtle)]";
     case "work":
-      return "bg-[#E8D9C8]";
+      return "bg-[var(--color-feedback-warning-subtle)]";
     case "neighbour-help":
-      return "bg-[#F5E8C8]";
+      return "bg-[var(--color-accent-lime-subtle)]";
     case "mobility":
-      return "bg-[#F3D0CC]";
+      return "bg-[var(--color-sea-subtle)]";
     case "recommendations":
-      return "bg-[#F5E8C8]";
+      return "bg-[var(--color-feedback-warning-subtle)]";
     default:
       return "bg-[var(--color-action-primary-subtle)]";
   }

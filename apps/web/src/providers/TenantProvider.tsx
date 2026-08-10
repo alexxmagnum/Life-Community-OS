@@ -10,7 +10,10 @@ import {
   type ReactNode,
 } from "react";
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
-import type { TenantBrandTokens } from "@life-community-os/design-tokens";
+import type {
+  TenantBrandTokens,
+  TenantThemeMode,
+} from "@life-community-os/design-tokens";
 import type { TenantConfiguration } from "@life-community-os/types";
 import { isTenantModuleEnabled } from "@life-community-os/types";
 import {
@@ -32,6 +35,11 @@ import {
 
 type TenantContextValue = {
   theme: TenantBrandTokens;
+  /**
+   * Active visual identity. Resolved from tenant configuration today;
+   * user preference and system sync are future concerns.
+   */
+  themeMode: TenantThemeMode;
   features: TenantFeatureFlags;
   /**
    * Declarative tenant configuration (D.0.2).
@@ -69,13 +77,17 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<DemoRole>("member");
   const [demoPersonId, setDemoPersonId] = useState<string>(DEMO_PERSON_MARTA);
 
+  const themeMode: TenantThemeMode = theme.defaultMode ?? "day";
+
   useEffect(() => {
-    const vars = tenantThemeToCssVars(theme);
+    const vars = tenantThemeToCssVars(theme, themeMode);
     const root = document.documentElement;
     for (const [key, value] of Object.entries(vars)) {
       root.style.setProperty(key, value);
     }
-  }, [theme]);
+    root.dataset.themeMode = themeMode;
+    root.style.colorScheme = themeMode === "night" ? "dark" : "light";
+  }, [theme, themeMode]);
 
   const caps = useMemo(() => capabilitiesForRole(role), [role]);
 
@@ -105,6 +117,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       theme,
+      themeMode,
       features,
       configuration,
       role,
@@ -119,6 +132,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }),
     [
       theme,
+      themeMode,
       features,
       configuration,
       role,

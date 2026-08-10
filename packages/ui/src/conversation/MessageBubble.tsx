@@ -221,7 +221,7 @@ export function MessageBubble({
             className={cn(
               "mb-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px]",
               selected
-                ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]"
+                ? "border-[var(--color-action-primary)] bg-[var(--color-action-primary)] text-[var(--color-text-on-action)]"
                 : "border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)]",
             )}
             aria-label={selected ? "Deseleccionar" : "Seleccionar"}

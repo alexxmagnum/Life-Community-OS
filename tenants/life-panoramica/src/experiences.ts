@@ -152,12 +152,13 @@ function endOf(startIso: string, durationHours: number): string {
 function buildExperienceCatalog(nowMs: number): Experience[] {
   const upcoming = (dayOffset: number, hour: number, minute = 0) =>
     upcomingFrom(nowMs, dayOffset, hour, minute);
-  const startWalk = upcoming(2, 9, 30);
+  const startWalk = upcoming(0, 18, 30);
   const startStretch = upcoming(3, 10, 0);
   const startCoffee = upcoming(1, 11, 0);
   const startSunset = upcoming(4, 19, 0);
   const startExpired = upcoming(-3, 18, 0);
   const startFull = upcoming(5, 17, 0);
+  const startGolf = upcoming(1, 18, 30);
 
   return [
     {
@@ -293,13 +294,56 @@ function buildExperienceCatalog(nowMs: number): Experience[] {
       capacity: 30,
       participantCount: 14,
       participants: [
-        { id: "p-rita", name: "Rita" },
-        { id: DEMO_PERSON_TOM, name: "Tom" },
-        { id: "p-eva", name: "Eva" },
+        {
+          id: "p-rita",
+          name: "Rita",
+          avatarUrl:
+            "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80",
+        },
+        {
+          id: DEMO_PERSON_TOM,
+          name: "Tom",
+          avatarUrl:
+            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80",
+        },
+        {
+          id: "p-eva",
+          name: "Eva",
+          avatarUrl:
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+        },
       ],
       status: "registration_open",
       type: "event",
       channelId: "ch-events",
+      communityAreaId: "area-aldea-golf",
+    },
+    {
+      id: "exp-golf-afternoon",
+      title: "Tarde de golf",
+      description:
+        "Nueve hoyos tranquilos al caer la tarde. Salidas abiertas para vecinos, con poca ocupación en el campo.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1535131749006-b7f58c99034b?auto=format&fit=crop&w=1400&q=80",
+      startsAt: startGolf,
+      endsAt: endOf(startGolf, 2.5),
+      location: "Panorámica Golf",
+      areaLabel: "Aldea Golf",
+      organizer: {
+        id: "org-golf",
+        name: "Club de Golf",
+        roleLabel: "Club",
+      },
+      capacity: 24,
+      participantCount: 6,
+      participants: [
+        { id: DEMO_PERSON_LUIS, name: "Luis" },
+        { id: "p-rita", name: "Rita" },
+      ],
+      status: "registration_open",
+      type: "experience",
+      channelId: "ch-golf",
+      groupId: "g-golf",
       communityAreaId: "area-aldea-golf",
     },
     {

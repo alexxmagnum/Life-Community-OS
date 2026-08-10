@@ -66,7 +66,7 @@ export function SupportCard({
               "min-h-[44px] rounded-[var(--radius-md)] px-4 text-[14px] font-semibold transition-transform active:scale-[0.98] disabled:opacity-45",
               supportedByViewer
                 ? "bg-[var(--color-surface-muted)] text-[var(--color-text-primary)]"
-                : "bg-[var(--color-action-primary)] text-[var(--color-text-inverse)]",
+                : "bg-[var(--color-action-primary)] text-[var(--color-text-on-action)]",
             )}
           >
             {supportedByViewer ? unsupportLabel : supportLabel}

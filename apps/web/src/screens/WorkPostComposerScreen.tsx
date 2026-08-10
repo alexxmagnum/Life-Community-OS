@@ -69,7 +69,7 @@ export function WorkPostComposerScreen() {
   }
 
   const fieldClass =
-    "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
+    "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
 
   const onPublish = () => {
     if (!type) return;

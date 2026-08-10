@@ -262,7 +262,7 @@ export function ScreenPrimaryAction({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex min-h-[56px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)] transition-transform active:scale-[0.99] disabled:opacity-50",
+        "flex min-h-[56px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-on-action)] transition-transform active:scale-[0.99] disabled:opacity-50",
         className,
       )}
     >

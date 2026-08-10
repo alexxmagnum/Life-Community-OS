@@ -16,6 +16,8 @@ import {
 } from "@life-community-os/ui";
 import {
   bindProjectedNavigation,
+  communityAlertIcon,
+  listActiveCommunityAlerts,
   projectMemberNavigation,
 } from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -125,6 +127,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const {
     theme,
+    themeMode,
     hasCapability,
     isFeatureEnabled,
     isModuleEnabled,
@@ -144,7 +147,42 @@ export function MemberShell({ children }: { children: ReactNode }) {
   };
 
   const brandName = theme.logoText;
-  const brandLogoUrl = theme.imagery.logo;
+  const wordmarkPrimary = theme.identity?.wordmarkPrimary ?? theme.logoText;
+  const wordmarkSecondary = theme.identity?.wordmarkSecondary;
+  const isHome = pathname === "/";
+
+  /** The most severe live advisory rides inside the floating tab bar. */
+  const [navAlert, setNavAlert] = useState<{
+    title: string;
+    context: string;
+    icon: string;
+    href: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const weight = { alert: 0, important: 1, info: 2 } as const;
+    const next = [...listActiveCommunityAlerts(Date.now())].sort(
+      (a, b) => weight[a.level] - weight[b.level],
+    )[0];
+    setNavAlert(
+      next
+        ? {
+            title: next.areaLabel
+              ? `${next.title} · ${next.areaLabel}`
+              : next.title,
+            context: next.body,
+            icon: communityAlertIcon(next.kind, next.level),
+            href: next.href ?? "/community",
+          }
+        : null,
+    );
+  }, []);
+  /**
+   * Night chrome needs a light mark. The dark-ink logo is skipped rather than
+   * rendered unreadable, leaving the wordmark until a light asset exists.
+   */
+  const brandLogoUrl =
+    themeMode === "night" ? theme.imagery.logoLight : theme.imagery.logo;
 
   /** Hamburger menu — hide actions that cannot complete a real flow yet. */
   const menuCategories = useMemo((): AppMenuCategory[] => {
@@ -317,6 +355,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         brandLogoUrl={brandLogoUrl}
         items={navItems}
         activeId={activeFromPath(pathname)}
+        flushTop={isHome}
         onNavigate={(item) => {
           if (item.id === "create") {
             setCreateOpen(true);
@@ -326,10 +365,41 @@ export function MemberShell({ children }: { children: ReactNode }) {
         }}
         onCreate={() => setCreateOpen(true)}
         showCreateFab={false}
+        navNotice={
+          navAlert ? (
+            <button
+              type="button"
+              onClick={() => {
+                // Soft-nav must not carry a hash — App Router RSC prefetch fails on it.
+                const href = (navAlert.href.split("#")[0] || "/community").trim();
+                router.push(href);
+              }}
+              className="flex w-full items-center gap-2 text-left"
+            >
+              <span className="text-[13px] leading-none" aria-hidden>
+                {navAlert.icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[9.5px] font-semibold leading-3 text-[var(--color-text-primary)]">
+                  {navAlert.title}
+                </span>
+                <span className="block truncate text-[8.5px] leading-3 text-[var(--color-text-tertiary)]">
+                  {navAlert.context}
+                </span>
+              </span>
+            </button>
+          ) : null
+        }
         header={
           <CommunityAppHeader
-            brandName={brandName}
+            brandName={wordmarkPrimary}
+            brandSubName={wordmarkSecondary}
+            transparent={isHome}
+            heroOverlay={isHome}
             brandLogoUrl={brandLogoUrl}
+            weatherTemperature={theme.identity?.weatherTemperature}
+            weatherCondition={theme.identity?.weatherCondition}
+            placeLabel={theme.identity?.municipalityName}
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"

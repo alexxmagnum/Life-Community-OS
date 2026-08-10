@@ -360,7 +360,7 @@ export function ActivityCard({
           <button
             type="button"
             onClick={onCta}
-            className="flex min-h-[52px] flex-1 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
+            className="flex min-h-[52px] flex-1 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-on-action)]"
           >
             {ctaLabel}
           </button>

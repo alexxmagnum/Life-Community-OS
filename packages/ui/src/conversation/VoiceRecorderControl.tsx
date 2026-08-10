@@ -87,7 +87,7 @@ export function VoiceRecorderControl({
         type="button"
         disabled={disabled}
         onClick={() => onSendRequest?.()}
-        className="rounded-full bg-[var(--color-action-primary)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-inverse)]"
+        className="rounded-full bg-[var(--color-action-primary)] px-3 py-1.5 text-[12px] font-semibold text-[var(--color-text-on-action)]"
       >
         Enviar
       </button>
