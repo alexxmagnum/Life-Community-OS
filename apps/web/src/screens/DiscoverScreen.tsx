@@ -210,7 +210,9 @@ export function DiscoverScreen() {
                         name={g.name}
                         members={g.memberCount}
                         imageUrl={g.imageUrl}
-                        onOpen={() => router.push(`/community/groups/${g.id}`)}
+                        onOpen={() =>
+                          router.push(`/community/groups/${g.id}/conversation`)
+                        }
                       />
                     ))}
                   </div>

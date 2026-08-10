@@ -562,14 +562,14 @@ export type CommunityConversationRowProps = {
   onOpen?: () => void;
   openLabel?: string;
   reactionBar?: ReactNode;
-  /** Scrollable comments + composer — rendered inside the expanded window. */
+  /** Public comments + composer — never styled as a private chat. */
   conversation?: ReactNode;
   className?: string;
 };
 
 /**
  * Compact accordion row — title only when collapsed.
- * Prefer for conversation lists over full CommunityPostCard density.
+ * Expanded body shows public post content + comments (never a mini-chat).
  */
 export function CommunityConversationRow({
   title,
@@ -652,7 +652,7 @@ export function CommunityConversationRow({
           </p>
           {reactionBar ? <div>{reactionBar}</div> : null}
           {conversation ? (
-            <div className="overflow-hidden rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)]">
+            <div className="space-y-2 border-t border-[var(--color-border-subtle)] pt-3">
               {conversation}
             </div>
           ) : null}
@@ -660,7 +660,7 @@ export function CommunityConversationRow({
             <button
               type="button"
               onClick={onOpen}
-              className="text-[15px] font-semibold text-[var(--color-action-primary)]"
+              className="text-[14px] font-semibold text-[var(--color-action-primary)]"
             >
               {openLabel}
             </button>

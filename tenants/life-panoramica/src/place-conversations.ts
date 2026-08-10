@@ -34,6 +34,9 @@ export const PLACE_QUICK_ACTION_LABELS: Record<QuickActionKind, string> = {
 export const DEMO_PLACE_CONVERSATION_REACTIONS: readonly ReactionType[] = [
   "thumbs_up",
   "heart",
+  "laugh",
+  "surprised",
+  "pray",
   "clap",
 ];
 
@@ -211,6 +214,7 @@ export function postPlaceMessage(input: {
   authorName: string;
   authorAvatarUrl?: string;
   body: string;
+  replyToMessageId?: string;
 }): PlaceMessageView | undefined {
   const bundle = getPlaceConversationBundle(input.placeId);
   if (!bundle) return undefined;
@@ -231,6 +235,7 @@ export function postPlaceMessage(input: {
     tenantId: DEMO_TENANT_ID,
     authorPersonId: input.authorPersonId,
     body,
+    replyToMessageId: input.replyToMessageId,
     createdAt: now,
     mediaRefs: [],
     reactionSummary: emptyMessageReactionSummary(),
@@ -320,6 +325,33 @@ export function togglePlaceMessageReaction(input: {
   }
 
   const updated: Message = { ...existing, reactionSummary: current };
+  store.messages = store.messages.map((m) =>
+    m.id === updated.id ? updated : m,
+  );
+  writeStore(store);
+  return toMessageView(updated, store.authors);
+}
+
+export function softDeletePlaceMessage(input: {
+  placeId: string;
+  messageId: string;
+  actorPersonId: string;
+}): PlaceMessageView | undefined {
+  const bundle = getPlaceConversationBundle(input.placeId);
+  if (!bundle) return undefined;
+
+  const store = readStore();
+  const existing = store.messages.find((m) => m.id === input.messageId);
+  if (!existing) return undefined;
+  if (existing.conversationId !== bundle.conversation.id) return undefined;
+  if (existing.authorPersonId !== input.actorPersonId) return undefined;
+  if (existing.deletedAt) return undefined;
+
+  const updated: Message = {
+    ...existing,
+    deletedAt: new Date().toISOString(),
+    body: undefined,
+  };
   store.messages = store.messages.map((m) =>
     m.id === updated.id ? updated : m,
   );

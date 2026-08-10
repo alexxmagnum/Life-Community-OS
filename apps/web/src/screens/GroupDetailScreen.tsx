@@ -1,18 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getGroupById } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
-  ZoomableImage,
 } from "@life-community-os/ui";
 import { canOpenGroupConversation } from "@/lib/group-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Community Group detail — entry to long-lived group conversation (D.0.6.2).
+ * Group entry — opens Conversation Experience directly when allowed.
+ * Group info lives in the chat header info sheet (not a pre-chat page).
  */
 export function GroupDetailScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
@@ -25,6 +26,23 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
 
   const groupsOn =
     isModuleEnabled("community.groups") && isFeatureEnabled("groups");
+  const group = groupsOn ? getGroupById(groupId) : undefined;
+
+  const canChat =
+    Boolean(group) &&
+    hasCapability(CAPABILITIES.contentView) &&
+    canOpenGroupConversation({
+      group: group!,
+      configuration,
+      isModuleEnabled,
+      hasCapability,
+    });
+
+  useEffect(() => {
+    if (canChat) {
+      router.replace(`/community/groups/${groupId}/conversation`);
+    }
+  }, [canChat, groupId, router]);
 
   if (!groupsOn) {
     return (
@@ -44,8 +62,6 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     );
   }
 
-  const group = getGroupById(groupId);
-
   if (!group) {
     return (
       <MobileScreen>
@@ -64,89 +80,34 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     );
   }
 
-  if (!hasCapability(CAPABILITIES.contentView)) {
+  if (!hasCapability(CAPABILITIES.contentView) || !canChat) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Grupos"
+          title={group.name}
           onBack={() => router.push("/community?tab=grupos")}
           onExit={() => router.push("/community")}
         />
         <EmptyState
-          title="Sin acceso"
-          description="No puedes ver este grupo con tu cuenta actual."
+          title="Sin acceso a la conversación"
+          description="Puedes seguir el grupo desde Comunidad. La conversación se abrirá cuando tengas acceso."
+          actionLabel="Volver a Comunidad"
+          onAction={() => router.push("/community?tab=grupos")}
         />
       </MobileScreen>
     );
   }
 
-  const showConversation = canOpenGroupConversation({
-    group,
-    configuration,
-    isModuleEnabled,
-    hasCapability,
-  });
-
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={group.name}
-        subtitle={group.categoryLabel}
         onBack={() => router.push("/community?tab=grupos")}
         onExit={() => router.push("/community")}
       />
-
-      <div className="overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
-        <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
-          <ZoomableImage
-            src={group.imageUrl}
-            alt=""
-            wrapperClassName="h-full w-full"
-          />
-        </div>
-      </div>
-
-      <header className="space-y-2">
-        <p className="text-[16px] leading-7 text-[var(--color-text-secondary)]">
-          {group.description}
-        </p>
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-[15px] text-[var(--color-text-tertiary)]">
-            {group.memberCount} miembros
-            {group.areaLabel ? ` · ${group.areaLabel}` : ""}
-          </span>
-        </div>
-      </header>
-
-      {showConversation ? (
-        <button
-          type="button"
-          onClick={() =>
-            router.push(`/community/groups/${group.id}/conversation`)
-          }
-          className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
-        >
-          <span className="text-[22px]" aria-hidden>
-            💬
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[16px] font-semibold text-[var(--color-text-primary)]">
-              Abrir conversación
-            </span>
-            <span className="mt-0.5 block text-[15px] text-[var(--color-text-secondary)]">
-              Habla con los miembros del grupo
-            </span>
-          </span>
-          <span className="text-[var(--color-text-tertiary)]" aria-hidden>
-            ›
-          </span>
-        </button>
-      ) : (
-        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-          Puedes seguir el grupo desde Comunidad. La conversación se abrirá
-          cuando tengas acceso.
-        </p>
-      )}
+      <p className="px-1 py-8 text-center text-[13px] text-[var(--color-text-tertiary)]">
+        Abriendo conversación…
+      </p>
     </MobileScreen>
   );
 }

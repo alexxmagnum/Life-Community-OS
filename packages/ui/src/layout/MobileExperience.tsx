@@ -27,14 +27,16 @@ export function MobileScreen({
       className={cn(
         "mx-auto w-full max-w-none",
         bleed ? "-mx-2.5 md:-mx-8" : "",
-        className,
       )}
     >
       <div
         className={cn(
-          "flex flex-col pb-2",
-          dense ? "gap-4" : "gap-8",
+          "flex flex-col",
+          // Defaults — omit when caller sets gap-* / pb-* (chats use gap-0 pb-0).
+          className && /\bgap-/.test(className) ? undefined : dense ? "gap-4" : "gap-8",
+          className && /\bpb-/.test(className) ? undefined : "pb-2",
           bleed ? "px-0" : "",
+          className,
         )}
       >
         {children}

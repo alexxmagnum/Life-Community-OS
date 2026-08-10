@@ -210,6 +210,9 @@ export const QUICK_ACTION_LABELS: Record<QuickActionKind, string> = {
 export const DEMO_CONVERSATION_REACTIONS: readonly ReactionType[] = [
   "thumbs_up",
   "heart",
+  "laugh",
+  "surprised",
+  "pray",
   "clap",
 ];
 
@@ -267,6 +270,7 @@ export function postExperienceMessage(input: {
   authorName: string;
   authorAvatarUrl?: string;
   body: string;
+  replyToMessageId?: string;
 }): ExperienceMessageView | undefined {
   const bundle = getExperienceConversationBundle(input.experienceId);
   if (!bundle) return undefined;
@@ -282,6 +286,7 @@ export function postExperienceMessage(input: {
     tenantId: DEMO_TENANT_ID,
     authorPersonId: input.authorPersonId,
     body,
+    replyToMessageId: input.replyToMessageId,
     createdAt: now,
     mediaRefs: [],
     reactionSummary: emptyMessageReactionSummary(),
@@ -369,6 +374,33 @@ export function toggleExperienceMessageReaction(input: {
   const updated: Message = {
     ...existing,
     reactionSummary: current,
+  };
+  store.messages = store.messages.map((m) =>
+    m.id === updated.id ? updated : m,
+  );
+  writeStore(store);
+  return toMessageView(updated, store.authors);
+}
+
+export function softDeleteExperienceMessage(input: {
+  experienceId: string;
+  messageId: string;
+  actorPersonId: string;
+}): ExperienceMessageView | undefined {
+  const bundle = getExperienceConversationBundle(input.experienceId);
+  if (!bundle) return undefined;
+
+  const store = readStore();
+  const existing = store.messages.find((m) => m.id === input.messageId);
+  if (!existing) return undefined;
+  if (existing.conversationId !== bundle.conversation.id) return undefined;
+  if (existing.authorPersonId !== input.actorPersonId) return undefined;
+  if (existing.deletedAt) return undefined;
+
+  const updated: Message = {
+    ...existing,
+    deletedAt: new Date().toISOString(),
+    body: undefined,
   };
   store.messages = store.messages.map((m) =>
     m.id === updated.id ? updated : m,

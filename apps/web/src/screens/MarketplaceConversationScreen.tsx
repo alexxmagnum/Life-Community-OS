@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEMO_MARKETPLACE_CONVERSATION_REACTIONS,
@@ -9,27 +9,22 @@ import {
   MARKETPLACE_QUICK_ACTION_LABELS,
   marketplaceKindLabel,
   postMarketplaceMessage,
-  postMarketplaceQuickAction,
+  softDeleteMarketplaceMessage,
   toggleMarketplaceMessageReaction,
   type MarketplaceListing,
   type MarketplaceMessageView,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   createMarketplaceConversationAdapter,
-  QUICK_ACTION_KINDS,
   REACTION_TYPE_GLYPH,
-  type QuickActionKind,
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  ContextHeader,
-  ConversationShell,
+  ConversationExperience,
   EmptyState,
   FlowScreenHeader,
-  MessageComposer,
-  MessageList,
   MobileScreen,
-  ReactionPicker,
+  type MessageComposerReplyTarget,
   type MessageListItem,
 } from "@life-community-os/ui";
 import {
@@ -38,8 +33,14 @@ import {
 } from "@/lib/marketplace-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
+function previewBody(body?: string): string {
+  const t = (body ?? "").trim();
+  if (!t) return "Mensaje";
+  return t.length > 80 ? `${t.slice(0, 77)}…` : t;
+}
+
 /**
- * Contextual Marketplace Listing Conversation — Shared Product shell (Phase 2.5).
+ * Contextual Marketplace Listing Conversation — Shared Product shell (Phase 2.5.3).
  * Contact is about this specific listing — not a global chat inbox.
  */
 export function MarketplaceConversationScreen({
@@ -63,6 +64,15 @@ export function MarketplaceConversationScreen({
   const [peerName, setPeerName] = useState("Vecino");
   const [peerAvatarUrl, setPeerAvatarUrl] = useState<string | undefined>();
   const [kindLabel, setKindLabel] = useState("");
+  const [replyTo, setReplyTo] = useState<MessageComposerReplyTarget | null>(
+    null,
+  );
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<
+    string | null
+  >(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const moduleOn =
     isModuleEnabled("marketplace") && isFeatureEnabled("marketplace");
@@ -137,6 +147,54 @@ export function MarketplaceConversationScreen({
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (messages.length === 0) {
+      setFirstUnreadMessageId(null);
+      return;
+    }
+    const key = `lcos.unread.marketplace.${listingId}.${demoMember.personId}`;
+    const lastSeen = window.localStorage.getItem(key);
+    const firstUnread = messages.find(
+      (m) =>
+        m.authorPersonId !== demoMember.personId &&
+        (!lastSeen || m.createdAt > lastSeen),
+    );
+    setFirstUnreadMessageId(firstUnread?.id ?? null);
+    const latest = messages[messages.length - 1];
+    if (!latest) return;
+    const t = window.setTimeout(() => {
+      window.localStorage.setItem(key, latest.createdAt);
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [demoMember.personId, listingId, messages]);
+
+  const byId = useMemo(() => {
+    const map = new Map<string, MarketplaceMessageView>();
+    for (const m of messages) map.set(m.id, m);
+    return map;
+  }, [messages]);
+
+  const infoMembers = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; avatarUrl?: string }>();
+    for (const m of messages) {
+      if (!seen.has(m.authorPersonId)) {
+        seen.set(m.authorPersonId, {
+          id: m.authorPersonId,
+          name: m.author.displayName,
+          avatarUrl: m.author.avatarUrl,
+        });
+      }
+    }
+    if (!seen.has(demoMember.personId)) {
+      seen.set(demoMember.personId, {
+        id: demoMember.personId,
+        name: demoMember.displayName,
+        avatarUrl: demoMember.avatarUrl,
+      });
+    }
+    return [...seen.values()];
+  }, [demoMember, messages]);
+
   if (!moduleOn) {
     return (
       <MobileScreen>
@@ -184,22 +242,13 @@ export function MarketplaceConversationScreen({
       authorName: demoMember.displayName,
       authorAvatarUrl: demoMember.avatarUrl,
       body: draft,
+      replyToMessageId: replyTo?.messageId,
     });
     if (created) {
       setDraft("");
+      setReplyTo(null);
       refresh();
     }
-  };
-
-  const onQuickAction = (kind: QuickActionKind) => {
-    postMarketplaceQuickAction({
-      listingId,
-      authorPersonId: demoMember.personId,
-      authorName: demoMember.displayName,
-      authorAvatarUrl: demoMember.avatarUrl,
-      kind,
-    });
-    refresh();
   };
 
   const onReaction = (messageId: string, reaction: ReactionType) => {
@@ -207,97 +256,140 @@ export function MarketplaceConversationScreen({
       listingId,
       messageId,
       reaction,
+      personId: demoMember.personId,
+      displayName: demoMember.displayName,
     });
     refresh();
   };
 
-  const listItems: MessageListItem[] = messages.map((message) => ({
-    id: message.id,
-    authorPersonId: message.authorPersonId,
-    author: {
-      personId: message.author.personId,
-      displayName: message.author.displayName,
-      avatarUrl: message.author.avatarUrl,
-    },
-    body: message.body,
-    createdAt: message.createdAt,
-    badge: message.quickActionKind ? (
-      <span className="rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
-        {MARKETPLACE_QUICK_ACTION_LABELS[message.quickActionKind]}
-      </span>
-    ) : undefined,
-    reactions: (
-      <ReactionPicker
-        options={DEMO_MARKETPLACE_CONVERSATION_REACTIONS.map((reaction) => ({
+  const reactionOptions = DEMO_MARKETPLACE_CONVERSATION_REACTIONS.map(
+    (reaction) => ({
+      id: reaction,
+      glyph: REACTION_TYPE_GLYPH[reaction],
+    }),
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const listItems: MessageListItem[] = messages.map((message) => {
+    const parent = message.replyToMessageId
+      ? byId.get(message.replyToMessageId)
+      : undefined;
+    return {
+      id: message.id,
+      authorPersonId: message.authorPersonId,
+      author: {
+        personId: message.author.personId,
+        displayName: message.author.displayName,
+        avatarUrl: message.author.avatarUrl,
+      },
+      body: message.body,
+      createdAt: message.createdAt,
+      replyPreview: parent ? previewBody(parent.body) : undefined,
+      replyAuthorName: parent?.author.displayName,
+      badge: message.quickActionKind ? (
+        <span className="rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
+          {MARKETPLACE_QUICK_ACTION_LABELS[message.quickActionKind]}
+        </span>
+      ) : undefined,
+      reactionSummary: DEMO_MARKETPLACE_CONVERSATION_REACTIONS.map(
+        (reaction) => ({
           id: reaction,
           glyph: REACTION_TYPE_GLYPH[reaction],
           count: message.reactionSummary?.[reaction] ?? 0,
-        }))}
-        onSelect={(id) => onReaction(message.id, id as ReactionType)}
-      />
-    ),
-  }));
+          active: message.reactors.some(
+            (r) =>
+              r.personId === demoMember.personId && r.reaction === reaction,
+          ),
+        }),
+      ),
+      reactionOptions,
+      reactors: message.reactors.map((r) => ({
+        personId: r.personId,
+        displayName: r.displayName,
+        reactionId: r.reaction,
+      })),
+      onReaction: (id) => onReaction(message.id, id as ReactionType),
+      onReply: () =>
+        setReplyTo({
+          messageId: message.id,
+          authorName: message.author.displayName,
+          bodyPreview: previewBody(message.body),
+        }),
+      onSelect: () => toggleSelect(message.id),
+      onDeleteOwn:
+        message.authorPersonId === demoMember.personId
+          ? () => {
+              softDeleteMarketplaceMessage({
+                listingId,
+                messageId: message.id,
+                actorPersonId: demoMember.personId,
+              });
+              refresh();
+            }
+          : undefined,
+      selected: selectedIds.includes(message.id),
+      deleteEnabled: message.authorPersonId === demoMember.personId,
+      forwardEnabled: false,
+    };
+  });
+
+  const reason = kindLabel || "Consulta de anuncio";
 
   return (
-    <MobileScreen dense>
-      <ConversationShell
-        header={
-          <>
-            <FlowScreenHeader
-              title="Conversación"
-              subtitle="Sobre este anuncio"
-              onBack={() => router.push(`/marketplace/${listingId}`)}
-              onExit={() => router.push("/services")}
-            />
-            <ContextHeader
-              name={peerName}
-              avatarUrl={peerAvatarUrl}
-              reason="Consulta de anuncio"
-              context={{
-                title: listing?.title ?? "Anuncio",
-                subtitle: kindLabel || undefined,
-                imageUrl: listing?.imageUrl,
-                statusLabel: kindLabel || undefined,
-                onClick: () => router.push(`/marketplace/${listingId}`),
-              }}
-            />
-          </>
-        }
-        footer={
-          <MessageComposer
-            value={draft}
-            onChange={setDraft}
-            onSend={sendDraft}
-            placeholder="Escribe sobre este anuncio…"
-            quickActions={
-              <div className="space-y-2">
-                <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
-                  Respuestas rápidas
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_ACTION_KINDS.map((kind) => (
-                    <button
-                      key={kind}
-                      type="button"
-                      onClick={() => onQuickAction(kind)}
-                      className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-                    >
-                      {MARKETPLACE_QUICK_ACTION_LABELS[kind]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            }
-          />
-        }
-      >
-        <MessageList
-          messages={listItems}
-          viewerPersonId={demoMember.personId}
-          emptyTitle="Todavía no hay mensajes"
-          emptyDescription="Escribe para coordinar recogida o detalles sobre este anuncio."
-        />
-      </ConversationShell>
+    <MobileScreen dense className="gap-0 pb-0">
+      <ConversationExperience
+        onBack={() => router.push(`/marketplace/${listingId}`)}
+        infoOpen={infoOpen}
+        onInfoOpenChange={setInfoOpen}
+        infoDescription={listing?.title ? `${listing.title} · ${reason}` : reason}
+        infoMembers={infoMembers}
+        header={{
+          name: peerName,
+          avatarUrl: peerAvatarUrl,
+          reason,
+          contextTitle: listing?.title ?? "Anuncio",
+          contextImageUrl: listing?.imageUrl,
+        }}
+        messages={listItems}
+        viewerPersonId={demoMember.personId}
+        selectionMode={selectionMode}
+        firstUnreadMessageId={firstUnreadMessageId}
+        emptyTitle="Todavía no hay mensajes"
+        emptyDescription="Escribe para coordinar recogida o detalles sobre este anuncio."
+        composer={{
+          value: draft,
+          onChange: setDraft,
+          onSend: sendDraft,
+          placeholder: "Escribe un mensaje…",
+          replyTo,
+          onCancelReply: () => setReplyTo(null),
+          attachmentsEnabled: true,
+          voiceEnabled: true,
+          quickActions: selectionMode ? (
+            <div className="flex items-center justify-between gap-2 px-1">
+              <p className="text-[12px] font-semibold text-[var(--color-text-secondary)]">
+                {selectedIds.length} seleccionados
+              </p>
+              <button
+                type="button"
+                className="text-[12px] font-semibold text-[var(--color-action-primary)]"
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+              >
+                Listo
+              </button>
+            </div>
+          ) : undefined,
+        }}
+      />
     </MobileScreen>
   );
 }

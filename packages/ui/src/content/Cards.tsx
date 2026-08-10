@@ -327,6 +327,7 @@ export type GroupCardProps = {
   name: string;
   members: number;
   imageUrl: string;
+  categoryLabel?: string;
   onOpen?: () => void;
   className?: string;
 };
@@ -335,6 +336,7 @@ export function GroupCard({
   name,
   members,
   imageUrl,
+  categoryLabel,
   onOpen,
   className,
 }: GroupCardProps) {
@@ -343,19 +345,20 @@ export function GroupCard({
       type="button"
       onClick={onOpen}
       className={cn(
-        "overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] text-left shadow-[var(--shadow-elev-1)]",
+        "overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]",
         className,
       )}
     >
-      <div className="aspect-[4/3] bg-[var(--color-surface-muted)]">
+      <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
         <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
       </div>
       <div className="p-3">
-        <h3 className="text-[16px] font-semibold text-[var(--color-text-primary)]">
+        <h3 className="truncate text-[16px] font-semibold text-[var(--color-text-primary)]">
           {name}
         </h3>
-        <p className="text-[15px] text-[var(--color-text-secondary)]">
+        <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
           {members} miembros
+          {categoryLabel ? ` · ${categoryLabel}` : ""}
         </p>
       </div>
     </button>

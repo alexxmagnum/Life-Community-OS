@@ -1,14 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
-import { Avatar } from "../people/Avatar";
-import { EmptyState } from "../states/States";
 import { cn } from "../lib/cn";
 import {
   MessageBubble,
+  type MessageBubbleReactor,
   type MessageDeliveryState,
 } from "./MessageBubble";
+import type { MediaPreviewKind } from "./MediaPreview";
+import type { ReactionPickerOption } from "./ReactionPicker";
 
 export type MessageListAuthor = {
   personId: string;
@@ -24,8 +25,30 @@ export type MessageListItem = {
   createdAt: string;
   badge?: ReactNode;
   replyPreview?: string;
+  replyAuthorName?: string;
   deliveryState?: MessageDeliveryState;
+  /** @deprecated Prefer reactionSummary + reactionOptions. */
   reactions?: ReactNode;
+  reactionSummary?: ReactionPickerOption[];
+  reactionOptions?: ReactionPickerOption[];
+  reactors?: MessageBubbleReactor[];
+  onReaction?: (reactionId: string) => void;
+  onCopy?: () => void;
+  onReply?: () => void;
+  onForward?: () => void;
+  onSelect?: () => void;
+  onDeleteOwn?: () => void;
+  forwardEnabled?: boolean;
+  selectEnabled?: boolean;
+  deleteEnabled?: boolean;
+  selected?: boolean;
+  media?: {
+    kind: MediaPreviewKind;
+    title: string;
+    subtitle?: string;
+    previewUrl?: string;
+  };
+  actionsDisabled?: boolean;
 };
 
 export type MessageListProps = {
@@ -35,6 +58,14 @@ export type MessageListProps = {
   emptyDescription?: string;
   /** Group consecutive same-author messages within this window (ms). */
   groupWindowMs?: number;
+  /** Avatars next to bubbles — first of each sender group only. */
+  showAvatars?: boolean;
+  /** Groups keep avatars on the start (left). Neighbour chats use end (right). */
+  avatarSide?: "start" | "end";
+  /** Insert unread separator before this message id. */
+  firstUnreadMessageId?: string | null;
+  unreadLabel?: string;
+  selectionMode?: boolean;
   className?: string;
 };
 
@@ -50,9 +81,9 @@ function dateSeparatorLabel(iso: string, now = new Date()): string {
   if (day === today) return "Hoy";
   if (day === yesterday) return "Ayer";
   return new Intl.DateTimeFormat("es-ES", {
-    weekday: "long",
     day: "numeric",
     month: "short",
+    year: "numeric",
   }).format(new Date(iso));
 }
 
@@ -64,19 +95,77 @@ function timeLabel(iso: string): string {
 }
 
 /**
- * Message scroller with date separators and consecutive grouping.
+ * Conversation rhythm: day lines, sender grouping, unread separator.
+ * On enter → always last message. Never restore a stale mid-thread scroll.
  */
 export function MessageList({
   messages,
   viewerPersonId,
   emptyTitle = "Todavía no hay mensajes",
   emptyDescription = "Escribe el primero para empezar la conversación.",
-  groupWindowMs = 3 * 60 * 1000,
+  groupWindowMs = 2 * 60 * 1000,
+  showAvatars = true,
+  avatarSide = "start",
+  firstUnreadMessageId = null,
+  unreadLabel = "Mensajes no leídos",
+  selectionMode = false,
   className,
 }: MessageListProps) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const endRef = useRef<HTMLLIElement>(null);
+  const stickToBottom = useRef(true);
+  const initialScrollDone = useRef(false);
+  const conversationFingerprint = `${viewerPersonId}:${messages[0]?.id ?? "empty"}:${messages.length}`;
+
+  useEffect(() => {
+    // New conversation mount / thread change → force latest.
+    initialScrollDone.current = false;
+    stickToBottom.current = true;
+  }, [conversationFingerprint]);
+
+  useEffect(() => {
+    const el = listRef.current?.parentElement;
+    if (!el) return;
+    const onScroll = () => {
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      stickToBottom.current = remaining < 80;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const el = listRef.current?.parentElement;
+    if (!el || messages.length === 0) return;
+
+    const jumpToLatest = () => {
+      el.scrollTop = el.scrollHeight;
+      endRef.current?.scrollIntoView({ block: "end" });
+    };
+
+    if (!initialScrollDone.current) {
+      jumpToLatest();
+      // Second frame — layout may settle after images/fonts.
+      requestAnimationFrame(jumpToLatest);
+      initialScrollDone.current = true;
+      return;
+    }
+
+    if (stickToBottom.current) {
+      jumpToLatest();
+    }
+  }, [messages.length, messages[messages.length - 1]?.id, conversationFingerprint]);
+
   if (messages.length === 0) {
     return (
-      <EmptyState title={emptyTitle} description={emptyDescription} />
+      <div className="flex h-full min-h-[10rem] flex-col items-center justify-center px-6 text-center">
+        <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+          {emptyTitle}
+        </p>
+        <p className="mt-1 max-w-xs text-[13px] leading-5 text-[var(--color-text-secondary)]">
+          {emptyDescription}
+        </p>
+      </div>
     );
   }
 
@@ -85,15 +174,15 @@ export function MessageList({
   let lastAuthor: string | null = null;
   let lastTs = 0;
 
-  messages.forEach((message) => {
+  messages.forEach((message, index) => {
     const day = startOfLocalDay(message.createdAt);
     if (lastDay !== day) {
       rows.push(
         <li
           key={`day-${message.createdAt}-${message.id}`}
-          className="flex justify-center py-2"
+          className="flex justify-center py-3"
         >
-          <span className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold capitalize text-[var(--color-text-tertiary)]">
+          <span className="text-[11px] font-medium tracking-wide text-[var(--color-text-tertiary)]">
             {dateSeparatorLabel(message.createdAt)}
           </span>
         </li>,
@@ -102,11 +191,36 @@ export function MessageList({
       lastAuthor = null;
     }
 
+    if (firstUnreadMessageId && message.id === firstUnreadMessageId) {
+      rows.push(
+        <li
+          key={`unread-${message.id}`}
+          className="flex items-center gap-3 py-2"
+          role="separator"
+          aria-label={unreadLabel}
+        >
+          <span className="h-px flex-1 bg-[var(--color-border-subtle)]" />
+          <span className="text-[11px] font-semibold tracking-wide text-[var(--color-action-primary)]">
+            {unreadLabel}
+          </span>
+          <span className="h-px flex-1 bg-[var(--color-border-subtle)]" />
+        </li>,
+      );
+    }
+
     const mine = message.authorPersonId === viewerPersonId;
     const ts = new Date(message.createdAt).getTime();
     const grouped =
-      lastAuthor === message.authorPersonId &&
-      ts - lastTs <= groupWindowMs;
+      lastAuthor === message.authorPersonId && ts - lastTs <= groupWindowMs;
+
+    const next = messages[index + 1];
+    const nextTs = next ? new Date(next.createdAt).getTime() : 0;
+    const nextGrouped =
+      Boolean(next) &&
+      next!.authorPersonId === message.authorPersonId &&
+      nextTs - ts <= groupWindowMs;
+    const showTime = !nextGrouped;
+
     lastAuthor = message.authorPersonId;
     lastTs = ts;
 
@@ -114,44 +228,62 @@ export function MessageList({
       <li
         key={message.id}
         className={cn(
-          "flex gap-2",
+          "flex",
           mine ? "justify-end" : "justify-start",
-          grouped ? "mt-1" : "mt-3",
+          grouped ? "mt-[2px]" : "mt-2.5",
         )}
       >
-        {!mine && !grouped ? (
-          <Avatar
-            src={message.author.avatarUrl}
-            alt={message.author.displayName}
-            size="sm"
-            className="mt-1"
-            zoomable={false}
-          />
-        ) : !mine ? (
-          <span className="w-8 shrink-0" aria-hidden />
+        <MessageBubble
+          body={message.body}
+          mine={mine}
+          authorName={!mine && !grouped ? message.author.displayName : undefined}
+          authorAvatarUrl={
+            !mine && showAvatars && !grouped
+              ? message.author.avatarUrl
+              : undefined
+          }
+          showAvatar={!mine && showAvatars && !grouped}
+          reserveAvatarSpace={!mine && showAvatars && grouped}
+          avatarSide={avatarSide}
+          timeLabel={timeLabel(message.createdAt)}
+          showTime={showTime}
+          badge={message.badge}
+          replyPreview={message.replyPreview}
+          replyAuthorName={message.replyAuthorName}
+          deliveryState={message.deliveryState}
+          reactionSummary={message.reactionSummary}
+          reactionOptions={message.reactionOptions}
+          reactors={message.reactors}
+          onReaction={message.onReaction}
+          onCopy={message.onCopy}
+          onReply={message.onReply}
+          onForward={message.onForward}
+          onSelect={message.onSelect}
+          onDeleteOwn={message.onDeleteOwn}
+          forwardEnabled={message.forwardEnabled}
+          selectEnabled={message.selectEnabled}
+          deleteEnabled={message.deleteEnabled}
+          selected={message.selected}
+          selectionMode={selectionMode}
+          media={message.media}
+          actionsDisabled={message.actionsDisabled}
+        />
+        {message.reactions && !message.reactionSummary ? (
+          <div className="mt-0.5">{message.reactions}</div>
         ) : null}
-        <div className={cn("min-w-0", mine ? "items-end" : "items-start")}>
-          {!mine && !grouped ? (
-            <p className="mb-1 px-1 text-[12px] font-semibold text-[var(--color-text-secondary)]">
-              {message.author.displayName}
-            </p>
-          ) : null}
-          <MessageBubble
-            body={message.body}
-            mine={mine}
-            timeLabel={timeLabel(message.createdAt)}
-            badge={message.badge}
-            replyPreview={message.replyPreview}
-            deliveryState={message.deliveryState}
-            reactions={message.reactions}
-          />
-        </div>
       </li>,
     );
   });
 
+  rows.push(<li key="scroll-end" ref={endRef} className="h-px" aria-hidden />);
+
   return (
-    <ul className={cn("space-y-0 px-0.5", className)} aria-live="polite">
+    <ul
+      ref={listRef}
+      className={cn("flex flex-col", className)}
+      aria-live="polite"
+      data-show-avatars={showAvatars ? "true" : "false"}
+    >
       {rows}
     </ul>
   );

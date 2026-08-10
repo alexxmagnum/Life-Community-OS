@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEMO_OFFICIAL_CONVERSATION_REACTIONS,
@@ -8,10 +8,9 @@ import {
   getOfficialEntityBySlug,
   officialInteractionModeLabel,
   OFFICIAL_QUICK_ACTION_LABELS,
-  OFFICIAL_RESIDENT_QUICK_ACTIONS,
-  postOfficialQuickAction,
   postOfficialResidentMessage,
   setOfficialConversationStatus,
+  softDeleteOfficialMessage,
   toggleOfficialMessageReaction,
   type OfficialMessageView,
 } from "@life-community-os/tenant-life-panoramica";
@@ -19,18 +18,14 @@ import {
   allowsOfficialReactions,
   allowsOfficialResidentReplies,
   REACTION_TYPE_GLYPH,
-  type QuickActionKind,
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  ContextHeader,
-  ConversationShell,
+  ConversationExperience,
   EmptyState,
   FlowScreenHeader,
-  MessageComposer,
-  MessageList,
   MobileScreen,
-  ReactionPicker,
+  type MessageComposerReplyTarget,
   type MessageListItem,
 } from "@life-community-os/ui";
 import {
@@ -39,6 +34,12 @@ import {
   isOfficialEntitySurfaceAvailable,
 } from "@/lib/official-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+
+function previewBody(body?: string): string {
+  const t = (body ?? "").trim();
+  if (!t) return "Mensaje";
+  return t.length > 80 ? `${t.slice(0, 77)}…` : t;
+}
 
 /**
  * Official contextual communication — Shared Product shell (Phase 2.6).
@@ -65,6 +66,15 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
   const [canReply, setCanReply] = useState(false);
   const [canReact, setCanReact] = useState(false);
   const [canModerate, setCanModerate] = useState(false);
+  const [replyTo, setReplyTo] = useState<MessageComposerReplyTarget | null>(
+    null,
+  );
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<
+    string | null
+  >(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const entity = getOfficialEntityBySlug(slug);
   const surfaceOn = entity
@@ -133,6 +143,54 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (!noticeId || messages.length === 0) {
+      setFirstUnreadMessageId(null);
+      return;
+    }
+    const key = `lcos.unread.official.${noticeId}.${demoMember.personId}`;
+    const lastSeen = window.localStorage.getItem(key);
+    const firstUnread = messages.find(
+      (m) =>
+        m.authorPersonId !== demoMember.personId &&
+        (!lastSeen || m.createdAt > lastSeen),
+    );
+    setFirstUnreadMessageId(firstUnread?.id ?? null);
+    const latest = messages[messages.length - 1];
+    if (!latest) return;
+    const t = window.setTimeout(() => {
+      window.localStorage.setItem(key, latest.createdAt);
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [demoMember.personId, messages, noticeId]);
+
+  const byId = useMemo(() => {
+    const map = new Map<string, OfficialMessageView>();
+    for (const m of messages) map.set(m.id, m);
+    return map;
+  }, [messages]);
+
+  const infoMembers = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; avatarUrl?: string }>();
+    for (const m of messages) {
+      if (!seen.has(m.authorPersonId)) {
+        seen.set(m.authorPersonId, {
+          id: m.authorPersonId,
+          name: m.author.displayName,
+          avatarUrl: m.author.avatarUrl,
+        });
+      }
+    }
+    if (!seen.has(demoMember.personId)) {
+      seen.set(demoMember.personId, {
+        id: demoMember.personId,
+        name: demoMember.displayName,
+        avatarUrl: demoMember.avatarUrl,
+      });
+    }
+    return [...seen.values()];
+  }, [demoMember, messages]);
+
   if (!entity || !surfaceOn) {
     return (
       <MobileScreen>
@@ -177,23 +235,13 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
       authorName: demoMember.displayName,
       authorAvatarUrl: demoMember.avatarUrl,
       body: draft,
+      replyToMessageId: replyTo?.messageId,
     });
     if (created) {
       setDraft("");
+      setReplyTo(null);
       refresh();
     }
-  };
-
-  const onQuickAction = (kind: QuickActionKind) => {
-    if (!noticeId || !canReply) return;
-    postOfficialQuickAction({
-      noticeId,
-      authorPersonId: demoMember.personId,
-      authorName: demoMember.displayName,
-      authorAvatarUrl: demoMember.avatarUrl,
-      kind,
-    });
-    refresh();
   };
 
   const onReaction = (messageId: string, reaction: ReactionType) => {
@@ -206,18 +254,35 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
     refresh();
   };
 
+  const reactionOptions = DEMO_OFFICIAL_CONVERSATION_REACTIONS.map(
+    (reaction) => ({
+      id: reaction,
+      glyph: REACTION_TYPE_GLYPH[reaction],
+    }),
+  );
+
+  const toggleSelect = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
   const listItems: MessageListItem[] = messages.map((message) => {
     const official = Boolean(message.author.isOfficial);
+    const parent = message.replyToMessageId
+      ? byId.get(message.replyToMessageId)
+      : undefined;
     const badges = (
       <>
         {official ? (
-          <span className="rounded-full bg-[var(--color-accent-official)]/20 px-2 py-0.5 text-[12px] font-semibold text-[var(--color-accent-official)]">
+          <span className="rounded-full bg-[var(--color-accent-official)]/20 px-2 py-0.5 text-[11px] font-semibold text-[var(--color-accent-official)]">
             Oficial
           </span>
         ) : null}
         {message.quickActionKind &&
         OFFICIAL_QUICK_ACTION_LABELS[message.quickActionKind] ? (
-          <span className="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
+          <span className="ml-1 rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
             {OFFICIAL_QUICK_ACTION_LABELS[message.quickActionKind]}
           </span>
         ) : null}
@@ -234,137 +299,133 @@ export function OfficialConversationScreen({ slug }: { slug: string }) {
       },
       body: message.body,
       createdAt: message.createdAt,
+      replyPreview: parent ? previewBody(parent.body) : undefined,
+      replyAuthorName: parent?.author.displayName,
       badge:
         official || message.quickActionKind ? (
           <span className="inline-flex flex-wrap items-center gap-1">
             {badges}
           </span>
         ) : undefined,
-      reactions: canReact ? (
-        <ReactionPicker
-          options={DEMO_OFFICIAL_CONVERSATION_REACTIONS.map((reaction) => ({
+      reactionSummary: canReact
+        ? DEMO_OFFICIAL_CONVERSATION_REACTIONS.map((reaction) => ({
             id: reaction,
             glyph: REACTION_TYPE_GLYPH[reaction],
             count: message.reactionSummary?.[reaction] ?? 0,
-          }))}
-          onSelect={(id) => onReaction(message.id, id as ReactionType)}
-        />
-      ) : undefined,
+          }))
+        : undefined,
+      reactionOptions: canReact ? reactionOptions : undefined,
+      onReaction: canReact
+        ? (id) => onReaction(message.id, id as ReactionType)
+        : undefined,
+      onReply: canReply
+        ? () =>
+            setReplyTo({
+              messageId: message.id,
+              authorName: message.author.displayName,
+              bodyPreview: previewBody(message.body),
+            })
+        : undefined,
+      onSelect: () => toggleSelect(message.id),
+      onDeleteOwn:
+        message.authorPersonId === demoMember.personId
+          ? () => {
+              if (!noticeId) return;
+              softDeleteOfficialMessage({
+                noticeId,
+                messageId: message.id,
+                actorPersonId: demoMember.personId,
+              });
+              refresh();
+            }
+          : undefined,
+      selected: selectedIds.includes(message.id),
+      deleteEnabled: message.authorPersonId === demoMember.personId,
+      forwardEnabled: false,
+      actionsDisabled: !canReact && !canReply,
     };
   });
 
+  const reason = modeLabel || statusLabel || "Aviso oficial";
+
   return (
-    <MobileScreen dense>
-      <ConversationShell
-        header={
-          <>
-            <FlowScreenHeader
-              title="Comunicación oficial"
-              subtitle={entityName}
-              onBack={() => router.push(`/official/${entity.slug}`)}
-              onExit={() => router.push("/")}
-            />
-            <ContextHeader
-              name={entityName}
-              avatarUrl={entityImageUrl}
-              reason={modeLabel || "Aviso oficial"}
-              context={{
-                title: noticeTitle,
-                subtitle: statusLabel,
-                imageUrl: entityImageUrl,
-                statusLabel: statusLabel || undefined,
-                onClick: () => router.push(`/official/${entity.slug}`),
+    <MobileScreen dense className="gap-0 pb-0">
+      <ConversationExperience
+        onBack={() => router.push(`/official/${entity.slug}`)}
+        infoOpen={infoOpen}
+        onInfoOpenChange={setInfoOpen}
+        infoDescription={noticeTitle ? `${noticeTitle} · ${reason}` : reason}
+        infoMembers={infoMembers}
+        header={{
+          name: entityName,
+          avatarUrl: entityImageUrl,
+          reason,
+          contextTitle: noticeTitle,
+          contextImageUrl: entityImageUrl,
+        }}
+        trailing={
+          canModerate && noticeId ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOfficialConversationStatus({
+                  noticeId,
+                  status: "locked",
+                });
+                refresh();
               }}
-              trailing={
-                canModerate && noticeId ? (
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOfficialConversationStatus({
-                          noticeId,
-                          status: "locked",
-                        });
-                        refresh();
-                      }}
-                      className="min-h-[32px] rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[12px] font-semibold shadow-[var(--shadow-elev-1)]"
-                    >
-                      Bloquear
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOfficialConversationStatus({
-                          noticeId,
-                          status: "archived",
-                        });
-                        refresh();
-                      }}
-                      className="min-h-[32px] rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[12px] font-semibold shadow-[var(--shadow-elev-1)]"
-                    >
-                      Archivar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOfficialConversationStatus({
-                          noticeId,
-                          status: "active",
-                        });
-                        refresh();
-                      }}
-                      className="min-h-[32px] rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[12px] font-semibold shadow-[var(--shadow-elev-1)]"
-                    >
-                      Reactivar
-                    </button>
-                  </div>
-                ) : undefined
-              }
-            />
-          </>
+              className="rounded-full bg-[var(--color-surface-muted)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--color-text-secondary)]"
+            >
+              Bloquear
+            </button>
+          ) : undefined
         }
-        footer={
-          canReply ? (
-            <MessageComposer
-              value={draft}
-              onChange={setDraft}
-              onSend={sendDraft}
-              placeholder="Pregunta o responde a la administración…"
-              quickActions={
-                <div className="space-y-2">
-                  <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
-                    Respuestas
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {OFFICIAL_RESIDENT_QUICK_ACTIONS.map((kind) => (
-                      <button
-                        key={kind}
-                        type="button"
-                        onClick={() => onQuickAction(kind)}
-                        className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-                      >
-                        {OFFICIAL_QUICK_ACTION_LABELS[kind]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              }
-            />
-          ) : (
-            <p className="px-1 text-[14px] leading-6 text-[var(--color-text-tertiary)]">
-              Este es un aviso oficial. Puedes leerlo
-              {canReact ? " y reaccionar" : ""}, pero no hay discusión abierta.
+        messages={listItems}
+        viewerPersonId={demoMember.personId}
+        selectionMode={selectionMode}
+        firstUnreadMessageId={firstUnreadMessageId}
+        emptyTitle="Todavía no hay mensajes"
+        emptyDescription="Cuando haya respuestas o actualizaciones aparecerán aquí."
+        footerOverride={
+          canReply ? undefined : (
+            <p className="px-1 py-2 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+              Aviso oficial. Puedes leerlo
+              {canReact ? " y reaccionar" : ""}; no hay discusión abierta.
             </p>
           )
         }
-      >
-        <MessageList
-          messages={listItems}
-          viewerPersonId={demoMember.personId}
-          emptyTitle="Todavía no hay mensajes"
-          emptyDescription="Cuando haya respuestas o actualizaciones aparecerán aquí."
-        />
-      </ConversationShell>
+        composer={
+          canReply
+            ? {
+                value: draft,
+                onChange: setDraft,
+                onSend: sendDraft,
+                placeholder: "Escribe un mensaje…",
+                replyTo,
+                onCancelReply: () => setReplyTo(null),
+                attachmentsEnabled: true,
+                voiceEnabled: true,
+                quickActions: selectionMode ? (
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <p className="text-[12px] font-semibold text-[var(--color-text-secondary)]">
+                      {selectedIds.length} seleccionados
+                    </p>
+                    <button
+                      type="button"
+                      className="text-[12px] font-semibold text-[var(--color-action-primary)]"
+                      onClick={() => {
+                        setSelectionMode(false);
+                        setSelectedIds([]);
+                      }}
+                    >
+                      Listo
+                    </button>
+                  </div>
+                ) : undefined,
+              }
+            : undefined
+        }
+      />
     </MobileScreen>
   );
 }

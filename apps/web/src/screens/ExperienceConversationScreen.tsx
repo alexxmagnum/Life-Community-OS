@@ -1,36 +1,37 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEMO_CONVERSATION_REACTIONS,
   getExperienceConversationBundle,
   postExperienceMessage,
-  postExperienceQuickAction,
   QUICK_ACTION_LABELS,
+  softDeleteExperienceMessage,
   toggleExperienceMessageReaction,
   type ExperienceMessageView,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   createExperienceConversationAdapter,
-  QUICK_ACTION_KINDS,
   REACTION_TYPE_GLYPH,
-  type QuickActionKind,
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  ContextHeader,
-  ConversationShell,
+  ConversationExperience,
   EmptyState,
   FlowScreenHeader,
-  MessageComposer,
-  MessageList,
   MobileScreen,
-  ReactionPicker,
+  type MessageComposerReplyTarget,
   type MessageListItem,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+
+function previewBody(body?: string): string {
+  const t = (body ?? "").trim();
+  if (!t) return "Mensaje";
+  return t.length > 80 ? `${t.slice(0, 77)}…` : t;
+}
 
 /**
  * Contextual Experience Conversation — Shared Product shell (Phase 2.6).
@@ -62,6 +63,15 @@ export function ExperienceConversationScreen({
     string | undefined
   >();
   const [participantCount, setParticipantCount] = useState(0);
+  const [replyTo, setReplyTo] = useState<MessageComposerReplyTarget | null>(
+    null,
+  );
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [firstUnreadMessageId, setFirstUnreadMessageId] = useState<
+    string | null
+  >(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const moduleOn =
     isFeatureEnabled("experiences") && isModuleEnabled("experiences");
@@ -115,6 +125,54 @@ export function ExperienceConversationScreen({
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (messages.length === 0) {
+      setFirstUnreadMessageId(null);
+      return;
+    }
+    const key = `lcos.unread.experience.${experienceId}.${demoMember.personId}`;
+    const lastSeen = window.localStorage.getItem(key);
+    const firstUnread = messages.find(
+      (m) =>
+        m.authorPersonId !== demoMember.personId &&
+        (!lastSeen || m.createdAt > lastSeen),
+    );
+    setFirstUnreadMessageId(firstUnread?.id ?? null);
+    const latest = messages[messages.length - 1];
+    if (!latest) return;
+    const t = window.setTimeout(() => {
+      window.localStorage.setItem(key, latest.createdAt);
+    }, 1200);
+    return () => window.clearTimeout(t);
+  }, [demoMember.personId, experienceId, messages]);
+
+  const byId = useMemo(() => {
+    const map = new Map<string, ExperienceMessageView>();
+    for (const m of messages) map.set(m.id, m);
+    return map;
+  }, [messages]);
+
+  const infoMembers = useMemo(() => {
+    const seen = new Map<string, { id: string; name: string; avatarUrl?: string }>();
+    for (const m of messages) {
+      if (!seen.has(m.authorPersonId)) {
+        seen.set(m.authorPersonId, {
+          id: m.authorPersonId,
+          name: m.author.displayName,
+          avatarUrl: m.author.avatarUrl,
+        });
+      }
+    }
+    if (!seen.has(demoMember.personId)) {
+      seen.set(demoMember.personId, {
+        id: demoMember.personId,
+        name: demoMember.displayName,
+        avatarUrl: demoMember.avatarUrl,
+      });
+    }
+    return [...seen.values()];
+  }, [demoMember, messages]);
+
   if (!moduleOn) {
     return (
       <MobileScreen>
@@ -158,22 +216,13 @@ export function ExperienceConversationScreen({
       authorName: demoMember.displayName,
       authorAvatarUrl: demoMember.avatarUrl,
       body: draft,
+      replyToMessageId: replyTo?.messageId,
     });
     if (created) {
       setDraft("");
+      setReplyTo(null);
       refresh();
     }
-  };
-
-  const onQuickAction = (kind: QuickActionKind) => {
-    postExperienceQuickAction({
-      experienceId,
-      authorPersonId: demoMember.personId,
-      authorName: demoMember.displayName,
-      authorAvatarUrl: demoMember.avatarUrl,
-      kind,
-    });
-    refresh();
   };
 
   const onReaction = (messageId: string, reaction: ReactionType) => {
@@ -185,93 +234,121 @@ export function ExperienceConversationScreen({
     refresh();
   };
 
-  const listItems: MessageListItem[] = messages.map((message) => ({
-    id: message.id,
-    authorPersonId: message.authorPersonId,
-    author: {
-      personId: message.author.personId,
-      displayName: message.author.displayName,
-      avatarUrl: message.author.avatarUrl,
-    },
-    body: message.body,
-    createdAt: message.createdAt,
-    badge: message.quickActionKind ? (
-      <span className="rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
-        {QUICK_ACTION_LABELS[message.quickActionKind]}
-      </span>
-    ) : undefined,
-    reactions: (
-      <ReactionPicker
-        options={DEMO_CONVERSATION_REACTIONS.map((reaction) => ({
-          id: reaction,
-          glyph: REACTION_TYPE_GLYPH[reaction],
-          count: message.reactionSummary?.[reaction] ?? 0,
-        }))}
-        onSelect={(id) => onReaction(message.id, id as ReactionType)}
-      />
-    ),
+  const reactionOptions = DEMO_CONVERSATION_REACTIONS.map((reaction) => ({
+    id: reaction,
+    glyph: REACTION_TYPE_GLYPH[reaction],
   }));
 
-  return (
-    <MobileScreen dense>
-      <ConversationShell
-        header={
-          <>
-            <FlowScreenHeader
-              title="Conversación"
-              subtitle="Sobre esta experiencia"
-              onBack={() => router.push(`/experiences/${experienceId}`)}
-              onExit={() => router.push("/")}
-            />
-            <ContextHeader
-              name={organizerName}
-              avatarUrl={organizerAvatarUrl}
-              reason="Conversación sobre experiencia"
-              context={{
-                title: experienceTitle || "Actividad",
-                subtitle: `${participantCount} personas preparándose`,
-                imageUrl: experienceImageUrl,
-                statusLabel: "Experiencia",
-                onClick: () => router.push(`/experiences/${experienceId}`),
-              }}
-            />
-          </>
-        }
-        footer={
-          <MessageComposer
-            value={draft}
-            onChange={setDraft}
-            onSend={sendDraft}
-            placeholder="Escribe a tus vecinos…"
-            quickActions={
-              <div className="space-y-2">
-                <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
-                  Respuestas rápidas
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {QUICK_ACTION_KINDS.map((kind) => (
-                    <button
-                      key={kind}
-                      type="button"
-                      onClick={() => onQuickAction(kind)}
-                      className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-                    >
-                      {QUICK_ACTION_LABELS[kind]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+  const toggleSelect = (id: string) => {
+    setSelectionMode(true);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
+
+  const listItems: MessageListItem[] = messages.map((message) => {
+    const parent = message.replyToMessageId
+      ? byId.get(message.replyToMessageId)
+      : undefined;
+    return {
+      id: message.id,
+      authorPersonId: message.authorPersonId,
+      author: {
+        personId: message.author.personId,
+        displayName: message.author.displayName,
+        avatarUrl: message.author.avatarUrl,
+      },
+      body: message.body,
+      createdAt: message.createdAt,
+      replyPreview: parent ? previewBody(parent.body) : undefined,
+      replyAuthorName: parent?.author.displayName,
+      badge: message.quickActionKind ? (
+        <span className="rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
+          {QUICK_ACTION_LABELS[message.quickActionKind]}
+        </span>
+      ) : undefined,
+      reactionSummary: DEMO_CONVERSATION_REACTIONS.map((reaction) => ({
+        id: reaction,
+        glyph: REACTION_TYPE_GLYPH[reaction],
+        count: message.reactionSummary?.[reaction] ?? 0,
+      })),
+      reactionOptions,
+      onReaction: (id) => onReaction(message.id, id as ReactionType),
+      onReply: () =>
+        setReplyTo({
+          messageId: message.id,
+          authorName: message.author.displayName,
+          bodyPreview: previewBody(message.body),
+        }),
+      onSelect: () => toggleSelect(message.id),
+      onDeleteOwn:
+        message.authorPersonId === demoMember.personId
+          ? () => {
+              softDeleteExperienceMessage({
+                experienceId,
+                messageId: message.id,
+                actorPersonId: demoMember.personId,
+              });
+              refresh();
             }
-          />
-        }
-      >
-        <MessageList
-          messages={listItems}
-          viewerPersonId={demoMember.personId}
-          emptyTitle="Todavía no hay mensajes"
-          emptyDescription="Coordina detalles con quien se prepara para esta experiencia."
-        />
-      </ConversationShell>
+          : undefined,
+      selected: selectedIds.includes(message.id),
+      deleteEnabled: message.authorPersonId === demoMember.personId,
+      forwardEnabled: false,
+    };
+  });
+
+  const reason = `${participantCount} personas preparándose`;
+
+  return (
+    <MobileScreen dense className="gap-0 pb-0">
+      <ConversationExperience
+        onBack={() => router.push(`/experiences/${experienceId}`)}
+        infoOpen={infoOpen}
+        onInfoOpenChange={setInfoOpen}
+        infoDescription={experienceTitle ? `${experienceTitle} · ${reason}` : reason}
+        infoMembers={infoMembers}
+        header={{
+          name: organizerName,
+          avatarUrl: organizerAvatarUrl,
+          reason,
+          contextTitle: experienceTitle || "Actividad",
+          contextImageUrl: experienceImageUrl,
+        }}
+        messages={listItems}
+        viewerPersonId={demoMember.personId}
+        selectionMode={selectionMode}
+        firstUnreadMessageId={firstUnreadMessageId}
+        emptyTitle="Todavía no hay mensajes"
+        emptyDescription="Coordina detalles con quien se prepara para esta experiencia."
+        composer={{
+          value: draft,
+          onChange: setDraft,
+          onSend: sendDraft,
+          placeholder: "Escribe un mensaje…",
+          replyTo,
+          onCancelReply: () => setReplyTo(null),
+          attachmentsEnabled: true,
+          voiceEnabled: true,
+          quickActions: selectionMode ? (
+            <div className="flex items-center justify-between gap-2 px-1">
+              <p className="text-[12px] font-semibold text-[var(--color-text-secondary)]">
+                {selectedIds.length} seleccionados
+              </p>
+              <button
+                type="button"
+                className="text-[12px] font-semibold text-[var(--color-action-primary)]"
+                onClick={() => {
+                  setSelectionMode(false);
+                  setSelectedIds([]);
+                }}
+              >
+                Listo
+              </button>
+            </div>
+          ) : undefined,
+        }}
+      />
     </MobileScreen>
   );
 }

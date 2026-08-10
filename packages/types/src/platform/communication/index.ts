@@ -65,13 +65,34 @@ export type {
 } from "./message";
 export { validateMessage } from "./message";
 
-export type { ReactionType, MessageReactionSummary } from "./reactions";
+export type { ReactionType, MessageReactionSummary, MessageReactor } from "./reactions";
 export {
   REACTION_TYPES,
   REACTION_TYPE_GLYPH,
   isReactionType,
   emptyMessageReactionSummary,
 } from "./reactions";
+
+export type { MessageActionKind, MessageActionAvailability } from "./message-actions";
+export {
+  MESSAGE_ACTION_KINDS,
+  isMessageActionKind,
+  DEFAULT_MESSAGE_ACTION_AVAILABILITY,
+} from "./message-actions";
+
+export type { AttachmentPickerKind } from "./attachment-picker";
+export {
+  ATTACHMENT_PICKER_KINDS,
+  isAttachmentPickerKind,
+  ATTACHMENT_FOUNDATION_NOTE,
+} from "./attachment-picker";
+
+export type { VoiceRecorderState } from "./voice-message";
+export {
+  VOICE_RECORDER_STATES,
+  isVoiceRecorderState,
+  VOICE_MESSAGE_FOUNDATION_NOTE,
+} from "./voice-message";
 
 export type { QuickActionKind } from "./quick-actions";
 export { QUICK_ACTION_KINDS, isQuickActionKind } from "./quick-actions";

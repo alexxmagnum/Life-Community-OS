@@ -208,6 +208,9 @@ export const WORK_QUICK_ACTION_LABELS: Record<QuickActionKind, string> = {
 export const DEMO_WORK_CONVERSATION_REACTIONS: readonly ReactionType[] = [
   "thumbs_up",
   "heart",
+  "laugh",
+  "surprised",
+  "pray",
   "clap",
 ];
 
@@ -298,6 +301,7 @@ export function postWorkMessage(input: {
   authorName: string;
   authorAvatarUrl?: string;
   body: string;
+  replyToMessageId?: string;
 }): WorkMessageView | undefined {
   const bundle = getWorkConversationBundle(input.workPostId);
   if (!bundle) return undefined;
@@ -318,6 +322,7 @@ export function postWorkMessage(input: {
     tenantId: DEMO_TENANT_ID,
     authorPersonId: input.authorPersonId,
     body,
+    replyToMessageId: input.replyToMessageId,
     createdAt: now,
     mediaRefs: [],
     reactionSummary: emptyMessageReactionSummary(),
@@ -410,6 +415,33 @@ export function toggleWorkMessageReaction(input: {
   const updated: Message = {
     ...existing,
     reactionSummary: current,
+  };
+  store.messages = store.messages.map((m) =>
+    m.id === updated.id ? updated : m,
+  );
+  writeStore(store);
+  return toMessageView(updated, store.authors);
+}
+
+export function softDeleteWorkMessage(input: {
+  workPostId: string;
+  messageId: string;
+  actorPersonId: string;
+}): WorkMessageView | undefined {
+  const bundle = getWorkConversationBundle(input.workPostId);
+  if (!bundle) return undefined;
+
+  const store = readStore();
+  const existing = store.messages.find((m) => m.id === input.messageId);
+  if (!existing) return undefined;
+  if (existing.conversationId !== bundle.conversation.id) return undefined;
+  if (existing.authorPersonId !== input.actorPersonId) return undefined;
+  if (existing.deletedAt) return undefined;
+
+  const updated: Message = {
+    ...existing,
+    deletedAt: new Date().toISOString(),
+    body: undefined,
   };
   store.messages = store.messages.map((m) =>
     m.id === updated.id ? updated : m,

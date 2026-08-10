@@ -6,13 +6,14 @@ import { useMediaLightbox } from "../media/MediaLightbox";
 export type AvatarProps = {
   src?: string;
   alt: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   /** When false, avatar is not zoomable (rare). Default true. */
   zoomable?: boolean;
 };
 
 const sizes = {
+  xs: "h-7 w-7",
   sm: "h-8 w-8",
   md: "h-10 w-10",
   lg: "h-14 w-14",

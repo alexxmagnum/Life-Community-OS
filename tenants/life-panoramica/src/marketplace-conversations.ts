@@ -12,6 +12,7 @@ import type {
   DomainId,
   Message,
   MessageReactionSummary,
+  MessageReactor,
   QuickActionKind,
   ReactionType,
 } from "@life-community-os/types";
@@ -39,6 +40,9 @@ export const MARKETPLACE_QUICK_ACTION_LABELS: Record<QuickActionKind, string> = 
 export const DEMO_MARKETPLACE_CONVERSATION_REACTIONS: readonly ReactionType[] = [
   "thumbs_up",
   "heart",
+  "laugh",
+  "surprised",
+  "pray",
   "clap",
 ];
 
@@ -50,6 +54,7 @@ export type MarketplaceMessageAuthorView = {
 
 export type MarketplaceMessageView = Message & {
   author: MarketplaceMessageAuthorView;
+  reactors: MessageReactor[];
 };
 
 export type MarketplaceConversationBundle = {
@@ -65,6 +70,8 @@ type ConversationStore = {
   authors: Record<string, MarketplaceMessageAuthorView>;
   /** listingId → interested person ids (author + contactors). */
   interestedByListing: Record<string, DomainId[]>;
+  /** messageId → who reacted (demo foundation). */
+  reactorsByMessageId: Record<string, MessageReactor[]>;
 };
 
 function emptyStore(): ConversationStore {
@@ -73,6 +80,7 @@ function emptyStore(): ConversationStore {
     messages: [],
     authors: {},
     interestedByListing: {},
+    reactorsByMessageId: {},
   };
 }
 
@@ -94,6 +102,11 @@ function readStore(): ConversationStore {
         parsed.interestedByListing &&
         typeof parsed.interestedByListing === "object"
           ? parsed.interestedByListing
+          : {},
+      reactorsByMessageId:
+        parsed.reactorsByMessageId &&
+        typeof parsed.reactorsByMessageId === "object"
+          ? parsed.reactorsByMessageId
           : {},
     };
   } catch {
@@ -120,12 +133,17 @@ function buildContext(listingId: string): ConversationContext {
 function toMessageView(
   message: Message,
   authors: Record<string, MarketplaceMessageAuthorView>,
+  reactorsByMessageId: Record<string, MessageReactor[]> = {},
 ): MarketplaceMessageView {
   const author = authors[message.authorPersonId] ?? {
     personId: message.authorPersonId,
     displayName: "Vecino",
   };
-  return { ...message, author };
+  return {
+    ...message,
+    author,
+    reactors: reactorsByMessageId[message.id] ?? [],
+  };
 }
 
 export function getMarketplaceInterestedPersonIds(
@@ -212,7 +230,7 @@ export function getMarketplaceConversationBundle(
   const messages = store.messages
     .filter((m) => m.conversationId === conversation.id && !m.deletedAt)
     .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-    .map((m) => toMessageView(m, store.authors));
+    .map((m) => toMessageView(m, store.authors, store.reactorsByMessageId));
 
   return { conversation, messages, listing, interestedPersonIds };
 }
@@ -223,6 +241,7 @@ export function postMarketplaceMessage(input: {
   authorName: string;
   authorAvatarUrl?: string;
   body: string;
+  replyToMessageId?: string;
 }): MarketplaceMessageView | undefined {
   const bundle = getMarketplaceConversationBundle(input.listingId);
   if (!bundle) return undefined;
@@ -243,6 +262,7 @@ export function postMarketplaceMessage(input: {
     tenantId: DEMO_TENANT_ID,
     authorPersonId: input.authorPersonId,
     body,
+    replyToMessageId: input.replyToMessageId,
     createdAt: now,
     mediaRefs: [],
     reactionSummary: emptyMessageReactionSummary(),
@@ -258,7 +278,7 @@ export function postMarketplaceMessage(input: {
     c.id === bundle.conversation.id ? { ...c, updatedAt: now } : c,
   );
   writeStore(store);
-  return toMessageView(message, store.authors);
+  return toMessageView(message, store.authors, store.reactorsByMessageId);
 }
 
 export function postMarketplaceQuickAction(input: {
@@ -302,13 +322,42 @@ export function postMarketplaceQuickAction(input: {
     c.id === bundle.conversation.id ? { ...c, updatedAt: now } : c,
   );
   writeStore(store);
-  return toMessageView(message, store.authors);
+  return toMessageView(message, store.authors, store.reactorsByMessageId);
+}
+
+export function softDeleteMarketplaceMessage(input: {
+  listingId: string;
+  messageId: string;
+  actorPersonId: string;
+}): MarketplaceMessageView | undefined {
+  const bundle = getMarketplaceConversationBundle(input.listingId);
+  if (!bundle) return undefined;
+
+  const store = readStore();
+  const existing = store.messages.find((m) => m.id === input.messageId);
+  if (!existing) return undefined;
+  if (existing.conversationId !== bundle.conversation.id) return undefined;
+  if (existing.authorPersonId !== input.actorPersonId) return undefined;
+  if (existing.deletedAt) return undefined;
+
+  const updated: Message = {
+    ...existing,
+    deletedAt: new Date().toISOString(),
+    body: undefined,
+  };
+  store.messages = store.messages.map((m) =>
+    m.id === updated.id ? updated : m,
+  );
+  writeStore(store);
+  return toMessageView(updated, store.authors, store.reactorsByMessageId);
 }
 
 export function toggleMarketplaceMessageReaction(input: {
   listingId: string;
   messageId: string;
   reaction: ReactionType;
+  personId: string;
+  displayName: string;
 }): MarketplaceMessageView | undefined {
   if (!isReactionType(input.reaction)) return undefined;
   const bundle = getMarketplaceConversationBundle(input.listingId);
@@ -325,13 +374,47 @@ export function toggleMarketplaceMessageReaction(input: {
     ...emptyMessageReactionSummary(),
     ...existing.reactionSummary,
   };
-  const prev = current[input.reaction] ?? 0;
-  if (prev <= 0) {
-    current[input.reaction] = 1;
+
+  const reactors = [...(store.reactorsByMessageId[input.messageId] ?? [])];
+  const existingIdx = reactors.findIndex(
+    (r) => r.personId === input.personId && r.reaction === input.reaction,
+  );
+
+  if (existingIdx >= 0) {
+    reactors.splice(existingIdx, 1);
+    const prev = current[input.reaction] ?? 0;
+    if (prev <= 1) delete current[input.reaction];
+    else current[input.reaction] = prev - 1;
   } else {
-    delete current[input.reaction];
+    // One soft reaction per person per message (replace previous).
+    const prior = reactors.find((r) => r.personId === input.personId);
+    if (prior) {
+      const p = current[prior.reaction] ?? 0;
+      if (p <= 1) delete current[prior.reaction];
+      else current[prior.reaction] = p - 1;
+    }
+    const nextReactors = reactors.filter((r) => r.personId !== input.personId);
+    nextReactors.push({
+      personId: input.personId,
+      displayName: input.displayName.trim() || "Vecino",
+      reaction: input.reaction,
+      createdAt: new Date().toISOString(),
+    });
+    store.reactorsByMessageId[input.messageId] = nextReactors;
+    current[input.reaction] = (current[input.reaction] ?? 0) + 1;
+
+    const updated: Message = {
+      ...existing,
+      reactionSummary: current,
+    };
+    store.messages = store.messages.map((m) =>
+      m.id === updated.id ? updated : m,
+    );
+    writeStore(store);
+    return toMessageView(updated, store.authors, store.reactorsByMessageId);
   }
 
+  store.reactorsByMessageId[input.messageId] = reactors;
   const updated: Message = {
     ...existing,
     reactionSummary: current,
@@ -340,7 +423,7 @@ export function toggleMarketplaceMessageReaction(input: {
     m.id === updated.id ? updated : m,
   );
   writeStore(store);
-  return toMessageView(updated, store.authors);
+  return toMessageView(updated, store.authors, store.reactorsByMessageId);
 }
 
 export function marketplaceConversationSubtitle(

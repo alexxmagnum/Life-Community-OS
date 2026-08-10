@@ -1,13 +1,23 @@
 /**
- * Shared Product — contextual conversation experience (Phase 2.5).
+ * Shared Product — universal Conversation Experience (Phase 2.5.5).
  *
  * No tenant imports. No Panoramica data. Prop-driven only.
+ * ONE chat system. Context changes header / participants / permissions only.
  */
 
 export {
   ConversationShell,
   type ConversationShellProps,
 } from "./ConversationShell";
+export {
+  ConversationExperience,
+  type ConversationExperienceProps,
+} from "./ConversationExperience";
+export {
+  ConversationInfoSheet,
+  type ConversationInfoSheetProps,
+  type ConversationInfoMember,
+} from "./ConversationInfoSheet";
 export {
   ContextHeader,
   type ContextHeaderProps,
@@ -16,6 +26,7 @@ export {
 export {
   MessageBubble,
   type MessageBubbleProps,
+  type MessageBubbleReactor,
   type MessageDeliveryState,
 } from "./MessageBubble";
 export {
@@ -27,7 +38,26 @@ export {
 export {
   MessageComposer,
   type MessageComposerProps,
+  type MessageComposerReplyTarget,
 } from "./MessageComposer";
+export {
+  MessageActionMenu,
+  type MessageActionMenuProps,
+} from "./MessageActionMenu";
+export {
+  AttachmentSheet,
+  type AttachmentSheetProps,
+  type AttachmentSheetItem,
+} from "./AttachmentSheet";
+export {
+  VoiceRecorderControl,
+  type VoiceRecorderControlProps,
+} from "./VoiceRecorderControl";
+export {
+  MediaPreview,
+  type MediaPreviewProps,
+  type MediaPreviewKind,
+} from "./MediaPreview";
 export {
   EmojiPicker,
   type EmojiPickerProps,

@@ -23,7 +23,7 @@ import { useCommunityInteractions } from "@/providers/CommunityInteractionProvid
 function detailChromeTitle(type: string, official: boolean): string {
   if (official) return "Aviso";
   if (type === "proposal") return "Propuesta";
-  if (type === "discussion") return "Conversación";
+  if (type === "discussion") return "Publicación";
   return "Publicación";
 }
 
@@ -33,7 +33,8 @@ export function CommunityContentDetailScreen({
   contentId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const demoPersonId = demoMember.personId;
   const {
     getContent,
     getMyReaction,
@@ -248,57 +249,71 @@ export function CommunityContentDetailScreen({
         ) : null}
       </article>
 
-      <section className="space-y-2 border-t border-[var(--color-border-subtle)] pt-3">
-        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Conversación
-          {visibleComments.length > 0 ? (
-            <span className="ml-1.5 font-normal text-[var(--color-text-tertiary)]">
-              {visibleComments.length}
-            </span>
-          ) : null}
-        </h2>
-
-        <div className="overflow-hidden rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)]">
-          <div className="max-h-[280px] space-y-2.5 overflow-y-auto overscroll-contain p-3">
-            {visibleComments.length === 0 ? (
-              <p className="text-[13px] text-[var(--color-text-secondary)]">
-                Sé el primero en responder.
-              </p>
-            ) : (
-              visibleComments.map((c) => (
-                <CommentPreview
-                  key={c.id}
-                  authorName={c.author.name}
-                  body={c.body}
-                  avatarUrl={c.author.avatarUrl}
-                  meta={formatContentWhen(c.createdAt)}
-                />
-              ))
-            )}
-          </div>
-          {canComment ? (
-            <div className="space-y-1 border-t border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated)] p-3">
-              <InlineCommentComposer
-                compact
-                value={draft}
-                onChange={(value) => {
-                  setDraft(value);
-                  if (commentHint) setCommentHint(null);
-                }}
-                onSubmit={submitComment}
-                placeholder="Escribe un comentario…"
-              />
-              {commentHint ? (
-                <p
-                  className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
-                  role="alert"
-                >
-                  {commentHint}
-                </p>
-              ) : null}
-            </div>
+      <section className="space-y-3 border-t border-[var(--color-border-subtle)] pt-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+            Comentarios públicos
+            {visibleComments.length > 0 ? (
+              <span className="ml-1.5 font-normal text-[var(--color-text-tertiary)]">
+                {visibleComments.length}
+              </span>
+            ) : null}
+          </h2>
+          {!content.isOfficial && content.author.id !== demoPersonId ? (
+            <button
+              type="button"
+              className="text-[13px] font-semibold text-[var(--color-action-primary)]"
+              onClick={() =>
+                router.push(
+                  `/community/neighbours/${encodeURIComponent(content.author.id)}/conversation?from=${encodeURIComponent(content.id)}`,
+                )
+              }
+            >
+              Contactar en privado
+            </button>
           ) : null}
         </div>
+
+        <div className="space-y-2.5">
+          {visibleComments.length === 0 ? (
+            <p className="text-[13px] text-[var(--color-text-secondary)]">
+              Sé el primero en comentar.
+            </p>
+          ) : (
+            visibleComments.map((c) => (
+              <CommentPreview
+                key={c.id}
+                authorName={c.author.name}
+                body={c.body}
+                avatarUrl={c.author.avatarUrl}
+                meta={formatContentWhen(c.createdAt)}
+              />
+            ))
+          )}
+        </div>
+        {canComment ? (
+          <div className="space-y-1 pt-1">
+            <InlineCommentComposer
+              compact
+              value={draft}
+              onChange={(value) => {
+                setDraft(value);
+                if (commentHint) setCommentHint(null);
+              }}
+              onSubmit={submitComment}
+              placeholder="Escribe un comentario…"
+              submitLabel="Comentar"
+            />
+            {commentHint ? (
+              <p
+                className="text-[12px] font-medium text-[var(--color-feedback-danger)]"
+                role="alert"
+              >
+                {commentHint}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </section>
     </MobileScreen>
   );
