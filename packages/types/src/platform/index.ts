@@ -143,6 +143,37 @@ export {
   EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./communication";
 
+/** Platform Core Notifications spine (ADR-019 / Phase 2.2). */
+export type {
+  NotificationStatus,
+  NotificationCategory,
+  NotificationContextRef,
+  Notification,
+  NotificationEventType,
+  NotificationRecipientSelector,
+  NotificationEvent,
+  NotificationRecipientResolver,
+  NotificationFactory,
+  NotificationInboxPort,
+  NotificationDeliveryPort,
+} from "./notifications";
+export {
+  NOTIFICATION_STATUSES,
+  NOTIFICATION_CATEGORIES,
+  isNotificationStatus,
+  isNotificationCategory,
+  markNotificationRead,
+  markNotificationArchived,
+  isNotificationUnread,
+  NOTIFICATION_EVENT_TYPES,
+  NOTIFICATION_EVENT_CATEGORY,
+  isNotificationEventType,
+  categoryForNotificationEvent,
+  createEmptyNotificationInboxPort,
+  createNoopNotificationRecipientResolver,
+  createNoopNotificationDeliveryPort,
+} from "./notifications";
+
 /** Platform Core Files & Media (ADR-020 / D.0.5c) — contracts only. */
 export type {
   FileType,

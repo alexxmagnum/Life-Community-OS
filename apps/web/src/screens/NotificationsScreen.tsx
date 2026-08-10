@@ -5,26 +5,20 @@ import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
+  NotificationInboxItem,
 } from "@life-community-os/ui";
+import { isNotificationUnread } from "@life-community-os/types";
+import { hrefForNotificationContext } from "@/lib/notification-href";
+import { useNotifications } from "@/providers/NotificationProvider";
 
 /**
- * Notifications inbox — Platform Core attention surface (ADR-019).
- * Entry: header bell. Backend delivery is future; UI stays present.
+ * Notifications inbox — Platform attention surface (ADR-019 / Phase 2.2).
  *
- * When items exist they should show: title, context, time, unread, deep link.
- * Until then: honest empty state (never fake counts or toast-only stubs).
+ * Empty by default (no fake activity). When items exist: why / what / next action.
  */
 export function NotificationsScreen() {
   const router = useRouter();
-  /** Future: load from NotificationProvider / Platform Core API. */
-  const notifications: Array<{
-    id: string;
-    title: string;
-    body: string;
-    href?: string;
-    read: boolean;
-    createdAt: string;
-  }> = [];
+  const { notifications, markRead } = useNotifications();
 
   return (
     <MobileScreen>
@@ -44,24 +38,22 @@ export function NotificationsScreen() {
         />
       ) : (
         <ul className="space-y-2">
-          {notifications.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  if (item.href) router.push(item.href);
-                }}
-                className="flex w-full flex-col rounded-[14px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)]"
-              >
-                <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-                  {item.title}
-                </span>
-                <span className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
-                  {item.body}
-                </span>
-              </button>
-            </li>
-          ))}
+          {notifications.map((item) => {
+            const href = hrefForNotificationContext(item.context);
+            return (
+              <li key={item.id}>
+                <NotificationInboxItem
+                  title={item.title}
+                  body={item.body}
+                  unread={isNotificationUnread(item)}
+                  onClick={() => {
+                    markRead(item.id);
+                    if (href) router.push(href);
+                  }}
+                />
+              </li>
+            );
+          })}
         </ul>
       )}
     </MobileScreen>

@@ -124,3 +124,8 @@ export {
   ActivityCard,
   CommunityLifeSection,
 } from "./community/CommunityLife";
+export {
+  NotificationInboxItem,
+  type NotificationInboxItemProps,
+  type NotificationInboxEmptyProps,
+} from "./notifications/NotificationInbox";

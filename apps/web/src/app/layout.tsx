@@ -7,6 +7,7 @@ import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
 import { CommunityInteractionProvider } from "@/providers/CommunityInteractionProvider";
 import { ReservationProvider } from "@/providers/ReservationProvider";
+import { NotificationProvider } from "@/providers/NotificationProvider";
 
 import "./globals.css";
 
@@ -47,7 +48,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ExperienceParticipationProvider>
             <CommunityInteractionProvider>
               <ReservationProvider>
-                <MediaLightboxProvider>{children}</MediaLightboxProvider>
+                <NotificationProvider>
+                  <MediaLightboxProvider>{children}</MediaLightboxProvider>
+                </NotificationProvider>
               </ReservationProvider>
             </CommunityInteractionProvider>
           </ExperienceParticipationProvider>

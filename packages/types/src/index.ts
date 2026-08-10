@@ -129,6 +129,24 @@ export {
   EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./platform/communication";
 
+/** Platform Core Notifications spine (ADR-019 / Phase 2.2). */
+export {
+  NOTIFICATION_STATUSES,
+  NOTIFICATION_CATEGORIES,
+  isNotificationStatus,
+  isNotificationCategory,
+  markNotificationRead,
+  markNotificationArchived,
+  isNotificationUnread,
+  NOTIFICATION_EVENT_TYPES,
+  NOTIFICATION_EVENT_CATEGORY,
+  isNotificationEventType,
+  categoryForNotificationEvent,
+  createEmptyNotificationInboxPort,
+  createNoopNotificationRecipientResolver,
+  createNoopNotificationDeliveryPort,
+} from "./platform/notifications";
+
 /** Platform Core Files & Media (ADR-020 / D.0.5c) — contracts only. */
 export {
   FILE_TYPES,

@@ -21,6 +21,7 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { BrandSplash } from "@/components/BrandSplash";
+import { useNotifications } from "@/providers/NotificationProvider";
 
 function IconHome() {
   return (
@@ -130,6 +131,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
     configuration,
     demoMember,
   } = useTenant();
+  const { unreadCount } = useNotifications();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [postOpen, setPostOpen] = useState(false);
@@ -331,7 +333,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"
-            notificationCount={0}
+            notificationCount={unreadCount}
             onNotifications={() => router.push("/notifications")}
             notificationsLabel="Notificaciones"
             profileImageUrl={demoMember.avatarUrl}
