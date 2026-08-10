@@ -21,6 +21,11 @@ export {
 } from "./work-adapter";
 
 export {
+  createMarketplaceConversationAdapter,
+  type MarketplaceConversationSnapshot,
+} from "./marketplace-adapter";
+
+export {
   createCommunityDiscussionConversationAdapter,
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   type CommunityDiscussionSnapshot,
@@ -47,10 +52,11 @@ import { createExperienceConversationAdapter } from "./experience-adapter";
 import { createGroupConversationAdapter } from "./group-adapter";
 import { createOfficialConversationAdapter } from "./official-adapter";
 import { createReservationConversationAdapter } from "./reservation-adapter";
+import { createMarketplaceConversationAdapter } from "./marketplace-adapter";
 import { createWorkConversationAdapter } from "./work-adapter";
 
 /**
- * Default registry with the six foundation adapters.
+ * Default registry with foundation adapters.
  * Callers may clone/register further adapters for new modules.
  */
 export function createDefaultConversationContextAdapterRegistry(): ConversationContextAdapterRegistry {
@@ -58,6 +64,7 @@ export function createDefaultConversationContextAdapterRegistry(): ConversationC
     createExperienceConversationAdapter(),
     createGroupConversationAdapter(),
     createWorkConversationAdapter(),
+    createMarketplaceConversationAdapter(),
     createCommunityDiscussionConversationAdapter(),
     createReservationConversationAdapter(),
     createOfficialConversationAdapter(),

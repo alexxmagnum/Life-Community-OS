@@ -4,7 +4,6 @@ import { useMemo } from "react";
 import {
   getMyHomeContext,
   getTerritoryAccessContext,
-  profileShortcuts,
   residencyDemoNarratives,
 } from "@life-community-os/tenant-life-panoramica";
 import type { DemoRole } from "@life-community-os/tenant-life-panoramica";
@@ -17,6 +16,8 @@ import {
 import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 const roles: { id: DemoRole; label: string }[] = [
   { id: "member", label: "Miembro" },
@@ -42,6 +43,14 @@ export function ProfileScreen() {
     demoPersonId,
     setDemoPersonId,
   } = useTenant();
+  const { joinedExperiences, savedExperiences } = useExperienceParticipation();
+  const { upcoming: upcomingReservations } = useReservations();
+
+  const upcomingExperienceCount = joinedExperiences.filter(
+    (e) => e.status !== "cancelled" && e.status !== "expired",
+  ).length;
+  const upcomingReservationCount = upcomingReservations.length;
+  const savedExperienceCount = savedExperiences.length;
 
   const home = useMemo(() => getMyHomeContext(demoPersonId), [demoPersonId]);
   const primary = home.primary;
@@ -209,7 +218,11 @@ export function ProfileScreen() {
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
             label="Experiencias"
-            hint={`${profileShortcuts.going} próximas`}
+            hint={
+              upcomingExperienceCount > 0
+                ? `${upcomingExperienceCount} próximas`
+                : "Tu agenda de experiencias"
+            }
             onClick={() => router.push("/calendar")}
           />
         ) : null}
@@ -230,14 +243,22 @@ export function ProfileScreen() {
         {isFeatureEnabled("resources") ? (
           <ExploreLink
             label="Mis reservas"
-            hint={`${profileShortcuts.reservations} activas`}
+            hint={
+              upcomingReservationCount > 0
+                ? `${upcomingReservationCount} activas`
+                : "Espacios que has reservado"
+            }
             onClick={() => router.push("/reservations")}
           />
         ) : null}
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
             label="Experiencias guardadas"
-            hint="Las que has marcado"
+            hint={
+              savedExperienceCount > 0
+                ? `${savedExperienceCount} guardadas`
+                : "Las que has marcado"
+            }
             onClick={() => router.push("/experiences?saved=1")}
           />
         ) : null}

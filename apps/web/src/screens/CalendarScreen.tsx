@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceDay,
@@ -12,7 +12,6 @@ import {
   CalendarEventCard,
   CalendarReservationCard,
   EmptyState,
-  FilterChipRow,
   FlowScreenHeader,
   MobileScreen,
 } from "@life-community-os/ui";
@@ -25,7 +24,6 @@ export function CalendarScreen() {
   const { isFeatureEnabled } = useTenant();
   const { joinedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
-  const [view, setView] = useState<"agenda" | "month">("agenda");
 
   const joinedAgenda = useMemo(() => {
     return joinedExperiences
@@ -92,72 +90,52 @@ export function CalendarScreen() {
         Reservas
       </button>
 
-      <FilterChipRow
-        items={[
-          { id: "agenda", label: "Lista" },
-          { id: "month", label: "Mes" },
-        ]}
-        activeId={view}
-        onChange={(id) => setView(id as "agenda" | "month")}
-      />
-
-      {view === "month" ? (
-        <div className="rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-elev-1)]">
-          <p className="text-[17px] font-semibold">Este mes</p>
-          <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-secondary)]">
-            Tus experiencias y reservas aparecen en la lista.
-          </p>
+      {allItems.length === 0 ? (
+        <EmptyState
+          title="Tu semana está libre"
+          description="Únete a una experiencia o reserva un espacio y aparecerá aquí."
+          actionLabel="Ver experiencias"
+          onAction={() => router.push("/experiences")}
+        />
+      ) : (
+        <div className="space-y-6">
+          {days.map((day) => (
+            <section key={day} className="space-y-3">
+              <h2 className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+                {day}
+              </h2>
+              <ul className="space-y-3">
+                {allItems
+                  .filter((i) => i.day === day)
+                  .map((item) => (
+                    <li key={`${item.kind}-${item.id}`}>
+                      {item.kind === "reservation" ? (
+                        <CalendarReservationCard
+                          time={item.time}
+                          title={item.title}
+                          place={item.place}
+                          statusLabel={item.status}
+                          imageUrl={item.imageUrl}
+                          onClick={() => router.push(item.href)}
+                        />
+                      ) : (
+                        <CalendarEventCard
+                          time={item.time}
+                          title={item.title}
+                          place={item.place}
+                          statusLabel={item.status}
+                          imageUrl={item.imageUrl}
+                          kind="experience"
+                          onClick={() => router.push(item.href)}
+                        />
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          ))}
         </div>
-      ) : null}
-
-      {view === "agenda" ? (
-        allItems.length === 0 ? (
-          <EmptyState
-            title="Tu semana está libre"
-            description="Únete a una experiencia o reserva un espacio y aparecerá aquí."
-            actionLabel="Ver experiencias"
-            onAction={() => router.push("/experiences")}
-          />
-        ) : (
-          <div className="space-y-6">
-            {days.map((day) => (
-              <section key={day} className="space-y-3">
-                <h2 className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-                  {day}
-                </h2>
-                <ul className="space-y-3">
-                  {allItems
-                    .filter((i) => i.day === day)
-                    .map((item) => (
-                      <li key={`${item.kind}-${item.id}`}>
-                        {item.kind === "reservation" ? (
-                          <CalendarReservationCard
-                            time={item.time}
-                            title={item.title}
-                            place={item.place}
-                            statusLabel={item.status}
-                            imageUrl={item.imageUrl}
-                            onClick={() => router.push(item.href)}
-                          />
-                        ) : (
-                          <CalendarEventCard
-                            time={item.time}
-                            title={item.title}
-                            place={item.place}
-                            statusLabel={item.status}
-                            imageUrl={item.imageUrl}
-                            kind="experience"
-                            onClick={() => router.push(item.href)}
-                          />
-                        )}
-                      </li>
-                    ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        )
-      ) : null}
+      )}
     </MobileScreen>
   );
 }

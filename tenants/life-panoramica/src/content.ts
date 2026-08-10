@@ -216,9 +216,10 @@ export const proposals = [
   },
 ];
 
+/** @deprecated Prefer live counts from participation/reservation providers. */
 export const profileShortcuts = {
-  going: 2,
-  reservations: 1,
-  requests: 1,
-  saves: 8,
+  going: 0,
+  reservations: 0,
+  requests: 0,
+  saves: 0,
 };

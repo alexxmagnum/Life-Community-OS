@@ -236,6 +236,7 @@ export function DiscoverScreen() {
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
+                    onClick={() => router.push(`/near/place/${place.id}`)}
                   />
                 ))}
               </LocalLifeRail>

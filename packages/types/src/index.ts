@@ -107,6 +107,7 @@ export {
   experienceContextMatches,
   createGroupConversationAdapter,
   createWorkConversationAdapter,
+  createMarketplaceConversationAdapter,
   createCommunityDiscussionConversationAdapter,
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   createReservationConversationAdapter,
