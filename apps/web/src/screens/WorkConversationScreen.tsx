@@ -11,6 +11,7 @@ import {
   toggleWorkMessageReaction,
   WORK_QUICK_ACTION_LABELS,
   type WorkMessageView,
+  type WorkPostListing,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   createWorkConversationAdapter,
@@ -20,10 +21,15 @@ import {
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  Avatar,
+  ContextHeader,
+  ConversationShell,
   EmptyState,
   FlowScreenHeader,
+  MessageComposer,
+  MessageList,
   MobileScreen,
+  ReactionPicker,
+  type MessageListItem,
 } from "@life-community-os/ui";
 import {
   canOpenWorkConversation,
@@ -32,8 +38,8 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Contextual Work / service Conversation — not a global chat inbox.
- * "The conversation lives where life happens."
+ * Contextual Work / service Conversation — Shared Product shell (Phase 2.6).
+ * Not a global chat inbox. Domain logic unchanged.
  */
 export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
   const router = useRouter();
@@ -48,10 +54,10 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
   const [draft, setDraft] = useState("");
   const [ready, setReady] = useState(false);
   const [allowed, setAllowed] = useState(false);
-  const [title, setTitle] = useState("Conversación del anuncio");
-  const [postTitle, setPostTitle] = useState("");
+  const [workPost, setWorkPost] = useState<WorkPostListing | null>(null);
+  const [peerName, setPeerName] = useState("Vecino");
+  const [peerAvatarUrl, setPeerAvatarUrl] = useState<string | undefined>();
   const [categoryLabel, setCategoryLabel] = useState("");
-  const [participantLabel, setParticipantLabel] = useState("");
 
   const moduleOn =
     isModuleEnabled("services") &&
@@ -61,6 +67,7 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
     if (!moduleOn || !hasCapability(CAPABILITIES.localView)) {
       setAllowed(false);
       setMessages([]);
+      setWorkPost(null);
       setReady(true);
       return;
     }
@@ -69,6 +76,7 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
     if (!bundle) {
       setAllowed(false);
       setMessages([]);
+      setWorkPost(null);
       setReady(true);
       return;
     }
@@ -93,27 +101,24 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
     });
     setAllowed(open && view);
     setMessages(bundle.messages);
-    setTitle(bundle.conversation.title ?? "Conversación del anuncio");
-    setPostTitle(bundle.workPost.title);
+    setWorkPost(bundle.workPost);
     setCategoryLabel(bundle.workPost.categoryLabel);
 
+    const iAmAuthor =
+      bundle.workPost.createdByPersonId === demoMember.personId;
+    if (iAmAuthor) {
+      const other = bundle.messages.find(
+        (m) => m.authorPersonId !== demoMember.personId,
+      );
+      setPeerName(other?.author.displayName ?? "Interesado");
+      setPeerAvatarUrl(other?.author.avatarUrl);
+    } else {
+      setPeerName(bundle.workPost.authorName);
+      setPeerAvatarUrl(bundle.workPost.authorAvatarUrl);
+    }
+
     const adapter = createWorkConversationAdapter();
-    const participants = adapter.listParticipants(
-      bundle.conversation.context,
-      snapshot,
-    );
-    const names = participants.map((p) => {
-      if (p.personId === demoMember.personId) return "Tú";
-      if (p.personId === bundle.workPost.createdByPersonId) {
-        return bundle.workPost.authorName;
-      }
-      return "Vecino";
-    });
-    setParticipantLabel(
-      names.length > 0
-        ? names.join(" · ")
-        : `${Math.max(participants.length, 1)} personas`,
-    );
+    adapter.listParticipants(bundle.conversation.context, snapshot);
     setReady(true);
   }, [
     configuration,
@@ -202,127 +207,92 @@ export function WorkConversationScreen({ workPostId }: { workPostId: string }) {
     refresh();
   };
 
-  return (
-    <MobileScreen>
-      <FlowScreenHeader
-        title={title}
-        subtitle={postTitle || "Anuncio"}
-        onBack={() => router.push(`/services/work/${workPostId}`)}
-        onExit={() => router.push("/services")}
+  const listItems: MessageListItem[] = messages.map((message) => ({
+    id: message.id,
+    authorPersonId: message.authorPersonId,
+    author: {
+      personId: message.author.personId,
+      displayName: message.author.displayName,
+      avatarUrl: message.author.avatarUrl,
+    },
+    body: message.body,
+    createdAt: message.createdAt,
+    badge: message.quickActionKind ? (
+      <span className="rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
+        {WORK_QUICK_ACTION_LABELS[message.quickActionKind]}
+      </span>
+    ) : undefined,
+    reactions: (
+      <ReactionPicker
+        options={DEMO_WORK_CONVERSATION_REACTIONS.map((reaction) => ({
+          id: reaction,
+          glyph: REACTION_TYPE_GLYPH[reaction],
+          count: message.reactionSummary?.[reaction] ?? 0,
+        }))}
+        onSelect={(id) => onReaction(message.id, id as ReactionType)}
       />
+    ),
+  }));
 
-      <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {categoryLabel ? (
-            <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
-              {categoryLabel}
-            </span>
-          ) : null}
-          <span className="text-[15px] text-[var(--color-text-tertiary)]">
-            {participantLabel}
-          </span>
-        </div>
-      </header>
-
-      <ul className="mt-2 space-y-4" aria-live="polite">
-        {messages.map((message) => {
-          const mine = message.authorPersonId === demoMember.personId;
-          return (
-            <li key={message.id} className="flex gap-3">
-              <Avatar
-                src={message.author.avatarUrl}
-                alt={message.author.displayName}
-                size="md"
-                className="mt-0.5"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {mine ? "Tú" : message.author.displayName}
-                  </span>
-                  {message.quickActionKind ? (
-                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-text-secondary)]">
-                      {WORK_QUICK_ACTION_LABELS[message.quickActionKind]}
-                    </span>
-                  ) : null}
-                </div>
-                {message.body ? (
-                  <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
-                    {message.body}
-                  </p>
-                ) : null}
-                <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-                  {DEMO_WORK_CONVERSATION_REACTIONS.map((reaction) => {
-                    const count = message.reactionSummary?.[reaction] ?? 0;
-                    if (count <= 0) {
-                      return (
-                        <button
-                          key={reaction}
-                          type="button"
-                          onClick={() => onReaction(message.id, reaction)}
-                          className="min-h-[28px] text-[12px] font-medium text-[var(--color-text-tertiary)]"
-                          aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
-                        >
-                          {REACTION_TYPE_GLYPH[reaction]}
-                        </button>
-                      );
-                    }
-                    return (
-                      <button
-                        key={reaction}
-                        type="button"
-                        onClick={() => onReaction(message.id, reaction)}
-                        className="min-h-[28px] text-[12px] font-semibold text-[var(--color-action-primary)]"
-                        aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
-                      >
-                        {REACTION_TYPE_GLYPH[reaction]} {count}
-                      </button>
-                    );
-                  })}
+  return (
+    <MobileScreen dense>
+      <ConversationShell
+        header={
+          <>
+            <FlowScreenHeader
+              title="Conversación"
+              subtitle="Sobre este servicio"
+              onBack={() => router.push(`/services/work/${workPostId}`)}
+              onExit={() => router.push("/services")}
+            />
+            <ContextHeader
+              name={peerName}
+              avatarUrl={peerAvatarUrl}
+              reason="Conversación sobre servicio"
+              context={{
+                title: workPost?.title ?? "Anuncio",
+                subtitle: categoryLabel || undefined,
+                statusLabel: categoryLabel || undefined,
+                onClick: () => router.push(`/services/work/${workPostId}`),
+              }}
+            />
+          </>
+        }
+        footer={
+          <MessageComposer
+            value={draft}
+            onChange={setDraft}
+            onSend={sendDraft}
+            placeholder="Escribe sobre este anuncio…"
+            quickActions={
+              <div className="space-y-2">
+                <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+                  Respuestas rápidas
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_ACTION_KINDS.map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => onQuickAction(kind)}
+                      className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
+                    >
+                      {WORK_QUICK_ACTION_LABELS[kind]}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      <section className="mt-6 space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
-        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-          Respuestas rápidas
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACTION_KINDS.map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => onQuickAction(kind)}
-              className="min-h-[44px] rounded-full bg-[var(--color-surface-elevated)] px-3.5 text-[14px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-            >
-              {WORK_QUICK_ACTION_LABELS[kind]}
-            </button>
-          ))}
-        </div>
-
-        <label className="block space-y-1.5">
-          <span className="sr-only">Escribe un mensaje</span>
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={2}
-            placeholder="Escribe sobre este anuncio…"
-            className="min-h-[88px] w-full resize-none rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 py-3 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
-            maxLength={500}
+            }
           />
-        </label>
-        <button
-          type="button"
-          onClick={sendDraft}
-          disabled={!draft.trim()}
-          className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)] disabled:opacity-45"
-        >
-          Enviar
-        </button>
-      </section>
+        }
+      >
+        <MessageList
+          messages={listItems}
+          viewerPersonId={demoMember.personId}
+          emptyTitle="Todavía no hay mensajes"
+          emptyDescription="Escribe para coordinar detalles sobre este servicio."
+        />
+      </ConversationShell>
     </MobileScreen>
   );
 }

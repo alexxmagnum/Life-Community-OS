@@ -20,10 +20,15 @@ import {
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  Avatar,
+  ContextHeader,
+  ConversationShell,
   EmptyState,
   FlowScreenHeader,
+  MessageComposer,
+  MessageList,
   MobileScreen,
+  ReactionPicker,
+  type MessageListItem,
 } from "@life-community-os/ui";
 import {
   canOpenGroupConversation,
@@ -32,8 +37,10 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Contextual Group Conversation — long-lived, membership-scoped.
- * Not a global chat inbox.
+ * Membership-scoped Group Conversation — Shared Product shell (Phase 2.6).
+ *
+ * Classification (A): private group conversation for members.
+ * Not a WhatsApp clone. Not public plaza posts. Membership ≠ messages.
  */
 export function GroupConversationScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
@@ -48,8 +55,8 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
   const [draft, setDraft] = useState("");
   const [ready, setReady] = useState(false);
   const [allowed, setAllowed] = useState(false);
-  const [title, setTitle] = useState("Conversación del grupo");
   const [groupName, setGroupName] = useState("");
+  const [groupImageUrl, setGroupImageUrl] = useState<string | undefined>();
   const [memberCount, setMemberCount] = useState(0);
   const [categoryLabel, setCategoryLabel] = useState("");
   const [archived, setArchived] = useState(false);
@@ -88,8 +95,8 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
     });
     setAllowed(open && view);
     setMessages(bundle.messages);
-    setTitle(bundle.conversation.title ?? bundle.group.name);
     setGroupName(bundle.group.name);
+    setGroupImageUrl(bundle.group.imageUrl);
     setMemberCount(bundle.group.memberCount);
     setCategoryLabel(bundle.group.categoryLabel);
     setArchived(
@@ -186,130 +193,101 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
     refresh();
   };
 
-  return (
-    <MobileScreen>
-      <FlowScreenHeader
-        title={title}
-        subtitle={groupName || "Grupo"}
-        onBack={() => router.push(`/community/groups/${groupId}`)}
-        onExit={() => router.push("/")}
+  const listItems: MessageListItem[] = messages.map((message) => ({
+    id: message.id,
+    authorPersonId: message.authorPersonId,
+    author: {
+      personId: message.author.personId,
+      displayName: message.author.displayName,
+      avatarUrl: message.author.avatarUrl,
+    },
+    body: message.body,
+    createdAt: message.createdAt,
+    badge: message.quickActionKind ? (
+      <span className="rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
+        {GROUP_QUICK_ACTION_LABELS[message.quickActionKind]}
+      </span>
+    ) : undefined,
+    reactions: (
+      <ReactionPicker
+        options={DEMO_GROUP_CONVERSATION_REACTIONS.map((reaction) => ({
+          id: reaction,
+          glyph: REACTION_TYPE_GLYPH[reaction],
+          count: message.reactionSummary?.[reaction] ?? 0,
+        }))}
+        onSelect={(id) => onReaction(message.id, id as ReactionType)}
       />
+    ),
+  }));
 
-      <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          {categoryLabel ? (
-            <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
-              {categoryLabel}
-            </span>
-          ) : null}
-          <span className="text-[15px] text-[var(--color-text-tertiary)]">
-            {memberCount} miembros
-          </span>
-          {archived ? (
-            <span className="rounded-full bg-[var(--color-surface-elevated)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-text-secondary)]">
-              Archivado
-            </span>
-          ) : null}
-        </div>
-      </header>
-
-      <ul className="mt-2 space-y-4" aria-live="polite">
-        {messages.map((message) => {
-          const mine = message.authorPersonId === demoMember.personId;
-          return (
-            <li key={message.id} className="flex gap-3">
-              <Avatar
-                src={message.author.avatarUrl}
-                alt={message.author.displayName}
-                size="md"
-                className="mt-0.5"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {mine ? "Tú" : message.author.displayName}
-                  </span>
-                  {message.quickActionKind ? (
-                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-text-secondary)]">
-                      {GROUP_QUICK_ACTION_LABELS[message.quickActionKind]}
-                    </span>
-                  ) : null}
-                </div>
-                {message.body ? (
-                  <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
-                    {message.body}
-                  </p>
-                ) : null}
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {DEMO_GROUP_CONVERSATION_REACTIONS.map((reaction) => {
-                    const count = message.reactionSummary?.[reaction] ?? 0;
-                    return (
-                      <button
-                        key={reaction}
-                        type="button"
-                        onClick={() => onReaction(message.id, reaction)}
-                        className={
-                          count > 0
-                            ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
-                            : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[15px] text-[var(--color-text-tertiary)]"
-                        }
-                        aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
-                      >
-                        <span aria-hidden>{REACTION_TYPE_GLYPH[reaction]}</span>
-                        {count > 0 ? <span>{count}</span> : null}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {!archived ? (
-        <section className="mt-6 space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
-          <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Respuestas rápidas
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_ACTION_KINDS.map((kind) => (
-              <button
-                key={kind}
-                type="button"
-                onClick={() => onQuickAction(kind)}
-                className="min-h-[44px] rounded-full bg-[var(--color-surface-elevated)] px-3.5 text-[14px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-              >
-                {GROUP_QUICK_ACTION_LABELS[kind]}
-              </button>
-            ))}
-          </div>
-
-          <label className="block space-y-1.5">
-            <span className="sr-only">Escribe un mensaje</span>
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={2}
-              placeholder="Escribe al grupo…"
-              className="min-h-[88px] w-full resize-none rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 py-3 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
-              maxLength={500}
+  return (
+    <MobileScreen dense>
+      <ConversationShell
+        header={
+          <>
+            <FlowScreenHeader
+              title="Conversación"
+              subtitle="Grupo de miembros"
+              onBack={() => router.push(`/community/groups/${groupId}`)}
+              onExit={() => router.push("/")}
             />
-          </label>
-          <button
-            type="button"
-            onClick={sendDraft}
-            disabled={!draft.trim()}
-            className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)] disabled:opacity-45"
-          >
-            Enviar
-          </button>
-        </section>
-      ) : (
-        <p className="mt-6 text-[14px] text-[var(--color-text-tertiary)]">
-          Este grupo está archivado. La conversación queda en solo lectura.
-        </p>
-      )}
+            <ContextHeader
+              name={groupName || "Grupo"}
+              avatarUrl={groupImageUrl}
+              reason="Conversación del grupo"
+              context={{
+                title: groupName || "Grupo",
+                subtitle: `${memberCount} miembros`,
+                imageUrl: groupImageUrl,
+                statusLabel: archived
+                  ? "Archivado"
+                  : categoryLabel || undefined,
+                onClick: () => router.push(`/community/groups/${groupId}`),
+              }}
+            />
+          </>
+        }
+        footer={
+          archived ? (
+            <p className="px-1 text-[14px] text-[var(--color-text-tertiary)]">
+              Este grupo está archivado. La conversación queda en solo lectura.
+            </p>
+          ) : (
+            <MessageComposer
+              value={draft}
+              onChange={setDraft}
+              onSend={sendDraft}
+              placeholder="Escribe al grupo…"
+              quickActions={
+                <div className="space-y-2">
+                  <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+                    Respuestas rápidas
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {QUICK_ACTION_KINDS.map((kind) => (
+                      <button
+                        key={kind}
+                        type="button"
+                        onClick={() => onQuickAction(kind)}
+                        className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
+                      >
+                        {GROUP_QUICK_ACTION_LABELS[kind]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              }
+            />
+          )
+        }
+      >
+        <MessageList
+          messages={listItems}
+          viewerPersonId={demoMember.personId}
+          emptyTitle="Todavía no hay mensajes"
+          emptyDescription="Sé el primero en escribir a los miembros de este grupo."
+        />
+      </ConversationShell>
     </MobileScreen>
   );
 }

@@ -19,17 +19,22 @@ import {
   type ReactionType,
 } from "@life-community-os/types";
 import {
-  Avatar,
+  ContextHeader,
+  ConversationShell,
   EmptyState,
   FlowScreenHeader,
+  MessageComposer,
+  MessageList,
   MobileScreen,
+  ReactionPicker,
+  type MessageListItem,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Contextual Experience Conversation — not a global chat inbox.
- * "People preparing something together."
+ * Contextual Experience Conversation — Shared Product shell (Phase 2.6).
+ * Participation (join/save/attendance) stays on the experience detail — not here.
  */
 export function ExperienceConversationScreen({
   experienceId,
@@ -48,8 +53,14 @@ export function ExperienceConversationScreen({
   const [draft, setDraft] = useState("");
   const [ready, setReady] = useState(false);
   const [allowed, setAllowed] = useState(false);
-  const [title, setTitle] = useState("Conversación del evento");
   const [experienceTitle, setExperienceTitle] = useState("");
+  const [experienceImageUrl, setExperienceImageUrl] = useState<
+    string | undefined
+  >();
+  const [organizerName, setOrganizerName] = useState("Organizador");
+  const [organizerAvatarUrl, setOrganizerAvatarUrl] = useState<
+    string | undefined
+  >();
   const [participantCount, setParticipantCount] = useState(0);
 
   const moduleOn =
@@ -79,8 +90,10 @@ export function ExperienceConversationScreen({
     });
     setAllowed(open);
     setMessages(bundle.messages);
-    setTitle(bundle.conversation.title ?? "Conversación del evento");
     setExperienceTitle(bundle.experience.title);
+    setExperienceImageUrl(bundle.experience.imageUrl);
+    setOrganizerName(bundle.experience.organizer?.name ?? "Organizador");
+    setOrganizerAvatarUrl(bundle.experience.organizer?.avatarUrl);
     const adapter = createExperienceConversationAdapter();
     const participants = adapter.listParticipants(
       bundle.conversation.context,
@@ -172,117 +185,93 @@ export function ExperienceConversationScreen({
     refresh();
   };
 
-  return (
-    <MobileScreen>
-      <FlowScreenHeader
-        title={title}
-        subtitle={experienceTitle || "Actividad"}
-        onBack={() => router.push(`/experiences/${experienceId}`)}
-        onExit={() => router.push("/")}
+  const listItems: MessageListItem[] = messages.map((message) => ({
+    id: message.id,
+    authorPersonId: message.authorPersonId,
+    author: {
+      personId: message.author.personId,
+      displayName: message.author.displayName,
+      avatarUrl: message.author.avatarUrl,
+    },
+    body: message.body,
+    createdAt: message.createdAt,
+    badge: message.quickActionKind ? (
+      <span className="rounded-full bg-black/10 px-2 py-0.5 text-[12px] font-semibold">
+        {QUICK_ACTION_LABELS[message.quickActionKind]}
+      </span>
+    ) : undefined,
+    reactions: (
+      <ReactionPicker
+        options={DEMO_CONVERSATION_REACTIONS.map((reaction) => ({
+          id: reaction,
+          glyph: REACTION_TYPE_GLYPH[reaction],
+          count: message.reactionSummary?.[reaction] ?? 0,
+        }))}
+        onSelect={(id) => onReaction(message.id, id as ReactionType)}
       />
+    ),
+  }));
 
-      <header className="space-y-2 border-b border-[var(--color-border-subtle)] pb-4">
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-1 text-[14px] font-semibold text-[var(--color-action-primary)]">
-            Experiencia
-          </span>
-          <span className="text-[15px] text-[var(--color-text-tertiary)]">
-            {participantCount} personas preparándose
-          </span>
-        </div>
-      </header>
-
-      <ul className="mt-2 space-y-4" aria-live="polite">
-        {messages.map((message) => {
-          const mine = message.authorPersonId === demoMember.personId;
-          return (
-            <li key={message.id} className="flex gap-3">
-              <Avatar
-                src={message.author.avatarUrl}
-                alt={message.author.displayName}
-                size="md"
-                className="mt-0.5"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {mine ? "Tú" : message.author.displayName}
-                  </span>
-                  {message.quickActionKind ? (
-                    <span className="rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-[15px] font-semibold text-[var(--color-text-secondary)]">
-                      {QUICK_ACTION_LABELS[message.quickActionKind]}
-                    </span>
-                  ) : null}
-                </div>
-                {message.body ? (
-                  <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-secondary)]">
-                    {message.body}
-                  </p>
-                ) : null}
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {DEMO_CONVERSATION_REACTIONS.map((reaction) => {
-                    const count = message.reactionSummary?.[reaction] ?? 0;
-                    return (
-                      <button
-                        key={reaction}
-                        type="button"
-                        onClick={() => onReaction(message.id, reaction)}
-                        className={
-                          count > 0
-                            ? "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 text-[15px] font-semibold text-[var(--color-action-primary)]"
-                            : "inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[var(--color-surface-elevated)] px-2.5 text-[15px] text-[var(--color-text-tertiary)]"
-                        }
-                        aria-label={`Reacción ${REACTION_TYPE_GLYPH[reaction]}`}
-                      >
-                        <span aria-hidden>{REACTION_TYPE_GLYPH[reaction]}</span>
-                        {count > 0 ? <span>{count}</span> : null}
-                      </button>
-                    );
-                  })}
+  return (
+    <MobileScreen dense>
+      <ConversationShell
+        header={
+          <>
+            <FlowScreenHeader
+              title="Conversación"
+              subtitle="Sobre esta experiencia"
+              onBack={() => router.push(`/experiences/${experienceId}`)}
+              onExit={() => router.push("/")}
+            />
+            <ContextHeader
+              name={organizerName}
+              avatarUrl={organizerAvatarUrl}
+              reason="Conversación sobre experiencia"
+              context={{
+                title: experienceTitle || "Actividad",
+                subtitle: `${participantCount} personas preparándose`,
+                imageUrl: experienceImageUrl,
+                statusLabel: "Experiencia",
+                onClick: () => router.push(`/experiences/${experienceId}`),
+              }}
+            />
+          </>
+        }
+        footer={
+          <MessageComposer
+            value={draft}
+            onChange={setDraft}
+            onSend={sendDraft}
+            placeholder="Escribe a tus vecinos…"
+            quickActions={
+              <div className="space-y-2">
+                <p className="text-[12px] font-semibold text-[var(--color-text-tertiary)]">
+                  Respuestas rápidas
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_ACTION_KINDS.map((kind) => (
+                    <button
+                      key={kind}
+                      type="button"
+                      onClick={() => onQuickAction(kind)}
+                      className="min-h-[40px] rounded-full bg-[var(--color-surface-elevated)] px-3 text-[13px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
+                    >
+                      {QUICK_ACTION_LABELS[kind]}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      <section className="mt-6 space-y-3 border-t border-[var(--color-border-subtle)] pt-4">
-        <p className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-          Respuestas rápidas
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACTION_KINDS.map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => onQuickAction(kind)}
-              className="min-h-[44px] rounded-full bg-[var(--color-surface-elevated)] px-3.5 text-[14px] font-semibold text-[var(--color-text-primary)] shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.98]"
-            >
-              {QUICK_ACTION_LABELS[kind]}
-            </button>
-          ))}
-        </div>
-
-        <label className="block space-y-1.5">
-          <span className="sr-only">Escribe un mensaje</span>
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={2}
-            placeholder="Escribe a tus vecinos…"
-            className="min-h-[88px] w-full resize-none rounded-[14px] border border-[var(--color-border-subtle)] bg-white px-3.5 py-3 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]"
-            maxLength={500}
+            }
           />
-        </label>
-        <button
-          type="button"
-          onClick={sendDraft}
-          disabled={!draft.trim()}
-          className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)] disabled:opacity-45"
-        >
-          Enviar
-        </button>
-      </section>
+        }
+      >
+        <MessageList
+          messages={listItems}
+          viewerPersonId={demoMember.personId}
+          emptyTitle="Todavía no hay mensajes"
+          emptyDescription="Coordina detalles con quien se prepara para esta experiencia."
+        />
+      </ConversationShell>
     </MobileScreen>
   );
 }
