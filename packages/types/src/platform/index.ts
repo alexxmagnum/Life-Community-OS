@@ -143,6 +143,38 @@ export {
   EPHEMERAL_MEDIA_TTL_PRESETS,
 } from "./communication";
 
+/** Participation foundations — Reaction ≠ Support ≠ Vote (Phase 2.5). */
+export type {
+  SoftReactionKind,
+  SoftReactionSummary,
+  SupportVisibility,
+  SupportRecord,
+  SupportAggregate,
+  SupportIssue,
+  SupportIssueCode,
+  VoteStatus,
+  VoteOption,
+  VoteEligibility,
+  VoteDefinition,
+  VoteResultTally,
+  VoteResults,
+  VoteIssue,
+  VoteIssueCode,
+} from "./participation";
+export {
+  SOFT_REACTION_KINDS,
+  isSoftReactionKind,
+  emptySoftReactionSummary,
+  PARTICIPATION_SEPARATION_NOTE,
+  SUPPORT_VISIBILITY_MODES,
+  isSupportVisibility,
+  validateSupportRecord,
+  VOTE_STATUSES,
+  isVoteStatus,
+  validateVoteDefinition,
+  VOTE_FOUNDATION_NOTE,
+} from "./participation";
+
 /** Platform Core Notifications spine (ADR-019 / Phase 2.2). */
 export type {
   NotificationStatus,
