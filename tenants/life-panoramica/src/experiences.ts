@@ -280,7 +280,7 @@ function buildExperienceCatalog(nowMs: number): Experience[] {
       description:
         "Café, presentaciones y un comienzo tranquilo del día en Zona norte. Pasa — sin agenda, solo comunidad.",
       imageUrl:
-        "https://images.unsplash.com/photo-1511632765481-a929fcf8e8f4?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1400&q=80",
       startsAt: startCoffee,
       endsAt: endOf(startCoffee, 1.5),
       location: "Terraza comunitaria",

@@ -49,8 +49,14 @@ export type TerritoryHeroProps = {
   className?: string;
   /** Time-of-day greeting with member name — belonging overlay */
   greeting?: string;
+  /** One emotional line under the greeting ("Panorámica está viva hoy"). */
+  tagline?: string;
   areaLabel?: string;
+  /** Living context next to the area ("3 planes cerca"). */
+  contextLabel?: string;
   weatherLabel?: string;
+  /** Belonging hero as a full window into the place instead of a thin band. */
+  tall?: boolean;
   /** Accessible name for the place image */
   imageAlt?: string;
   /**
@@ -65,15 +71,20 @@ export function TerritoryHero({
   variant = "belonging",
   className,
   greeting,
+  tagline,
   areaLabel,
+  contextLabel,
   weatherLabel,
   imageAlt = "",
+  tall = false,
   searchSlot,
 }: TerritoryHeroProps) {
   const isBand = variant === "band";
   const isBelonging = variant === "belonging";
-  const showBelongingCopy = Boolean(greeting || areaLabel);
+  const isTall = isBelonging && tall;
+  const showBelongingCopy = Boolean(greeting || areaLabel || tagline);
   const weatherText = weatherLabel ? cleanWeatherLabel(weatherLabel) : "";
+  const metaLine = [areaLabel, contextLabel].filter(Boolean).join(" · ");
 
   return (
     <section className={cn("relative", className)}>
@@ -87,7 +98,11 @@ export function TerritoryHero({
           "relative overflow-hidden bg-[var(--color-surface-muted)]",
           isBand && "h-[72px] rounded-[16px] sm:h-[80px]",
           variant === "stage" && "h-[min(42vh,340px)] rounded-[26px]",
+          /* Landscape crop — territory photography is horizontal by nature. */
+          isTall &&
+            "aspect-[4/3] max-h-[320px] rounded-[26px] shadow-[0_14px_36px_rgba(26,31,28,0.18)] sm:max-h-[360px]",
           isBelonging &&
+            !isTall &&
             "aspect-[2.35/1] max-h-[200px] rounded-[12px] shadow-[0_8px_28px_rgba(26,31,28,0.12)] sm:max-h-[220px]",
         )}
       >
@@ -104,9 +119,11 @@ export function TerritoryHero({
           style={{
             background: isBand
               ? "linear-gradient(90deg, rgba(20,28,24,0.55) 0%, rgba(20,28,24,0.15) 55%, transparent 100%)"
-              : isBelonging
-                ? "linear-gradient(180deg, rgba(20,28,24,0.28) 0%, rgba(20,28,24,0.06) 36%, rgba(20,28,24,0.58) 100%)"
-                : "linear-gradient(180deg, rgba(20,28,24,0.04) 0%, transparent 45%, rgba(20,28,24,0.58) 100%)",
+              : isTall
+                ? "linear-gradient(180deg, rgba(20,28,24,0.30) 0%, rgba(20,28,24,0.02) 32%, rgba(20,28,24,0.72) 100%)"
+                : isBelonging
+                  ? "linear-gradient(180deg, rgba(20,28,24,0.28) 0%, rgba(20,28,24,0.06) 36%, rgba(20,28,24,0.58) 100%)"
+                  : "linear-gradient(180deg, rgba(20,28,24,0.04) 0%, transparent 45%, rgba(20,28,24,0.58) 100%)",
           }}
         />
 
@@ -118,19 +135,44 @@ export function TerritoryHero({
         ) : null}
 
         {isBelonging && showBelongingCopy ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-2.5 pt-14 sm:px-5 sm:pb-3">
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 pt-14",
+              isTall ? "px-5 pb-5 sm:px-6 sm:pb-6" : "px-4 pb-2.5 sm:px-5 sm:pb-3",
+            )}
+          >
             {greeting ? (
               <p
-                className="font-sans text-[22px] font-semibold leading-[1.2] tracking-tight text-white sm:text-[26px]"
+                className={cn(
+                  "font-sans font-semibold leading-[1.2] tracking-tight text-white",
+                  isTall ? "text-[26px] sm:text-[30px]" : "text-[22px] sm:text-[26px]",
+                )}
                 style={{ textShadow: "0 1px 14px rgba(20,28,24,0.32)" }}
                 suppressHydrationWarning
               >
                 {greeting}
               </p>
             ) : null}
-            {areaLabel ? (
-              <p className="mt-1 text-[15px] font-medium tracking-wide text-white/75 sm:text-[14px]">
-                {areaLabel}
+            {tagline ? (
+              <p
+                className={cn(
+                  "mt-1 font-[family-name:var(--font-display)] italic leading-[1.25] text-white/90",
+                  isTall ? "text-[19px] sm:text-[21px]" : "text-[17px]",
+                )}
+                style={{ textShadow: "0 1px 12px rgba(20,28,24,0.34)" }}
+              >
+                {tagline}
+              </p>
+            ) : null}
+            {metaLine ? (
+              <p
+                className={cn(
+                  "font-medium tracking-wide text-white/75",
+                  isTall ? "mt-2.5 text-[15px]" : "mt-1 text-[15px] sm:text-[14px]",
+                )}
+                suppressHydrationWarning
+              >
+                {metaLine}
               </p>
             ) : null}
           </div>
@@ -174,7 +216,11 @@ export function QuickActionBar({ items, className }: QuickActionBarProps) {
     <div
       className={cn(
         "grid gap-2",
-        visible.length >= 4 ? "grid-cols-4" : "grid-cols-3",
+        visible.length >= 4
+          ? "grid-cols-4"
+          : visible.length === 2
+            ? "grid-cols-2"
+            : "grid-cols-3",
         className,
       )}
     >

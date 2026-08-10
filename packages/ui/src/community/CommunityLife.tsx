@@ -166,24 +166,25 @@ export function LocalPlaceCard({
               "linear-gradient(transparent 40%, rgba(20,28,24,0.72))",
           }}
         >
-          <span className="text-[14px] font-semibold text-[var(--color-text-inverse)]/80">
+          {/* Overlay text uses literal white: Tailwind cannot fade a CSS var. */}
+          <span className="text-[14px] font-semibold text-white/80">
             {categoryLabel}
             {verified ? " · Verificado" : ""}
           </span>
-          <span className="mt-1 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-[var(--color-text-inverse)]">
+          <span className="mt-1 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-6 text-white">
             {name}
           </span>
-          <span className="mt-1 text-[15px] text-[var(--color-text-inverse)]/85">
+          <span className="mt-1 text-[15px] text-white/85">
             {areaLabel}
             {recommendedBy ? ` · Recomendado por ${recommendedBy}` : ""}
           </span>
           {blurb ? (
-            <span className="mt-2 line-clamp-2 text-[15px] leading-5 text-[var(--color-text-inverse)]/75">
+            <span className="mt-2 line-clamp-2 text-[15px] leading-5 text-white/75">
               {blurb}
             </span>
           ) : null}
           {trustNote ? (
-            <span className="mt-2 text-[14px] font-medium text-[var(--color-text-inverse)]/90">
+            <span className="mt-2 text-[14px] font-medium text-white/90">
               {trustNote}
             </span>
           ) : null}
@@ -266,15 +267,28 @@ export function NeighbourTipCard({
   );
 }
 
+export type ActivityCardPerson = {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+};
+
 export type ActivityCardProps = {
   title: string;
   when: string;
   where: string;
   peopleLabel?: string;
+  /** Real neighbours already in — shown as a stack next to the people label. */
+  people?: ReadonlyArray<ActivityCardPerson>;
   imageUrl: string;
+  /** Quiet label over the photo (activity family, area). */
+  badgeLabel?: string;
   ctaLabel?: string;
+  /** Quiet companion action next to the primary CTA (e.g. "Ver plan"). */
+  secondaryCtaLabel?: string;
   onClick?: () => void;
   onCta?: () => void;
+  onSecondaryCta?: () => void;
   className?: string;
 };
 
@@ -283,12 +297,17 @@ export function ActivityCard({
   when,
   where,
   peopleLabel,
+  people,
   imageUrl,
+  badgeLabel,
   ctaLabel = "Apuntarme",
+  secondaryCtaLabel,
   onClick,
   onCta,
+  onSecondaryCta,
   className,
 }: ActivityCardProps) {
+  const stack = (people ?? []).filter((person) => person.avatarUrl).slice(0, 4);
   return (
     <article
       className={cn(
@@ -297,8 +316,13 @@ export function ActivityCard({
       )}
     >
       <button type="button" className="block w-full text-left" onClick={onClick}>
-        <div className="aspect-[16/10] bg-[var(--color-surface-muted)]">
+        <div className="relative aspect-[16/10] bg-[var(--color-surface-muted)]">
           <ZoomableImage src={imageUrl} alt="" wrapperClassName="h-full w-full" />
+          {badgeLabel ? (
+            <span className="pointer-events-none absolute left-3 top-3 rounded-full bg-black/30 px-2.5 py-1 text-[13px] font-semibold text-white backdrop-blur-[2px]">
+              {badgeLabel}
+            </span>
+          ) : null}
         </div>
         <div className="p-4">
           <h3 className="font-[family-name:var(--font-display)] text-[20px] font-semibold leading-6 text-[var(--color-text-primary)]">
@@ -307,22 +331,48 @@ export function ActivityCard({
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
             {when} · {where}
           </p>
-          {peopleLabel ? (
-            <p className="mt-1 text-[15px] text-[var(--color-text-tertiary)]">
-              {peopleLabel}
-            </p>
+          {stack.length > 0 || peopleLabel ? (
+            <span className="mt-2 flex items-center gap-2">
+              {stack.length > 0 ? (
+                <span className="flex shrink-0 items-center" aria-hidden>
+                  {stack.map((person, index) => (
+                    <img
+                      key={person.id}
+                      src={person.avatarUrl}
+                      alt=""
+                      className="h-7 w-7 rounded-full border-2 border-[var(--color-surface-elevated)] object-cover"
+                      style={index > 0 ? { marginLeft: -10 } : undefined}
+                    />
+                  ))}
+                </span>
+              ) : null}
+              {peopleLabel ? (
+                <span className="min-w-0 truncate text-[15px] text-[var(--color-text-tertiary)]">
+                  {peopleLabel}
+                </span>
+              ) : null}
+            </span>
           ) : null}
         </div>
       </button>
       {onCta ? (
-        <div className="px-4 pb-4">
+        <div className="flex items-center gap-2 px-4 pb-4">
           <button
             type="button"
             onClick={onCta}
-            className="flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
+            className="flex min-h-[52px] flex-1 items-center justify-center rounded-[var(--radius-md)] bg-[var(--color-action-primary)] text-[16px] font-semibold text-[var(--color-text-inverse)]"
           >
             {ctaLabel}
           </button>
+          {secondaryCtaLabel && onSecondaryCta ? (
+            <button
+              type="button"
+              onClick={onSecondaryCta}
+              className="flex min-h-[52px] shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-border-subtle)] px-4 text-[16px] font-semibold text-[var(--color-action-primary)]"
+            >
+              {secondaryCtaLabel}
+            </button>
+          ) : null}
         </div>
       ) : null}
     </article>
