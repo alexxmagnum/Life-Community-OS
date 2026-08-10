@@ -21,6 +21,34 @@ export {
 } from "./conversation-context";
 
 export type {
+  ConversationPersistenceMode,
+  ConversationRepository,
+  ConversationPersistencePlan,
+} from "./conversation-persistence";
+export { DEFAULT_CONVERSATION_PERSISTENCE_PLAN } from "./conversation-persistence";
+
+export type {
+  CommunicationEventType,
+  CommunicationEvent,
+  CommunicationEventPublisher,
+} from "./communication-events";
+export {
+  COMMUNICATION_EVENT_TYPES,
+  createNoopCommunicationEventPublisher,
+  isCommunicationEventType,
+} from "./communication-events";
+
+export type {
+  DeliveryChannelKind,
+  DeliveryChannelAdapter,
+} from "./delivery-channels";
+export {
+  DELIVERY_CHANNEL_KINDS,
+  isDeliveryChannelKind,
+  COMMUNICATION_DELIVERY_ARCHITECTURE_NOTE,
+} from "./delivery-channels";
+
+export type {
   Conversation,
   ConversationStatus,
   ConversationParticipantPolicy,
@@ -83,6 +111,10 @@ export {
   createGroupConversationAdapter,
   createWorkConversationAdapter,
   createMarketplaceConversationAdapter,
+  createPlaceConversationAdapter,
+  localEntityToPlaceConversationSnapshot,
+  createHousingConversationAdapter,
+  createServiceRequestConversationAdapter,
   createCommunityDiscussionConversationAdapter,
   COMMUNITY_DISCUSSION_CREATE_CAPABILITY,
   createReservationConversationAdapter,
@@ -96,6 +128,9 @@ export type {
   GroupConversationSnapshot,
   WorkConversationSnapshot,
   MarketplaceConversationSnapshot,
+  PlaceConversationSnapshot,
+  HousingConversationSnapshot,
+  ServiceRequestConversationSnapshot,
   CommunityDiscussionSnapshot,
   ReservationConversationSnapshot,
   OfficialConversationSnapshot,

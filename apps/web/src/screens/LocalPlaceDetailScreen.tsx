@@ -8,14 +8,20 @@ import {
   MobileScreen,
   ZoomableImage,
 } from "@life-community-os/ui";
+import { canOpenPlaceConversation } from "@/lib/place-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Local place detail — story + useful next actions (not a directory stub).
+ * Local place detail — story + contextual neighbour questions (not a directory stub).
  */
 export function LocalPlaceDetailScreen({ placeId }: { placeId: string }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const {
+    configuration,
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+  } = useTenant();
   const place = getLocalEntityById(placeId);
 
   if (!isFeatureEnabled("localLife") || !hasCapability(CAPABILITIES.localView)) {
@@ -50,6 +56,13 @@ export function LocalPlaceDetailScreen({ placeId }: { placeId: string }) {
       </MobileScreen>
     );
   }
+
+  const showAsk = canOpenPlaceConversation({
+    placeId: place.id,
+    configuration,
+    isModuleEnabled,
+    hasCapability,
+  });
 
   return (
     <MobileScreen dense>
@@ -94,13 +107,26 @@ export function LocalPlaceDetailScreen({ placeId }: { placeId: string }) {
         </div>
 
         <div className="space-y-2 border-t border-[var(--color-border-subtle)] pt-3">
-          <button
-            type="button"
-            onClick={() => router.push("/community")}
-            className="w-full rounded-[14px] bg-[var(--color-action-primary)] px-4 py-3.5 text-left text-[15px] font-semibold text-white"
-          >
-            Preguntar a vecinos
-          </button>
+          {showAsk ? (
+            <button
+              type="button"
+              onClick={() =>
+                router.push(`/near/place/${place.id}/conversation`)
+              }
+              className="flex w-full flex-col rounded-[14px] bg-[var(--color-action-primary)] px-4 py-3.5 text-left"
+            >
+              <span className="text-[15px] font-semibold text-white">
+                Preguntar sobre este lugar
+              </span>
+              <span className="mt-0.5 text-[13px] font-medium text-white/85">
+                Habla con vecinos sobre “{place.name}”
+              </span>
+            </button>
+          ) : (
+            <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-4 py-3.5 text-[13px] leading-5 text-[var(--color-text-secondary)]">
+              Las preguntas sobre este lugar no están disponibles ahora mismo.
+            </p>
+          )}
           <button
             type="button"
             onClick={() => router.push("/discover")}

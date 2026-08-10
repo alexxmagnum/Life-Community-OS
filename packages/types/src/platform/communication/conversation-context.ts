@@ -22,6 +22,10 @@ export const KNOWN_CONVERSATION_CONTEXT_TYPES = [
   "community_discussion",
   "reservation",
   "official",
+  "marketplace",
+  "place",
+  "service_request",
+  "housing_listing",
 ] as const;
 
 export type KnownConversationContextType =

@@ -1,7 +1,8 @@
 /**
- * Initial Conversation Context Adapters (D.0.5b).
+ * Initial Conversation Context Adapters (D.0.5b / Phase 2.1).
  *
- * Register additional adapters (e.g. boat_club) without changing Communication Core.
+ * Register additional adapters without changing Communication Core.
+ * Housing + service_request are fail-closed extension points.
  */
 
 export {
@@ -24,6 +25,22 @@ export {
   createMarketplaceConversationAdapter,
   type MarketplaceConversationSnapshot,
 } from "./marketplace-adapter";
+
+export {
+  createPlaceConversationAdapter,
+  localEntityToPlaceConversationSnapshot,
+  type PlaceConversationSnapshot,
+} from "./place-adapter";
+
+export {
+  createHousingConversationAdapter,
+  type HousingConversationSnapshot,
+} from "./housing-adapter";
+
+export {
+  createServiceRequestConversationAdapter,
+  type ServiceRequestConversationSnapshot,
+} from "./service-request-adapter";
 
 export {
   createCommunityDiscussionConversationAdapter,
@@ -50,14 +67,16 @@ import { createConversationContextAdapterRegistry } from "../adapter-registry";
 import { createCommunityDiscussionConversationAdapter } from "./community-discussion-adapter";
 import { createExperienceConversationAdapter } from "./experience-adapter";
 import { createGroupConversationAdapter } from "./group-adapter";
-import { createOfficialConversationAdapter } from "./official-adapter";
-import { createReservationConversationAdapter } from "./reservation-adapter";
+import { createHousingConversationAdapter } from "./housing-adapter";
 import { createMarketplaceConversationAdapter } from "./marketplace-adapter";
+import { createOfficialConversationAdapter } from "./official-adapter";
+import { createPlaceConversationAdapter } from "./place-adapter";
+import { createReservationConversationAdapter } from "./reservation-adapter";
+import { createServiceRequestConversationAdapter } from "./service-request-adapter";
 import { createWorkConversationAdapter } from "./work-adapter";
 
 /**
- * Default registry with foundation adapters.
- * Callers may clone/register further adapters for new modules.
+ * Default registry with foundation + extension-point adapters.
  */
 export function createDefaultConversationContextAdapterRegistry(): ConversationContextAdapterRegistry {
   return createConversationContextAdapterRegistry([
@@ -65,6 +84,9 @@ export function createDefaultConversationContextAdapterRegistry(): ConversationC
     createGroupConversationAdapter(),
     createWorkConversationAdapter(),
     createMarketplaceConversationAdapter(),
+    createPlaceConversationAdapter(),
+    createServiceRequestConversationAdapter(),
+    createHousingConversationAdapter(),
     createCommunityDiscussionConversationAdapter(),
     createReservationConversationAdapter(),
     createOfficialConversationAdapter(),
