@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "@life-community-os/database",
     "@life-community-os/design-tokens",
     "@life-community-os/tenant-life-panoramica",
+    "@life-community-os/assets",
   ],
   images: {
     remotePatterns: [

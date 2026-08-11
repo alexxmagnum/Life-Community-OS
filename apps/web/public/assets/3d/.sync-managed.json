@@ -1,0 +1,344 @@
+﻿{
+    "schemaVersion":  "1.0.0",
+    "generatedAt":  "2026-08-12T01:06:45.8389344+02:00",
+    "syncVersion":  "1.0.0-phase8",
+    "note":  "Internal sync ownership map. Not for app imports.",
+    "assets":  {
+                   "professionals.veterinary-doctor.scene":  {
+                                                                 "relativePath":  "apps/web/public/assets/3d/platform/professionals/veterinary-doctor/scene/veterinary-doctor.webp",
+                                                                 "webPath":  "/assets/3d/platform/professionals/veterinary-doctor/scene/veterinary-doctor.webp",
+                                                                 "sha256":  "67B15F2EE0FEF5382A3BC3CBDBB86C5EE5323E7871A49C150F6A2F9E3B0025C8",
+                                                                 "scope":  "global",
+                                                                 "tenant":  null
+                                                             },
+                   "professionals.repairs.scene":  {
+                                                       "relativePath":  "apps/web/public/assets/3d/platform/professionals/repairs/scene/repairs.webp",
+                                                       "webPath":  "/assets/3d/platform/professionals/repairs/scene/repairs.webp",
+                                                       "sha256":  "B5E06250EF91C1A475E0719FFE04499BF3902F22F26F1C591BD61607A3AF5B3F",
+                                                       "scope":  "global",
+                                                       "tenant":  null
+                                                   },
+                   "professionals.professionals.card":  {
+                                                            "relativePath":  "apps/web/public/assets/3d/platform/professionals/professionals/card/professionals.webp",
+                                                            "webPath":  "/assets/3d/platform/professionals/professionals/card/professionals.webp",
+                                                            "sha256":  "6AD9A5D938D6A88B786949867FC3457D6EACFA9DDDDD7151B8D4E56C1A226CA3",
+                                                            "scope":  "global",
+                                                            "tenant":  null
+                                                        },
+                   "services.maintenance.card":  {
+                                                     "relativePath":  "apps/web/public/assets/3d/platform/services/maintenance/card/maintenance.webp",
+                                                     "webPath":  "/assets/3d/platform/services/maintenance/card/maintenance.webp",
+                                                     "sha256":  "A562B176DEE9961924015E6D006B148FD23EF35ED081061D281A92D6D6E6A734",
+                                                     "scope":  "global",
+                                                     "tenant":  null
+                                                 },
+                   "professionals.waiter.scene.alternate-1":  {
+                                                                  "relativePath":  "apps/web/public/assets/3d/platform/professionals/waiter/scene/waiter--alternate-1.webp",
+                                                                  "webPath":  "/assets/3d/platform/professionals/waiter/scene/waiter--alternate-1.webp",
+                                                                  "sha256":  "4959CEA271028AA55A8D9DB9DD989187869FE88589C498035430EE9D4E3A2F21",
+                                                                  "scope":  "global",
+                                                                  "tenant":  null
+                                                              },
+                   "professionals.waiter.scene":  {
+                                                      "relativePath":  "apps/web/public/assets/3d/platform/professionals/waiter/scene/waiter.webp",
+                                                      "webPath":  "/assets/3d/platform/professionals/waiter/scene/waiter.webp",
+                                                      "sha256":  "A0CA341EC989E636010307683801A42C39817AD39B38572A34DEF31BB60F034B",
+                                                      "scope":  "global",
+                                                      "tenant":  null
+                                                  },
+                   "professionals.gardening.scene":  {
+                                                         "relativePath":  "apps/web/public/assets/3d/platform/professionals/gardening/scene/gardening.webp",
+                                                         "webPath":  "/assets/3d/platform/professionals/gardening/scene/gardening.webp",
+                                                         "sha256":  "9882D4E852B59B72E45FA8BFC38CF0B577C51609CBE1416A32C57739072E07DB",
+                                                         "scope":  "global",
+                                                         "tenant":  null
+                                                     },
+                   "professionals.electrician.scene":  {
+                                                           "relativePath":  "apps/web/public/assets/3d/platform/professionals/electrician/scene/electrician.webp",
+                                                           "webPath":  "/assets/3d/platform/professionals/electrician/scene/electrician.webp",
+                                                           "sha256":  "4878B408F0C122A9255470397C4B54238242F791189BE272E756B9B65AD15EB1",
+                                                           "scope":  "global",
+                                                           "tenant":  null
+                                                       },
+                   "professionals.cleaning.scene":  {
+                                                        "relativePath":  "apps/web/public/assets/3d/platform/professionals/cleaning/scene/cleaning.webp",
+                                                        "webPath":  "/assets/3d/platform/professionals/cleaning/scene/cleaning.webp",
+                                                        "sha256":  "CD40ADFBD893807FF0A3B457286FA7369370CC9396D63A03DC70D462F54FBA71",
+                                                        "scope":  "global",
+                                                        "tenant":  null
+                                                    },
+                   "professionals.plumber.scene":  {
+                                                       "relativePath":  "apps/web/public/assets/3d/platform/professionals/plumber/scene/plumber.webp",
+                                                       "webPath":  "/assets/3d/platform/professionals/plumber/scene/plumber.webp",
+                                                       "sha256":  "7F00D97953E87AA23A4A522AC6EB8D2624AB8CC65998E333A7D170FF4DA4835A",
+                                                       "scope":  "global",
+                                                       "tenant":  null
+                                                   },
+                   "professionals.painter.scene":  {
+                                                       "relativePath":  "apps/web/public/assets/3d/platform/professionals/painter/scene/painter.webp",
+                                                       "webPath":  "/assets/3d/platform/professionals/painter/scene/painter.webp",
+                                                       "sha256":  "C0B8AE2EE397871B1D15324D318B23CDA4D3546F1C837A73974A11D46849BA45",
+                                                       "scope":  "global",
+                                                       "tenant":  null
+                                                   },
+                   "professionals.locksmith-service.scene":  {
+                                                                 "relativePath":  "apps/web/public/assets/3d/platform/professionals/locksmith-service/scene/locksmith-service.webp",
+                                                                 "webPath":  "/assets/3d/platform/professionals/locksmith-service/scene/locksmith-service.webp",
+                                                                 "sha256":  "3E0E002180387F6E09146024F873FB92C856D1B134713F035E2734D56340FC82",
+                                                                 "scope":  "global",
+                                                                 "tenant":  null
+                                                             },
+                   "sports.padel.object":  {
+                                               "relativePath":  "apps/web/public/assets/3d/platform/sports/padel/object/padel.webp",
+                                               "webPath":  "/assets/3d/platform/sports/padel/object/padel.webp",
+                                               "sha256":  "96736F717AA87C9716E1B9E9F8053429C660A451C60BCEA51FB88CE0435F1468",
+                                               "scope":  "global",
+                                               "tenant":  null
+                                           },
+                   "sports.golf.card":  {
+                                            "relativePath":  "apps/web/public/assets/3d/platform/sports/golf/card/golf.webp",
+                                            "webPath":  "/assets/3d/platform/sports/golf/card/golf.webp",
+                                            "sha256":  "E1CD2CD7700B4004A38E0C268EDD5BDB17FCBE48214531165FB60CD29EA7C5F8",
+                                            "scope":  "global",
+                                            "tenant":  null
+                                        },
+                   "sports.football-school.scene":  {
+                                                        "relativePath":  "apps/web/public/assets/3d/platform/sports/football-school/scene/football-school.webp",
+                                                        "webPath":  "/assets/3d/platform/sports/football-school/scene/football-school.webp",
+                                                        "sha256":  "991736028E55B3D604E3AF20840FBDB3B11BB8422E2F5FEC4637FCE37A2DE96D",
+                                                        "scope":  "global",
+                                                        "tenant":  null
+                                                    },
+                   "sports.tennis.object":  {
+                                                "relativePath":  "apps/web/public/assets/3d/platform/sports/tennis/object/tennis.webp",
+                                                "webPath":  "/assets/3d/platform/sports/tennis/object/tennis.webp",
+                                                "sha256":  "44C785A8F8DA7BF03EC1E78A6D5C8ABA4DD5A23F34E798E8B6128F1B1C80EBB2",
+                                                "scope":  "global",
+                                                "tenant":  null
+                                            },
+                   "sports.sports.card":  {
+                                              "relativePath":  "apps/web/public/assets/3d/platform/sports/sports/card/sports.webp",
+                                              "webPath":  "/assets/3d/platform/sports/sports/card/sports.webp",
+                                              "sha256":  "2AAC6FD12FCDA6A26B84A6713307B0C71E4EE060B5F1C3349E3107D1E2B1C5B5",
+                                              "scope":  "global",
+                                              "tenant":  null
+                                          },
+                   "sports.padel-player.scene":  {
+                                                     "relativePath":  "apps/web/public/assets/3d/platform/sports/padel-player/scene/padel-player.webp",
+                                                     "webPath":  "/assets/3d/platform/sports/padel-player/scene/padel-player.webp",
+                                                     "sha256":  "FA16D99D84E09854EF97A82057AA28BA838671C914523FE95567FC17A157AF2C",
+                                                     "scope":  "global",
+                                                     "tenant":  null
+                                                 },
+                   "sports.billiards.object":  {
+                                                   "relativePath":  "apps/web/public/assets/3d/platform/sports/billiards/object/billiards.webp",
+                                                   "webPath":  "/assets/3d/platform/sports/billiards/object/billiards.webp",
+                                                   "sha256":  "BCED736D0842851583FCD7439007DFD0B9DB454E20D45F53CD1F8E84E551CA88",
+                                                   "scope":  "global",
+                                                   "tenant":  null
+                                               },
+                   "services.towing.scene":  {
+                                                 "relativePath":  "apps/web/public/assets/3d/platform/services/towing/scene/towing.webp",
+                                                 "webPath":  "/assets/3d/platform/services/towing/scene/towing.webp",
+                                                 "sha256":  "76ABFB61B7DEA8449C98FF03A24858346AF78C73BBB62F87BCFB0991FE3CFC30",
+                                                 "scope":  "global",
+                                                 "tenant":  null
+                                             },
+                   "services.spaces-reservations.card":  {
+                                                             "relativePath":  "apps/web/public/assets/3d/platform/services/spaces-reservations/card/spaces-reservations.webp",
+                                                             "webPath":  "/assets/3d/platform/services/spaces-reservations/card/spaces-reservations.webp",
+                                                             "sha256":  "9068215751D7C40C299B3236836C845B266E46B38B8E09E552C19138B68A82F1",
+                                                             "scope":  "global",
+                                                             "tenant":  null
+                                                         },
+                   "sports.football.card":  {
+                                                "relativePath":  "apps/web/public/assets/3d/platform/sports/football/card/football.webp",
+                                                "webPath":  "/assets/3d/platform/sports/football/card/football.webp",
+                                                "sha256":  "2A0C0F58441ADD3309948CE8A9870D2FFBB65C7B113F5F6F13FA092D8E2D0232",
+                                                "scope":  "global",
+                                                "tenant":  null
+                                            },
+                   "sports.darts.object":  {
+                                               "relativePath":  "apps/web/public/assets/3d/platform/sports/darts/object/darts.webp",
+                                               "webPath":  "/assets/3d/platform/sports/darts/object/darts.webp",
+                                               "sha256":  "38BCA1C43205C319317E4041A9A1BEEF1B32D57319C4B3F64EA7381CD448FEA1",
+                                               "scope":  "global",
+                                               "tenant":  null
+                                           },
+                   "sports.cyclist.scene":  {
+                                                "relativePath":  "apps/web/public/assets/3d/platform/sports/cyclist/scene/cyclist.webp",
+                                                "webPath":  "/assets/3d/platform/sports/cyclist/scene/cyclist.webp",
+                                                "sha256":  "337A96EE427D15ED70037BA7430F20508D920161182353FB6BBC9D90060D33E3",
+                                                "scope":  "global",
+                                                "tenant":  null
+                                            },
+                   "community.neighbour-help.card":  {
+                                                         "relativePath":  "apps/web/public/assets/3d/platform/community/neighbour-help/card/neighbour-help.webp",
+                                                         "webPath":  "/assets/3d/platform/community/neighbour-help/card/neighbour-help.webp",
+                                                         "sha256":  "5CE31FB9A383F0F00B3E5E72ADAD57A8BB6B141C0EDDEA099B3C39C453D76D8B",
+                                                         "scope":  "global",
+                                                         "tenant":  null
+                                                     },
+                   "community.marketplace.card":  {
+                                                      "relativePath":  "apps/web/public/assets/3d/platform/community/marketplace/card/marketplace.webp",
+                                                      "webPath":  "/assets/3d/platform/community/marketplace/card/marketplace.webp",
+                                                      "sha256":  "BDE3E3A6EAC477C88DB4DBC3C3DB71D731C46719F5F950A790E98D0D9AEF4AB1",
+                                                      "scope":  "global",
+                                                      "tenant":  null
+                                                  },
+                   "community.jobs.card":  {
+                                               "relativePath":  "apps/web/public/assets/3d/platform/community/jobs/card/jobs.webp",
+                                               "webPath":  "/assets/3d/platform/community/jobs/card/jobs.webp",
+                                               "sha256":  "3F174AFC383CC3469EB8FA13B5F42DB42A93B9E6F7C6E7B882EDCF5BC32B9E73",
+                                               "scope":  "global",
+                                               "tenant":  null
+                                           },
+                   "experiences.eat.card":  {
+                                                "relativePath":  "apps/web/public/assets/3d/platform/experiences/eat/card/eat.webp",
+                                                "webPath":  "/assets/3d/platform/experiences/eat/card/eat.webp",
+                                                "sha256":  "05734FE80A79C99D2D7AA91B8AAFB05D02E9CE1A6CC2B65B78F40FE2798B82E7",
+                                                "scope":  "global",
+                                                "tenant":  null
+                                            },
+                   "community.recommendations.card":  {
+                                                          "relativePath":  "apps/web/public/assets/3d/platform/community/recommendations/card/recommendations.webp",
+                                                          "webPath":  "/assets/3d/platform/community/recommendations/card/recommendations.webp",
+                                                          "sha256":  "598ECBB4F5E65E54CF46F1415CA556C89EB00DFDA0BAFEA502B793015D9B2F80",
+                                                          "scope":  "global",
+                                                          "tenant":  null
+                                                      },
+                   "community.neighbours.scene":  {
+                                                      "relativePath":  "apps/web/public/assets/3d/platform/community/neighbours/scene/neighbours.webp",
+                                                      "webPath":  "/assets/3d/platform/community/neighbours/scene/neighbours.webp",
+                                                      "sha256":  "ABA461CEFBEE93F6D7AD51D3A41D2B2C883F705636170EFE3126C18A3498B6AD",
+                                                      "scope":  "global",
+                                                      "tenant":  null
+                                                  },
+                   "branding.life-panoramica-symbol.branding.symbol":  {
+                                                                           "relativePath":  "apps/web/public/assets/3d/tenants/life-panoramica/branding/life-panoramica-symbol/branding/life-panoramica-symbol--symbol.webp",
+                                                                           "webPath":  "/assets/3d/tenants/life-panoramica/branding/life-panoramica-symbol/branding/life-panoramica-symbol--symbol.webp",
+                                                                           "sha256":  "5FE93903F25D0B4E29A8DC75D9BF53C3690D33D66DCC54F08F1BC17C59864A46",
+                                                                           "scope":  "tenant",
+                                                                           "tenant":  "life-panoramica"
+                                                                       },
+                   "actions.camera.symbol":  {
+                                                 "relativePath":  "apps/web/public/assets/3d/platform/actions/camera/symbol/camera.webp",
+                                                 "webPath":  "/assets/3d/platform/actions/camera/symbol/camera.webp",
+                                                 "sha256":  "F11C7172B352DE697CE27FAA4319712BC74ECE1E7BD306F5B4E1811C35E7728C",
+                                                 "scope":  "global",
+                                                 "tenant":  null
+                                             },
+                   "actions.calendar.symbol":  {
+                                                   "relativePath":  "apps/web/public/assets/3d/platform/actions/calendar/symbol/calendar.webp",
+                                                   "webPath":  "/assets/3d/platform/actions/calendar/symbol/calendar.webp",
+                                                   "sha256":  "7907BF9CEED47EA8FCA93B3C6FD4756C679AC54B38F677A89DEA2B4E7C86F889",
+                                                   "scope":  "global",
+                                                   "tenant":  null
+                                               },
+                   "community.heart-community.symbol":  {
+                                                            "relativePath":  "apps/web/public/assets/3d/platform/community/heart-community/symbol/heart-community.webp",
+                                                            "webPath":  "/assets/3d/platform/community/heart-community/symbol/heart-community.webp",
+                                                            "sha256":  "FDA8523989CAD30946CEBD44C2D90CB3BEF960DC23C1DCDF51AF359017DCC07A",
+                                                            "scope":  "global",
+                                                            "tenant":  null
+                                                        },
+                   "community.hand-wave.symbol":  {
+                                                      "relativePath":  "apps/web/public/assets/3d/platform/community/hand-wave/symbol/hand-wave.webp",
+                                                      "webPath":  "/assets/3d/platform/community/hand-wave/symbol/hand-wave.webp",
+                                                      "sha256":  "41A1235F9D2232490BCDCDED4D741F0B0BA648067A4C2BA30AEFABF2B593A7AA",
+                                                      "scope":  "global",
+                                                      "tenant":  null
+                                                  },
+                   "branding.life-panoramica-wordmark.branding.wordmark":  {
+                                                                               "relativePath":  "apps/web/public/assets/3d/tenants/life-panoramica/branding/life-panoramica-wordmark/branding/life-panoramica-wordmark--wordmark.webp",
+                                                                               "webPath":  "/assets/3d/tenants/life-panoramica/branding/life-panoramica-wordmark/branding/life-panoramica-wordmark--wordmark.webp",
+                                                                               "sha256":  "836D594172EC63FF99A3C2825179E5B67F9DB2A3993DE578CEF085A54827E52A",
+                                                                               "scope":  "tenant",
+                                                                               "tenant":  "life-panoramica"
+                                                                           },
+                   "people.friends-group.scene":  {
+                                                      "relativePath":  "apps/web/public/assets/3d/platform/people/friends-group/scene/friends-group.webp",
+                                                      "webPath":  "/assets/3d/platform/people/friends-group/scene/friends-group.webp",
+                                                      "sha256":  "A66B937A967155B6C90042DBD3CC9B7293225F5405A127331B178E8FCB89FB1E",
+                                                      "scope":  "global",
+                                                      "tenant":  null
+                                                  },
+                   "people.family.scene":  {
+                                               "relativePath":  "apps/web/public/assets/3d/platform/people/family/scene/family.webp",
+                                               "webPath":  "/assets/3d/platform/people/family/scene/family.webp",
+                                               "sha256":  "0A3D5D4E4967CD36A97F876523645F3D70BAB3493DA7CBA200F4C604B6618677",
+                                               "scope":  "global",
+                                               "tenant":  null
+                                           },
+                   "navigation.notification-bell.symbol":  {
+                                                               "relativePath":  "apps/web/public/assets/3d/platform/navigation/notification-bell/symbol/notification-bell.webp",
+                                                               "webPath":  "/assets/3d/platform/navigation/notification-bell/symbol/notification-bell.webp",
+                                                               "sha256":  "75966D0EF0D5181C511DC544973CB94AB89EE0391E260A4DC9B240D7614FAEF9",
+                                                               "scope":  "global",
+                                                               "tenant":  null
+                                                           },
+                   "professionals.carpenter.scene":  {
+                                                         "relativePath":  "apps/web/public/assets/3d/platform/professionals/carpenter/scene/carpenter.webp",
+                                                         "webPath":  "/assets/3d/platform/professionals/carpenter/scene/carpenter.webp",
+                                                         "sha256":  "72CCF308E2A732A431083B01768AD09702FE3EEF745F364D2BAA62DB5CA65606",
+                                                         "scope":  "global",
+                                                         "tenant":  null
+                                                     },
+                   "professionals.air-conditioning.scene":  {
+                                                                "relativePath":  "apps/web/public/assets/3d/platform/professionals/air-conditioning/scene/air-conditioning.webp",
+                                                                "webPath":  "/assets/3d/platform/professionals/air-conditioning/scene/air-conditioning.webp",
+                                                                "sha256":  "DCF9D9411721A02230945405C65624D600DF5BB7C18DD40AC5AC3B99E75D0066",
+                                                                "scope":  "global",
+                                                                "tenant":  null
+                                                            },
+                   "people.pets-dog-cat.scene":  {
+                                                     "relativePath":  "apps/web/public/assets/3d/platform/people/pets-dog-cat/scene/pets-dog-cat.webp",
+                                                     "webPath":  "/assets/3d/platform/people/pets-dog-cat/scene/pets-dog-cat.webp",
+                                                     "sha256":  "D46FD82AE9209CEFF324E8C63365B4FCCE5E3BCDBB4FC2F1486B69D7CB752F81",
+                                                     "scope":  "global",
+                                                     "tenant":  null
+                                                 },
+                   "mobility.ev-charging.card":  {
+                                                     "relativePath":  "apps/web/public/assets/3d/platform/mobility/ev-charging/card/ev-charging.webp",
+                                                     "webPath":  "/assets/3d/platform/mobility/ev-charging/card/ev-charging.webp",
+                                                     "sha256":  "5CE78D6612817E57DA7B69F81EA59898A73FC74DBBD29E28C68B943C68D59A18",
+                                                     "scope":  "global",
+                                                     "tenant":  null
+                                                 },
+                   "mobility.car-share.card":  {
+                                                   "relativePath":  "apps/web/public/assets/3d/platform/mobility/car-share/card/car-share.webp",
+                                                   "webPath":  "/assets/3d/platform/mobility/car-share/card/car-share.webp",
+                                                   "sha256":  "D090AB853AFA02797B5799E4C57F3C7E8941E286AB917A701399DBD166A357E8",
+                                                   "scope":  "global",
+                                                   "tenant":  null
+                                               },
+                   "mobility.bicycle.object":  {
+                                                   "relativePath":  "apps/web/public/assets/3d/platform/mobility/bicycle/object/bicycle.webp",
+                                                   "webPath":  "/assets/3d/platform/mobility/bicycle/object/bicycle.webp",
+                                                   "sha256":  "CF32D65E51D89FA00398BC8154B3373B79920977FE93B1E37893DBE7B1F1DA66",
+                                                   "scope":  "global",
+                                                   "tenant":  null
+                                               },
+                   "navigation.map-pin.symbol":  {
+                                                     "relativePath":  "apps/web/public/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp",
+                                                     "webPath":  "/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp",
+                                                     "sha256":  "2FF326A4902D5183B1A5A94E1907B209BE65766F43715595CCEA0BE4BCDE4E27",
+                                                     "scope":  "global",
+                                                     "tenant":  null
+                                                 },
+                   "navigation.hamburger-menu.symbol":  {
+                                                            "relativePath":  "apps/web/public/assets/3d/platform/navigation/hamburger-menu/symbol/hamburger-menu.webp",
+                                                            "webPath":  "/assets/3d/platform/navigation/hamburger-menu/symbol/hamburger-menu.webp",
+                                                            "sha256":  "170D6BC81CCA0972E5859BBAD1E080DFCDD5810AE652BE928AF7CAFFE34DC1B8",
+                                                            "scope":  "global",
+                                                            "tenant":  null
+                                                        },
+                   "navigation.discover.card":  {
+                                                    "relativePath":  "apps/web/public/assets/3d/platform/navigation/discover/card/discover.webp",
+                                                    "webPath":  "/assets/3d/platform/navigation/discover/card/discover.webp",
+                                                    "sha256":  "A0B1BAA7D437143BAD535D629145DC02B0632A0F7DDF01D017B2478E4EB0F1D6",
+                                                    "scope":  "global",
+                                                    "tenant":  null
+                                                }
+               }
+}

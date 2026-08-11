@@ -1,0 +1,489 @@
+﻿{
+    "schemaVersion":  "1.0.0",
+    "generatedAt":  "2026-08-12T01:06:45.8369316+02:00",
+    "syncVersion":  "1.0.0-phase8",
+    "sourceCatalogSchema":  "1.1.0",
+    "assetCount":  48,
+    "assets":  {
+                   "professionals.veterinary-doctor.scene":  {
+                                                                 "path":  "/assets/3d/platform/professionals/veterinary-doctor/scene/veterinary-doctor.webp",
+                                                                 "type":  "scene",
+                                                                 "domain":  "professionals",
+                                                                 "variant":  "default",
+                                                                 "scope":  "global",
+                                                                 "tenant":  null,
+                                                                 "width":  1024,
+                                                                 "height":  683
+                                                             },
+                   "professionals.repairs.scene":  {
+                                                       "path":  "/assets/3d/platform/professionals/repairs/scene/repairs.webp",
+                                                       "type":  "scene",
+                                                       "domain":  "professionals",
+                                                       "variant":  "default",
+                                                       "scope":  "global",
+                                                       "tenant":  null,
+                                                       "width":  1024,
+                                                       "height":  683
+                                                   },
+                   "professionals.professionals.card":  {
+                                                            "path":  "/assets/3d/platform/professionals/professionals/card/professionals.webp",
+                                                            "type":  "card",
+                                                            "domain":  "professionals",
+                                                            "variant":  "default",
+                                                            "scope":  "global",
+                                                            "tenant":  null,
+                                                            "width":  512,
+                                                            "height":  341
+                                                        },
+                   "services.maintenance.card":  {
+                                                     "path":  "/assets/3d/platform/services/maintenance/card/maintenance.webp",
+                                                     "type":  "card",
+                                                     "domain":  "services",
+                                                     "variant":  "default",
+                                                     "scope":  "global",
+                                                     "tenant":  null,
+                                                     "width":  512,
+                                                     "height":  512
+                                                 },
+                   "professionals.waiter.scene.alternate-1":  {
+                                                                  "path":  "/assets/3d/platform/professionals/waiter/scene/waiter--alternate-1.webp",
+                                                                  "type":  "scene",
+                                                                  "domain":  "professionals",
+                                                                  "variant":  "alternate-1",
+                                                                  "scope":  "global",
+                                                                  "tenant":  null,
+                                                                  "width":  1024,
+                                                                  "height":  683
+                                                              },
+                   "professionals.waiter.scene":  {
+                                                      "path":  "/assets/3d/platform/professionals/waiter/scene/waiter.webp",
+                                                      "type":  "scene",
+                                                      "domain":  "professionals",
+                                                      "variant":  "default",
+                                                      "scope":  "global",
+                                                      "tenant":  null,
+                                                      "width":  1024,
+                                                      "height":  1024
+                                                  },
+                   "professionals.gardening.scene":  {
+                                                         "path":  "/assets/3d/platform/professionals/gardening/scene/gardening.webp",
+                                                         "type":  "scene",
+                                                         "domain":  "professionals",
+                                                         "variant":  "default",
+                                                         "scope":  "global",
+                                                         "tenant":  null,
+                                                         "width":  1024,
+                                                         "height":  683
+                                                     },
+                   "professionals.electrician.scene":  {
+                                                           "path":  "/assets/3d/platform/professionals/electrician/scene/electrician.webp",
+                                                           "type":  "scene",
+                                                           "domain":  "professionals",
+                                                           "variant":  "default",
+                                                           "scope":  "global",
+                                                           "tenant":  null,
+                                                           "width":  1024,
+                                                           "height":  683
+                                                       },
+                   "professionals.cleaning.scene":  {
+                                                        "path":  "/assets/3d/platform/professionals/cleaning/scene/cleaning.webp",
+                                                        "type":  "scene",
+                                                        "domain":  "professionals",
+                                                        "variant":  "default",
+                                                        "scope":  "global",
+                                                        "tenant":  null,
+                                                        "width":  1024,
+                                                        "height":  683
+                                                    },
+                   "professionals.plumber.scene":  {
+                                                       "path":  "/assets/3d/platform/professionals/plumber/scene/plumber.webp",
+                                                       "type":  "scene",
+                                                       "domain":  "professionals",
+                                                       "variant":  "default",
+                                                       "scope":  "global",
+                                                       "tenant":  null,
+                                                       "width":  1024,
+                                                       "height":  683
+                                                   },
+                   "professionals.painter.scene":  {
+                                                       "path":  "/assets/3d/platform/professionals/painter/scene/painter.webp",
+                                                       "type":  "scene",
+                                                       "domain":  "professionals",
+                                                       "variant":  "default",
+                                                       "scope":  "global",
+                                                       "tenant":  null,
+                                                       "width":  1024,
+                                                       "height":  683
+                                                   },
+                   "professionals.locksmith-service.scene":  {
+                                                                 "path":  "/assets/3d/platform/professionals/locksmith-service/scene/locksmith-service.webp",
+                                                                 "type":  "scene",
+                                                                 "domain":  "professionals",
+                                                                 "variant":  "default",
+                                                                 "scope":  "global",
+                                                                 "tenant":  null,
+                                                                 "width":  1024,
+                                                                 "height":  683
+                                                             },
+                   "sports.padel.object":  {
+                                               "path":  "/assets/3d/platform/sports/padel/object/padel.webp",
+                                               "type":  "object",
+                                               "domain":  "sports",
+                                               "variant":  "default",
+                                               "scope":  "global",
+                                               "tenant":  null,
+                                               "width":  341,
+                                               "height":  512
+                                           },
+                   "sports.golf.card":  {
+                                            "path":  "/assets/3d/platform/sports/golf/card/golf.webp",
+                                            "type":  "card",
+                                            "domain":  "sports",
+                                            "variant":  "default",
+                                            "scope":  "global",
+                                            "tenant":  null,
+                                            "width":  512,
+                                            "height":  341
+                                        },
+                   "sports.football-school.scene":  {
+                                                        "path":  "/assets/3d/platform/sports/football-school/scene/football-school.webp",
+                                                        "type":  "scene",
+                                                        "domain":  "sports",
+                                                        "variant":  "default",
+                                                        "scope":  "global",
+                                                        "tenant":  null,
+                                                        "width":  1024,
+                                                        "height":  1024
+                                                    },
+                   "sports.tennis.object":  {
+                                                "path":  "/assets/3d/platform/sports/tennis/object/tennis.webp",
+                                                "type":  "object",
+                                                "domain":  "sports",
+                                                "variant":  "default",
+                                                "scope":  "global",
+                                                "tenant":  null,
+                                                "width":  341,
+                                                "height":  512
+                                            },
+                   "sports.sports.card":  {
+                                              "path":  "/assets/3d/platform/sports/sports/card/sports.webp",
+                                              "type":  "card",
+                                              "domain":  "sports",
+                                              "variant":  "default",
+                                              "scope":  "global",
+                                              "tenant":  null,
+                                              "width":  512,
+                                              "height":  341
+                                          },
+                   "sports.padel-player.scene":  {
+                                                     "path":  "/assets/3d/platform/sports/padel-player/scene/padel-player.webp",
+                                                     "type":  "scene",
+                                                     "domain":  "sports",
+                                                     "variant":  "default",
+                                                     "scope":  "global",
+                                                     "tenant":  null,
+                                                     "width":  683,
+                                                     "height":  1024
+                                                 },
+                   "sports.billiards.object":  {
+                                                   "path":  "/assets/3d/platform/sports/billiards/object/billiards.webp",
+                                                   "type":  "object",
+                                                   "domain":  "sports",
+                                                   "variant":  "default",
+                                                   "scope":  "global",
+                                                   "tenant":  null,
+                                                   "width":  512,
+                                                   "height":  341
+                                               },
+                   "services.towing.scene":  {
+                                                 "path":  "/assets/3d/platform/services/towing/scene/towing.webp",
+                                                 "type":  "scene",
+                                                 "domain":  "services",
+                                                 "variant":  "default",
+                                                 "scope":  "global",
+                                                 "tenant":  null,
+                                                 "width":  1024,
+                                                 "height":  1024
+                                             },
+                   "services.spaces-reservations.card":  {
+                                                             "path":  "/assets/3d/platform/services/spaces-reservations/card/spaces-reservations.webp",
+                                                             "type":  "card",
+                                                             "domain":  "services",
+                                                             "variant":  "default",
+                                                             "scope":  "global",
+                                                             "tenant":  null,
+                                                             "width":  512,
+                                                             "height":  341
+                                                         },
+                   "sports.football.card":  {
+                                                "path":  "/assets/3d/platform/sports/football/card/football.webp",
+                                                "type":  "card",
+                                                "domain":  "sports",
+                                                "variant":  "default",
+                                                "scope":  "global",
+                                                "tenant":  null,
+                                                "width":  512,
+                                                "height":  512
+                                            },
+                   "sports.darts.object":  {
+                                               "path":  "/assets/3d/platform/sports/darts/object/darts.webp",
+                                               "type":  "object",
+                                               "domain":  "sports",
+                                               "variant":  "default",
+                                               "scope":  "global",
+                                               "tenant":  null,
+                                               "width":  512,
+                                               "height":  341
+                                           },
+                   "sports.cyclist.scene":  {
+                                                "path":  "/assets/3d/platform/sports/cyclist/scene/cyclist.webp",
+                                                "type":  "scene",
+                                                "domain":  "sports",
+                                                "variant":  "default",
+                                                "scope":  "global",
+                                                "tenant":  null,
+                                                "width":  683,
+                                                "height":  1024
+                                            },
+                   "community.neighbour-help.card":  {
+                                                         "path":  "/assets/3d/platform/community/neighbour-help/card/neighbour-help.webp",
+                                                         "type":  "card",
+                                                         "domain":  "community",
+                                                         "variant":  "default",
+                                                         "scope":  "global",
+                                                         "tenant":  null,
+                                                         "width":  512,
+                                                         "height":  341
+                                                     },
+                   "community.marketplace.card":  {
+                                                      "path":  "/assets/3d/platform/community/marketplace/card/marketplace.webp",
+                                                      "type":  "card",
+                                                      "domain":  "community",
+                                                      "variant":  "default",
+                                                      "scope":  "global",
+                                                      "tenant":  null,
+                                                      "width":  512,
+                                                      "height":  341
+                                                  },
+                   "community.jobs.card":  {
+                                               "path":  "/assets/3d/platform/community/jobs/card/jobs.webp",
+                                               "type":  "card",
+                                               "domain":  "community",
+                                               "variant":  "default",
+                                               "scope":  "global",
+                                               "tenant":  null,
+                                               "width":  512,
+                                               "height":  341
+                                           },
+                   "experiences.eat.card":  {
+                                                "path":  "/assets/3d/platform/experiences/eat/card/eat.webp",
+                                                "type":  "card",
+                                                "domain":  "experiences",
+                                                "variant":  "default",
+                                                "scope":  "global",
+                                                "tenant":  null,
+                                                "width":  512,
+                                                "height":  341
+                                            },
+                   "community.recommendations.card":  {
+                                                          "path":  "/assets/3d/platform/community/recommendations/card/recommendations.webp",
+                                                          "type":  "card",
+                                                          "domain":  "community",
+                                                          "variant":  "default",
+                                                          "scope":  "global",
+                                                          "tenant":  null,
+                                                          "width":  512,
+                                                          "height":  341
+                                                      },
+                   "community.neighbours.scene":  {
+                                                      "path":  "/assets/3d/platform/community/neighbours/scene/neighbours.webp",
+                                                      "type":  "scene",
+                                                      "domain":  "community",
+                                                      "variant":  "default",
+                                                      "scope":  "global",
+                                                      "tenant":  null,
+                                                      "width":  1024,
+                                                      "height":  683
+                                                  },
+                   "branding.life-panoramica-symbol.branding.symbol":  {
+                                                                           "path":  "/assets/3d/tenants/life-panoramica/branding/life-panoramica-symbol/branding/life-panoramica-symbol--symbol.webp",
+                                                                           "type":  "branding",
+                                                                           "domain":  "branding",
+                                                                           "variant":  "symbol",
+                                                                           "scope":  "tenant",
+                                                                           "tenant":  "life-panoramica",
+                                                                           "width":  512,
+                                                                           "height":  448
+                                                                       },
+                   "actions.camera.symbol":  {
+                                                 "path":  "/assets/3d/platform/actions/camera/symbol/camera.webp",
+                                                 "type":  "symbol",
+                                                 "domain":  "actions",
+                                                 "variant":  "default",
+                                                 "scope":  "global",
+                                                 "tenant":  null,
+                                                 "width":  256,
+                                                 "height":  171
+                                             },
+                   "actions.calendar.symbol":  {
+                                                   "path":  "/assets/3d/platform/actions/calendar/symbol/calendar.webp",
+                                                   "type":  "symbol",
+                                                   "domain":  "actions",
+                                                   "variant":  "default",
+                                                   "scope":  "global",
+                                                   "tenant":  null,
+                                                   "width":  171,
+                                                   "height":  256
+                                               },
+                   "community.heart-community.symbol":  {
+                                                            "path":  "/assets/3d/platform/community/heart-community/symbol/heart-community.webp",
+                                                            "type":  "symbol",
+                                                            "domain":  "community",
+                                                            "variant":  "default",
+                                                            "scope":  "global",
+                                                            "tenant":  null,
+                                                            "width":  256,
+                                                            "height":  171
+                                                        },
+                   "community.hand-wave.symbol":  {
+                                                      "path":  "/assets/3d/platform/community/hand-wave/symbol/hand-wave.webp",
+                                                      "type":  "symbol",
+                                                      "domain":  "community",
+                                                      "variant":  "default",
+                                                      "scope":  "global",
+                                                      "tenant":  null,
+                                                      "width":  256,
+                                                      "height":  171
+                                                  },
+                   "branding.life-panoramica-wordmark.branding.wordmark":  {
+                                                                               "path":  "/assets/3d/tenants/life-panoramica/branding/life-panoramica-wordmark/branding/life-panoramica-wordmark--wordmark.webp",
+                                                                               "type":  "branding",
+                                                                               "domain":  "branding",
+                                                                               "variant":  "wordmark",
+                                                                               "scope":  "tenant",
+                                                                               "tenant":  "life-panoramica",
+                                                                               "width":  768,
+                                                                               "height":  465
+                                                                           },
+                   "people.friends-group.scene":  {
+                                                      "path":  "/assets/3d/platform/people/friends-group/scene/friends-group.webp",
+                                                      "type":  "scene",
+                                                      "domain":  "people",
+                                                      "variant":  "default",
+                                                      "scope":  "global",
+                                                      "tenant":  null,
+                                                      "width":  1024,
+                                                      "height":  683
+                                                  },
+                   "people.family.scene":  {
+                                               "path":  "/assets/3d/platform/people/family/scene/family.webp",
+                                               "type":  "scene",
+                                               "domain":  "people",
+                                               "variant":  "default",
+                                               "scope":  "global",
+                                               "tenant":  null,
+                                               "width":  1024,
+                                               "height":  683
+                                           },
+                   "navigation.notification-bell.symbol":  {
+                                                               "path":  "/assets/3d/platform/navigation/notification-bell/symbol/notification-bell.webp",
+                                                               "type":  "symbol",
+                                                               "domain":  "navigation",
+                                                               "variant":  "default",
+                                                               "scope":  "global",
+                                                               "tenant":  null,
+                                                               "width":  256,
+                                                               "height":  171
+                                                           },
+                   "professionals.carpenter.scene":  {
+                                                         "path":  "/assets/3d/platform/professionals/carpenter/scene/carpenter.webp",
+                                                         "type":  "scene",
+                                                         "domain":  "professionals",
+                                                         "variant":  "default",
+                                                         "scope":  "global",
+                                                         "tenant":  null,
+                                                         "width":  1024,
+                                                         "height":  683
+                                                     },
+                   "professionals.air-conditioning.scene":  {
+                                                                "path":  "/assets/3d/platform/professionals/air-conditioning/scene/air-conditioning.webp",
+                                                                "type":  "scene",
+                                                                "domain":  "professionals",
+                                                                "variant":  "default",
+                                                                "scope":  "global",
+                                                                "tenant":  null,
+                                                                "width":  1024,
+                                                                "height":  683
+                                                            },
+                   "people.pets-dog-cat.scene":  {
+                                                     "path":  "/assets/3d/platform/people/pets-dog-cat/scene/pets-dog-cat.webp",
+                                                     "type":  "scene",
+                                                     "domain":  "people",
+                                                     "variant":  "default",
+                                                     "scope":  "global",
+                                                     "tenant":  null,
+                                                     "width":  1024,
+                                                     "height":  683
+                                                 },
+                   "mobility.ev-charging.card":  {
+                                                     "path":  "/assets/3d/platform/mobility/ev-charging/card/ev-charging.webp",
+                                                     "type":  "card",
+                                                     "domain":  "mobility",
+                                                     "variant":  "default",
+                                                     "scope":  "global",
+                                                     "tenant":  null,
+                                                     "width":  512,
+                                                     "height":  341
+                                                 },
+                   "mobility.car-share.card":  {
+                                                   "path":  "/assets/3d/platform/mobility/car-share/card/car-share.webp",
+                                                   "type":  "card",
+                                                   "domain":  "mobility",
+                                                   "variant":  "default",
+                                                   "scope":  "global",
+                                                   "tenant":  null,
+                                                   "width":  512,
+                                                   "height":  512
+                                               },
+                   "mobility.bicycle.object":  {
+                                                   "path":  "/assets/3d/platform/mobility/bicycle/object/bicycle.webp",
+                                                   "type":  "object",
+                                                   "domain":  "mobility",
+                                                   "variant":  "default",
+                                                   "scope":  "global",
+                                                   "tenant":  null,
+                                                   "width":  512,
+                                                   "height":  341
+                                               },
+                   "navigation.map-pin.symbol":  {
+                                                     "path":  "/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp",
+                                                     "type":  "symbol",
+                                                     "domain":  "navigation",
+                                                     "variant":  "default",
+                                                     "scope":  "global",
+                                                     "tenant":  null,
+                                                     "width":  171,
+                                                     "height":  256
+                                                 },
+                   "navigation.hamburger-menu.symbol":  {
+                                                            "path":  "/assets/3d/platform/navigation/hamburger-menu/symbol/hamburger-menu.webp",
+                                                            "type":  "symbol",
+                                                            "domain":  "navigation",
+                                                            "variant":  "default",
+                                                            "scope":  "global",
+                                                            "tenant":  null,
+                                                            "width":  256,
+                                                            "height":  171
+                                                        },
+                   "navigation.discover.card":  {
+                                                    "path":  "/assets/3d/platform/navigation/discover/card/discover.webp",
+                                                    "type":  "card",
+                                                    "domain":  "navigation",
+                                                    "variant":  "default",
+                                                    "scope":  "global",
+                                                    "tenant":  null,
+                                                    "width":  512,
+                                                    "height":  341
+                                                }
+               }
+}

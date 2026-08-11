@@ -8,7 +8,10 @@
     "dev": "pnpm --filter @life-community-os/web dev",
     "build": "pnpm --filter @life-community-os/web build",
     "lint": "pnpm --filter @life-community-os/web lint",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "assets:generate": "pnpm --filter @life-community-os/assets generate",
+    "assets:validate": "pnpm --filter @life-community-os/assets validate",
+    "assets:test": "pnpm --filter @life-community-os/assets test"
   },
   "engines": {
     "node": ">=20"
