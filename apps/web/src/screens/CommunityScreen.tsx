@@ -8,7 +8,6 @@ import {
   formatContentWhen,
   listAccessibleChannels,
   listActiveCommunityAlerts,
-  listActualidadContent,
   listDiscoverableExperiences,
   listEspaciosComunitarios,
   listGroups,
@@ -39,15 +38,9 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
-/** Explorable areas that open in place instead of a separate route. */
-type HubAreaKey =
-  | "actualidad"
-  | "canales"
-  | "espacios"
-  | "mascotas"
-  | "oficial";
-
-const NEIGHBOUR_PEEK = 3;
+const PLAZA_PEEK = 4;
+const OFFICIAL_NOTICE_PEEK = 3;
+const OFFICIAL_CHANNEL_PEEK = 3;
 
 function proposalStatus(status?: string): HubProposalStatus {
   if (status === "closing_soon") return "closing_soon";
@@ -60,21 +53,35 @@ function plural(count: number, one: string, many: string): string {
 }
 
 /**
- * Community Hub — digital town square.
- * Three intents, in order: what needs attention → who is talking →
- * what you can explore. Areas open in place so ?tab= deep links keep working
- * without a parallel route per area.
+ * Community Hub — the digital town square.
+ *
+ * Six layers, each with its own emotional role and its own card family:
+ *   1 Ahora mismo  → what affects me today (attention cards)
+ *   2 En la plaza  → neighbour life (photo cards → public content detail)
+ *   3 Grupos       → belonging (horizontal rail → group conversation)
+ *   4 Decidir      → participation (proposal cards)
+ *   5 Oficial      → authority (quiet institutional rows)
+ *   6 Explorar     → doors to other capabilities (tiles)
+ *
+ * One content, one layer: official information never repeats in the plaza,
+ * and neighbour content never repeats outside it.
  */
 export function CommunityHubScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, isModuleEnabled, hasCapability, demoPersonId } =
-    useTenant();
+  const {
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    demoPersonId,
+    theme,
+  } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
 
   const [expandGroups, setExpandGroups] = useState(false);
-  const [expandNeighbours, setExpandNeighbours] = useState(false);
-  const [activeArea, setActiveArea] = useState<HubAreaKey | null>(null);
+  const [expandPlaza, setExpandPlaza] = useState(false);
+  const [expandChannels, setExpandChannels] = useState(false);
+  const [petsOpen, setPetsOpen] = useState(false);
 
   const canView = hasCapability(CAPABILITIES.contentView);
   const canChannels = hasCapability(CAPABILITIES.channelView);
@@ -90,23 +97,30 @@ export function CommunityHubScreen() {
 
   const alerts = useMemo(() => listActiveCommunityAlerts(), []);
 
-  const officialNotices = useMemo(() => {
-    return listOfficialContent()
-      .map((c) => feedById.get(c.id))
-      .filter(Boolean)
-      .slice(0, 3) as typeof feedItems;
-  }, [feedById]);
-
-  const neighbourActivity = useMemo(() => {
-    return feedItems
-      .filter((c) => !c.isOfficial && c.type !== "proposal")
-      .slice(0, 8);
-  }, [feedItems]);
-
+  /** Participation items — proposals open or about to close. */
   const participation = useMemo(() => {
     return listParticipacionContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
+  }, [feedById]);
+
+  /** Layer 1 — decisions with a deadline are the only promoted proposals. */
+  const closingSoon = useMemo(
+    () => participation.filter((c) => c.decisionStatus === "closing_soon"),
+    [participation],
+  );
+
+  /** Layer 2 — single source for neighbour life. Official never enters here. */
+  const plazaItems = useMemo(() => {
+    return feedItems.filter((c) => !c.isOfficial && c.type !== "proposal");
+  }, [feedItems]);
+
+  /** Layer 5 — official communications live only in the official section. */
+  const officialNotices = useMemo(() => {
+    return listOfficialContent()
+      .map((c) => feedById.get(c.id))
+      .filter(Boolean)
+      .slice(0, OFFICIAL_NOTICE_PEEK) as typeof feedItems;
   }, [feedById]);
 
   const groupItems = useMemo(() => listGroups(), []);
@@ -116,7 +130,6 @@ export function CommunityHubScreen() {
   );
   const espacios = useMemo(() => listEspaciosComunitarios(), []);
   const officialEntities = useMemo(() => listOfficialEntities(), []);
-  const actualidad = useMemo(() => listActualidadContent(), []);
   const experienceCount = useMemo(
     () => listDiscoverableExperiences({ includeSessionCreated: false }).length,
     [],
@@ -133,7 +146,7 @@ export function CommunityHubScreen() {
   const resolvedTab = resolveCommunityHubArea(tabParam);
 
   useEffect(() => {
-    // Deep links (?tab=) jump to a section. Plain /community stays at top.
+    // Deep links (?tab=) jump to a layer. Plain /community stays at top.
     if (!tabParam || !resolvedTab) {
       const t = window.setTimeout(() => {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -141,22 +154,25 @@ export function CommunityHubScreen() {
       return () => window.clearTimeout(t);
     }
 
+    // Every canonical area keeps a landing layer — areas are the navigation
+    // contract and are never rewritten here.
     const sectionByTab: Record<CommunityHubAreaId, string> = {
+      // Alerts and closing decisions live in "Ahora mismo".
       actualidad: "plaza-important",
-      grupos: "plaza-people",
       conversaciones: "plaza-activity",
+      grupos: "plaza-people",
       propuestas: "plaza-participate",
       participacion: "plaza-participate",
-      canales: "plaza-explore",
+      canales: "plaza-official",
       espacios: "plaza-explore",
       mascotas: "plaza-explore",
     };
 
     if (resolvedTab === "grupos") setExpandGroups(true);
-    if (resolvedTab === "conversaciones") setExpandNeighbours(true);
-    if (resolvedTab === "canales") setActiveArea("canales");
-    if (resolvedTab === "espacios") setActiveArea("espacios");
-    if (resolvedTab === "mascotas") setActiveArea("mascotas");
+    if (resolvedTab === "actualidad" || resolvedTab === "conversaciones") {
+      setExpandPlaza(true);
+    }
+    if (resolvedTab === "mascotas") setPetsOpen(true);
 
     const id = sectionByTab[resolvedTab];
     const t = window.setTimeout(() => {
@@ -188,6 +204,8 @@ export function CommunityHubScreen() {
   const openPostComposer = () =>
     window.dispatchEvent(new Event("lcos:open-post"));
 
+  const communityName = theme.shortName || theme.name;
+
   const showChannels =
     canChannels &&
     (isFeatureEnabled("communityChannels") ||
@@ -200,30 +218,42 @@ export function CommunityHubScreen() {
     (isModuleEnabled("community.pets") || resolvedTab === "mascotas") &&
     mascotasItems.length > 0;
   const showExperiences = isFeatureEnabled("experiences") && experienceCount > 0;
-  const showActualidad = isFeatureEnabled("feed") && actualidad.length > 0;
-  const showOfficial = officialEntities.length > 0;
+  const showServices = isModuleEnabled("services");
+  // Housing is an extension point: it only becomes a door once its module ships.
+  const showHousing = isModuleEnabled("housing");
+  const showOfficial =
+    officialEntities.length > 0 || officialNotices.length > 0 || showChannels;
+  const showExplore =
+    showExperiences || showSpaces || showServices || showPets || showHousing;
 
-  const toggleArea = (key: HubAreaKey) =>
-    setActiveArea((current) => (current === key ? null : key));
+  const attentionCount = alerts.length + closingSoon.length;
 
-  const livingLine =
-    [
-      participation.length > 0
-        ? plural(participation.length, "propuesta abierta", "propuestas abiertas")
-        : null,
-      groupItems.length > 0 ? plural(groupItems.length, "grupo", "grupos") : null,
-      neighbourActivity.length > 0
-        ? plural(neighbourActivity.length, "tema entre vecinos", "temas entre vecinos")
-        : null,
-    ]
-      .filter(Boolean)
-      .join(" · ") || "Qué pasa hoy con tus vecinos.";
+  /** Header state line — qualitative, never a module dashboard. */
+  const stateLine =
+    attentionCount > 0
+      ? [
+          alerts.length > 0
+            ? plural(alerts.length, "aviso activo", "avisos activos")
+            : null,
+          closingSoon.length > 0
+            ? plural(
+                closingSoon.length,
+                "decisión que cierra pronto",
+                "decisiones que cierran pronto",
+              )
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : `Todo tranquilo en ${communityName}`;
 
-  const visibleNeighbours = expandNeighbours
-    ? neighbourActivity
-    : neighbourActivity.slice(0, NEIGHBOUR_PEEK);
+  const visiblePlaza = expandPlaza
+    ? plazaItems
+    : plazaItems.slice(0, PLAZA_PEEK);
 
-  const attentionCount = alerts.length + officialNotices.length;
+  const visibleChannels = expandChannels
+    ? accessibleChannels
+    : accessibleChannels.slice(0, OFFICIAL_CHANNEL_PEEK);
 
   return (
     <MobileScreen dense>
@@ -232,7 +262,7 @@ export function CommunityHubScreen() {
           Comunidad
         </h1>
         <p className="mt-1 text-[14px] leading-5 text-[var(--color-text-tertiary)]">
-          {livingLine}
+          {stateLine}
         </p>
         {canCreate ? (
           <Button
@@ -245,12 +275,13 @@ export function CommunityHubScreen() {
         ) : null}
       </header>
 
+      {/* 1 — Ahora mismo: only what affects the neighbour today. */}
       {attentionCount > 0 ? (
         <section id="plaza-important" className="scroll-mt-3">
           <span id="plaza-avisos" className="sr-only" />
           <HomeSection
-            title="Requiere tu atención"
-            subtitle="Avisos activos y comunicados oficiales."
+            title="Ahora mismo"
+            subtitle="Lo que te afecta hoy."
           >
             <div className="space-y-2.5">
               {alerts.map((alert) => {
@@ -281,7 +312,11 @@ export function CommunityHubScreen() {
                     onClick={
                       alert.href
                         ? () => {
-                            if (alert.href?.includes("#plaza-avisos")) {
+                            const href = alert.href!;
+                            if (
+                              href.includes("#plaza-avisos") ||
+                              href.includes("tab=actualidad")
+                            ) {
                               document
                                 .getElementById("plaza-important")
                                 ?.scrollIntoView({
@@ -290,7 +325,7 @@ export function CommunityHubScreen() {
                                 });
                               return;
                             }
-                            router.push(alert.href!);
+                            router.push(href.split("#")[0] || href);
                           }
                         : undefined
                     }
@@ -298,25 +333,102 @@ export function CommunityHubScreen() {
                 );
               })}
 
-              {officialNotices.map((item) => (
-                <HubRow
-                  key={item.id}
-                  glyph="📢"
-                  title={item.title}
-                  meta={item.author.name}
-                  trailingLabel={formatContentWhen(
-                    item.publishedAt ?? item.createdAt,
-                  )}
-                  onClick={() => router.push(`/community/content/${item.id}`)}
-                />
-              ))}
+              {closingSoon.map((item) => {
+                const live = getContent(item.id) ?? item;
+                return (
+                  <HubAttentionCard
+                    key={live.id}
+                    tone="important"
+                    glyph="⏳"
+                    title={live.title}
+                    meta={`Decisión abierta · cierra pronto · ${live.author.name}`}
+                    actionLabel="Ver propuesta"
+                    onClick={() => router.push(`/community/content/${live.id}`)}
+                  />
+                );
+              })}
             </div>
           </HomeSection>
         </section>
       ) : (
-        <div id="plaza-important" className="scroll-mt-3" />
+        <div id="plaza-important" className="scroll-mt-3">
+          <span id="plaza-avisos" className="sr-only" />
+        </div>
       )}
 
+      {/* 2 — En la plaza: neighbour life. Opens the public content detail. */}
+      <section id="plaza-activity" className="scroll-mt-3">
+        <HomeSection
+          title="En la plaza"
+          subtitle="La vida social de la comunidad."
+          actionLabel={
+            plazaItems.length > PLAZA_PEEK
+              ? expandPlaza
+                ? "Ver menos"
+                : "Ver todo"
+              : undefined
+          }
+          onAction={
+            plazaItems.length > PLAZA_PEEK
+              ? () => setExpandPlaza((v) => !v)
+              : undefined
+          }
+        >
+          {plazaItems.length === 0 ? (
+            <EmptyState
+              title="Sé el primero en compartir"
+              description="Cuenta algo útil a tus vecinos: un aviso, una pregunta o una mano."
+              actionLabel={canCreate ? "Escribir en la comunidad" : undefined}
+              onAction={canCreate ? openPostComposer : undefined}
+            />
+          ) : (
+            <div className="space-y-2.5">
+              {visiblePlaza.map((item) => {
+                const live = getContent(item.id) ?? item;
+                const zone =
+                  live.areaLabel && live.areaLabel !== theme.name
+                    ? live.areaLabel
+                    : undefined;
+                const supports =
+                  live.reactionCounts.support + live.reactionCounts.acknowledge;
+                const signals =
+                  [
+                    supports > 0 ? plural(supports, "apoyo", "apoyos") : null,
+                    live.commentCount > 0
+                      ? plural(
+                          live.commentCount,
+                          "comentario",
+                          "comentarios",
+                        )
+                      : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || undefined;
+                return (
+                  <HubDoorCard
+                    key={live.id}
+                    title={live.title}
+                    meta={[
+                      live.author.name,
+                      formatContentWhen(live.publishedAt ?? live.createdAt),
+                      zone,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                    signals={signals}
+                    imageUrl={live.imageUrl || live.author.avatarUrl}
+                    fallbackInitial={live.author.name.slice(0, 1).toUpperCase()}
+                    imageSide="end"
+                    onClick={() => router.push(`/community/content/${live.id}`)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </HomeSection>
+      </section>
+
+      {/* 3 — Grupos: belonging. Group card → universal conversation. */}
       {groupItems.length > 0 ? (
         <section id="plaza-people" className="scroll-mt-3">
           <HomeSection
@@ -362,69 +474,11 @@ export function CommunityHubScreen() {
         </section>
       ) : null}
 
-      <section id="plaza-activity" className="scroll-mt-3">
-        <HomeSection
-          title="Entre vecinos"
-          subtitle="Conversaciones abiertas hoy."
-          actionLabel={
-            neighbourActivity.length > NEIGHBOUR_PEEK
-              ? expandNeighbours
-                ? "Ver menos"
-                : "Ver todas"
-              : undefined
-          }
-          onAction={
-            neighbourActivity.length > NEIGHBOUR_PEEK
-              ? () => setExpandNeighbours((v) => !v)
-              : undefined
-          }
-        >
-          {neighbourActivity.length === 0 ? (
-            <EmptyState
-              title="Sé el primero en compartir"
-              description="Cuenta algo útil a tus vecinos: un aviso, una pregunta o una mano."
-              actionLabel={canCreate ? "Escribir en la comunidad" : undefined}
-              onAction={canCreate ? openPostComposer : undefined}
-            />
-          ) : (
-            <div className="space-y-2.5">
-              {visibleNeighbours.map((item) => {
-                const live = getContent(item.id) ?? item;
-                const zone =
-                  live.areaLabel && live.areaLabel !== "Life Panoramica"
-                    ? live.areaLabel
-                    : undefined;
-                return (
-                  <HubDoorCard
-                    key={live.id}
-                    title={live.title}
-                    meta={[
-                      live.author.name,
-                      formatContentWhen(live.publishedAt ?? live.createdAt),
-                      zone,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                    imageUrl={live.imageUrl || live.author.avatarUrl}
-                    fallbackInitial={live.author.name.slice(0, 1).toUpperCase()}
-                    imageSide="end"
-                    onClick={() =>
-                      router.push(
-                        `/community/neighbours/${encodeURIComponent(live.author.id)}/conversation`,
-                      )
-                    }
-                  />
-                );
-              })}
-            </div>
-          )}
-        </HomeSection>
-      </section>
-
+      {/* 4 — Decidir juntos: support and decision status, never votes. */}
       <section id="plaza-participate" className="scroll-mt-3">
         <HomeSection
-          title="Propuestas"
-          subtitle="Decisiones abiertas de la comunidad."
+          title="Decidir juntos"
+          subtitle="Propuestas abiertas de la comunidad."
         >
           {participation.length === 0 ? (
             <EmptyState
@@ -436,7 +490,7 @@ export function CommunityHubScreen() {
               {participation.map((item) => {
                 const live = getContent(item.id) ?? item;
                 const zone =
-                  live.areaLabel && live.areaLabel !== "Life Panoramica"
+                  live.areaLabel && live.areaLabel !== theme.name
                     ? live.areaLabel
                     : undefined;
                 return (
@@ -460,83 +514,48 @@ export function CommunityHubScreen() {
         </HomeSection>
       </section>
 
-      <section id="plaza-explore" className="scroll-mt-3">
-        <HomeSection
-          title="Explora la comunidad"
-          subtitle="Todo lo que vive en Panorámica."
-        >
-          <HubTileGrid>
-            {showActualidad ? (
-              <HubTile
-                label="Actualidad"
-                glyph="📰"
-                meta={plural(actualidad.length, "noticia", "noticias")}
-                tint="bg-[var(--color-sea-subtle)]"
-                active={activeArea === "actualidad"}
-                onSelect={() => toggleArea("actualidad")}
-              />
-            ) : null}
-            {showChannels ? (
-              <HubTile
-                label="Canales"
-                glyph="📣"
-                meta={plural(accessibleChannels.length, "canal", "canales")}
-                tint="bg-[var(--color-action-accent-subtle)]"
-                active={activeArea === "canales"}
-                onSelect={() => toggleArea("canales")}
-              />
-            ) : null}
-            {showSpaces ? (
-              <HubTile
-                label="Espacios"
-                glyph="🏊"
-                meta={plural(espacios.length, "espacio", "espacios")}
-                tint="bg-[var(--color-sea-subtle)]"
-                active={activeArea === "espacios"}
-                onSelect={() => toggleArea("espacios")}
-              />
-            ) : null}
-            {showExperiences ? (
-              <HubTile
-                label="Experiencias"
-                glyph="✨"
-                meta={plural(experienceCount, "plan", "planes")}
-                tint="bg-[var(--color-action-accent-subtle)]"
-                onSelect={() => router.push("/experiences")}
-              />
-            ) : null}
-            {showOfficial ? (
-              <HubTile
-                label="Oficial"
-                glyph="🏛"
-                meta={plural(officialEntities.length, "entidad", "entidades")}
-                active={activeArea === "oficial"}
-                onSelect={() => toggleArea("oficial")}
-              />
-            ) : null}
-            {showPets ? (
-              <HubTile
-                label="Mascotas"
-                glyph="🐾"
-                meta={plural(mascotasItems.length, "recurso", "recursos")}
-                tint="bg-[var(--color-feedback-success-subtle)]"
-                active={activeArea === "mascotas"}
-                onSelect={() => toggleArea("mascotas")}
-              />
-            ) : null}
-          </HubTileGrid>
+      {/* 5 — Información oficial: the only home for authority content. */}
+      {showOfficial ? (
+        <section id="plaza-official" className="scroll-mt-3">
+          <HomeSection
+            title="Información oficial"
+            subtitle="Administración, entidades y canales de la comunidad."
+            actionLabel={
+              showChannels && accessibleChannels.length > OFFICIAL_CHANNEL_PEEK
+                ? expandChannels
+                  ? "Ver menos"
+                  : "Ver todos"
+                : undefined
+            }
+            onAction={
+              showChannels && accessibleChannels.length > OFFICIAL_CHANNEL_PEEK
+                ? () => setExpandChannels((v) => !v)
+                : undefined
+            }
+          >
+            <div className="space-y-2.5">
+              {officialEntities.map((entity) => (
+                <HubRow
+                  key={entity.id}
+                  tone="quiet"
+                  imageUrl={entity.imageUrl}
+                  glyph="🏛"
+                  title={entity.name}
+                  meta={entity.description}
+                  onClick={() => router.push(`/official/${entity.slug}`)}
+                />
+              ))}
 
-          {activeArea === "actualidad" ? (
-            <HubPanel
-              title="Actualidad"
-              description="Lo que está pasando ahora en la comunidad."
-              onClose={() => setActiveArea(null)}
-              className="mt-3"
-            >
-              {actualidad.slice(0, 6).map((item) => (
+              {officialNotices.length > 0 ? (
+                <p className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  Últimos comunicados
+                </p>
+              ) : null}
+              {officialNotices.map((item) => (
                 <HubRow
                   key={item.id}
-                  glyph="📰"
+                  tone="quiet"
+                  glyph="📢"
                   title={item.title}
                   meta={item.author.name}
                   trailingLabel={formatContentWhen(
@@ -545,162 +564,169 @@ export function CommunityHubScreen() {
                   onClick={() => router.push(`/community/content/${item.id}`)}
                 />
               ))}
-            </HubPanel>
-          ) : null}
 
-          {activeArea === "canales" ? (
-            <HubPanel
-              title="Canales"
-              description="Comunicación oficial y de vecinos."
-              onClose={() => setActiveArea(null)}
-              className="mt-3"
-            >
-              {accessibleChannels.map((channel) => {
-                const label = channelAccessLabel({
-                  allowed: true,
-                  reason: "accessible",
-                  requiresVerifiedResidency:
-                    channel.requiresVerifiedResidency,
-                  type: channel.type,
-                });
-                const matchedEntity =
-                  channel.type === "official"
-                    ? officialEntities.find((e) => e.id === channel.ownerId) ??
-                      officialEntities.find((e) => e.slug === channel.slug)
-                    : undefined;
-                const typeLabel =
-                  channel.type === "official" ? "Oficial" : "Comunidad";
-                const access =
-                  label.badge && label.badge !== typeLabel
-                    ? label.badge
-                    : undefined;
-                return (
-                  <HubRow
-                    key={channel.id}
-                    glyph={channel.type === "official" ? "🏛" : "📣"}
-                    title={channel.name}
-                    meta={[typeLabel, access].filter(Boolean).join(" · ")}
-                    onClick={
-                      matchedEntity
-                        ? () => router.push(`/official/${matchedEntity.slug}`)
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </HubPanel>
-          ) : null}
+              {showChannels ? (
+                <p className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  Canales
+                </p>
+              ) : null}
+              {showChannels
+                ? visibleChannels.map((channel) => {
+                    const label = channelAccessLabel({
+                      allowed: true,
+                      reason: "accessible",
+                      requiresVerifiedResidency:
+                        channel.requiresVerifiedResidency,
+                      type: channel.type,
+                    });
+                    const matchedEntity =
+                      channel.type === "official"
+                        ? (officialEntities.find(
+                            (e) => e.id === channel.ownerId,
+                          ) ??
+                          officialEntities.find((e) => e.slug === channel.slug))
+                        : undefined;
+                    const typeLabel =
+                      channel.type === "official" ? "Oficial" : "Comunidad";
+                    const access =
+                      label.badge && label.badge !== typeLabel
+                        ? label.badge
+                        : undefined;
+                    return (
+                      <HubRow
+                        key={channel.id}
+                        tone="quiet"
+                        glyph={channel.type === "official" ? "🏛" : "📣"}
+                        title={channel.name}
+                        meta={[typeLabel, access].filter(Boolean).join(" · ")}
+                        onClick={
+                          matchedEntity
+                            ? () => router.push(`/official/${matchedEntity.slug}`)
+                            : undefined
+                        }
+                      />
+                    );
+                  })
+                : null}
+            </div>
+          </HomeSection>
+        </section>
+      ) : null}
 
-          {activeArea === "espacios" ? (
-            <HubPanel
-              title="Espacios compartidos"
-              description="Zonas comunes de la comunidad."
-              onClose={() => setActiveArea(null)}
-              className="mt-3"
-            >
-              {espacios.map((space) => (
-                <HubRow
-                  key={space.id}
+      {/* 6 — Explorar: doors to other capabilities, gated by module. */}
+      {showExplore ? (
+        <section id="plaza-explore" className="scroll-mt-3">
+          <HomeSection
+            title="Explorar"
+            subtitle={`Todo lo que vive en ${communityName}.`}
+          >
+            <HubTileGrid>
+              {showExperiences ? (
+                <HubTile
+                  label="Experiencias"
+                  glyph="✨"
+                  meta={plural(experienceCount, "plan", "planes")}
+                  tint="bg-[var(--color-action-accent-subtle)]"
+                  onSelect={() => router.push("/experiences")}
+                />
+              ) : null}
+              {showSpaces ? (
+                <HubTile
+                  label="Espacios"
                   glyph="🏊"
-                  title={space.name}
-                  meta={[space.areaLabel, space.availabilityPreview]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  onClick={
-                    space.bookable
-                      ? () => router.push(`/resources/${space.id}`)
-                      : undefined
-                  }
+                  meta={plural(espacios.length, "espacio", "espacios")}
+                  tint="bg-[var(--color-sea-subtle)]"
+                  onSelect={() => router.push("/resources")}
                 />
-              ))}
-              <Button
-                variant="secondary"
-                fullWidth
-                onClick={() => router.push("/resources")}
-                className="mt-1 min-h-[44px] text-[15px]"
+              ) : null}
+              {showServices ? (
+                <HubTile
+                  label="Servicios"
+                  glyph="🛠"
+                  meta="Vecinos y negocios"
+                  tint="bg-[var(--color-sea-subtle)]"
+                  onSelect={() => router.push("/services")}
+                />
+              ) : null}
+              {showPets ? (
+                <HubTile
+                  label="Mascotas"
+                  glyph="🐾"
+                  meta={plural(mascotasItems.length, "recurso", "recursos")}
+                  tint="bg-[var(--color-feedback-success-subtle)]"
+                  active={petsOpen}
+                  expandable
+                  onSelect={() => setPetsOpen((v) => !v)}
+                />
+              ) : null}
+              {showHousing ? (
+                <HubTile
+                  label="Vivienda"
+                  glyph="🏠"
+                  tint="bg-[var(--color-action-accent-subtle)]"
+                  onSelect={() => router.push("/housing")}
+                />
+              ) : null}
+            </HubTileGrid>
+
+            {showPets && petsOpen ? (
+              <HubPanel
+                title="Mascotas"
+                description="Lugares, manos y grupos para tu mascota."
+                onClose={() => setPetsOpen(false)}
+                className="mt-3"
               >
-                Ver todos los espacios
-              </Button>
-            </HubPanel>
-          ) : null}
-
-          {activeArea === "oficial" ? (
-            <HubPanel
-              title="Oficial"
-              description="Entidades responsables de la comunidad."
-              onClose={() => setActiveArea(null)}
-              className="mt-3"
-            >
-              {officialEntities.map((entity) => (
-                <HubRow
-                  key={entity.id}
-                  imageUrl={entity.imageUrl}
-                  glyph="🏛"
-                  title={entity.name}
-                  meta={entity.description}
-                  onClick={() => router.push(`/official/${entity.slug}`)}
-                />
-              ))}
-            </HubPanel>
-          ) : null}
-
-          {activeArea === "mascotas" ? (
-            <HubPanel
-              title="Mascotas"
-              description="Lugares, manos y grupos para tu mascota."
-              onClose={() => setActiveArea(null)}
-              className="mt-3"
-            >
-              {mascotasItems.map((item) => {
-                if (item.kind === "place") {
+                {mascotasItems.map((item) => {
+                  if (item.kind === "place") {
+                    return (
+                      <HubRow
+                        key={`place-${item.place.id}`}
+                        glyph="🐾"
+                        title={item.place.name}
+                        meta={item.place.story}
+                        onClick={() =>
+                          router.push(`/near/place/${item.place.id}`)
+                        }
+                      />
+                    );
+                  }
+                  if (item.kind === "work") {
+                    return (
+                      <HubRow
+                        key={`work-${item.post.id}`}
+                        glyph="🤝"
+                        title={item.post.title}
+                        meta="Servicio entre vecinos"
+                        onClick={() =>
+                          router.push(`/services/work/${item.post.id}`)
+                        }
+                      />
+                    );
+                  }
                   return (
                     <HubRow
-                      key={`place-${item.place.id}`}
+                      key={`group-${item.group.id}`}
+                      imageUrl={item.group.imageUrl}
                       glyph="🐾"
-                      title={item.place.name}
-                      meta={item.place.story}
+                      title={item.group.name}
+                      meta={plural(
+                        item.group.memberCount,
+                        "miembro",
+                        "miembros",
+                      )}
                       onClick={() =>
-                        router.push(`/near/place/${item.place.id}`)
+                        router.push(
+                          `/community/groups/${item.group.id}/conversation`,
+                        )
                       }
                     />
                   );
-                }
-                if (item.kind === "work") {
-                  return (
-                    <HubRow
-                      key={`work-${item.post.id}`}
-                      glyph="🤝"
-                      title={item.post.title}
-                      meta="Servicio entre vecinos"
-                      onClick={() =>
-                        router.push(`/services/work/${item.post.id}`)
-                      }
-                    />
-                  );
-                }
-                return (
-                  <HubRow
-                    key={`group-${item.group.id}`}
-                    imageUrl={item.group.imageUrl}
-                    glyph="🐾"
-                    title={item.group.name}
-                    meta={plural(
-                      item.group.memberCount,
-                      "miembro",
-                      "miembros",
-                    )}
-                    onClick={() =>
-                      router.push(
-                        `/community/groups/${item.group.id}/conversation`,
-                      )
-                    }
-                  />
-                );
-              })}
-            </HubPanel>
-          ) : null}
-        </HomeSection>
-      </section>
+                })}
+              </HubPanel>
+            ) : null}
+          </HomeSection>
+        </section>
+      ) : null}
     </MobileScreen>
   );
 }

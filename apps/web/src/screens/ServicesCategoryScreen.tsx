@@ -11,6 +11,7 @@ import {
   listRecommendationsForHub,
   listWorkPostsForHub,
   marketplaceKindLabel,
+  PROFESSIONALS_HEADER_ART_URL,
   rankLocalEntitiesForTerritory,
   workPostTypeLabel,
   type WorkPostListing,
@@ -335,7 +336,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     <MobileScreen>
       <FlowScreenHeader
         title={hub.label}
-        subtitle={hub.problem}
+        subtitle={hub.slug === "professionals" ? undefined : hub.problem}
         onBack={() => router.push("/services")}
         onExit={() => router.push("/")}
       />
@@ -387,16 +388,35 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         </div>
       ) : null}
 
-      <ScreenSearch
-        value={query}
-        onChange={setQuery}
-        placeholder={
-          isWorkHub
-            ? "Buscar anuncios de trabajo…"
-            : `Buscar en ${hub.label.toLowerCase()}…`
-        }
-        label={`Buscar ${hub.label}`}
-      />
+      {hub.slug === "professionals" ? (
+        <div className="-mt-10 flex flex-col gap-1">
+          <div className="flex justify-center">
+            <img
+              src={PROFESSIONALS_HEADER_ART_URL}
+              alt=""
+              draggable={false}
+              className="h-[280px] w-auto max-w-full object-contain object-bottom"
+            />
+          </div>
+          <ScreenSearch
+            value={query}
+            onChange={setQuery}
+            placeholder={`Buscar en ${hub.label.toLowerCase()}…`}
+            label={`Buscar ${hub.label}`}
+          />
+        </div>
+      ) : (
+        <ScreenSearch
+          value={query}
+          onChange={setQuery}
+          placeholder={
+            isWorkHub
+              ? "Buscar anuncios de trabajo…"
+              : `Buscar en ${hub.label.toLowerCase()}…`
+          }
+          label={`Buscar ${hub.label}`}
+        />
+      )}
 
       {body}
 

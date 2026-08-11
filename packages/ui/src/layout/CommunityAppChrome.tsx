@@ -136,21 +136,28 @@ export function CommunityAppHeader({
         >
           <div className="relative z-10 flex shrink-0 items-center">
             {brandLogoUrl ? (
-              <button
-                type="button"
-                onClick={() =>
-                  lightbox?.open(brandLogoUrl, `Logo ${brandName}`)
-                }
-                className="life-logo flex h-12 shrink-0 items-center gap-2.5 text-left active:opacity-80"
-                aria-label={brandLabel ?? `Ver logo de ${brandName}`}
-              >
-                <img
-                  src={brandLogoUrl}
-                  alt=""
-                  data-brand-logo
-                  className="life-logo__symbol h-9 w-9 shrink-0 object-contain"
-                />
-                <span className="min-w-0">
+              <div className="life-logo flex h-12 shrink-0 items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    lightbox?.open(brandLogoUrl, `Logo ${brandName}`)
+                  }
+                  className="shrink-0 active:opacity-80"
+                  aria-label={`Ver logo de ${brandName}`}
+                >
+                  <img
+                    src={brandLogoUrl}
+                    alt=""
+                    data-brand-logo
+                    className="life-logo__symbol h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onBrandClick?.()}
+                  className="min-w-0 text-left active:opacity-80"
+                  aria-label={brandLabel}
+                >
                   <span className="life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[20px] font-normal uppercase leading-none tracking-[0.22em] text-[#F7FAFA]">
                     {brandName}
                   </span>
@@ -159,8 +166,8 @@ export function CommunityAppHeader({
                       {brandSubName}
                     </span>
                   ) : null}
-                </span>
-              </button>
+                </button>
+              </div>
             ) : (
               <LifeLogo
                 primary={brandName}
@@ -277,21 +284,35 @@ export function CommunityAppHeader({
                 type="button"
                 onClick={onMenuOpen}
                 className={cn(
-                  "flex shrink-0 items-center justify-center rounded-full transition-colors active:bg-white/10",
-                  overHero
-                    ? "h-10 w-10 text-[#F7FAFA]"
-                    : "-mr-0.5 h-8 w-7 text-[var(--color-text-primary)]",
+                  "flex shrink-0 items-center justify-center rounded-full transition-opacity active:opacity-80",
+                  overHero ? "h-[60px] w-[60px]" : "-mr-1 h-[58px] w-[58px]",
                 )}
                 aria-label={menuLabel}
               >
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path
-                    d="M4 7h16M4 12h16M4 17h16"
-                    stroke="currentColor"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                {/* 3D glass menu — thin slices with extra vertical gap */}
+                <span
+                  className="flex w-[55px] flex-col items-center gap-[3px] mix-blend-screen"
+                  aria-hidden
+                >
+                  {[0, 1, 2].map((slice) => (
+                    <span
+                      key={slice}
+                      className="relative h-[10px] w-full overflow-hidden"
+                    >
+                      <img
+                        src="/tenants/life-panoramica/glyphs/menu.webp?v=premium-menu1"
+                        alt=""
+                        draggable={false}
+                        className="absolute left-0 max-w-none"
+                        style={{
+                          width: 55,
+                          height: 55,
+                          top: -(slice * (55 / 3) + 55 / 6 - 5),
+                        }}
+                      />
+                    </span>
+                  ))}
+                </span>
               </button>
             ) : null}
           </div>

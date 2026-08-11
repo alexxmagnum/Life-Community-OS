@@ -151,7 +151,7 @@ export function HomeScreen() {
       : `${placeName}\nrespira tranquila.`;
 
   return (
-    <div className="life-home overflow-x-hidden bg-[var(--life-bg,#001219)] pb-1">
+    <div className="life-home overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))] pb-1">
       <HomeHeroStage
         slides={heroSlides}
         initialIndex={heroInitialIndex}
@@ -162,7 +162,7 @@ export function HomeScreen() {
         underChrome={false}
       />
 
-      <div className="space-y-[15px] px-2.5 md:px-0">
+      <div className="space-y-7 px-4 md:px-0">
       {/* ── HOY — open moments with real neighbours ── */}
       <section ref={todaySectionRef} className="scroll-mt-[64px]">
         <HomeSectionHead
@@ -174,7 +174,7 @@ export function HomeScreen() {
           }
         />
         {moments.length === 0 ? (
-          <div className="mt-2.5">
+          <div>
             <EmptyState
               title="Hoy está tranquilo por aquí."
               description="Cuando alguien abra un plan, lo verás aquí."
@@ -191,7 +191,7 @@ export function HomeScreen() {
             />
           </div>
         ) : (
-          <HomeRail className="mt-2.5">
+          <HomeRail>
             {moments.map(({ experience, presentation }) => (
               <HomeMomentCard
                 key={experience.id}
@@ -228,10 +228,11 @@ export function HomeScreen() {
           actionLabel="Ver más"
           onAction={() => router.push("/community")}
         />
-        <HomeRail className="mt-2.5">
+        <HomeRail>
           {moves.map((move) => (
             <HomeMoveCard
               key={move.id}
+              tone={move.tone}
               glyph={move.glyph}
               headline={move.headline}
               meta={move.meta}
@@ -245,10 +246,10 @@ export function HomeScreen() {
         </HomeRail>
       </section>
 
-      {/* ── QUÉ TE APETECE HACER — four translucent doors ── */}
+      {/* ── QUÉ TE APETECE HACER — four intent doors, horizontal rail ── */}
       <section>
         <HomeSectionHead title="¿Qué te apetece hacer?" />
-        <div className="mt-2.5 grid grid-cols-2 gap-2.5">
+        <HomeRail>
           {intents.map((intent) => (
             <HomeIntentCard
               key={intent.id}
@@ -257,10 +258,11 @@ export function HomeScreen() {
               title={intent.title}
               subtitle={intent.subtitle}
               imageUrl={intent.imageUrl}
+              bgImageUrl={intent.bgImageUrl}
               onClick={() => router.push(intent.href)}
             />
           ))}
-        </div>
+        </HomeRail>
       </section>
 
       {/* ── CERCA DE TI — places the community points at ── */}
@@ -272,7 +274,7 @@ export function HomeScreen() {
             actionGlyph="map"
             onAction={() => router.push("/discover")}
           />
-          <HomeRail className="mt-2.5">
+          <HomeRail>
             {nearby.map((place) => (
               <HomeNearbyCard
                 key={place.id}

@@ -178,11 +178,13 @@ export function MemberShell({ children }: { children: ReactNode }) {
     );
   }, []);
   /**
-   * Night chrome needs a light mark. The dark-ink logo is skipped rather than
-   * rendered unreadable, leaving the wordmark until a light asset exists.
+   * Night chrome needs a light mark. Prefer logoLight; fall back to logo
+   * (the Panorámica icon is transparent and reads on dark surfaces).
    */
   const brandLogoUrl =
-    themeMode === "night" ? theme.imagery.logoLight : theme.imagery.logo;
+    (themeMode === "night"
+      ? theme.imagery.logoLight ?? theme.imagery.logo
+      : theme.imagery.logo) || undefined;
 
   /** Hamburger menu — hide actions that cannot complete a real flow yet. */
   const menuCategories = useMemo((): AppMenuCategory[] => {
@@ -394,8 +396,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
           <CommunityAppHeader
             brandName={wordmarkPrimary}
             brandSubName={wordmarkSecondary}
-            transparent={isHome}
-            heroOverlay={isHome}
+            transparent
+            heroOverlay
             brandLogoUrl={brandLogoUrl}
             weatherTemperature={theme.identity?.weatherTemperature}
             weatherCondition={theme.identity?.weatherCondition}

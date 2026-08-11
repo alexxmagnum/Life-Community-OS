@@ -27,6 +27,7 @@ export function tenantThemeToCssVars(
   const glass = c.surfaceGlass ?? c.bgElevated;
   const glassStrong = c.surfaceGlassStrong ?? c.bgElevated;
   return {
+    "--life-bg": c.bgApp,
     "--color-surface-app": c.bgApp,
     "--color-surface-elevated": c.bgElevated,
     "--color-surface-muted": c.bgMuted,

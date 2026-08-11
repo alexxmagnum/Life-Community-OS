@@ -159,6 +159,7 @@ export {
   type HomeGlyphName,
   type HomeMomentTone,
   type HomeMomentCardProps,
+  type HomeMoveCardTone,
   type HomeMoveCardProps,
   type HomeIntentTone,
   type HomeIntentCardProps,

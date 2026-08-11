@@ -64,10 +64,10 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
       brandAccentSubtle: "rgba(183, 242, 42, 0.16)",
       brandSea: "#00C8B4",
       brandSeaSubtle: "rgba(0, 200, 180, 0.16)",
-      bgApp: "#001219",
+      bgApp: "#000000",
       bgElevated: "#0B252D",
       bgMuted: "#071D25",
-      bgHeroScrim: "rgba(0, 18, 25, 0.55)",
+      bgHeroScrim: "rgba(0, 0, 0, 0.55)",
       textPrimary: "#F7FAFA",
       textSecondary: "#B8C5C8",
       textTertiary: "#7A8A8A",
@@ -83,7 +83,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
       dangerSubtle: "rgba(255, 92, 92, 0.18)",
       info: "#00D8E8",
       infoSubtle: "rgba(0, 216, 232, 0.16)",
-      chromeSurface: "rgba(0, 18, 25, 0.78)",
+      chromeSurface: "rgba(0, 0, 0, 0.78)",
       surfaceGlass: "rgba(7, 29, 37, 0.86)",
       surfaceGlassStrong: "rgba(11, 37, 45, 0.92)",
       borderGlass: "rgba(255, 255, 255, 0.10)",
@@ -92,8 +92,7 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
       accentTurquoise: "#00C8B4",
       accentLime: "#B7F22A",
       accentLimeSubtle: "rgba(183, 242, 42, 0.16)",
-      appGradient:
-        "radial-gradient(circle at 50% 18%, rgba(0, 216, 232, 0.035), transparent 32rem), #001219",
+      appGradient: "#000000",
       brandGradient:
         "linear-gradient(135deg, #00D8E8 0%, #00C8B4 52%, #B7F22A 100%)",
       shadowElev1:
@@ -118,6 +117,8 @@ export const lifePanoramicaTheme: TenantBrandTokens = {
       "/tenants/life-panoramica/hero/hero-afternoon.png",
       "/tenants/life-panoramica/hero/hero-evening.png",
     ],
-    logo: "/tenants/life-panoramica/logo.png",
+    logo: "/tenants/life-panoramica/logo.png?v=premium-icon1",
+    /** Light mark for night chrome — same asset (transparent on dark). */
+    logoLight: "/tenants/life-panoramica/logo.png?v=premium-icon1",
   },
 };

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 
@@ -323,13 +323,13 @@ export function HomeSectionHead({
   onAction,
 }: HomeSectionHeadProps) {
   return (
-    <div className="flex items-center justify-between gap-3 px-0.5">
-      <h2 className="flex items-center gap-1.5 font-sans text-[15px] font-semibold leading-5 tracking-[-0.01em] text-[var(--color-text-primary)]">
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-sans text-[20px] font-semibold leading-[1.2] tracking-[-0.02em] text-white">
         {title}
         {sparkle ? (
           <HomeGlyph
             name="spark"
-            size={13}
+            size={14}
             className="text-[var(--color-accent-lime)]"
           />
         ) : null}
@@ -338,13 +338,15 @@ export function HomeSectionHead({
         <button
           type="button"
           onClick={onAction}
-          className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-[var(--color-text-tertiary)] active:opacity-70"
+          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-white/55 active:opacity-70"
         >
           {actionLabel}
           {actionGlyph ? (
             <HomeGlyph name={actionGlyph} size={12} />
           ) : (
-            <span aria-hidden>›</span>
+            <span aria-hidden className="text-[15px] leading-none">
+              ›
+            </span>
           )}
         </button>
       ) : null}
@@ -362,7 +364,7 @@ export function HomeRail({
   return (
     <div
       className={cn(
-        "-mx-2.5 flex gap-2 overflow-x-auto px-2.5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "-mx-4 flex gap-3 overflow-x-auto px-4 pb-0.5 scroll-pl-4 scroll-pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
@@ -387,12 +389,15 @@ const MOMENT_CTA: Record<HomeMomentTone, string> = {
 
 /** Premium 3D clay glyphs — transparent assets, never flat icons in cyan discs. */
 const HOME_GLYPH_3D: Partial<Record<HomeGlyphName, string>> = {
-  coffee: "/tenants/life-panoramica/glyphs/coffee.png",
-  trail: "/tenants/life-panoramica/glyphs/trail.png",
-  golf: "/tenants/life-panoramica/glyphs/golf.png",
-  calendar: "/tenants/life-panoramica/glyphs/calendar.png",
-  dining: "/tenants/life-panoramica/intents/dining.png",
-  compass: "/tenants/life-panoramica/intents/discover.png",
+  coffee: "/tenants/life-panoramica/glyphs/coffee.png?v=premium-ref2",
+  trail: "/tenants/life-panoramica/glyphs/trail.png?v=premium-ref2",
+  golf: "/tenants/life-panoramica/glyphs/golf.png?v=premium-ref2",
+  calendar: "/tenants/life-panoramica/glyphs/calendar.png?v=premium-ref2",
+  dining: "/tenants/life-panoramica/intents/dining.png?v=premium-ref2",
+  compass: "/tenants/life-panoramica/intents/discover.png?v=premium-ref2",
+  people: "/tenants/life-panoramica/glyphs/people.png?v=premium-ref9",
+  ball: "/tenants/life-panoramica/glyphs/ball.png?v=premium-ref9",
+  camera: "/tenants/life-panoramica/glyphs/camera.png?v=premium-ref9",
 };
 
 export type HomeMomentPerson = {
@@ -542,8 +547,13 @@ export function HomeMomentCard({
   );
 }
 
+export type HomeMoveCardTone = "green" | "cyan" | "violet" | "default";
+
 export type HomeMoveCardProps = {
+  /** @deprecated Dark-glass cards no longer use per-tone fills. Kept for API stability. */
+  tone?: HomeMoveCardTone;
   glyph: HomeGlyphName;
+  glyphImageUrl?: string;
   headline: string;
   meta: string;
   quote?: string;
@@ -553,9 +563,10 @@ export type HomeMoveCardProps = {
   onClick?: () => void;
 };
 
-/** A small human update — who moved, and how long ago. */
+/** Dark-glass community movement card — pixel-faithful to the reference rail. */
 export function HomeMoveCard({
   glyph,
+  glyphImageUrl,
   headline,
   meta,
   quote,
@@ -564,61 +575,72 @@ export function HomeMoveCard({
   liked = false,
   onClick,
 }: HomeMoveCardProps) {
-  const wide = Boolean(personName);
+  const glyph3d = glyphImageUrl ?? HOME_GLYPH_3D[glyph];
+  const isPerson = Boolean(personName);
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "flex h-[102px] shrink-0 flex-col rounded-[16px] border border-white/12 bg-[rgba(7,29,37,0.88)] p-2 text-left shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-transform active:scale-[0.98]",
-        wide ? "w-[142px]" : "w-[108px]",
-      )}
+      className="relative flex h-[152px] w-[142px] min-w-[142px] shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/[0.12] p-3 text-left transition-transform active:scale-[0.98]"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        boxShadow:
+          "0 8px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 20px rgba(255,255,255,0.02)",
+      }}
     >
-      <span className="flex items-center gap-1.5">
-        {personAvatarUrl ? (
-          <img
-            src={personAvatarUrl}
-            alt=""
-            className="h-[24px] w-[24px] shrink-0 rounded-full object-cover ring-1 ring-[#29434A]"
-          />
-        ) : (
-          <span className="relative flex h-[28px] w-[28px] shrink-0 items-center justify-center">
+      {isPerson ? (
+        <>
+          <span className="flex h-10 items-start">
+            {personAvatarUrl ? (
+              <img
+                src={personAvatarUrl}
+                alt=""
+                className="h-10 w-10 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-[14px] font-semibold text-white">
+                {(personName ?? "?").slice(0, 1)}
+              </span>
+            )}
+          </span>
+          {liked ? (
             <span
-              className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(0,212,229,0.45)_0%,rgba(0,212,229,0)_70%)]"
+              className="absolute right-3 top-3 flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white shadow-[0_4px_12px_rgba(0,0,0,0.25)]"
               aria-hidden
-            />
-            <HomeGlyph name={glyph} size={22} />
+            >
+              <HomeGlyph name="heart" size={14} className="text-[#FF3B5C]" />
+            </span>
+          ) : null}
+          <span className="mt-2 line-clamp-2 font-sans text-[15px] font-semibold leading-[1.22] text-white">
+            {headline}
           </span>
-        )}
-        {personName ? (
-          <span className="min-w-0 flex-1 truncate text-[9.5px] font-semibold text-[#B9C3C3]">
-            {personName}
+          {quote ? (
+            <span className="mt-1 line-clamp-2 font-sans text-[12px] leading-[1.25] text-white/55">
+              &ldquo;{quote}&rdquo;
+            </span>
+          ) : null}
+        </>
+      ) : (
+        <>
+          <span className="flex h-10 items-center">
+            {glyph3d ? (
+              <img
+                src={glyph3d}
+                alt=""
+                className="h-10 w-10 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)]"
+              />
+            ) : (
+              <HomeGlyph name={glyph} size={36} className="text-white/90" />
+            )}
           </span>
-        ) : null}
-        {liked ? (
-          <span
-            className="flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full bg-[rgba(255,92,92,0.22)] text-[#FF5C5C] shadow-[0_0_8px_rgba(255,92,92,0.55)]"
-            aria-hidden
-          >
-            <HomeGlyph name="heart" size={9} />
+          <span className="mt-2 line-clamp-3 font-sans text-[15px] font-semibold leading-[1.22] text-white">
+            {headline}
           </span>
-        ) : null}
-      </span>
+        </>
+      )}
 
-      <span
-        className={cn(
-          "mt-1.5 text-[10px] font-semibold leading-[1.25] text-[#F5F7F6]",
-          quote ? "line-clamp-2" : "line-clamp-3",
-        )}
-      >
-        {headline}
-      </span>
-      {quote ? (
-        <span className="mt-0.5 line-clamp-1 text-[9px] italic leading-3 text-[#B9C3C3]/80">
-          “{quote}”
-        </span>
-      ) : null}
-      <span className="mt-auto line-clamp-2 text-[8.5px] leading-[1.25] text-[#B9C3C3]/70">
+      <span className="mt-auto whitespace-pre-line font-sans text-[12px] leading-[1.25] text-white/45">
         {meta}
       </span>
     </button>
@@ -627,15 +649,30 @@ export function HomeMoveCard({
 
 export type HomeIntentTone = "plans" | "dining" | "golf" | "discover";
 
-const INTENT_SURFACE: Record<HomeIntentTone, string> = {
+/** Warm metallic top fills — dining matches the copper reference card. */
+const INTENT_METAL: Record<HomeIntentTone, string> = {
   plans:
-    "bg-[rgba(7,29,37,0.92)] border-white/12 shadow-[0_0_28px_rgba(0,216,232,0.12)]",
+    "radial-gradient(ellipse 130% 100% at 60% 8%, #7AF0F8 0%, #3BC4D0 30%, #0F5C68 68%, #041C22 100%)",
   dining:
-    "bg-[rgba(7,29,37,0.92)] border-white/12 shadow-[0_0_28px_rgba(233,154,71,0.14)]",
+    "radial-gradient(ellipse 130% 100% at 60% 8%, #F0D2A8 0%, #D4A574 22%, #B07A48 48%, #6E4A30 78%, #2A1C14 100%)",
   golf:
-    "bg-[rgba(7,29,37,0.92)] border-white/12 shadow-[0_0_28px_rgba(183,242,42,0.12)]",
+    "radial-gradient(ellipse 130% 100% at 60% 8%, #B8F08A 0%, #68C850 30%, #2E7038 68%, #0C2014 100%)",
   discover:
-    "bg-[rgba(7,29,37,0.92)] border-white/12 shadow-[0_0_28px_rgba(0,216,232,0.12)]",
+    "radial-gradient(ellipse 130% 100% at 60% 8%, #F0C0FF 0%, #C078E8 30%, #6E3A9E 68%, #1E1028 100%)",
+};
+
+const INTENT_GLOW: Record<HomeIntentTone, string> = {
+  plans: "rgba(90, 235, 245, 0.48)",
+  dining: "rgba(236, 180, 120, 0.52)",
+  golf: "rgba(130, 225, 110, 0.45)",
+  discover: "rgba(220, 150, 245, 0.45)",
+};
+
+const INTENT_BORDER: Record<HomeIntentTone, string> = {
+  plans: "rgba(90, 220, 230, 0.22)",
+  dining: "rgba(200, 160, 120, 0.32)",
+  golf: "rgba(120, 200, 120, 0.22)",
+  discover: "rgba(190, 140, 220, 0.24)",
 };
 
 export type HomeIntentCardProps = {
@@ -643,56 +680,103 @@ export type HomeIntentCardProps = {
   glyph: HomeGlyphName;
   title: string;
   subtitle: string;
-  /** Premium 3D illustration (transparent PNG/WebP). */
   imageUrl?: string;
+  /** Optional photographic / metallic wash under the glass panel. */
+  bgImageUrl?: string;
   onClick?: () => void;
 };
 
-/** What a neighbour feels like doing — four doors with 3D identity assets. */
+/**
+ * Intent door — exact chrome from the Comer reference:
+ * metallic top, frosted glass bottom, 3D icon top-right, copy bottom-left.
+ * Reference card is 218×195 → scaled to 172×154 for the Home rail.
+ */
 export function HomeIntentCard({
   tone,
   glyph,
   title,
   subtitle,
   imageUrl,
+  bgImageUrl,
   onClick,
 }: HomeIntentCardProps) {
+  const glyph3d = imageUrl ?? HOME_GLYPH_3D[glyph];
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn(
-        "relative flex min-h-[118px] w-full flex-col overflow-hidden rounded-[16px] border p-2.5 text-left transition-transform active:scale-[0.97]",
-        INTENT_SURFACE[tone],
-      )}
+      className="relative h-[154px] w-[172px] min-w-[172px] shrink-0 overflow-hidden rounded-[28px] border text-left transition-transform active:scale-[0.98]"
+      style={{
+        background: INTENT_METAL[tone],
+        borderColor: INTENT_BORDER[tone],
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.06), 0 14px 28px rgba(0,0,0,0.30)",
+      }}
     >
-      <span className="relative mb-1 flex h-[56px] w-full items-center justify-center">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt=""
-            className="h-[56px] w-[56px] object-contain drop-shadow-[0_8px_14px_rgba(0,0,0,0.35)]"
-          />
-        ) : (
-          <HomeGlyph name={glyph} size={28} />
-        )}
-      </span>
-      <span className="mt-auto block truncate text-[13px] font-semibold leading-4 text-[#F7FAFA]">
-        {title}
-      </span>
-      <span className="mt-0.5 line-clamp-2 pr-6 text-[10px] leading-[1.25] text-[#B8C5C8]">
-        {subtitle}
-      </span>
+      {bgImageUrl ? (
+        <img
+          src={bgImageUrl}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-[48%] w-full object-cover opacity-65"
+        />
+      ) : null}
+
+      {/* Soft depth glow / ghost behind the 3D icon */}
       <span
-        className="absolute bottom-2 right-2 flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white/15 text-white"
+        className="pointer-events-none absolute right-1 top-2 h-[92px] w-[92px] rounded-full blur-[22px]"
+        style={{ background: INTENT_GLOW[tone] }}
+        aria-hidden
+      />
+
+      {/* 3D icon — top right, overlaps the glass edge */}
+      {glyph3d ? (
+        <img
+          src={glyph3d}
+          alt=""
+          className="pointer-events-none absolute right-[-6px] top-[-4px] z-[2] h-[112px] w-[112px] object-contain drop-shadow-[0_14px_20px_rgba(0,0,0,0.38)]"
+        />
+      ) : (
+        <HomeGlyph
+          name={glyph}
+          size={82}
+          className="absolute right-1 top-1 z-[2] opacity-90"
+        />
+      )}
+
+      {/* Frosted glass bottom — hard top edge like the reference */}
+      <span
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-[52%]"
+        style={{
+          background: "rgba(8, 8, 8, 0.66)",
+          backdropFilter: "blur(20px) saturate(120%)",
+          WebkitBackdropFilter: "blur(20px) saturate(120%)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.10)",
+          borderTop: "1px solid rgba(255,255,255,0.10)",
+        }}
+        aria-hidden
+      />
+
+      <div className="absolute bottom-[16px] left-[16px] z-[4] max-w-[108px]">
+        <h3 className="font-sans text-[18px] font-semibold leading-none tracking-[-0.02em] text-white">
+          {title}
+        </h3>
+        <p className="mt-[7px] whitespace-pre-line font-sans text-[13px] leading-[1.25] text-white/75">
+          {subtitle.includes(" y ")
+            ? subtitle.replace(" y ", " y\n")
+            : subtitle}
+        </p>
+      </div>
+
+      <span
+        className="absolute bottom-[16px] right-[16px] z-[4] grid h-[32px] w-[32px] place-items-center rounded-full border border-white/40 bg-black/30 text-white shadow-[0_0_0_3px_rgba(255,255,255,0.06)] backdrop-blur-[10px]"
         aria-hidden
       >
-        <HomeGlyph name="arrow" size={10} />
+        <HomeGlyph name="arrow" size={15} />
       </span>
     </button>
   );
 }
-
 export type HomeNearbyCardProps = {
   name: string;
   imageUrl: string;

@@ -81,7 +81,8 @@ export function listActiveCommunityAlerts(
     areaLabel: "Zona Norte",
     timeWindowLabel: "Hasta 20:00",
     actionLabel: "Ver avisos oficiales",
-    href: "/community#plaza-avisos",
+    // Query deep-link only — hash fragments break App Router RSC soft-nav.
+    href: "/community?tab=actualidad",
   };
 
   return [demoAlert, ...communityAlertCatalog]

@@ -11,9 +11,11 @@ let splashFinishedThisDocument = false;
  */
 export function BrandSplash() {
   const { theme, themeMode } = useTenant();
-  /** Night uses the Motans SVG mark — skip the raster splash card. */
+  /** Prefer the light mark on night chrome; fall back to the shared logo. */
   const logoUrl =
-    themeMode === "night" ? theme.imagery.logoLight : theme.imagery.logo;
+    (themeMode === "night"
+      ? theme.imagery.logoLight ?? theme.imagery.logo
+      : theme.imagery.logo) || undefined;
   const [visible, setVisible] = useState(false);
   const [leave, setLeave] = useState(false);
 
@@ -32,11 +34,11 @@ export function BrandSplash() {
       return () => window.clearTimeout(t);
     }
 
-    const startLeave = window.setTimeout(() => setLeave(true), 900);
+    const startLeave = window.setTimeout(() => setLeave(true), 1100);
     const done = window.setTimeout(() => {
       splashFinishedThisDocument = true;
       setVisible(false);
-    }, 900 + 1100);
+    }, 1100 + 1100);
 
     return () => {
       window.clearTimeout(startLeave);
@@ -47,6 +49,10 @@ export function BrandSplash() {
   if (!visible || !logoUrl) return null;
 
   const ease = "cubic-bezier(0.4, 0, 0.2, 1)";
+  /** Header slot size — splash scales up from this anchor. */
+  const slot = 48;
+  /** Splash hold size ≈ 48 × 7.4 ≈ 355px. */
+  const splashScale = 7.4;
 
   return (
     <div
@@ -75,15 +81,15 @@ export function BrandSplash() {
         style={{
           left: 10,
           top: "calc(env(safe-area-inset-top, 0px) + 2px)",
-          width: 48,
-          height: 48,
-          borderRadius: leave ? 8 : 4,
+          width: slot,
+          height: slot,
+          borderRadius: leave ? 8 : 12,
           transformOrigin: "center center",
           transform: leave
             ? "translate(0px, 0px) scale(1)"
-            : "translate(calc(50vw - 34px), calc(50vh - env(safe-area-inset-top, 0px) - 26px)) scale(3.2)",
+            : `translate(calc(50vw - 34px), calc(50vh - env(safe-area-inset-top, 0px) - 26px)) scale(${splashScale})`,
           opacity: leave ? 0 : 1,
-          boxShadow: leave ? "none" : "0 24px 80px rgba(0,0,0,0.5)",
+          boxShadow: leave ? "none" : "0 28px 90px rgba(0,0,0,0.55)",
           transition: leave
             ? [
                 `transform 1.05s ${ease}`,

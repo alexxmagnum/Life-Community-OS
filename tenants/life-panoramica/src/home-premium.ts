@@ -90,8 +90,11 @@ export function listHomeMomentCards(options?: {
   }));
 }
 
+export type HomeMoveCardTone = "green" | "cyan" | "violet" | "default";
+
 export type HomeMoveItem = {
   id: string;
+  tone?: HomeMoveCardTone;
   glyph: HomeGlyph;
   /** Lead line. Neighbour name is emphasised by the card when present. */
   headline: string;
@@ -109,6 +112,7 @@ export function listHomeMoves(): HomeMoveItem[] {
   return [
     {
       id: "move-recommendation",
+      tone: "green",
       glyph: "heart",
       personName: "Ana",
       personAvatarUrl:
@@ -121,6 +125,7 @@ export function listHomeMoves(): HomeMoveItem[] {
     },
     {
       id: "move-join",
+      tone: "cyan",
       glyph: "people",
       headline: "12 vecinos se han unido al café de mañana",
       meta: "Hace 32 min",
@@ -128,13 +133,15 @@ export function listHomeMoves(): HomeMoveItem[] {
     },
     {
       id: "move-kids",
+      tone: "default",
       glyph: "ball",
       headline: "Los niños vuelven a entrenar esta tarde",
-      meta: "Escuela de fútbol · 18:30 Campo municipal",
+      meta: "Escuela de fútbol · 18:30\nCampo municipal",
       href: "/community",
     },
     {
       id: "move-photos",
+      tone: "violet",
       glyph: "camera",
       headline: "Marta compartió fotos del atardecer en el lago",
       meta: "Hace 45 min",
@@ -154,6 +161,8 @@ export type HomeIntentDoor = {
   href: string;
   /** Premium 3D illustration — isolated transparent asset. */
   imageUrl?: string;
+  /** Ambient background photo behind the 3D icon. */
+  bgImageUrl?: string;
 };
 
 /** The four things a neighbour may feel like doing today. */
@@ -166,7 +175,8 @@ export function listHomeIntents(): HomeIntentDoor[] {
       tone: "plans",
       glyph: "calendar",
       href: "/experiences",
-      imageUrl: "/tenants/life-panoramica/intents/plans.png",
+      imageUrl: "/tenants/life-panoramica/intents/plans.png?v=premium-ref11",
+      bgImageUrl: undefined,
     },
     {
       id: "dining",
@@ -175,7 +185,8 @@ export function listHomeIntents(): HomeIntentDoor[] {
       tone: "dining",
       glyph: "dining",
       href: "/near/restaurants",
-      imageUrl: "/tenants/life-panoramica/intents/dining.png",
+      imageUrl: "/tenants/life-panoramica/intents/dining.png?v=premium-ref13",
+      bgImageUrl: "/tenants/life-panoramica/intents/metal-dining.png",
     },
     {
       id: "golf",
@@ -184,7 +195,8 @@ export function listHomeIntents(): HomeIntentDoor[] {
       tone: "golf",
       glyph: "golf",
       href: "/activities/golf",
-      imageUrl: "/tenants/life-panoramica/intents/golf.png",
+      imageUrl: "/tenants/life-panoramica/intents/golf.png?v=premium-ref11",
+      bgImageUrl: undefined,
     },
     {
       id: "discover",
@@ -193,7 +205,8 @@ export function listHomeIntents(): HomeIntentDoor[] {
       tone: "discover",
       glyph: "compass",
       href: "/discover",
-      imageUrl: "/tenants/life-panoramica/intents/discover.png",
+      imageUrl: "/tenants/life-panoramica/intents/discover.png?v=premium-ref11",
+      bgImageUrl: undefined,
     },
   ];
 }
@@ -303,3 +316,7 @@ export function listHomeHeroSlideUrls(imagery: {
   }
   return [imagery.homeHero];
 }
+
+/** 3D header art for the Profesionales services page. */
+export const PROFESSIONALS_HEADER_ART_URL =
+  "/tenants/life-panoramica/glyphs/professionals.png?v=premium-pro2";

@@ -3,28 +3,23 @@
 @tailwind utilities;
 
 :root {
-  /* First paint — Life Premium Night editorial (#001219) */
+  /* First paint — negro vivo */
   color-scheme: dark;
-  --life-bg: #001219;
-  --life-surface: #071d25;
-  --life-surface-raised: #0b252d;
+  --life-bg: #000000;
+  --life-surface: #071D25;
+  --life-surface-raised: #0B252D;
   --life-text: #f7fafa;
   --life-text-secondary: #b8c5c8;
   --life-cyan: #00d8e8;
   --life-turquoise: #00c8b4;
   --life-lime: #b7f22a;
-  --color-surface-app: #001219;
-  --color-surface-elevated: #0b252d;
-  --color-surface-muted: #071d25;
-  --color-surface-glass: rgba(7, 29, 37, 0.86);
-  --color-surface-glass-strong: rgba(11, 37, 45, 0.92);
-  --color-chrome-surface: rgba(0, 18, 25, 0.78);
-  --gradient-surface-app: radial-gradient(
-      circle at 50% 18%,
-      rgba(0, 216, 232, 0.035),
-      transparent 32rem
-    ),
-    #001219;
+  --color-surface-app: #000000;
+  --color-surface-elevated: #0B252D;
+  --color-surface-muted: #071D25;
+  --color-surface-glass: rgba(5, 24, 32, 0.88);
+  --color-surface-glass-strong: rgba(9, 30, 38, 0.94);
+  --color-chrome-surface: rgba(0, 0, 0, 0.82);
+  --gradient-surface-app: #000000;
   --gradient-brand: linear-gradient(
     135deg,
     #00d8e8 0%,
@@ -72,7 +67,7 @@
     0 8px 24px rgba(0, 18, 25, 0.55);
   --shadow-elev-2: 0 14px 38px rgba(0, 0, 0, 0.6),
     0 0 28px rgba(0, 216, 232, 0.12);
-  --chrome-height: 72px;
+  --chrome-height: 80px;
   --motion-fast: 140ms;
   --motion-base: 220ms;
   --motion-slow: 360ms;
@@ -80,6 +75,10 @@
 }
 
 @layer base {
+  html {
+    background-color: var(--life-bg, var(--color-surface-app));
+  }
+
   body {
     background: var(--gradient-surface-app);
     background-color: var(--life-bg, var(--color-surface-app));

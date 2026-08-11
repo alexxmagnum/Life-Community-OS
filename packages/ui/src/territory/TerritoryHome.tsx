@@ -324,7 +324,7 @@ export function HomeHeroStage({
   return (
     <section
       className={cn(
-        "life-hero relative isolate w-full overflow-hidden rounded-b-[24px] bg-[var(--life-bg,#001219)]",
+        "life-hero relative isolate w-full overflow-hidden rounded-b-[24px] bg-[var(--life-bg,#000000)]",
         "min-h-[clamp(320px,40svh,380px)]",
         className,
       )}
@@ -366,7 +366,7 @@ export function HomeHeroStage({
               rgba(0, 10, 15, 0.28) 0%,
               rgba(0, 12, 18, 0.02) 40%,
               rgba(0, 12, 18, 0.28) 78%,
-              var(--life-bg, #001219) 100%
+              var(--life-bg, #000000) 100%
             )
           `,
         }}

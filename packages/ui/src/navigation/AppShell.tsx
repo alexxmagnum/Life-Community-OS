@@ -55,7 +55,7 @@ export function AppShell({
   const showHeader = Boolean(header) && !immersive;
 
   return (
-    <div className="flex min-h-screen bg-[var(--life-bg,var(--color-surface-app))] [background:var(--gradient-surface-app)] text-[var(--color-text-primary)]">
+    <div className="flex min-h-screen bg-[var(--life-bg,var(--color-surface-app))] text-[var(--color-text-primary)] [background-image:var(--gradient-surface-app)] [background-attachment:fixed]">
       {!immersive ? (
         <DesktopNavigation
           brandName={brandName}
@@ -66,11 +66,11 @@ export function AppShell({
           onCreate={onCreate}
         />
       ) : null}
-      <div className="relative flex min-h-screen flex-1 flex-col overflow-x-hidden">
+      <div className="relative flex min-h-screen flex-1 flex-col overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))]">
         {showHeader ? header : null}
         <main
           className={cn(
-            "mx-auto w-full max-w-none flex-1 overflow-x-hidden",
+            "mx-auto w-full max-w-none flex-1 overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))]",
             immersive
               ? "max-w-none px-0 pb-0 pt-0 md:max-w-none md:px-0 md:pb-0 md:pt-0"
               : cn(
