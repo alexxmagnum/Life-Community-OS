@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   communityAlertIcon,
   communityAlertTone,
+  communityBelongLayers,
+  communityHubHref,
+  communityHubSectionIdForArea,
   formatContentWhen,
   listAccessibleChannels,
   listActiveCommunityAlerts,
@@ -15,12 +18,14 @@ import {
   listOfficialContent,
   listOfficialEntities,
   listParticipacionContent,
-  communityHubSectionIdForArea,
+  resolveCommunityBelongLayer,
   resolveCommunityHubArea,
+  type CommunityBelongLayerId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
   EmptyState,
+  FilterChipRow,
   HomeSection,
   HubAttentionCard,
   HubDoorCard,
@@ -53,17 +58,20 @@ function plural(count: number, one: string, many: string): string {
 }
 
 /**
- * Community Hub — the digital town square.
+ * Community Hub — Belong surface (H1 / FASE C.1).
  *
- * Six layers, each with its own emotional role and its own card family:
- *   1 Ahora mismo  → what affects me today (attention cards)
- *   2 En la plaza  → neighbour life (photo cards → public content detail)
- *   3 Grupos       → belonging (horizontal rail → group conversation)
- *   4 Decidir      → participation (proposal cards)
- *   5 Oficial      → authority (quiet institutional rows)
- *   6 Explorar     → doors to other capabilities (tiles)
+ * Visible Belong entries: Ahora · Grupos · Proponer · Oficial.
+ * Scroll layers still use plaza-* DOM ids for deep-link compatibility.
  *
- * One content, one layer: official information never repeats in the plaza,
+ * Content layers (unchanged structure):
+ *   1 Ahora        → attention cards (alerts + closing proposals peek)
+ *   2 En la plaza  → neighbour feed (PENDING placement — not a Belong root)
+ *   3 Grupos       → belonging rail
+ *   4 Proponer     → proposals
+ *   5 Oficial      → entities / notices / channels
+ *   6 Explorar     → cross-module doors (still present; FASE C.2 may gate)
+ *
+ * One content, one layer: official never repeats in the plaza,
  * and neighbour content never repeats outside it.
  */
 export function CommunityHubScreen() {
@@ -144,6 +152,24 @@ export function CommunityHubScreen() {
 
   const tabParam = searchParams.get("tab");
   const resolvedTab = resolveCommunityHubArea(tabParam);
+  /**
+   * Belong chip highlight. Plain `/community` defaults to Ahora.
+   * Plaza / Explorar tabs (`conversaciones`, `espacios`, `mascotas`) leave
+   * no Belong chip forced — pending product decisions.
+   */
+  const activeBelongLayer: CommunityBelongLayerId | "" =
+    resolveCommunityBelongLayer(tabParam) ?? (tabParam ? "" : "ahora");
+
+  const belongNavItems = useMemo(
+    () => communityBelongLayers.map((layer) => ({ id: layer.id, label: layer.label })),
+    [],
+  );
+
+  const goToBelongLayer = (layerId: string) => {
+    const layer = communityBelongLayers.find((item) => item.id === layerId);
+    if (!layer) return;
+    router.push(communityHubHref(layer.primaryAreaId));
+  };
 
   useEffect(() => {
     // Deep links (?tab=) jump to a layer. Plain /community stays at top.
@@ -268,12 +294,21 @@ export function CommunityHubScreen() {
         ) : null}
       </header>
 
-      {/* 1 — Ahora mismo: only what affects the neighbour today. */}
+      {/* Belong H1 internal nav — adapters write canonical ?tab= area ids. */}
+      <nav aria-label="Áreas de la comunidad" className="mt-3">
+        <FilterChipRow
+          items={belongNavItems}
+          activeId={activeBelongLayer}
+          onChange={goToBelongLayer}
+        />
+      </nav>
+
+      {/* 1 — Ahora: only what affects the neighbour today. */}
       {attentionCount > 0 ? (
         <section id="plaza-important" className="scroll-mt-3">
           <span id="plaza-avisos" className="sr-only" />
           <HomeSection
-            title="Ahora mismo"
+            title="Ahora"
             subtitle="Lo que te afecta hoy."
           >
             <div className="space-y-2.5">
@@ -349,7 +384,7 @@ export function CommunityHubScreen() {
         </div>
       )}
 
-      {/* 2 — En la plaza: neighbour life. Opens the public content detail. */}
+      {/* 2 — En la plaza (PENDING Belong placement): neighbour life. Encapsulated as-is. */}
       <section id="plaza-activity" className="scroll-mt-3">
         <HomeSection
           title="En la plaza"
@@ -467,10 +502,10 @@ export function CommunityHubScreen() {
         </section>
       ) : null}
 
-      {/* 4 — Decidir juntos: support and decision status, never votes. */}
+      {/* 4 — Proponer: support and decision status, never votes. */}
       <section id="plaza-participate" className="scroll-mt-3">
         <HomeSection
-          title="Decidir juntos"
+          title="Proponer"
           subtitle="Propuestas abiertas de la comunidad."
         >
           {participation.length === 0 ? (
@@ -507,11 +542,11 @@ export function CommunityHubScreen() {
         </HomeSection>
       </section>
 
-      {/* 5 — Información oficial: the only home for authority content. */}
+      {/* 5 — Oficial: the only home for authority content. */}
       {showOfficial ? (
         <section id="plaza-official" className="scroll-mt-3">
           <HomeSection
-            title="Información oficial"
+            title="Oficial"
             subtitle="Administración, entidades y canales de la comunidad."
             actionLabel={
               showChannels && accessibleChannels.length > OFFICIAL_CHANNEL_PEEK

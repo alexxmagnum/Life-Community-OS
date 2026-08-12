@@ -16,8 +16,8 @@
  * Community is the place neighbours live the territory.
  * Communication remains a contextual capability — not this hub.
  *
- * Compatibility phase: expose Belong mappings without changing UI, routes,
- * or ConversationExperience. DOM section ids stay `plaza-*` until FASE C.
+ * Compatibility maps power FASE C.1 Belong nav without new public routes.
+ * DOM section ids stay `plaza-*` until a later cleanup phase.
  */
 
 import type { TenantConfiguration } from "@life-community-os/types";
@@ -103,7 +103,7 @@ export function communityHubSectionIdForArea(
 
 /**
  * Conceptual Belong ownership for each area id.
- * Does not change UI — documents migration target for adapters / future FASE C.
+ * Used by FASE C.1 nav highlight and future reshape — does not delete area ids.
  */
 export type CommunityBelongOwnership =
   | { kind: "belong"; layer: CommunityBelongLayerId }
@@ -134,6 +134,84 @@ export function communityBelongOwnershipForArea(
   areaId: CommunityHubAreaId,
 ): CommunityBelongOwnership {
   return COMMUNITY_HUB_AREA_BELONG[areaId];
+}
+
+/**
+ * Visible Belong layers for Community hub navigation (FASE C.1).
+ * Labels are user-facing; primaryAreaId keeps `?tab=` on canonical area ids.
+ */
+export type CommunityBelongLayerDefinition = {
+  id: CommunityBelongLayerId;
+  label: string;
+  purpose: string;
+  sectionId: CommunityHubSectionId;
+  /** Canonical area written to `?tab=` when the neighbour picks this layer. */
+  primaryAreaId: CommunityHubAreaId;
+};
+
+export const communityBelongLayers: readonly CommunityBelongLayerDefinition[] =
+  [
+    {
+      id: "ahora",
+      label: "Ahora",
+      purpose: "Lo que te afecta hoy en la comunidad.",
+      sectionId: COMMUNITY_HUB_SECTION_IDS.ahora,
+      primaryAreaId: "actualidad",
+    },
+    {
+      id: "grupos",
+      label: "Grupos",
+      purpose: "Vecinos organizados por afición o interés.",
+      sectionId: COMMUNITY_HUB_SECTION_IDS.grupos,
+      primaryAreaId: "grupos",
+    },
+    {
+      id: "proponer",
+      label: "Proponer",
+      purpose: "Propuestas abiertas para decidir juntos.",
+      sectionId: COMMUNITY_HUB_SECTION_IDS.proponer,
+      primaryAreaId: "propuestas",
+    },
+    {
+      id: "oficial",
+      label: "Oficial",
+      purpose: "Administración, entidades y canales.",
+      sectionId: COMMUNITY_HUB_SECTION_IDS.oficial,
+      primaryAreaId: "canales",
+    },
+  ] as const;
+
+export function communityBelongLayerDefinition(
+  layerId: CommunityBelongLayerId,
+): CommunityBelongLayerDefinition {
+  return communityBelongLayers.find((layer) => layer.id === layerId)!;
+}
+
+/**
+ * Map a canonical area to a Belong layer for nav highlight.
+ * Pending plaza / outside areas return null (no Belong chip forced).
+ * `participacion` soft-highlights Proponer (same scroll land; D5 still open).
+ */
+export function communityBelongLayerFromArea(
+  areaId: CommunityHubAreaId,
+): CommunityBelongLayerId | null {
+  const ownership = COMMUNITY_HUB_AREA_BELONG[areaId];
+  if (ownership.kind === "belong") return ownership.layer;
+  if (areaId === "participacion") return "proponer";
+  return null;
+}
+
+/** Resolve Belong layer from `?tab=` (layer alias or canonical / legacy area). */
+export function resolveCommunityBelongLayer(
+  raw: string | null | undefined,
+): CommunityBelongLayerId | null {
+  if (!raw) return null;
+  if ((COMMUNITY_BELONG_LAYER_IDS as readonly string[]).includes(raw)) {
+    return raw as CommunityBelongLayerId;
+  }
+  const area = resolveCommunityHubArea(raw);
+  if (!area) return null;
+  return communityBelongLayerFromArea(area);
 }
 
 export type CommunityHubAreaIcon = ExplorerNavLeaf["icon"] | "family";
