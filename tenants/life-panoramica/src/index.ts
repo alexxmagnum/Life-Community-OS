@@ -14,6 +14,7 @@ export * from "./demo-members";
 export * from "./person-id-alignment";
 export * from "./contribution";
 export * from "./tenant-configuration";
+export * from "./housing";
 export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";

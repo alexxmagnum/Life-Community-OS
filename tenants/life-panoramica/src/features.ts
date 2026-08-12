@@ -52,7 +52,7 @@ export type TenantFeatureFlags = {
   intelligentDiffusion: boolean;
   /**
    * Housing / Living module (rent, sale, land, commercial).
-   * Platform capability — reference demo ON once product surface ships.
+   * Reference demo: ON — tenant activation config in `./housing`.
    */
   housing: boolean;
 };

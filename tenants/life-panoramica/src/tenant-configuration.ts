@@ -9,7 +9,6 @@
 import {
   applyTenantConfigurationPreset,
   housingTenantModuleConfigToRecord,
-  HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
   resolveTenantConfiguration,
   tenantPackToTenantConfiguration,
   type TenantConfiguration,
@@ -22,6 +21,7 @@ import {
   lifePanoramicaFeatures,
   lifePanoramicaFeaturesMinimal,
 } from "./features";
+import { lifePanoramicaHousingModuleConfig } from "./housing";
 import { lifePanoramicaTheme } from "./theme";
 
 /** Pack surface for the platform adapter — keep packs as source of truth. */
@@ -48,12 +48,12 @@ export function getLifePanoramicaPackConfigurationSource(
     languages: ["es"],
     features: { ...features },
     /**
-     * Housing knobs — platform defaults only (no Panoramica catalogs).
-     * Enablement still comes from features.housing + module registry.
+     * Housing activation — tenant module config (categories, zones, copy, publishing).
+     * Enablement still requires features.housing + registry (defaultEnabled false).
      */
     moduleConfigs: {
       housing: housingTenantModuleConfigToRecord(
-        HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
+        lifePanoramicaHousingModuleConfig,
       ),
     },
   };
