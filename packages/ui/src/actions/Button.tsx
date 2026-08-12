@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+import { interactionPreset } from "../interaction/presets";
 import { cn } from "../lib/cn";
 
 type Variant = "primary" | "secondary" | "ghost" | "accent" | "destructive";
@@ -34,7 +35,8 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex min-h-[48px] items-center justify-center rounded-[var(--radius-md)] px-5 text-[16px] font-semibold leading-5 transition-transform duration-[var(--motion-fast)] active:scale-[0.98] disabled:opacity-50",
+        "inline-flex min-h-[48px] items-center justify-center rounded-[var(--radius-md)] px-5 text-[16px] font-semibold leading-5 disabled:opacity-50",
+        interactionPreset("press"),
         variants[variant],
         fullWidth && "w-full",
         className,

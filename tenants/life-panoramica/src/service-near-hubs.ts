@@ -100,7 +100,7 @@ export const servicesCategoryHubs: ServicesCategoryHub[] = [
   },
   {
     slug: "mobility",
-    label: "Movilidad",
+    label: "Viajes compartidos",
     problem: "Necesito ayuda para desplazarme.",
     description: "Viajes compartidos y movilidad local entre vecinos.",
     emptyTitle: "No hay opciones de movilidad publicadas todavía.",

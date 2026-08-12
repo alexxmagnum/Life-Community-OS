@@ -1,0 +1,124 @@
+/**
+ * Shared interaction presets — Life Community OS platform.
+ * Consumes --motion-* tokens. Tenant-agnostic. Opt-in via classes / interactionPreset().
+ */
+
+/* ── Press: subtle physical press feedback ─────────────────────────── */
+.ui-press {
+  transition: transform var(--motion-fast) var(--motion-easing);
+}
+
+.ui-press:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 2px;
+}
+
+.ui-press:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.98);
+}
+
+/* ── Lift: subtle elevate (shared fast timing with press) ──────────── */
+.ui-lift {
+  transition: transform var(--motion-fast) var(--motion-easing);
+}
+
+/* Pointer devices only — avoid sticky hover lift on touch. */
+@media (hover: hover) and (pointer: fine) {
+  .ui-lift:hover,
+  .ui-lift[data-lifted="true"] {
+    transform: translateY(-2px);
+  }
+
+  .ui-press:hover .ui-lift {
+    transform: translateY(-2px);
+  }
+}
+
+.ui-lift:focus-visible {
+  transform: translateY(-2px);
+}
+
+.ui-press:focus-visible .ui-lift {
+  transform: translateY(-2px);
+}
+
+/*
+ * Active: asset settles with the card (no competing lift beat).
+ * Parent press scale owns the physical response.
+ */
+.ui-press:active .ui-lift,
+.ui-lift:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: none;
+}
+
+/* ── Pop: brief enter for action confirmation chrome ───────────────── */
+@keyframes ui-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ui-pop {
+  animation: ui-pop-in var(--motion-fast) var(--motion-easing) both;
+}
+
+/* ── Stagger: quiet entrance — first 4 items only (0…3) ────────────── */
+@keyframes ui-stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ui-stagger-item {
+  animation: ui-stagger-in var(--motion-fast) var(--motion-easing) both;
+}
+
+.ui-stagger-item[data-stagger-index="0"] {
+  animation-delay: 0ms;
+}
+.ui-stagger-item[data-stagger-index="1"] {
+  animation-delay: 36ms;
+}
+.ui-stagger-item[data-stagger-index="2"] {
+  animation-delay: 72ms;
+}
+.ui-stagger-item[data-stagger-index="3"] {
+  animation-delay: 108ms;
+}
+
+/* Reduced motion: no decorative motion; stagger delays must also clear */
+@media (prefers-reduced-motion: reduce) {
+  .ui-press,
+  .ui-lift {
+    transition: none;
+  }
+
+  .ui-press:active:not(:disabled):not([aria-disabled="true"]),
+  .ui-lift:hover,
+  .ui-lift:focus-visible,
+  .ui-lift[data-lifted="true"],
+  .ui-lift:active:not(:disabled):not([aria-disabled="true"]),
+  .ui-press:hover .ui-lift,
+  .ui-press:focus-visible .ui-lift,
+  .ui-press:active .ui-lift {
+    transform: none;
+  }
+
+  .ui-pop,
+  .ui-stagger-item {
+    animation: none !important;
+    animation-delay: 0ms !important;
+    opacity: 1;
+    transform: none;
+  }
+}

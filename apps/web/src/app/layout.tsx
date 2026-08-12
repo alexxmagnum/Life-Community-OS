@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Fraunces, Montserrat, Plus_Jakarta_Sans } from "next/font/google";
 import { MediaLightboxProvider } from "@life-community-os/ui";
+import "@life-community-os/ui/interaction.css";
+import "@life-community-os/ui/asset-pad.css";
 
 import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";

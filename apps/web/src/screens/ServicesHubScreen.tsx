@@ -2,13 +2,17 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { asset, hasAsset } from "@life-community-os/assets";
 import {
   getTerritoryAccessContext,
+  PROFESSIONALS_HEADER_ART_URL,
   servicesCategoryHubs,
 } from "@life-community-os/tenant-life-panoramica";
 import {
+  AssetPad,
   EmptyState,
   MobileScreen,
+  type AssetPadTone,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -17,13 +21,58 @@ type ServiceEntry = {
   title: string;
   description: string;
   href: string;
-  icon: string;
-  tint: string;
+  /** Platform registry key for type:card, or null → placeholder. */
+  assetKey: string | null;
+  assetSrc?: string;
+  tone: AssetPadTone;
+};
+
+/** Caller-owned tones — AssetPad stays category-agnostic. */
+const SERVICE_HUB_TONES: Record<string, AssetPadTone> = {
+  professionals: "cyan",
+  work: "copper",
+  "neighbour-help": "green",
+  mobility: "blue",
+  recommendations: "purple",
+  marketplace: "berry",
+  "community-resources": "teal",
 };
 
 /**
+ * Hub pad media — registry CARD keys, or direct URLs for explicitly requested art.
+ */
+const SERVICE_HUB_ASSET_KEYS: Record<string, string | null> = {
+  professionals: null, // resolved via PROFESSIONALS_HEADER_ART_URL below
+  work: "community.jobs.card",
+  "neighbour-help": "community.neighbour-help.card",
+  mobility: "mobility.car-share.card",
+  recommendations: null,
+  marketplace: null,
+  "community-resources": null,
+};
+
+/** Direct (non-registry) pad art when the caller opts in. */
+const SERVICE_HUB_ASSET_URLS: Record<string, string> = {
+  professionals: PROFESSIONALS_HEADER_ART_URL,
+};
+
+function resolveHubAsset(
+  entryId: string,
+): { assetKey: string | null; assetSrc?: string } {
+  const directUrl = SERVICE_HUB_ASSET_URLS[entryId];
+  if (directUrl) {
+    return { assetKey: entryId, assetSrc: directUrl };
+  }
+  const key = SERVICE_HUB_ASSET_KEYS[entryId] ?? null;
+  if (!key || !hasAsset(key)) {
+    return { assetKey: key };
+  }
+  return { assetKey: key, assetSrc: asset(key) };
+}
+
+/**
  * Servicios nav hub — “Necesito resolver algo”.
- * Category doors only. Territory/local-life discovery does not belong here.
+ * Uniform AssetPad grid: real type:card asset or layout-stable placeholder.
  */
 export function ServicesHubScreen() {
   const router = useRouter();
@@ -50,13 +99,14 @@ export function ServicesHubScreen() {
     for (const hub of servicesCategoryHubs) {
       const flagsOk = hub.featureKeys.some((key) => isFeatureEnabled(key));
       if (!flagsOk) continue;
+      const resolved = resolveHubAsset(hub.slug);
       cards.push({
         id: hub.slug,
         title: hub.label,
         description: copyForServiceSlug(hub.slug, hub.description),
         href: `/services/${hub.slug}`,
-        icon: iconForServiceSlug(hub.slug),
-        tint: tintForServiceSlug(hub.slug),
+        tone: SERVICE_HUB_TONES[hub.slug] ?? "neutral",
+        ...resolved,
       });
     }
 
@@ -66,23 +116,23 @@ export function ServicesHubScreen() {
         title: "Compra y venta",
         description: "Vende, regala o pide entre vecinos.",
         href: "/marketplace",
-        icon: "🛒",
-        tint: "bg-[var(--color-surface-glass-strong)]",
+        tone: SERVICE_HUB_TONES.marketplace ?? "neutral",
+        ...resolveHubAsset("marketplace"),
       });
     }
 
     if (isModuleEnabled("reservations") && isFeatureEnabled("resources")) {
       const reserveHint =
         territoryAccess.eligibleResourceCount > 0
-          ? `${territoryAccess.eligibleResourceCount} espacios disponibles para ti.`
-          : "Pistas, salas y zonas compartidas para reservar.";
+          ? `${territoryAccess.eligibleResourceCount} espacios disponibles.`
+          : "Pistas, salas y zonas compartidas.";
       cards.push({
         id: "community-resources",
         title: "Espacios y reservas",
         description: reserveHint,
         href: "/resources",
-        icon: "🏘",
-        tint: "bg-[var(--color-surface-glass-strong)]",
+        tone: SERVICE_HUB_TONES["community-resources"] ?? "neutral",
+        ...resolveHubAsset("community-resources"),
       });
     }
 
@@ -112,35 +162,17 @@ export function ServicesHubScreen() {
           onAction={() => router.push("/")}
         />
       ) : (
-        <ul className="mt-6 space-y-3">
-          {entries.map((entry) => (
-            <li key={entry.id}>
-              <button
-                type="button"
+        <ul className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 md:max-w-[720px]">
+          {entries.map((entry, index) => (
+            <li key={entry.id} className="min-w-0">
+              <AssetPad
+                assetSrc={entry.assetSrc}
+                title={entry.title}
+                meta={entry.description}
+                tone={entry.tone}
+                staggerIndex={index}
                 onClick={() => router.push(entry.href)}
-                className="flex w-full items-start gap-3.5 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)] backdrop-blur-md transition-transform active:scale-[0.99]"
-              >
-                <span
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] text-[22px] ${entry.tint}`}
-                  aria-hidden
-                >
-                  {entry.icon}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[17px] font-semibold text-[var(--color-text-primary)]">
-                    {entry.title}
-                  </span>
-                  <span className="mt-1 block text-[14px] leading-snug text-[var(--color-text-secondary)]">
-                    {entry.description}
-                  </span>
-                </span>
-                <span
-                  className="mt-1 shrink-0 text-[var(--color-text-tertiary)]"
-                  aria-hidden
-                >
-                  ›
-                </span>
-              </button>
+              />
             </li>
           ))}
         </ul>
@@ -149,52 +181,18 @@ export function ServicesHubScreen() {
   );
 }
 
-function iconForServiceSlug(slug: string): string {
-  switch (slug) {
-    case "professionals":
-      return "👷";
-    case "work":
-      return "💼";
-    case "neighbour-help":
-      return "💛";
-    case "mobility":
-      return "🚗";
-    case "recommendations":
-      return "⭐";
-    default:
-      return "•";
-  }
-}
-
-function tintForServiceSlug(slug: string): string {
-  switch (slug) {
-    case "professionals":
-      return "bg-[var(--color-action-accent-subtle)]";
-    case "work":
-      return "bg-[var(--color-feedback-warning-subtle)]";
-    case "neighbour-help":
-      return "bg-[var(--color-accent-lime-subtle)]";
-    case "mobility":
-      return "bg-[var(--color-sea-subtle)]";
-    case "recommendations":
-      return "bg-[var(--color-feedback-warning-subtle)]";
-    default:
-      return "bg-[var(--color-action-primary-subtle)]";
-  }
-}
-
 function copyForServiceSlug(slug: string, fallback: string): string {
   switch (slug) {
     case "professionals":
-      return "Jardinería, mantenimiento, limpieza, reparaciones y clases de confianza.";
+      return "Ayuda cualificada cerca.";
     case "work":
-      return "Anuncios de trabajo entre vecinos: busco u ofrezco.";
+      return "Busco u ofrezco trabajo.";
     case "neighbour-help":
-      return "Pide u ofrece una mano entre vecinos.";
+      return "Una mano entre vecinos.";
     case "mobility":
-      return "Trayectos compartidos y apoyo para moverte.";
+      return "Trayectos y movilidad.";
     case "recommendations":
-      return "Consejos de vecinos sobre sitios y profesionales.";
+      return "Consejos de confianza.";
     default:
       return fallback;
   }

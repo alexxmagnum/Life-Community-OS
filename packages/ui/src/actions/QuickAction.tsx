@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
+import { interactionPreset } from "../interaction/presets";
 import { cn } from "../lib/cn";
 
 export type QuickActionProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -17,7 +18,8 @@ export function QuickAction({
     <button
       type="button"
       className={cn(
-        "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-lg)] bg-[var(--color-action-primary-subtle)] px-2 py-3 text-[var(--color-action-primary)] transition-transform duration-[var(--motion-fast)] active:scale-[0.98]",
+        "flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-[var(--radius-lg)] bg-[var(--color-action-primary-subtle)] px-2 py-3 text-[var(--color-action-primary)]",
+        interactionPreset("press"),
         className,
       )}
       {...props}

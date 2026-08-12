@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { asset } from "@life-community-os/assets";
 import {
   formatContentWhen,
   getServicesCategoryBySlug,
@@ -331,12 +332,20 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   }
 
   const isWorkHub = hub.content.kind === "work";
+  const headerArtUrl =
+    hub.slug === "professionals"
+      ? PROFESSIONALS_HEADER_ART_URL
+      : hub.slug === "mobility"
+        ? asset("mobility.car-share.card")
+        : hub.slug === "neighbour-help"
+          ? asset("community.neighbour-help.card")
+          : null;
 
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={hub.label}
-        subtitle={hub.slug === "professionals" ? undefined : hub.problem}
+        subtitle={headerArtUrl ? undefined : hub.problem}
         onBack={() => router.push("/services")}
         onExit={() => router.push("/")}
       />
@@ -388,11 +397,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         </div>
       ) : null}
 
-      {hub.slug === "professionals" ? (
+      {headerArtUrl ? (
         <div className="-mt-10 flex flex-col gap-1">
           <div className="flex justify-center">
             <img
-              src={PROFESSIONALS_HEADER_ART_URL}
+              src={headerArtUrl}
               alt=""
               draggable={false}
               className="h-[280px] w-auto max-w-full object-contain object-bottom"

@@ -1,4 +1,13 @@
 export { cn } from "./lib/cn";
+export {
+  INTERACTION_STAGGER_MAX_INDEX,
+  clampStaggerIndex,
+  interactionPreset,
+  staggerItemProps,
+  ActionFeedback,
+  type InteractionPresetName,
+  type ActionFeedbackProps,
+} from "./interaction";
 export { Button, type ButtonProps } from "./actions/Button";
 export { QuickAction, type QuickActionProps } from "./actions/QuickAction";
 export { Avatar, type AvatarProps } from "./people/Avatar";
@@ -18,6 +27,17 @@ export {
   RecommendationCard,
   GroupCard,
 } from "./content/Cards";
+export {
+  CategoryDoorCard,
+  type CategoryDoorCardProps,
+} from "./content/CategoryDoorCard";
+export {
+  AssetPad,
+  type AssetPadProps,
+  type AssetPadTone,
+} from "./content/AssetPad";
+/** @deprecated Prefer `AssetPad`. */
+export { AssetCard, type AssetCardProps } from "./content/AssetCard";
 export {
   BottomNavigation,
   DesktopNavigation,
