@@ -75,7 +75,7 @@ function plural(count: number, one: string, many: string): string {
  *   Proponer  → open proposals (no invented voting)
  *   Oficial   → entities, notices, channels
  * Encapsulated (not decided): En la plaza (full neighbour feed)
- * Still present (later gate): Explorar cross-module doors
+ * Explorar portal: gated in C.3.1 (not a Belong peer); anchor kept for ?tab=
  */
 export function CommunityHubScreen() {
   const router = useRouter();
@@ -256,8 +256,16 @@ export function CommunityHubScreen() {
   const showHousing = housingSurfaceReady && isModuleEnabled("housing");
   const showOfficial =
     officialEntities.length > 0 || officialNotices.length > 0 || showChannels;
-  const showExplore =
+  /**
+   * C.3.1 — Community Explorar must not compete as a Belong peer
+   * (IA_DECISION: not a global module portal). Keep tile logic for rollback /
+   * later C.3.2 ownership moves; hide the portal visually. `plaza-explore`
+   * stays mounted so `?tab=espacios|mascotas` deep links still resolve.
+   */
+  const explorePortalReady = false;
+  const explorePortalContent =
     showExperiences || showSpaces || showServices || showPets || showHousing;
+  const showExplore = explorePortalReady && explorePortalContent;
 
   const attentionCount = alerts.length + closingSoon.length;
 
@@ -763,9 +771,14 @@ export function CommunityHubScreen() {
         </HomeSection>
       </section>
 
-      {/* 6 — Explorar: cross-module doors (not Belong roots; gate later). */}
-      {showExplore ? (
-        <section id="plaza-explore" className="scroll-mt-3">
+      {/*
+        6 — Explorar anchor (C.3.1 gated).
+        Not a Belong peer. Destinations remain on Operate/Life routes;
+        this portal is hidden until explorePortalReady. Section id kept
+        for ?tab=espacios|mascotas scroll compatibility.
+      */}
+      <section id="plaza-explore" className="scroll-mt-3">
+        {showExplore ? (
           <HomeSection
             title="Explorar"
             subtitle={`Todo lo que vive en ${communityName}.`}
@@ -875,8 +888,12 @@ export function CommunityHubScreen() {
               </HubPanel>
             ) : null}
           </HomeSection>
-        </section>
-      ) : null}
+        ) : (
+          <span className="sr-only">
+            Explorar está fuera de Comunidad Belong. Usa Servicios o Planes.
+          </span>
+        )}
+      </section>
     </MobileScreen>
   );
 }
