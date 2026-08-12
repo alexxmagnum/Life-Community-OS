@@ -31,6 +31,21 @@ export {
   LIFE_MAP_ACTION_KINDS,
 } from "./domain/life-map";
 
+/** Life Map spatial object projection registry (not SoT — no UI / SDK). */
+export {
+  LIFE_MAP_DOMAIN_MODULE_BY_TYPE,
+  LIFE_MAP_DEFAULT_LAYER_BY_TYPE,
+  LIFE_MAP_DOMAIN_BACKED_OBJECT_TYPES,
+  isLifeMapDomainBackedObjectType,
+  requiresLifeMapDomainRef,
+  validateLifeMapObjectProjection,
+  projectLifeMapObject,
+  assertLifeMapObjectProjection,
+  lifeMapObjectsMatchDomainRef,
+  filterLifeMapObjects,
+  createLifeMapObjectRegistry,
+} from "./domain/life-map-objects";
+
 /** Channel boundary validators (ADR-035) — required before persistence. */
 export {
   CHANNEL_OWNER_COMPATIBILITY,

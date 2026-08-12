@@ -240,3 +240,23 @@ export {
   LIFE_MAP_OBJECT_TYPES,
   LIFE_MAP_ACTION_KINDS,
 } from "./life-map";
+export type {
+  LifeMapObjectProjectionInput,
+  LifeMapObjectIssueCode,
+  LifeMapObjectIssue,
+  LifeMapObjectListFilter,
+  LifeMapObjectRegistry,
+} from "./life-map-objects";
+export {
+  LIFE_MAP_DOMAIN_MODULE_BY_TYPE,
+  LIFE_MAP_DEFAULT_LAYER_BY_TYPE,
+  LIFE_MAP_DOMAIN_BACKED_OBJECT_TYPES,
+  isLifeMapDomainBackedObjectType,
+  requiresLifeMapDomainRef,
+  validateLifeMapObjectProjection,
+  projectLifeMapObject,
+  assertLifeMapObjectProjection,
+  lifeMapObjectsMatchDomainRef,
+  filterLifeMapObjects,
+  createLifeMapObjectRegistry,
+} from "./life-map-objects";
