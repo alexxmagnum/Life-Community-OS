@@ -123,6 +123,10 @@ export type {
   HousingListingType,
   HousingListingStatus,
   HousingPublisherKind,
+  HousingContentSource,
+  HousingPublisherApprovalStatus,
+  HousingPublisherVerificationStatus,
+  HousingPublisher,
   HousingListingOwnerKind,
   HousingListingOwnership,
   HousingListingVisibility,
@@ -137,11 +141,15 @@ export type {
 } from "./housing";
 export {
   HOUSING_LISTING_TYPES,
+  HOUSING_CONTENT_SOURCES,
   HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
   isHousingListingPubliclyVisible,
   isHousingListingOwnerPerson,
   housingCategoryEnabled,
   housingListingPublisherKind,
+  housingListingContentSource,
+  housingContentSourceForPublisherKind,
+  buildHousingPublisher,
   housingModerationRequired,
   housingInitialCreateStatus,
 } from "./housing";
@@ -164,6 +172,25 @@ export {
   canCreateAsHousingPublisher,
   resolveHousingCreatePublisherKind,
 } from "./housing-lifecycle";
+export type {
+  HousingPublisherOrganizationRef,
+  HousingPublisherProfile,
+  HousingPublisherGovernanceActor,
+  HousingPublisherGovernanceAction,
+} from "./housing-publisher-governance";
+export {
+  housingPublisherApprovalAfterAction,
+  housingPublisherVerificationAfterAction,
+  canGrantHousingPublisherCapability,
+  canRevokeHousingPublisherCapability,
+  canPerformHousingPublisherGovernanceAction,
+  isHousingProfessionalPublisherAuthorized,
+  housingPublisherFromProfile,
+  createPendingHousingPublisherProfile,
+  applyHousingPublisherGrant,
+  applyHousingPublisherRevoke,
+  housingProfessionalGovernancePolicy,
+} from "./housing-publisher-governance";
 export {
   filterLocalEntities,
   listEntitiesNearYou,

@@ -12,14 +12,17 @@ import {
   isHousingListingOwnerPerson,
   isHousingListingPubliclyVisible,
 } from "./housing";
+import type { HousingPublisherProfile } from "./housing-publisher-governance";
+import { isHousingProfessionalPublisherAuthorized } from "./housing-publisher-governance";
 
 /**
  * Housing listing lifecycle & action rules (platform, tenant-neutral).
  *
  * Publishing model (two paths only):
  * - Resident owner → housing.create_own_listing / housing.edit_own_listing
- * - Authorized professional → housing.publisher
- * - Tenant manager → housing.manage (review / approve / hide / close)
+ * - Authorized professional → housing.publisher (+ optional profile governance)
+ * - Tenant Manager → housing.manage (review / approve / hide / close;
+ *   also grants/revokes housing.publisher — see housing-publisher-governance)
  *
  * AuthZ inputs are capability booleans (ADR-012). This module does not grant
  * Permissions; callers resolve caps via existing RBAC (demo roles / future RBAC).
@@ -102,6 +105,11 @@ export type HousingActionActor = {
   moduleEnabled: boolean;
   caps: HousingCapabilityBag;
   config: HousingTenantModuleConfig;
+  /**
+   * Optional professional governance profile for this person.
+   * When `professionalApprovalRequired`, absence fails closed for professionals.
+   */
+  professionalProfile?: HousingPublisherProfile | null;
 };
 
 export type HousingActionContext = {
@@ -138,9 +146,20 @@ export function canCreateAsHousingPublisher(
       actor.config.publishing.residentsEnabled && actor.caps.createOwnListing
     );
   }
-  return (
-    actor.config.publishing.professionalsEnabled && actor.caps.publisher
-  );
+
+  if (!actor.config.publishing.professionalsEnabled) return false;
+  if (!actor.caps.publisher) return false;
+
+  const profile = actor.professionalProfile;
+  if (actor.config.publishing.professionalApprovalRequired) {
+    if (!profile) return false;
+    return isHousingProfessionalPublisherAuthorized(profile, actor.config);
+  }
+  if (profile) {
+    return isHousingProfessionalPublisherAuthorized(profile, actor.config);
+  }
+  // Soft path: capability + tenant allow professionals (no approval gate).
+  return true;
 }
 
 function canOwnerPublishPath(ctx: HousingActionContext): boolean {

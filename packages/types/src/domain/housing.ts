@@ -40,6 +40,73 @@ export type HousingListingStatus =
  */
 export type HousingPublisherKind = "resident" | "professional";
 
+/**
+ * Provenance of listing content — metadata on HousingListing, not a second model.
+ * Does not replace ownership or AuthZ.
+ */
+export type HousingContentSource =
+  | "platform_demo"
+  | "tenant_managed"
+  | "resident_created"
+  | "professional_created";
+
+export const HOUSING_CONTENT_SOURCES: readonly HousingContentSource[] = [
+  "platform_demo",
+  "tenant_managed",
+  "resident_created",
+  "professional_created",
+] as const;
+
+/**
+ * Future agency / professional readiness (contracts only — not enforced yet).
+ * Tenant approval + verification workflows land in a later slice.
+ */
+export type HousingPublisherApprovalStatus =
+  | "none"
+  | "pending"
+  | "approved"
+  | "revoked";
+
+export type HousingPublisherVerificationStatus =
+  | "unverified"
+  | "pending"
+  | "verified"
+  | "rejected";
+
+/**
+ * Publisher representation attached to a listing (not a CRM / agency product).
+ * Professional path may show agency, organization, or a public trade name.
+ */
+export type HousingPublisher = {
+  kind: HousingPublisherKind;
+  /** Acting person when known (resident owner or professional contact). */
+  personId?: DomainId;
+  /**
+   * Soft link to durable `HousingPublisherProfile` when known.
+   * Listing still carries a denormalized `publisher` projection.
+   */
+  publisherProfileId?: DomainId;
+  /** Public-facing name for contact / cards. */
+  displayName?: string;
+  /**
+   * Professional public label — agency, promoter, or organization name.
+   * Display only; not a CRM account.
+   */
+  organizationName?: string;
+  /** Soft org / business-profile id when available. */
+  organizationId?: DomainId;
+  /**
+   * Tenant approval of this professional publisher.
+   * Enforced when `publishing.professionalApprovalRequired`.
+   */
+  approvalStatus?: HousingPublisherApprovalStatus;
+  /**
+   * Publisher / agency verification state.
+   * Enforced when `publishing.professionalVerificationRequired`.
+   */
+  verificationStatus?: HousingPublisherVerificationStatus;
+};
+
 /** Who stewards the listing (not residency Property ownership). */
 export type HousingListingOwnerKind =
   | "person"
@@ -124,9 +191,17 @@ export type HousingListing = {
   status: HousingListingStatus;
   /**
    * Publishing path used at creation.
-   * Defaults to resident when omitted (legacy / seed rows).
+   * Prefer `publisher.kind` when `publisher` is present; this field remains for
+   * compact checks and legacy rows.
    */
   publisherKind?: HousingPublisherKind;
+  /**
+   * Content provenance metadata — not a parallel listing aggregate.
+   * Defaults via `housingListingContentSource`.
+   */
+  contentSource?: HousingContentSource;
+  /** Publisher projection for display / future agency readiness. */
+  publisher?: HousingPublisher;
   title: string;
   description: string;
   /** Major currency units (e.g. EUR). Payments out of scope. */
@@ -184,6 +259,16 @@ export type HousingPublishingConfig = {
   professionalsEnabled: boolean;
   /** New listings enter pending_review before published. */
   moderationRequired: boolean;
+  /**
+   * Professional publishers need tenant approval before publishing.
+   * When true, `HousingPublisherProfile.approvalStatus` must be `approved`.
+   */
+  professionalApprovalRequired: boolean;
+  /**
+   * Optional stricter bar — verificationStatus must be `verified`.
+   * Independent of listing moderation.
+   */
+  professionalVerificationRequired: boolean;
 };
 
 /**
@@ -215,6 +300,8 @@ export const HOUSING_TENANT_MODULE_CONFIG_DEFAULTS: HousingTenantModuleConfig = 
     residentsEnabled: true,
     professionalsEnabled: true,
     moderationRequired: false,
+    professionalApprovalRequired: false,
+    professionalVerificationRequired: false,
   },
   defaultCurrency: "EUR",
 };
@@ -250,7 +337,51 @@ export function housingCategoryEnabled(
 export function housingListingPublisherKind(
   listing: HousingListing,
 ): HousingPublisherKind {
-  return listing.publisherKind ?? "resident";
+  return listing.publisher?.kind ?? listing.publisherKind ?? "resident";
+}
+
+/**
+ * Resolve content source metadata.
+ * Infers from publisher path when `contentSource` is omitted (legacy rows).
+ */
+export function housingListingContentSource(
+  listing: HousingListing,
+): HousingContentSource {
+  if (listing.contentSource) return listing.contentSource;
+  return housingContentSourceForPublisherKind(
+    housingListingPublisherKind(listing),
+  );
+}
+
+/** Map publisher path → default content source (create-time helper). */
+export function housingContentSourceForPublisherKind(
+  kind: HousingPublisherKind,
+): Extract<HousingContentSource, "resident_created" | "professional_created"> {
+  return kind === "professional" ? "professional_created" : "resident_created";
+}
+
+/** Build a minimal publisher projection (no CRM). */
+export function buildHousingPublisher(input: {
+  kind: HousingPublisherKind;
+  personId?: DomainId;
+  displayName?: string;
+  organizationName?: string;
+  organizationId?: DomainId;
+  publisherProfileId?: DomainId;
+  /** Future readiness — optional, not enforced. */
+  approvalStatus?: HousingPublisherApprovalStatus;
+  verificationStatus?: HousingPublisherVerificationStatus;
+}): HousingPublisher {
+  return {
+    kind: input.kind,
+    personId: input.personId,
+    displayName: input.displayName?.trim() || undefined,
+    organizationName: input.organizationName?.trim() || undefined,
+    organizationId: input.organizationId,
+    publisherProfileId: input.publisherProfileId,
+    approvalStatus: input.approvalStatus,
+    verificationStatus: input.verificationStatus,
+  };
 }
 
 export function housingModerationRequired(

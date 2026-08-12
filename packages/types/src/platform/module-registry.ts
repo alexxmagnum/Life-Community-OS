@@ -696,6 +696,8 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
         residentsEnabled: true,
         professionalsEnabled: true,
         moderationRequired: false,
+        professionalApprovalRequired: false,
+        professionalVerificationRequired: false,
       },
       defaultCurrency: "EUR",
       copy: {},

@@ -13,6 +13,8 @@ import type {
   TenantConfiguration,
 } from "@life-community-os/types";
 import {
+  buildHousingPublisher,
+  housingContentSourceForPublisherKind,
   HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
   resolveHousingTenantModuleConfig,
 } from "@life-community-os/types";
@@ -32,6 +34,10 @@ function daysAgo(days: number): string {
   return d.toISOString();
 }
 
+function platformDemoPublisher(personId: string) {
+  return buildHousingPublisher({ kind: "resident", personId });
+}
+
 /** Neutral seed listings for local demo — swap per tenant later. */
 export const housingSeedCatalog: HousingListing[] = [
   {
@@ -39,6 +45,9 @@ export const housingSeedCatalog: HousingListing[] = [
     tenantId: DEMO_TENANT,
     type: "rent",
     status: "published",
+    publisherKind: "resident",
+    contentSource: "platform_demo",
+    publisher: platformDemoPublisher("person-elena"),
     title: "Loft luminoso con terraza",
     description:
       "Dos dormitorios, cocina abierta y terraza soleada. Ideal para teletrabajo. Entrada flexible.",
@@ -90,6 +99,9 @@ export const housingSeedCatalog: HousingListing[] = [
     tenantId: DEMO_TENANT,
     type: "sale",
     status: "published",
+    publisherKind: "resident",
+    contentSource: "platform_demo",
+    publisher: platformDemoPublisher("person-jordi"),
     title: "Casa con jardín",
     description:
       "Tres dormitorios, jardín privado y plaza de parking. Buena orientación.",
@@ -133,6 +145,9 @@ export const housingSeedCatalog: HousingListing[] = [
     tenantId: DEMO_TENANT,
     type: "land",
     status: "published",
+    publisherKind: "resident",
+    contentSource: "platform_demo",
+    publisher: platformDemoPublisher("person-luis"),
     title: "Parcela edificable",
     description:
       "Parcela residencial con acceso rodado y servicios en límite. Consultar normativa.",
@@ -173,6 +188,9 @@ export const housingSeedCatalog: HousingListing[] = [
     tenantId: DEMO_TENANT,
     type: "commercial",
     status: "published",
+    publisherKind: "resident",
+    contentSource: "platform_demo",
+    publisher: platformDemoPublisher("person-ana"),
     title: "Local en planta calle",
     description:
       "Local comercial con escaparate. Apto para oficina o retail ligero.",
@@ -215,6 +233,9 @@ export const housingSeedCatalog: HousingListing[] = [
     tenantId: DEMO_TENANT,
     type: "rent",
     status: "draft",
+    publisherKind: "resident",
+    contentSource: "platform_demo",
+    publisher: platformDemoPublisher("person-marta"),
     title: "Estudio en borrador",
     description:
       "Borrador de ejemplo para probar publicación y ciclo de vida desde Mis anuncios.",
@@ -401,6 +422,10 @@ export type CreateHousingListingInput = {
   builtAreaM2?: number;
   createdByPersonId: string;
   publisherKind: HousingPublisherKind;
+  /** Optional public labels for professional publishers. */
+  publisherDisplayName?: string;
+  organizationName?: string;
+  organizationId?: string;
   /** Initial status after create — caller must respect lifecycle. */
   status: Extract<HousingListingStatus, "draft" | "pending_review" | "published">;
   imageUrl?: string;
@@ -413,12 +438,22 @@ export function createHousingListing(
   const now = new Date().toISOString();
   const imageUrl = input.imageUrl?.trim() || DEFAULT_IMAGE;
   const isProfessional = input.publisherKind === "professional";
+  const publisher = buildHousingPublisher({
+    kind: input.publisherKind,
+    personId: input.createdByPersonId,
+    displayName: input.publisherDisplayName,
+    organizationName: input.organizationName,
+    organizationId: input.organizationId,
+    // Agency readiness fields intentionally unset until workflow ships.
+  });
   const listing: HousingListing = {
     id,
     tenantId: DEMO_TENANT,
     type: input.type,
     status: input.status,
     publisherKind: input.publisherKind,
+    contentSource: housingContentSourceForPublisherKind(input.publisherKind),
+    publisher,
     title: input.title.trim(),
     description: input.description.trim(),
     priceAmount: input.priceAmount,
@@ -427,6 +462,7 @@ export function createHousingListing(
     ownership: {
       ownerKind: isProfessional ? "business_profile" : "person",
       ownerPersonId: input.createdByPersonId,
+      ownerEntityId: input.organizationId,
     },
     publication: {
       visibility: "territory",

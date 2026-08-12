@@ -41,11 +41,15 @@ export {
 /** Housing / Living domain helpers (module foundation). */
 export {
   HOUSING_LISTING_TYPES,
+  HOUSING_CONTENT_SOURCES,
   HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
   isHousingListingPubliclyVisible,
   isHousingListingOwnerPerson,
   housingCategoryEnabled,
   housingListingPublisherKind,
+  housingListingContentSource,
+  housingContentSourceForPublisherKind,
+  buildHousingPublisher,
   housingModerationRequired,
   housingInitialCreateStatus,
 } from "./domain/housing";
@@ -62,6 +66,20 @@ export {
   canCreateAsHousingPublisher,
   resolveHousingCreatePublisherKind,
 } from "./domain/housing-lifecycle";
+
+export {
+  housingPublisherApprovalAfterAction,
+  housingPublisherVerificationAfterAction,
+  canGrantHousingPublisherCapability,
+  canRevokeHousingPublisherCapability,
+  canPerformHousingPublisherGovernanceAction,
+  isHousingProfessionalPublisherAuthorized,
+  housingPublisherFromProfile,
+  createPendingHousingPublisherProfile,
+  applyHousingPublisherGrant,
+  applyHousingPublisherRevoke,
+  housingProfessionalGovernancePolicy,
+} from "./domain/housing-publisher-governance";
 
 /** Residency-derived Community Area access (ADR-037 / ADR-038). */
 export {

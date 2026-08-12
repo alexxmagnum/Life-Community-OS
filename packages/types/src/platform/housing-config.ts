@@ -51,6 +51,14 @@ function parsePublishing(value: unknown): HousingPublishingConfig {
       typeof value.moderationRequired === "boolean"
         ? value.moderationRequired
         : defaults.moderationRequired,
+    professionalApprovalRequired:
+      typeof value.professionalApprovalRequired === "boolean"
+        ? value.professionalApprovalRequired
+        : defaults.professionalApprovalRequired,
+    professionalVerificationRequired:
+      typeof value.professionalVerificationRequired === "boolean"
+        ? value.professionalVerificationRequired
+        : defaults.professionalVerificationRequired,
   };
 }
 
