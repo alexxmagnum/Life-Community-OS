@@ -5,6 +5,7 @@
 
 import type {
   HousingContactIntent,
+  HousingContentSource,
   HousingListing,
   HousingListingStatus,
   HousingListingType,
@@ -422,10 +423,16 @@ export type CreateHousingListingInput = {
   builtAreaM2?: number;
   createdByPersonId: string;
   publisherKind: HousingPublisherKind;
+  /**
+   * Override provenance (e.g. tenant_managed).
+   * Defaults from publisherKind when omitted.
+   */
+  contentSource?: HousingContentSource;
   /** Optional public labels for professional publishers. */
   publisherDisplayName?: string;
   organizationName?: string;
   organizationId?: string;
+  publisherProfileId?: string;
   /** Initial status after create — caller must respect lifecycle. */
   status: Extract<HousingListingStatus, "draft" | "pending_review" | "published">;
   imageUrl?: string;
@@ -438,13 +445,16 @@ export function createHousingListing(
   const now = new Date().toISOString();
   const imageUrl = input.imageUrl?.trim() || DEFAULT_IMAGE;
   const isProfessional = input.publisherKind === "professional";
+  const contentSource =
+    input.contentSource ??
+    housingContentSourceForPublisherKind(input.publisherKind);
   const publisher = buildHousingPublisher({
     kind: input.publisherKind,
     personId: input.createdByPersonId,
     displayName: input.publisherDisplayName,
     organizationName: input.organizationName,
     organizationId: input.organizationId,
-    // Agency readiness fields intentionally unset until workflow ships.
+    publisherProfileId: input.publisherProfileId,
   });
   const listing: HousingListing = {
     id,
@@ -452,7 +462,7 @@ export function createHousingListing(
     type: input.type,
     status: input.status,
     publisherKind: input.publisherKind,
-    contentSource: housingContentSourceForPublisherKind(input.publisherKind),
+    contentSource,
     publisher,
     title: input.title.trim(),
     description: input.description.trim(),

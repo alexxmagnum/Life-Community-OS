@@ -1,6 +1,7 @@
 import type {
   HousingActionActor,
   HousingCapabilityBag,
+  HousingPublisherProfile,
   HousingTenantModuleConfig,
   TenantConfiguration,
 } from "@life-community-os/types";
@@ -28,12 +29,17 @@ export function buildHousingActionActor(input: {
   /** Preferred: TenantConfiguration from TenantProvider. */
   configuration?: TenantConfiguration;
   config?: HousingTenantModuleConfig;
+  /**
+   * Required for professional_created when tenant requires approval.
+   * Fail closed if omitted under that policy.
+   */
+  professionalProfile?: HousingPublisherProfile | null;
 }): HousingActionActor {
   return {
     personId: input.personId,
     moduleEnabled: input.moduleEnabled,
     caps: resolveHousingCapabilityBag(input.hasCapability),
-    config:
-      input.config ?? getHousingModuleConfig(input.configuration),
+    config: input.config ?? getHousingModuleConfig(input.configuration),
+    professionalProfile: input.professionalProfile,
   };
 }

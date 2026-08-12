@@ -9,14 +9,15 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import {
-  canCreateAsHousingPublisher,
   canCreateHousingListing,
-  housingInitialCreateStatus,
   housingModerationRequired,
   resolveHousingCreatePublisherKind,
   type HousingListingType,
-  type HousingPublisherKind,
 } from "@life-community-os/types";
+import {
+  canRunHousingContentOperation,
+  planHousingListingCreate,
+} from "@life-community-os/tenant-life-panoramica";
 import {
   createHousingListing,
   getHousingModuleConfig,
@@ -27,8 +28,10 @@ import { useTenant } from "@/providers/TenantProvider";
 
 const TYPES: HousingListingType[] = ["rent", "sale", "land", "commercial"];
 
+type CreatePath = "resident" | "professional" | "tenant_managed";
+
 /**
- * Create housing listing — resident / professional paths + lifecycle.
+ * Create housing listing — operations layer (resident / professional / tenant_managed).
  */
 export function HousingComposerScreen() {
   const router = useRouter();
@@ -58,13 +61,26 @@ export function HousingComposerScreen() {
     [demoMember.personId, moduleOn, hasCapability, configuration, config],
   );
 
-  const canResident = canCreateAsHousingPublisher(actor, "resident");
-  const canProfessional = canCreateAsHousingPublisher(actor, "professional");
+  const canResident = canRunHousingContentOperation(actor, "create_resident");
+  const canProfessional = canRunHousingContentOperation(
+    actor,
+    "create_professional",
+  );
+  const canTenantManaged = canRunHousingContentOperation(
+    actor,
+    "create_tenant_managed",
+  );
   const defaultKind = resolveHousingCreatePublisherKind(actor) ?? "resident";
+  const defaultPath: CreatePath = canResident
+    ? "resident"
+    : canProfessional
+      ? "professional"
+      : canTenantManaged
+        ? "tenant_managed"
+        : "resident";
 
   const enabledTypes = config.enabledCategories;
-  const [publisherKind, setPublisherKind] =
-    useState<HousingPublisherKind>(defaultKind);
+  const [createPath, setCreatePath] = useState<CreatePath>(defaultPath);
   const [type, setType] = useState<HousingListingType>(
     enabledTypes[0] ?? "rent",
   );
@@ -80,7 +96,8 @@ export function HousingComposerScreen() {
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
 
   const moderationOn = housingModerationRequired(config);
-  const showPublisherChooser = canResident && canProfessional;
+  const showPathChooser =
+    [canResident, canProfessional, canTenantManaged].filter(Boolean).length > 1;
 
   if (!moduleOn) {
     return (
@@ -99,7 +116,7 @@ export function HousingComposerScreen() {
     );
   }
 
-  if (!canCreateHousingListing(actor)) {
+  if (!canCreateHousingListing(actor) && !canTenantManaged) {
     return (
       <MobileScreen>
         <FlowScreenHeader
@@ -115,9 +132,14 @@ export function HousingComposerScreen() {
     );
   }
 
-  const activeKind = canCreateAsHousingPublisher(actor, publisherKind)
-    ? publisherKind
-    : defaultKind;
+  const activePath: CreatePath =
+    createPath === "professional" && canProfessional
+      ? "professional"
+      : createPath === "tenant_managed" && canTenantManaged
+        ? "tenant_managed"
+        : canResident
+          ? "resident"
+          : defaultPath;
 
   const onPublish = () => {
     setError(null);
@@ -131,12 +153,10 @@ export function HousingComposerScreen() {
       setError("Describe un poco más el inmueble.");
       return;
     }
-    if (!enabledTypes.includes(type)) {
-      setError("Esta categoría no está habilitada.");
-      return;
-    }
-    if (!canCreateAsHousingPublisher(actor, activeKind)) {
-      setError("No tienes permiso para publicar como este tipo de anunciante.");
+
+    const plan = planHousingListingCreate(actor, activePath, type);
+    if (!plan.ok) {
+      setError(plan.reason);
       return;
     }
 
@@ -147,8 +167,6 @@ export function HousingComposerScreen() {
       setError("El precio no es válido.");
       return;
     }
-
-    const status = housingInitialCreateStatus(config);
 
     setSubmitting(true);
     try {
@@ -165,8 +183,9 @@ export function HousingComposerScreen() {
           ? Number.parseInt(bedrooms, 10)
           : undefined,
         createdByPersonId: demoMember.personId,
-        publisherKind: activeKind,
-        status,
+        publisherKind: plan.publisherKind,
+        contentSource: plan.contentSource,
+        status: plan.status,
       });
       router.replace(`/housing/${created.id}`);
     } catch {
@@ -180,40 +199,60 @@ export function HousingComposerScreen() {
       <FlowScreenHeader
         title="Crear anuncio"
         subtitle={
-          moderationOn ? "Se enviará a revisión" : "Se publicará al guardar"
+          activePath === "tenant_managed"
+            ? "Anuncio gestionado por el tenant"
+            : moderationOn
+              ? "Se enviará a revisión"
+              : "Se publicará al guardar"
         }
         onBack={() => router.push("/housing")}
         onExit={() => router.push("/")}
       />
 
-      {showPublisherChooser ? (
+      {showPathChooser ? (
         <div className="flex flex-wrap gap-2">
           {(
             [
-              { id: "resident" as const, label: "Propietario" },
-              { id: "professional" as const, label: "Inmobiliaria" },
+              canResident
+                ? { id: "resident" as const, label: "Propietario" }
+                : null,
+              canProfessional
+                ? { id: "professional" as const, label: "Inmobiliaria" }
+                : null,
+              canTenantManaged
+                ? { id: "tenant_managed" as const, label: "Gestión tenant" }
+                : null,
             ] as const
-          ).map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setPublisherKind(option.id)}
-              aria-pressed={activeKind === option.id}
-              className={
-                activeKind === option.id
-                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
-                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
-              }
-            >
-              {option.label}
-            </button>
-          ))}
+          )
+            .filter(
+              (option): option is { id: CreatePath; label: string } =>
+                option != null,
+            )
+            .map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  setCreatePath(option.id);
+                }}
+                aria-pressed={activePath === option.id}
+                className={
+                  activePath === option.id
+                    ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
+                    : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
+                }
+              >
+                {option.label}
+              </button>
+            ))}
         </div>
       ) : (
         <p className="text-[13px] text-[var(--color-text-secondary)]">
-          {activeKind === "professional"
+          {activePath === "professional"
             ? "Publicación profesional autorizada"
-            : "Publicación como propietario residente"}
+            : activePath === "tenant_managed"
+              ? "Publicación gestionada por el tenant"
+              : "Publicación como propietario residente"}
         </p>
       )}
 
@@ -310,9 +349,18 @@ export function HousingComposerScreen() {
       ) : null}
 
       <ScreenPrimaryAction
-        label={moderationOn ? "Enviar a revisión" : "Publicar anuncio"}
+        label={
+          activePath === "tenant_managed"
+            ? "Publicar (gestión tenant)"
+            : moderationOn
+              ? "Enviar a revisión"
+              : "Publicar anuncio"
+        }
         onClick={onPublish}
-        disabled={submitting || !canCreateAsHousingPublisher(actor, activeKind)}
+        disabled={
+          submitting ||
+          !planHousingListingCreate(actor, activePath, type).ok
+        }
       />
     </MobileScreen>
   );
