@@ -34,6 +34,14 @@ export const CAPABILITIES = {
   groupCreate: "community.group.create",
   marketplaceView: "community.marketplace.view",
   marketplaceCreate: "community.marketplace.create",
+  /** Housing / Living (platform module — availability gated separately). */
+  housingView: "housing.view",
+  housingCreateListing: "housing.create_listing",
+  housingEditListing: "housing.edit_listing",
+  housingContact: "housing.contact",
+  housingSave: "housing.save",
+  /** Administer Housing module settings / moderation. */
+  housingManage: "housing.manage",
   channelView: "community.channel.view",
   channelCreate: "community.channel.create",
   channelPublish: "community.channel.publish",
@@ -80,6 +88,11 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.groupCreate,
   CAPABILITIES.marketplaceView,
   CAPABILITIES.marketplaceCreate,
+  CAPABILITIES.housingView,
+  CAPABILITIES.housingCreateListing,
+  CAPABILITIES.housingEditListing,
+  CAPABILITIES.housingContact,
+  CAPABILITIES.housingSave,
   CAPABILITIES.channelView,
   CAPABILITIES.residencyClaim,
 ];
@@ -98,6 +111,7 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     ...memberCaps,
     CAPABILITIES.manageEnter,
     CAPABILITIES.residencyVerifyReview,
+    CAPABILITIES.housingManage,
   ],
   administrator: [
     ...memberCaps,
@@ -110,6 +124,7 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.channelPublish,
     CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.manageEnter,
+    CAPABILITIES.housingManage,
     // Ready when `securityModule` feature flag is enabled — no UI yet.
     CAPABILITIES.securityView,
     CAPABILITIES.securityNoticesView,
@@ -136,6 +151,16 @@ export function canAccessMunicipalityModule(input: {
   featureEnabled: boolean;
 }): boolean {
   return input.featureEnabled;
+}
+
+/** Housing module visibility — feature/module flag + view capability. */
+export function canAccessHousingModule(input: {
+  featureEnabled: boolean;
+  hasCapability: (key: CapabilityKey | string) => boolean;
+}): boolean {
+  return (
+    input.featureEnabled && input.hasCapability(CAPABILITIES.housingView)
+  );
 }
 
 export function capabilitiesForRole(role: DemoRole): Set<CapabilityKey> {

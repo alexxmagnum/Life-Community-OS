@@ -38,6 +38,26 @@ export {
   evaluateResourceAccess,
 } from "./domain/resource";
 
+/** Housing / Living domain helpers (module foundation). */
+export {
+  HOUSING_LISTING_TYPES,
+  HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
+  isHousingListingPubliclyVisible,
+  isHousingListingOwnerPerson,
+  housingCategoryEnabled,
+} from "./domain/housing";
+
+export {
+  HOUSING_STATUS_TO_PHASE,
+  HOUSING_STATUS_TRANSITIONS,
+  HOUSING_LIFECYCLE_RULES,
+  canTransitionHousingStatus,
+  canPerformHousingListingAction,
+  listHousingListingActions,
+  housingActionTargetStatus,
+  canCreateHousingListing,
+} from "./domain/housing-lifecycle";
+
 /** Residency-derived Community Area access (ADR-037 / ADR-038). */
 export {
   DEFAULT_RESIDENCY_ELIGIBILITY_ROLES,

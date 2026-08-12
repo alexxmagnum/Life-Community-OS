@@ -118,6 +118,45 @@ export type {
   WorkPostCategory,
   WorkPostStatus,
 } from "./work-post";
+export type {
+  HousingListing,
+  HousingListingType,
+  HousingListingStatus,
+  HousingListingOwnerKind,
+  HousingListingOwnership,
+  HousingListingVisibility,
+  HousingListingPublication,
+  HousingProperty,
+  HousingMedia,
+  HousingMediaKind,
+  HousingContactIntent,
+  HousingContactIntentStatus,
+  HousingTenantModuleConfig,
+} from "./housing";
+export {
+  HOUSING_LISTING_TYPES,
+  HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
+  isHousingListingPubliclyVisible,
+  isHousingListingOwnerPerson,
+  housingCategoryEnabled,
+} from "./housing";
+export type {
+  HousingLifecyclePhase,
+  HousingListingAction,
+  HousingCapabilityBag,
+  HousingActionActor,
+  HousingActionContext,
+} from "./housing-lifecycle";
+export {
+  HOUSING_STATUS_TO_PHASE,
+  HOUSING_STATUS_TRANSITIONS,
+  HOUSING_LIFECYCLE_RULES,
+  canTransitionHousingStatus,
+  canPerformHousingListingAction,
+  listHousingListingActions,
+  housingActionTargetStatus,
+  canCreateHousingListing,
+} from "./housing-lifecycle";
 export {
   filterLocalEntities,
   listEntitiesNearYou,

@@ -106,6 +106,13 @@ const CAP = {
   securityPatrolView: "community.security.patrol.view",
   securityIncidentCreate: "community.security.incident.create",
   pulseView: "community.pulse.view",
+  /** Housing / Living — platform module (fail closed until tenant enables). */
+  housingView: "housing.view",
+  housingCreateListing: "housing.create_listing",
+  housingEditListing: "housing.edit_listing",
+  housingContact: "housing.contact",
+  housingSave: "housing.save",
+  housingManage: "housing.manage",
 } as const;
 
 function mod(module: PlatformModule): PlatformModule {
@@ -652,6 +659,40 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
       icon: "cart",
     },
     configurationSchema: {},
+  }),
+
+  /**
+   * Housing / Living — optional SaaS capability (rent, sale, land, commercial).
+   * Distinct from marketplace goods and community resource reservations.
+   * defaultEnabled false → fail closed until a tenant turns the feature on.
+   * No navigation projector wiring in this foundation slice.
+   */
+  mod({
+    id: "housing",
+    name: "Housing",
+    description:
+      "Housing / Living listings — rent, sale, land, and commercial premises.",
+    category: "commerce",
+    status: "optional",
+    defaultEnabled: false,
+    dependencies: [],
+    featureFlagKeys: ["housing"],
+    capabilityKeys: [
+      CAP.housingView,
+      CAP.housingCreateListing,
+      CAP.housingEditListing,
+      CAP.housingContact,
+      CAP.housingSave,
+      CAP.housingManage,
+    ],
+    configurationSchema: {
+      enabledCategories: ["rent", "sale", "land", "commercial"],
+      allowNeighbourPublish: true,
+      requireModerationBeforePublish: false,
+      defaultCurrency: "EUR",
+      copy: {},
+      zones: [],
+    },
   }),
 ];
 

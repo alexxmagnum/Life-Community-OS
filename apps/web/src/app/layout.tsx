@@ -5,6 +5,7 @@ import { MediaLightboxProvider } from "@life-community-os/ui";
 
 import { TenantProvider } from "@/providers/TenantProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
+import { HousingSavesProvider } from "@/providers/HousingSavesProvider";
 import { CommunityInteractionProvider } from "@/providers/CommunityInteractionProvider";
 import { ReservationProvider } from "@/providers/ReservationProvider";
 import { NotificationProvider } from "@/providers/NotificationProvider";
@@ -56,13 +57,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-[var(--life-bg,var(--color-surface-app))] font-sans antialiased">
         <TenantProvider>
           <ExperienceParticipationProvider>
-            <CommunityInteractionProvider>
-              <ReservationProvider>
-                <NotificationProvider>
-                  <MediaLightboxProvider>{children}</MediaLightboxProvider>
-                </NotificationProvider>
-              </ReservationProvider>
-            </CommunityInteractionProvider>
+            <HousingSavesProvider>
+              <CommunityInteractionProvider>
+                <ReservationProvider>
+                  <NotificationProvider>
+                    <MediaLightboxProvider>{children}</MediaLightboxProvider>
+                  </NotificationProvider>
+                </ReservationProvider>
+              </CommunityInteractionProvider>
+            </HousingSavesProvider>
           </ExperienceParticipationProvider>
         </TenantProvider>
       </body>

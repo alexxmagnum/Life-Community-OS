@@ -50,6 +50,11 @@ export type TenantFeatureFlags = {
   participationTrust: boolean;
   /** Diffusion policy data — engine off. */
   intelligentDiffusion: boolean;
+  /**
+   * Housing / Living module (rent, sale, land, commercial).
+   * Platform capability — reference demo ON once product surface ships.
+   */
+  housing: boolean;
 };
 
 /**
@@ -82,6 +87,7 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   residencyVerification: true,
   participationTrust: true,
   intelligentDiffusion: true,
+  housing: true,
 };
 
 /** Minimal community showcase — core living modules only (future tenants). */
@@ -93,4 +99,5 @@ export const lifePanoramicaFeaturesMinimal: TenantFeatureFlags = {
   mobility: false,
   recommendations: false,
   work: false,
+  housing: false,
 };

@@ -2,7 +2,8 @@
  * Life Panoramica → TenantConfiguration adapter (Phase D.0.2).
  *
  * Does not replace theme / features / capabilities packs.
- * Reference demo defaults to FULL PRODUCT MODE (all modules enabled).
+ * Reference demo defaults to FULL PRODUCT MODE (core modules on;
+ * optional modules with defaultEnabled false remain flag-driven / fail closed).
  */
 
 import {
@@ -54,7 +55,8 @@ export function lifePanoramicaTenantConfiguration(
   const fromFlags = tenantPackToTenantConfiguration(
     getLifePanoramicaPackConfigurationSource(preset),
   );
-  // Ensure preset visibility is explicit (full product turns every registry row ON).
+  // Ensure preset visibility is explicit (full product turns core modules ON;
+  // optional defaultEnabled:false modules stay at feature-flag state).
   return applyTenantConfigurationPreset(fromFlags, preset);
 }
 

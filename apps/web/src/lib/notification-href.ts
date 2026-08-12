@@ -25,8 +25,7 @@ export function hrefForNotificationContext(
     case "reservation":
       return `/reservations`;
     case "housing_listing":
-      // Extension point — housing surface not shipped yet.
-      return undefined;
+      return `/housing/${context.contextId}`;
     default:
       return undefined;
   }

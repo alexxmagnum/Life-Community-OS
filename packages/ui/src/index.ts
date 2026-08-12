@@ -174,6 +174,16 @@ export {
   CommunityLifeSection,
 } from "./community/CommunityLife";
 export {
+  HousingListingCard,
+  HousingFilterBar,
+  HousingDetail,
+  type HousingListingCardProps,
+  type HousingFilterBarItem,
+  type HousingFilterBarProps,
+  type HousingDetailMedia,
+  type HousingDetailProps,
+} from "./housing/HousingComponents";
+export {
   NotificationInboxItem,
   type NotificationInboxItemProps,
   type NotificationInboxEmptyProps,

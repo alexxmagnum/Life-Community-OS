@@ -218,26 +218,25 @@ export function applyTenantConfigurationPreset(
     const modules: Record<string, TenantModuleEnablement> = {};
     for (const module of listPlatformModules(registry)) {
       const existing = configuration.modules[module.id];
-      modules[module.id] = {
-        enabled: true,
-        submodules: existing?.submodules
-          ? Object.fromEntries(
-              Object.keys(existing.submodules).map((id) => [id, true]),
-            )
-          : undefined,
-      };
+      // Optional modules with defaultEnabled false stay at flag-derived state
+      // (fail closed) — full_product does not force them on.
+      const enabled =
+        module.defaultEnabled === false
+          ? Boolean(existing?.enabled)
+          : true;
+      modules[module.id] = { enabled };
     }
-    // Rebuild root trees with all children true
+    // Rebuild root trees from resolved child enablement
     for (const root of registry) {
       const submodules: Record<string, boolean> = {};
       for (const child of root.submodules ?? []) {
-        submodules[child.id] = true;
+        submodules[child.id] = Boolean(modules[child.id]?.enabled);
         for (const grand of child.submodules ?? []) {
-          submodules[grand.id] = true;
+          submodules[grand.id] = Boolean(modules[grand.id]?.enabled);
         }
       }
       modules[root.id] = {
-        enabled: true,
+        enabled: Boolean(modules[root.id]?.enabled),
         submodules:
           Object.keys(submodules).length > 0 ? submodules : undefined,
       };
