@@ -8,6 +8,8 @@
 
 import {
   applyTenantConfigurationPreset,
+  housingTenantModuleConfigToRecord,
+  HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
   resolveTenantConfiguration,
   tenantPackToTenantConfiguration,
   type TenantConfiguration,
@@ -45,6 +47,15 @@ export function getLifePanoramicaPackConfigurationSource(
     },
     languages: ["es"],
     features: { ...features },
+    /**
+     * Housing knobs — platform defaults only (no Panoramica catalogs).
+     * Enablement still comes from features.housing + module registry.
+     */
+    moduleConfigs: {
+      housing: housingTenantModuleConfigToRecord(
+        HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
+      ),
+    },
   };
 }
 

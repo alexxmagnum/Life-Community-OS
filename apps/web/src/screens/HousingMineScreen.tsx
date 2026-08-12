@@ -56,6 +56,7 @@ export function HousingMineScreen() {
     isModuleEnabled,
     hasCapability,
     demoMember,
+    configuration,
   } = useTenant();
   const [sessionReady, setSessionReady] = useState(false);
   const [tick, setTick] = useState(0);
@@ -66,16 +67,20 @@ export function HousingMineScreen() {
 
   const moduleOn =
     isModuleEnabled("housing") && isFeatureEnabled("housing");
-  const config = useMemo(() => getHousingModuleConfig(), []);
+  const config = useMemo(
+    () => getHousingModuleConfig(configuration),
+    [configuration],
+  );
   const actor = useMemo(
     () =>
       buildHousingActionActor({
         personId: demoMember.personId,
         moduleEnabled: moduleOn,
         hasCapability,
+        configuration,
         config,
       }),
-    [demoMember.personId, moduleOn, hasCapability, config],
+    [demoMember.personId, moduleOn, hasCapability, configuration, config],
   );
 
   const items = useMemo(() => {

@@ -49,6 +49,14 @@ export {
   assertTenantConfigurationCoversRegistry,
 } from "./tenant-configuration";
 
+export {
+  mergeHousingTenantModuleConfig,
+  housingTenantModuleConfigToRecord,
+  resolveHousingTenantModuleConfig,
+  isHousingEnabledInTenantConfiguration,
+  withHousingTenantModuleConfig,
+} from "./housing-config";
+
 /** Contextual Conversation Layer (ADR-043) — contracts + adapters. */
 export type {
   ConversationContext,

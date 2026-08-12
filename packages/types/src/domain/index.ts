@@ -122,6 +122,7 @@ export type {
   HousingListing,
   HousingListingType,
   HousingListingStatus,
+  HousingPublisherKind,
   HousingListingOwnerKind,
   HousingListingOwnership,
   HousingListingVisibility,
@@ -131,6 +132,7 @@ export type {
   HousingMediaKind,
   HousingContactIntent,
   HousingContactIntentStatus,
+  HousingPublishingConfig,
   HousingTenantModuleConfig,
 } from "./housing";
 export {
@@ -139,6 +141,9 @@ export {
   isHousingListingPubliclyVisible,
   isHousingListingOwnerPerson,
   housingCategoryEnabled,
+  housingListingPublisherKind,
+  housingModerationRequired,
+  housingInitialCreateStatus,
 } from "./housing";
 export type {
   HousingLifecyclePhase,
@@ -156,6 +161,8 @@ export {
   listHousingListingActions,
   housingActionTargetStatus,
   canCreateHousingListing,
+  canCreateAsHousingPublisher,
+  resolveHousingCreatePublisherKind,
 } from "./housing-lifecycle";
 export {
   filterLocalEntities,

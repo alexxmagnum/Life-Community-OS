@@ -45,6 +45,9 @@ export {
   isHousingListingPubliclyVisible,
   isHousingListingOwnerPerson,
   housingCategoryEnabled,
+  housingListingPublisherKind,
+  housingModerationRequired,
+  housingInitialCreateStatus,
 } from "./domain/housing";
 
 export {
@@ -56,6 +59,8 @@ export {
   listHousingListingActions,
   housingActionTargetStatus,
   canCreateHousingListing,
+  canCreateAsHousingPublisher,
+  resolveHousingCreatePublisherKind,
 } from "./domain/housing-lifecycle";
 
 /** Residency-derived Community Area access (ADR-037 / ADR-038). */
@@ -103,6 +108,15 @@ export {
   applyTenantConfigurationPreset,
   assertTenantConfigurationCoversRegistry,
 } from "./platform/tenant-configuration";
+
+/** Housing settings on TenantConfiguration. */
+export {
+  mergeHousingTenantModuleConfig,
+  housingTenantModuleConfigToRecord,
+  resolveHousingTenantModuleConfig,
+  isHousingEnabledInTenantConfiguration,
+  withHousingTenantModuleConfig,
+} from "./platform/housing-config";
 
 /** Contextual Conversation Layer (ADR-043) — contracts + context adapters. */
 export {

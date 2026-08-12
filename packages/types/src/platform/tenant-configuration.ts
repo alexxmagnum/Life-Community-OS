@@ -32,6 +32,11 @@ export type TenantModuleEnablement = {
   enabled: boolean;
   /** Child module id → enabled. */
   submodules?: Record<string, boolean>;
+  /**
+   * Module-specific declarative settings (schema from PlatformModule.configurationSchema).
+   * Typed at read time via module resolvers (e.g. Housing).
+   */
+  config?: Readonly<Record<string, unknown>>;
 };
 
 /**
@@ -65,6 +70,11 @@ export type TenantPackConfigurationSource = {
    * Keys align with PlatformModule.featureFlagKeys.
    */
   features: Readonly<Record<string, boolean>>;
+  /**
+   * Optional per-module settings keyed by module id.
+   * Merged onto TenantModuleEnablement.config — not AuthZ.
+   */
+  moduleConfigs?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
 };
 
 export type TenantConfigurationSource =
@@ -144,9 +154,26 @@ export function tenantPackToTenantConfiguration(
     },
     territory: pack.territory,
     languages: pack.languages?.length ? [...pack.languages] : ["es"],
-    modules,
+    modules: attachPackModuleConfigs(modules, pack.moduleConfigs),
     source: "tenant_pack",
   };
+}
+
+function attachPackModuleConfigs(
+  modules: Record<string, TenantModuleEnablement>,
+  moduleConfigs?: Readonly<Record<string, Readonly<Record<string, unknown>>>>,
+): Record<string, TenantModuleEnablement> {
+  if (!moduleConfigs) return modules;
+  const next = { ...modules };
+  for (const [moduleId, config] of Object.entries(moduleConfigs)) {
+    const existing = next[moduleId];
+    if (!existing) continue;
+    next[moduleId] = {
+      ...existing,
+      config: { ...(existing.config ?? {}), ...config },
+    };
+  }
+  return next;
 }
 
 /**
@@ -224,7 +251,10 @@ export function applyTenantConfigurationPreset(
         module.defaultEnabled === false
           ? Boolean(existing?.enabled)
           : true;
-      modules[module.id] = { enabled };
+      modules[module.id] = {
+        enabled,
+        config: existing?.config,
+      };
     }
     // Rebuild root trees from resolved child enablement
     for (const root of registry) {
@@ -237,6 +267,7 @@ export function applyTenantConfigurationPreset(
       }
       modules[root.id] = {
         enabled: Boolean(modules[root.id]?.enabled),
+        config: modules[root.id]?.config ?? configuration.modules[root.id]?.config,
         submodules:
           Object.keys(submodules).length > 0 ? submodules : undefined,
       };
@@ -249,6 +280,7 @@ export function applyTenantConfigurationPreset(
   for (const module of listPlatformModules(registry)) {
     modules[module.id] = {
       enabled: MINIMAL_COMMUNITY_ENABLED_IDS.has(module.id),
+      config: configuration.modules[module.id]?.config,
     };
   }
   for (const root of registry) {
@@ -261,6 +293,7 @@ export function applyTenantConfigurationPreset(
     }
     modules[root.id] = {
       enabled: MINIMAL_COMMUNITY_ENABLED_IDS.has(root.id),
+      config: modules[root.id]?.config ?? configuration.modules[root.id]?.config,
       submodules:
         Object.keys(submodules).length > 0 ? submodules : undefined,
     };

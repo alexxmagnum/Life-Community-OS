@@ -36,8 +36,10 @@ export const CAPABILITIES = {
   marketplaceCreate: "community.marketplace.create",
   /** Housing / Living (platform module — availability gated separately). */
   housingView: "housing.view",
-  housingCreateListing: "housing.create_listing",
-  housingEditListing: "housing.edit_listing",
+  housingCreateOwnListing: "housing.create_own_listing",
+  housingEditOwnListing: "housing.edit_own_listing",
+  /** Authorized agency / promoter (tenant-granted). */
+  housingPublisher: "housing.publisher",
   housingContact: "housing.contact",
   housingSave: "housing.save",
   /** Administer Housing module settings / moderation. */
@@ -89,8 +91,8 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.marketplaceView,
   CAPABILITIES.marketplaceCreate,
   CAPABILITIES.housingView,
-  CAPABILITIES.housingCreateListing,
-  CAPABILITIES.housingEditListing,
+  CAPABILITIES.housingCreateOwnListing,
+  CAPABILITIES.housingEditOwnListing,
   CAPABILITIES.housingContact,
   CAPABILITIES.housingSave,
   CAPABILITIES.channelView,
@@ -106,6 +108,8 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.resourceManage,
     CAPABILITIES.channelPublish,
     CAPABILITIES.manageEnter,
+    /** Demo stand-in for a tenant-authorized professional publisher. */
+    CAPABILITIES.housingPublisher,
   ],
   moderator: [
     ...memberCaps,

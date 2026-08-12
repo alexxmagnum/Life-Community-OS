@@ -108,8 +108,12 @@ const CAP = {
   pulseView: "community.pulse.view",
   /** Housing / Living — platform module (fail closed until tenant enables). */
   housingView: "housing.view",
-  housingCreateListing: "housing.create_listing",
-  housingEditListing: "housing.edit_listing",
+  /** Resident owner — publish own property. */
+  housingCreateOwnListing: "housing.create_own_listing",
+  /** Resident owner — edit own listing. */
+  housingEditOwnListing: "housing.edit_own_listing",
+  /** Authorized agency / promoter publisher. */
+  housingPublisher: "housing.publisher",
   housingContact: "housing.contact",
   housingSave: "housing.save",
   housingManage: "housing.manage",
@@ -679,16 +683,20 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
     featureFlagKeys: ["housing"],
     capabilityKeys: [
       CAP.housingView,
-      CAP.housingCreateListing,
-      CAP.housingEditListing,
+      CAP.housingCreateOwnListing,
+      CAP.housingEditOwnListing,
+      CAP.housingPublisher,
       CAP.housingContact,
       CAP.housingSave,
       CAP.housingManage,
     ],
     configurationSchema: {
       enabledCategories: ["rent", "sale", "land", "commercial"],
-      allowNeighbourPublish: true,
-      requireModerationBeforePublish: false,
+      publishing: {
+        residentsEnabled: true,
+        professionalsEnabled: true,
+        moderationRequired: false,
+      },
       defaultCurrency: "EUR",
       copy: {},
       zones: [],

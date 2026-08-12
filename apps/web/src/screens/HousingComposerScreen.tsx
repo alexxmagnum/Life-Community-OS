@@ -9,8 +9,13 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import {
+  canCreateAsHousingPublisher,
   canCreateHousingListing,
+  housingInitialCreateStatus,
+  housingModerationRequired,
+  resolveHousingCreatePublisherKind,
   type HousingListingType,
+  type HousingPublisherKind,
 } from "@life-community-os/types";
 import {
   createHousingListing,
@@ -18,12 +23,12 @@ import {
 } from "@/lib/housing/catalog";
 import { buildHousingActionActor } from "@/lib/housing/actor";
 import { housingCategoryLabel } from "@/lib/housing/labels";
-import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useTenant } from "@/providers/TenantProvider";
 
 const TYPES: HousingListingType[] = ["rent", "sale", "land", "commercial"];
 
 /**
- * Create housing listing — permissions + lifecycle aware.
+ * Create housing listing — resident / professional paths + lifecycle.
  */
 export function HousingComposerScreen() {
   const router = useRouter();
@@ -32,23 +37,34 @@ export function HousingComposerScreen() {
     isModuleEnabled,
     hasCapability,
     demoMember,
+    configuration,
   } = useTenant();
 
   const moduleOn =
     isModuleEnabled("housing") && isFeatureEnabled("housing");
-  const config = useMemo(() => getHousingModuleConfig(), []);
+  const config = useMemo(
+    () => getHousingModuleConfig(configuration),
+    [configuration],
+  );
   const actor = useMemo(
     () =>
       buildHousingActionActor({
         personId: demoMember.personId,
         moduleEnabled: moduleOn,
         hasCapability,
+        configuration,
         config,
       }),
-    [demoMember.personId, moduleOn, hasCapability, config],
+    [demoMember.personId, moduleOn, hasCapability, configuration, config],
   );
 
+  const canResident = canCreateAsHousingPublisher(actor, "resident");
+  const canProfessional = canCreateAsHousingPublisher(actor, "professional");
+  const defaultKind = resolveHousingCreatePublisherKind(actor) ?? "resident";
+
   const enabledTypes = config.enabledCategories;
+  const [publisherKind, setPublisherKind] =
+    useState<HousingPublisherKind>(defaultKind);
   const [type, setType] = useState<HousingListingType>(
     enabledTypes[0] ?? "rent",
   );
@@ -62,6 +78,9 @@ export function HousingComposerScreen() {
 
   const fieldClass =
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
+
+  const moderationOn = housingModerationRequired(config);
+  const showPublisherChooser = canResident && canProfessional;
 
   if (!moduleOn) {
     return (
@@ -96,6 +115,10 @@ export function HousingComposerScreen() {
     );
   }
 
+  const activeKind = canCreateAsHousingPublisher(actor, publisherKind)
+    ? publisherKind
+    : defaultKind;
+
   const onPublish = () => {
     setError(null);
     const trimmedTitle = title.trim();
@@ -112,6 +135,10 @@ export function HousingComposerScreen() {
       setError("Esta categoría no está habilitada.");
       return;
     }
+    if (!canCreateAsHousingPublisher(actor, activeKind)) {
+      setError("No tienes permiso para publicar como este tipo de anunciante.");
+      return;
+    }
 
     const priceAmount = price.trim()
       ? Number.parseFloat(price.replace(",", "."))
@@ -121,9 +148,7 @@ export function HousingComposerScreen() {
       return;
     }
 
-    const status = config.requireModerationBeforePublish
-      ? "pending_review"
-      : "published";
+    const status = housingInitialCreateStatus(config);
 
     setSubmitting(true);
     try {
@@ -133,12 +158,14 @@ export function HousingComposerScreen() {
         description: trimmedDescription,
         priceAmount,
         currency: config.defaultCurrency ?? "EUR",
-        pricePeriodLabel: type === "rent" || type === "commercial" ? "mes" : undefined,
+        pricePeriodLabel:
+          type === "rent" || type === "commercial" ? "mes" : undefined,
         areaLabel: areaLabel.trim() || undefined,
         bedrooms: bedrooms.trim()
           ? Number.parseInt(bedrooms, 10)
           : undefined,
         createdByPersonId: demoMember.personId,
+        publisherKind: activeKind,
         status,
       });
       router.replace(`/housing/${created.id}`);
@@ -153,13 +180,42 @@ export function HousingComposerScreen() {
       <FlowScreenHeader
         title="Crear anuncio"
         subtitle={
-          config.requireModerationBeforePublish
-            ? "Se enviará a revisión"
-            : "Se publicará al guardar"
+          moderationOn ? "Se enviará a revisión" : "Se publicará al guardar"
         }
         onBack={() => router.push("/housing")}
         onExit={() => router.push("/")}
       />
+
+      {showPublisherChooser ? (
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              { id: "resident" as const, label: "Propietario" },
+              { id: "professional" as const, label: "Inmobiliaria" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setPublisherKind(option.id)}
+              aria-pressed={activeKind === option.id}
+              className={
+                activeKind === option.id
+                  ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
+                  : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          {activeKind === "professional"
+            ? "Publicación profesional autorizada"
+            : "Publicación como propietario residente"}
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {TYPES.filter((t) => enabledTypes.includes(t)).map((t) => (
@@ -254,13 +310,9 @@ export function HousingComposerScreen() {
       ) : null}
 
       <ScreenPrimaryAction
-        label={
-          config.requireModerationBeforePublish
-            ? "Enviar a revisión"
-            : "Publicar anuncio"
-        }
+        label={moderationOn ? "Enviar a revisión" : "Publicar anuncio"}
         onClick={onPublish}
-        disabled={submitting || !hasCapability(CAPABILITIES.housingCreateListing)}
+        disabled={submitting || !canCreateAsHousingPublisher(actor, activeKind)}
       />
     </MobileScreen>
   );

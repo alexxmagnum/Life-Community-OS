@@ -8,9 +8,14 @@ import type {
   HousingListing,
   HousingListingStatus,
   HousingListingType,
+  HousingPublisherKind,
   HousingTenantModuleConfig,
+  TenantConfiguration,
 } from "@life-community-os/types";
-import { HOUSING_TENANT_MODULE_CONFIG_DEFAULTS } from "@life-community-os/types";
+import {
+  HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
+  resolveHousingTenantModuleConfig,
+} from "@life-community-os/types";
 
 const CREATED_STORAGE_KEY = "lcos.housing.created.v1";
 const OVERRIDES_STORAGE_KEY = "lcos.housing.overrides.v1";
@@ -247,14 +252,19 @@ export const housingSeedCatalog: HousingListing[] = [
   },
 ];
 
-export function getHousingModuleConfig(): HousingTenantModuleConfig {
+/**
+ * Resolve Housing knobs from TenantConfiguration (runtime).
+ * Falls back to platform defaults when configuration is omitted.
+ */
+export function getHousingModuleConfig(
+  configuration?: TenantConfiguration,
+): HousingTenantModuleConfig {
+  if (configuration) {
+    return resolveHousingTenantModuleConfig(configuration);
+  }
   return {
     ...HOUSING_TENANT_MODULE_CONFIG_DEFAULTS,
-    zones: [
-      { key: "north", label: "Zona norte" },
-      { key: "center", label: "Centro" },
-      { key: "coast", label: "Costa" },
-    ],
+    publishing: { ...HOUSING_TENANT_MODULE_CONFIG_DEFAULTS.publishing },
   };
 }
 
@@ -390,6 +400,7 @@ export type CreateHousingListingInput = {
   bathrooms?: number;
   builtAreaM2?: number;
   createdByPersonId: string;
+  publisherKind: HousingPublisherKind;
   /** Initial status after create — caller must respect lifecycle. */
   status: Extract<HousingListingStatus, "draft" | "pending_review" | "published">;
   imageUrl?: string;
@@ -401,18 +412,20 @@ export function createHousingListing(
   const id = `hs-created-${Date.now().toString(36)}`;
   const now = new Date().toISOString();
   const imageUrl = input.imageUrl?.trim() || DEFAULT_IMAGE;
+  const isProfessional = input.publisherKind === "professional";
   const listing: HousingListing = {
     id,
     tenantId: DEMO_TENANT,
     type: input.type,
     status: input.status,
+    publisherKind: input.publisherKind,
     title: input.title.trim(),
     description: input.description.trim(),
     priceAmount: input.priceAmount,
     currency: input.currency ?? "EUR",
     pricePeriodLabel: input.pricePeriodLabel,
     ownership: {
-      ownerKind: "person",
+      ownerKind: isProfessional ? "business_profile" : "person",
       ownerPersonId: input.createdByPersonId,
     },
     publication: {

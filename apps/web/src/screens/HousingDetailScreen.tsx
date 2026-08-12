@@ -35,6 +35,7 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
     isModuleEnabled,
     hasCapability,
     demoMember,
+    configuration,
   } = useTenant();
   const { isSaved, toggleSave } = useHousingSaves();
   const [ready, setReady] = useState(false);
@@ -43,7 +44,10 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
 
   const moduleOn =
     isModuleEnabled("housing") && isFeatureEnabled("housing");
-  const config = useMemo(() => getHousingModuleConfig(), []);
+  const config = useMemo(
+    () => getHousingModuleConfig(configuration),
+    [configuration],
+  );
 
   const listing = useMemo(() => {
     void listingVersion;
@@ -119,6 +123,7 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
     personId: demoMember.personId,
     moduleEnabled: moduleOn,
     hasCapability,
+    configuration,
     config,
   });
   const actionCtx = { actor, listing };

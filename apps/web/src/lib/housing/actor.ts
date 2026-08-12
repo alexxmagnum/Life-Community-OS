@@ -2,6 +2,7 @@ import type {
   HousingActionActor,
   HousingCapabilityBag,
   HousingTenantModuleConfig,
+  TenantConfiguration,
 } from "@life-community-os/types";
 import { CAPABILITIES } from "@/providers/TenantProvider";
 import { getHousingModuleConfig } from "@/lib/housing/catalog";
@@ -11,8 +12,9 @@ export function resolveHousingCapabilityBag(hasCapability: (
 ) => boolean): HousingCapabilityBag {
   return {
     view: hasCapability(CAPABILITIES.housingView),
-    createListing: hasCapability(CAPABILITIES.housingCreateListing),
-    editListing: hasCapability(CAPABILITIES.housingEditListing),
+    createOwnListing: hasCapability(CAPABILITIES.housingCreateOwnListing),
+    editOwnListing: hasCapability(CAPABILITIES.housingEditOwnListing),
+    publisher: hasCapability(CAPABILITIES.housingPublisher),
     contact: hasCapability(CAPABILITIES.housingContact),
     save: hasCapability(CAPABILITIES.housingSave),
     manage: hasCapability(CAPABILITIES.housingManage),
@@ -23,12 +25,15 @@ export function buildHousingActionActor(input: {
   personId: string;
   moduleEnabled: boolean;
   hasCapability: (key: string) => boolean;
+  /** Preferred: TenantConfiguration from TenantProvider. */
+  configuration?: TenantConfiguration;
   config?: HousingTenantModuleConfig;
 }): HousingActionActor {
   return {
     personId: input.personId,
     moduleEnabled: input.moduleEnabled,
     caps: resolveHousingCapabilityBag(input.hasCapability),
-    config: input.config ?? getHousingModuleConfig(),
+    config:
+      input.config ?? getHousingModuleConfig(input.configuration),
   };
 }

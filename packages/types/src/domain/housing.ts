@@ -34,6 +34,12 @@ export type HousingListingStatus =
   | "closed"
   | "archived";
 
+/**
+ * Who publishes the listing (SaaS publishing model).
+ * Only two product paths — no anonymous / marketplace sellers.
+ */
+export type HousingPublisherKind = "resident" | "professional";
+
 /** Who stewards the listing (not residency Property ownership). */
 export type HousingListingOwnerKind =
   | "person"
@@ -116,6 +122,11 @@ export type HousingListing = {
   territoryId?: DomainId;
   type: HousingListingType;
   status: HousingListingStatus;
+  /**
+   * Publishing path used at creation.
+   * Defaults to resident when omitted (legacy / seed rows).
+   */
+  publisherKind?: HousingPublisherKind;
   title: string;
   description: string;
   /** Major currency units (e.g. EUR). Payments out of scope. */
@@ -163,16 +174,26 @@ export type HousingContactIntent = {
 // ── Tenant module configuration (no tenant catalogs) ─────────
 
 /**
+ * Who may publish under this tenant’s Housing module.
+ * Capability checks still apply on top of these switches.
+ */
+export type HousingPublishingConfig = {
+  /** Resident owners may publish own properties. */
+  residentsEnabled: boolean;
+  /** Authorized agencies / promoters may publish professionally. */
+  professionalsEnabled: boolean;
+  /** New listings enter pending_review before published. */
+  moderationRequired: boolean;
+};
+
+/**
  * Declarative Housing knobs a tenant may set.
  * Stored/applied via TenantConfiguration — not hardcoded per tenant here.
  */
 export type HousingTenantModuleConfig = {
   /** Subset of HOUSING_LISTING_TYPES this tenant offers. */
   enabledCategories: readonly HousingListingType[];
-  /** Neighbours may create listings (still capability-gated). */
-  allowNeighbourPublish: boolean;
-  /** New listings start as pending_review when true. */
-  requireModerationBeforePublish: boolean;
+  publishing: HousingPublishingConfig;
   defaultCurrency?: string;
   /** Optional UI copy overrides (i18n keys or plain labels). */
   copy?: {
@@ -190,8 +211,11 @@ export type HousingTenantModuleConfig = {
 /** Platform-neutral defaults — not Life Panoramica content. */
 export const HOUSING_TENANT_MODULE_CONFIG_DEFAULTS: HousingTenantModuleConfig = {
   enabledCategories: HOUSING_LISTING_TYPES,
-  allowNeighbourPublish: true,
-  requireModerationBeforePublish: false,
+  publishing: {
+    residentsEnabled: true,
+    professionalsEnabled: true,
+    moderationRequired: false,
+  },
   defaultCurrency: "EUR",
 };
 
@@ -221,4 +245,23 @@ export function housingCategoryEnabled(
   type: HousingListingType,
 ): boolean {
   return config.enabledCategories.includes(type);
+}
+
+export function housingListingPublisherKind(
+  listing: HousingListing,
+): HousingPublisherKind {
+  return listing.publisherKind ?? "resident";
+}
+
+export function housingModerationRequired(
+  config: HousingTenantModuleConfig,
+): boolean {
+  return config.publishing.moderationRequired;
+}
+
+/** Initial status after create — respects tenant moderation policy. */
+export function housingInitialCreateStatus(
+  config: HousingTenantModuleConfig,
+): Extract<HousingListingStatus, "pending_review" | "published"> {
+  return housingModerationRequired(config) ? "pending_review" : "published";
 }

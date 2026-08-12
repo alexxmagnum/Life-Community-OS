@@ -2,10 +2,13 @@ import type { DomainId } from "./ids";
 import type {
   HousingListing,
   HousingListingStatus,
+  HousingPublisherKind,
   HousingTenantModuleConfig,
 } from "./housing";
 import {
   housingCategoryEnabled,
+  housingListingPublisherKind,
+  housingModerationRequired,
   isHousingListingOwnerPerson,
   isHousingListingPubliclyVisible,
 } from "./housing";
@@ -13,17 +16,18 @@ import {
 /**
  * Housing listing lifecycle & action rules (platform, tenant-neutral).
  *
- * Status values match `HousingListingStatus`. Product “phases” are labels for
- * the same states — no parallel state machine.
+ * Publishing model (two paths only):
+ * - Resident owner → housing.create_own_listing / housing.edit_own_listing
+ * - Authorized professional → housing.publisher
+ * - Tenant manager → housing.manage (review / approve / hide / close)
  *
  * AuthZ inputs are capability booleans (ADR-012). This module does not grant
  * Permissions; callers resolve caps via existing RBAC (demo roles / future RBAC).
  *
  * Product role aliases (no new platform roles):
- * - Resident         → member (+ housing.view / contact / save)
- * - Owner/Publisher  → member with create+edit on own listings
+ * - Resident owner   → member (+ create_own / edit_own when tenant allows)
+ * - Professional     → authorized actor with housing.publisher
  * - Tenant Manager   → moderator | administrator (+ housing.manage)
- * - Platform Admin   → administrator (+ manageEnter / housing.manage)
  */
 
 // ── Phases ↔ status ──────────────────────────────────────────
@@ -81,8 +85,12 @@ export type HousingListingAction =
 /** Capability bag resolved by the host (TenantProvider / RBAC). */
 export type HousingCapabilityBag = {
   view: boolean;
-  createListing: boolean;
-  editListing: boolean;
+  /** Resident owner — create own listing. */
+  createOwnListing: boolean;
+  /** Resident owner — edit own listing. */
+  editOwnListing: boolean;
+  /** Authorized agency / promoter — create & manage own professional listings. */
+  publisher: boolean;
   contact: boolean;
   save: boolean;
   manage: boolean;
@@ -107,6 +115,39 @@ function isOwner(ctx: HousingActionContext): boolean {
 
 function canModerate(ctx: HousingActionContext): boolean {
   return ctx.actor.caps.manage;
+}
+
+function canEditOwnListing(ctx: HousingActionContext): boolean {
+  if (!isOwner(ctx)) return false;
+  const kind = housingListingPublisherKind(ctx.listing);
+  if (kind === "professional") {
+    return ctx.actor.caps.publisher || ctx.actor.caps.editOwnListing;
+  }
+  return ctx.actor.caps.editOwnListing || ctx.actor.caps.publisher;
+}
+
+/** Whether the actor may create under a given publisher path. */
+export function canCreateAsHousingPublisher(
+  actor: HousingActionActor,
+  kind: HousingPublisherKind,
+): boolean {
+  if (!actor.moduleEnabled) return false;
+  if (actor.caps.manage) return true;
+  if (kind === "resident") {
+    return (
+      actor.config.publishing.residentsEnabled && actor.caps.createOwnListing
+    );
+  }
+  return (
+    actor.config.publishing.professionalsEnabled && actor.caps.publisher
+  );
+}
+
+function canOwnerPublishPath(ctx: HousingActionContext): boolean {
+  if (canModerate(ctx)) return true;
+  if (!isOwner(ctx)) return false;
+  const kind = housingListingPublisherKind(ctx.listing);
+  return canCreateAsHousingPublisher(ctx.actor, kind);
 }
 
 /** Whether the status edge exists in the domain graph. */
@@ -279,23 +320,19 @@ export function canPerformHousingListingAction(
       return isHousingListingPubliclyVisible(listing);
     }
     case "edit": {
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
-      return isOwner(ctx) || canModerate(ctx);
+      if (canModerate(ctx)) return true;
+      return canEditOwnListing(ctx);
     }
     case "submit_for_review": {
-      if (!actor.config.requireModerationBeforePublish) return false;
-      if (!isOwner(ctx) || !actor.caps.editListing) return false;
+      if (!housingModerationRequired(actor.config)) return false;
+      if (!canOwnerPublishPath(ctx)) return false;
       if (!housingCategoryEnabled(actor.config, listing.type)) return false;
       return listing.status === "draft";
     }
     case "publish": {
       // Direct publish only when moderation is not required.
-      if (actor.config.requireModerationBeforePublish) return false;
-      if (!actor.config.allowNeighbourPublish && !canModerate(ctx)) {
-        return false;
-      }
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.createListing && !canModerate(ctx)) return false;
+      if (housingModerationRequired(actor.config)) return false;
+      if (!canOwnerPublishPath(ctx)) return false;
       if (!housingCategoryEnabled(actor.config, listing.type)) return false;
       return listing.status === "draft";
     }
@@ -309,23 +346,23 @@ export function canPerformHousingListingAction(
       return listing.status === "pending_review";
     }
     case "mark_reserved": {
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
+      if (canModerate(ctx)) return true;
+      if (!canEditOwnListing(ctx)) return false;
       return listing.status === "published";
     }
     case "unreserve": {
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
+      if (canModerate(ctx)) return true;
+      if (!canEditOwnListing(ctx)) return false;
       return listing.status === "reserved";
     }
     case "close": {
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
+      if (canModerate(ctx)) return true;
+      if (!canEditOwnListing(ctx)) return false;
       return listing.status === "published" || listing.status === "reserved";
     }
     case "archive": {
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
+      if (canModerate(ctx)) return true;
+      if (!canEditOwnListing(ctx)) return false;
       return (
         listing.status === "draft" ||
         listing.status === "pending_review" ||
@@ -335,8 +372,8 @@ export function canPerformHousingListingAction(
       );
     }
     case "reopen_to_draft": {
-      if (!isOwner(ctx) && !canModerate(ctx)) return false;
-      if (!actor.caps.editListing && !canModerate(ctx)) return false;
+      if (canModerate(ctx)) return true;
+      if (!canEditOwnListing(ctx)) return false;
       return listing.status === "closed" || listing.status === "archived";
     }
     case "contact": {
@@ -400,12 +437,28 @@ export function housingActionTargetStatus(
 }
 
 /**
- * Whether creating a new draft listing is allowed for the actor
- * (no listing yet — module + caps + tenant publish policy).
+ * Whether creating a new listing is allowed for the actor
+ * (module + caps + tenant publishing policy for either path).
  */
 export function canCreateHousingListing(actor: HousingActionActor): boolean {
   if (!actor.moduleEnabled) return false;
-  if (!actor.caps.createListing && !actor.caps.manage) return false;
-  if (!actor.config.allowNeighbourPublish && !actor.caps.manage) return false;
-  return actor.config.enabledCategories.length > 0;
+  if (actor.config.enabledCategories.length === 0) return false;
+  if (actor.caps.manage) return true;
+  return (
+    canCreateAsHousingPublisher(actor, "resident") ||
+    canCreateAsHousingPublisher(actor, "professional")
+  );
+}
+
+/** Preferred publisher kind when creating (resident first when both allowed). */
+export function resolveHousingCreatePublisherKind(
+  actor: HousingActionActor,
+): HousingPublisherKind | null {
+  if (canCreateAsHousingPublisher(actor, "resident")) return "resident";
+  if (canCreateAsHousingPublisher(actor, "professional")) return "professional";
+  if (actor.caps.manage) {
+    if (actor.config.publishing.residentsEnabled) return "resident";
+    if (actor.config.publishing.professionalsEnabled) return "professional";
+  }
+  return null;
 }

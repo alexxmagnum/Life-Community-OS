@@ -45,6 +45,7 @@ export function HousingExploreScreen() {
     isModuleEnabled,
     hasCapability,
     demoMember,
+    configuration,
   } = useTenant();
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [sessionReady, setSessionReady] = useState(false);
@@ -55,16 +56,20 @@ export function HousingExploreScreen() {
 
   const moduleOn =
     isModuleEnabled("housing") && isFeatureEnabled("housing");
-  const config = useMemo(() => getHousingModuleConfig(), []);
+  const config = useMemo(
+    () => getHousingModuleConfig(configuration),
+    [configuration],
+  );
   const actor = useMemo(
     () =>
       buildHousingActionActor({
         personId: demoMember.personId,
         moduleEnabled: moduleOn,
         hasCapability,
+        configuration,
         config,
       }),
-    [demoMember.personId, moduleOn, hasCapability, config],
+    [demoMember.personId, moduleOn, hasCapability, configuration, config],
   );
 
   const items = useMemo(() => {
