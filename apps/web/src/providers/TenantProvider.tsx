@@ -20,6 +20,7 @@ import {
   CAPABILITIES,
   canAccessMunicipalityModule,
   canAccessSecurityModule,
+  canAccessLifeMapModule,
   capabilitiesForRole,
   DEMO_PERSON_MARTA,
   getDemoMemberByPersonId,
@@ -164,4 +165,5 @@ export {
   CAPABILITIES,
   canAccessMunicipalityModule,
   canAccessSecurityModule,
+  canAccessLifeMapModule,
 };
