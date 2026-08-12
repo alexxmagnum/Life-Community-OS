@@ -189,8 +189,9 @@ export function communityBelongLayerDefinition(
 
 /**
  * Map a canonical area to a Belong layer for nav highlight.
- * Pending plaza / outside areas return null (no Belong chip forced).
- * `participacion` soft-highlights Proponer (same scroll land; D5 still open).
+ * Pending / outside areas return null except soft lands that share a Belong section:
+ * - `participacion` → Proponer (same scroll land; D5 still open)
+ * - `conversaciones` → Ahora (activity lives under Ahora; D6 naming still open)
  */
 export function communityBelongLayerFromArea(
   areaId: CommunityHubAreaId,
@@ -198,6 +199,7 @@ export function communityBelongLayerFromArea(
   const ownership = COMMUNITY_HUB_AREA_BELONG[areaId];
   if (ownership.kind === "belong") return ownership.layer;
   if (areaId === "participacion") return "proponer";
+  if (areaId === "conversaciones") return "ahora";
   return null;
 }
 
