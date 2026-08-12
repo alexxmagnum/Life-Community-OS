@@ -68,6 +68,7 @@ function plural(count: number, one: string, many: string): string {
  *   Grupos    → groups → detail/conversation routes
  *   Proponer  → open proposals (no invented voting)
  *   Oficial   → entities, notices, channels
+ * Housing door → /housing when module + feature + housing.view (not Belong)
  * Explorar portal: gated (not a Belong peer); anchor kept for ?tab=
  */
 export function CommunityHubScreen() {
@@ -241,12 +242,14 @@ export function CommunityHubScreen() {
   const showExperiences = isFeatureEnabled("experiences") && experienceCount > 0;
   const showServices = isModuleEnabled("services");
   /**
-   * Housing / Living (D13) — no product surface yet (`/housing` is not shipped).
-   * Keep the door closed even if a future module flag appears, until D13 ownership
-   * is decided and a real screen exists. Do not invent Housing IA here.
+   * Housing door only (D13 closed for Life Panoramica entry).
+   * Housing remains an independent SaaS module — Community does not own it.
+   * Gate: module registry + feature flag + view capability.
    */
-  const housingSurfaceReady = false;
-  const showHousing = housingSurfaceReady && isModuleEnabled("housing");
+  const showHousing =
+    isModuleEnabled("housing") &&
+    isFeatureEnabled("housing") &&
+    hasCapability(CAPABILITIES.housingView);
   const showOfficial =
     officialEntities.length > 0 || officialNotices.length > 0 || showChannels;
   /**
@@ -254,10 +257,11 @@ export function CommunityHubScreen() {
    * (IA_DECISION: not a global module portal). Keep tile logic for rollback /
    * later C.3.2 ownership moves; hide the portal visually. `plaza-explore`
    * stays mounted so `?tab=espacios|mascotas` deep links still resolve.
+   * Housing uses its own Community door — not this Explorar portal.
    */
   const explorePortalReady = false;
   const explorePortalContent =
-    showExperiences || showSpaces || showServices || showPets || showHousing;
+    showExperiences || showSpaces || showServices || showPets;
   const showExplore = explorePortalReady && explorePortalContent;
 
   const attentionCount = alerts.length + closingSoon.length;
@@ -331,6 +335,18 @@ export function CommunityHubScreen() {
           onChange={goToBelongLayer}
         />
       </nav>
+
+      {/* Housing module door — not a Belong layer; navigates to /housing. */}
+      {showHousing ? (
+        <div className="mt-3">
+          <HubDoorCard
+            title="Vivienda"
+            meta="Alquiler, venta, terrenos y locales"
+            fallbackInitial="V"
+            onClick={() => router.push("/housing")}
+          />
+        </div>
+      ) : null}
 
       {/* 1 — Ahora (Belong): alerts + actualidad + actividad reciente. */}
       <section id="plaza-important" className="scroll-mt-3">
@@ -774,14 +790,6 @@ export function CommunityHubScreen() {
                   active={petsOpen}
                   expandable
                   onSelect={() => setPetsOpen((v) => !v)}
-                />
-              ) : null}
-              {showHousing ? (
-                <HubTile
-                  label="Vivienda"
-                  glyph="🏠"
-                  tint="bg-[var(--color-action-accent-subtle)]"
-                  onSelect={() => router.push("/housing")}
                 />
               ) : null}
             </HubTileGrid>

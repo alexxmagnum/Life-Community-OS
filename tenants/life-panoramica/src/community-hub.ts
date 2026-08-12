@@ -11,7 +11,8 @@
  * H1 ownership (Belong): plaza, groups, decide, official entry.
  * Target visible layers (future reshape): Ahora · Grupos · Proponer · Oficial.
  * Eight area ids remain for deep-link compatibility (D5/D6 pending).
- * Housing (D13) is not a Community Explorar peer.
+ * Housing (D13): Community may show an access door only — not Explorar peer,
+ * not Belong layer, not Community-owned Housing models.
  *
  * Community is the place neighbours live the territory.
  * Communication remains a contextual capability — not this hub.
