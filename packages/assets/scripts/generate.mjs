@@ -47,7 +47,7 @@ lines.push(` * AssetCount: ${keys.length}`);
 lines.push(` * SchemaVersion: ${JSON.stringify(manifest.schemaVersion ?? null)}`);
 lines.push(" */");
 lines.push("");
-lines.push('import type { AssetType, AssetScope } from "./types";');
+lines.push('import type { AssetType, AssetScope, AssetSpatialMetadata } from "./types";');
 lines.push("");
 lines.push("export type GeneratedAssetEntry = {");
 lines.push("  readonly path: string;");
@@ -58,6 +58,7 @@ lines.push("  readonly scope: AssetScope;");
 lines.push("  readonly tenant: string | null;");
 lines.push("  readonly width: number;");
 lines.push("  readonly height: number;");
+lines.push("  readonly spatial?: AssetSpatialMetadata;");
 lines.push("};");
 lines.push("");
 lines.push("export const assetRegistry = {");
@@ -75,6 +76,9 @@ for (const key of keys) {
   lines.push(`    tenant: ${tenant},`);
   lines.push(`    width: ${Number(a.width)},`);
   lines.push(`    height: ${Number(a.height)},`);
+  if (a.spatial && typeof a.spatial === "object") {
+    lines.push(`    spatial: ${JSON.stringify(a.spatial)},`);
+  }
   lines.push(`  },`);
 }
 

@@ -4,6 +4,13 @@ Product-level 3D asset registry for Life Community OS (SaaS).
 
 Life Panoramica is **one tenant**, not the owner of this package.
 
+One registry serves:
+
+- **UI** — `card` / `scene` / `symbol` / `object` / `hero` / `branding` (AssetPad, hubs)
+- **Life Map** — `spatial_object` / `terrain` / `building` / `avatar` via `LifeMapObject.asset3DKey`
+
+Spatial entries may carry optional `spatial` metadata (category, scale, orientation, anchor, LOD, future `modelPath`). No second library.
+
 ## Usage
 
 ```ts
@@ -12,6 +19,9 @@ import {
   getAsset,
   hasAsset,
   listAssets,
+  listSpatialAssets,
+  resolveLifeMapAsset3DKey,
+  isSpatialAssetType,
 } from "@life-community-os/assets";
 
 asset("professionals.electrician.scene");
@@ -20,6 +30,7 @@ asset("professionals.electrician.scene");
 getAsset("community.jobs.card");
 hasAsset("sports.football.card");
 listAssets(); // all runtime metadata (dev browsers, tooling)
+listSpatialAssets(); // spatial twin keys (empty until catalog ships)
 ```
 
 Tenant context (optional):

@@ -7,7 +7,7 @@
  * SchemaVersion: "1.0.0"
  */
 
-import type { AssetType, AssetScope } from "./types";
+import type { AssetType, AssetScope, AssetSpatialMetadata } from "./types";
 
 export type GeneratedAssetEntry = {
   readonly path: string;
@@ -18,6 +18,7 @@ export type GeneratedAssetEntry = {
   readonly tenant: string | null;
   readonly width: number;
   readonly height: number;
+  readonly spatial?: AssetSpatialMetadata;
 };
 
 export const assetRegistry = {

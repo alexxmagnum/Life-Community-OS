@@ -31,6 +31,10 @@ const TYPE_ORDER: AssetType[] = [
   "scene",
   "hero",
   "branding",
+  "spatial_object",
+  "terrain",
+  "building",
+  "avatar",
 ];
 
 const TYPE_LABELS: Record<AssetType, string> = {
@@ -40,6 +44,10 @@ const TYPE_LABELS: Record<AssetType, string> = {
   scene: "Scenes",
   hero: "Heroes",
   branding: "Branding",
+  spatial_object: "Spatial objects",
+  terrain: "Terrain",
+  building: "Buildings",
+  avatar: "Avatars",
 };
 
 const CHECKER: CSSProperties = {

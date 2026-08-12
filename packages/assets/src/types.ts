@@ -1,9 +1,16 @@
 /**
  * Runtime 3D asset types for Life Community OS.
  * Keep these aligned with apps/web/public/assets/3d/manifest.json — not the master library catalog.
+ *
+ * One registry serves both:
+ * - UI surfaces (AssetPad / cards / scenes / symbols)
+ * - Life Map spatial projections (`LifeMapObject.asset3DKey`)
  */
 
-export type AssetType =
+// ── UI asset types (existing product surfaces) ───────────────
+
+/** Interface / product-surface asset kinds. */
+export type UiAssetType =
   | "symbol"
   | "card"
   | "object"
@@ -11,18 +18,110 @@ export type AssetType =
   | "hero"
   | "branding";
 
+export const UI_ASSET_TYPES: readonly UiAssetType[] = [
+  "symbol",
+  "card",
+  "object",
+  "scene",
+  "hero",
+  "branding",
+] as const;
+
+// ── Spatial asset types (Life Map / twin) ────────────────────
+
+/**
+ * Spatial twin asset kinds — same registry, different consumption path.
+ * Do not confuse with UI `object` (pad/decorative webp).
+ */
+export type SpatialAssetType =
+  | "spatial_object"
+  | "terrain"
+  | "building"
+  | "avatar";
+
+export const SPATIAL_ASSET_TYPES: readonly SpatialAssetType[] = [
+  "spatial_object",
+  "terrain",
+  "building",
+  "avatar",
+] as const;
+
+/** Full registry type union — UI + spatial. */
+export type AssetType = UiAssetType | SpatialAssetType;
+
+export const ASSET_TYPES: readonly AssetType[] = [
+  ...UI_ASSET_TYPES,
+  ...SPATIAL_ASSET_TYPES,
+] as const;
+
+/** Which product surface primarily consumes the asset. */
+export type AssetSurface = "ui" | "spatial";
+
+/**
+ * Spatial taxonomy (optional metadata.category).
+ * Independent from `domain` (professionals, sports, …).
+ */
+export type AssetSpatialCategory =
+  | "poi"
+  | "structure"
+  | "terrain"
+  | "character"
+  | "decoration"
+  | "amenity"
+  | (string & {});
+
+export type AssetSpatialLodLevel = {
+  /** Lower = coarser. */
+  level: number;
+  /**
+   * Opaque LOD reference — AssetKey or path under /assets/3d/.
+   * Not a binary payload.
+   */
+  ref: string;
+};
+
+/**
+ * Optional pose / mesh hints for Life Map renderers.
+ * All fields optional until real GLB / LOD pipelines land.
+ */
+export type AssetSpatialMetadata = {
+  category: AssetSpatialCategory;
+  /**
+   * Future 3D model path (e.g. .glb) under the asset root.
+   * Preview `path` on AssetMetadata may remain a webp billboard.
+   */
+  modelPath?: string;
+  /** Uniform scale, or per-axis. */
+  scale?: number | { x: number; y: number; z: number };
+  orientation?: {
+    headingDegrees?: number;
+    pitchDegrees?: number;
+    rollDegrees?: number;
+  };
+  /** Placement pivot relative to LifeMapObject.position. */
+  anchor?: "bottom" | "center" | "origin" | (string & {});
+  lod?: readonly AssetSpatialLodLevel[];
+};
+
 export type AssetScope = "global" | "tenant";
 
+/**
+ * Runtime asset record.
+ * Shape: `{ key, type, domain (category facet), …, spatial? }`.
+ */
 export type AssetMetadata = {
   key: string;
   path: string;
   type: AssetType;
+  /** Logical domain / folder family (e.g. professionals, sports, life-map). */
   domain: string;
   variant: string;
   scope: AssetScope;
   tenant: string | null;
   width: number;
   height: number;
+  /** Present for spatial types (and dual-use entries when declared). */
+  spatial?: AssetSpatialMetadata;
 };
 
 export type AssetResolveOptions = {
@@ -32,6 +131,22 @@ export type AssetResolveOptions = {
    */
   tenant?: string;
 };
+
+export function isUiAssetType(type: string): type is UiAssetType {
+  return (UI_ASSET_TYPES as readonly string[]).includes(type);
+}
+
+export function isSpatialAssetType(type: string): type is SpatialAssetType {
+  return (SPATIAL_ASSET_TYPES as readonly string[]).includes(type);
+}
+
+export function isAssetType(type: string): type is AssetType {
+  return (ASSET_TYPES as readonly string[]).includes(type);
+}
+
+export function getAssetSurface(type: AssetType): AssetSurface {
+  return isSpatialAssetType(type) ? "spatial" : "ui";
+}
 
 export class MissingAssetError extends Error {
   readonly assetKey: string;

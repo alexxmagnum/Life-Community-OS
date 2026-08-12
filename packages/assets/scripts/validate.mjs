@@ -14,7 +14,19 @@ const manifestPath = path.join(repoRoot, "apps/web/public/assets/3d/manifest.jso
 const publicRoot = path.join(repoRoot, "apps/web/public");
 const generatedPath = path.join(packageRoot, "src/registry.generated.ts");
 
-const VALID_TYPES = new Set(["symbol", "card", "object", "scene", "hero", "branding"]);
+const VALID_TYPES = new Set([
+  "symbol",
+  "card",
+  "object",
+  "scene",
+  "hero",
+  "branding",
+  "spatial_object",
+  "terrain",
+  "building",
+  "avatar",
+]);
+const SPATIAL_TYPES = new Set(["spatial_object", "terrain", "building", "avatar"]);
 const VALID_SCOPES = new Set(["global", "tenant"]);
 const EXPECTED = {
   total: 48,
@@ -55,7 +67,18 @@ const keys = Object.keys(manifest.assets || {});
 const seen = new Set();
 let global = 0;
 let tenant = 0;
-const byType = { symbol: 0, card: 0, object: 0, scene: 0, hero: 0, branding: 0 };
+const byType = {
+  symbol: 0,
+  card: 0,
+  object: 0,
+  scene: 0,
+  hero: 0,
+  branding: 0,
+  spatial_object: 0,
+  terrain: 0,
+  building: 0,
+  avatar: 0,
+};
 let filesOk = 0;
 
 for (const key of keys) {
@@ -89,6 +112,26 @@ for (const key of keys) {
   }
   if (!(Number(a.width) > 0)) err(`${key}: invalid width`);
   if (!(Number(a.height) > 0)) err(`${key}: invalid height`);
+  if (a.spatial !== undefined && a.spatial !== null) {
+    if (typeof a.spatial !== "object" || Array.isArray(a.spatial)) {
+      err(`${key}: spatial metadata must be an object`);
+    } else {
+      if (!a.spatial.category || typeof a.spatial.category !== "string") {
+        err(`${key}: spatial.category required when spatial is set`);
+      }
+      if (!SPATIAL_TYPES.has(a.type)) {
+        warn(`${key}: spatial metadata on non-spatial type ${a.type}`);
+      }
+      if (a.spatial.modelPath) {
+        const mp = String(a.spatial.modelPath);
+        if (!mp.startsWith("/assets/3d/") || mp.includes("..")) {
+          err(`${key}: spatial.modelPath must be a safe /assets/3d/ path`);
+        }
+      }
+    }
+  } else if (SPATIAL_TYPES.has(a.type)) {
+    warn(`${key}: spatial type without spatial metadata (category recommended)`);
+  }
 }
 
 if (keys.length !== EXPECTED.total) err(`Expected ${EXPECTED.total} entries, got ${keys.length}`);

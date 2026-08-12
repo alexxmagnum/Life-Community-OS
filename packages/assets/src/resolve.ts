@@ -1,6 +1,10 @@
 import {
   type AssetMetadata,
   type AssetResolveOptions,
+  type AssetSpatialMetadata,
+  type AssetType,
+  type SpatialAssetType,
+  isSpatialAssetType,
   MissingAssetError,
   TenantIsolationError,
   UnsafeAssetPathError,
@@ -33,6 +37,10 @@ export function assertSafeAssetPath(path: string): void {
 }
 
 function toMetadata(key: string, raw: (typeof assetRegistry)[AssetKey]): AssetMetadata {
+  const spatial =
+    "spatial" in raw && raw.spatial
+      ? (raw.spatial as AssetSpatialMetadata)
+      : undefined;
   return {
     key,
     path: raw.path,
@@ -43,6 +51,7 @@ function toMetadata(key: string, raw: (typeof assetRegistry)[AssetKey]): AssetMe
     tenant: raw.tenant,
     width: raw.width,
     height: raw.height,
+    ...(spatial ? { spatial } : {}),
   };
 }
 
@@ -132,15 +141,61 @@ export function getRegistryStats() {
   const byType: Record<string, number> = {};
   let global = 0;
   let tenant = 0;
+  let ui = 0;
+  let spatial = 0;
   for (const m of metas) {
     byType[m.type] = (byType[m.type] ?? 0) + 1;
     if (m.scope === "global") global += 1;
     else tenant += 1;
+    if (isSpatialAssetType(m.type)) spatial += 1;
+    else ui += 1;
   }
   return {
     total: metas.length,
     global,
     tenant,
+    ui,
+    spatial,
     byType,
   };
+}
+
+/** Filter registered assets by exact type. */
+export function listAssetsByType(type: AssetType): readonly AssetMetadata[] {
+  return listAssets().filter((a) => a.type === type);
+}
+
+/** All spatial twin assets currently registered (may be empty until catalog ships). */
+export function listSpatialAssets(
+  type?: SpatialAssetType,
+): readonly AssetMetadata[] {
+  return listAssets().filter((a) => {
+    if (!isSpatialAssetType(a.type)) return false;
+    if (type !== undefined && a.type !== type) return false;
+    return true;
+  });
+}
+
+export function getAssetSpatialMetadata(
+  key: AssetKey | string,
+  options?: AssetResolveOptions,
+): AssetSpatialMetadata | undefined {
+  return getAsset(key, options).spatial;
+}
+
+/**
+ * Resolve `LifeMapObject.asset3DKey` against the shared registry.
+ * Prefers spatial types; still allows registered dual-use keys until
+ * dedicated spatial entries exist (fail only on missing / unsafe / tenant).
+ */
+export function resolveLifeMapAsset3DKey(
+  asset3DKey: AssetKey | string,
+  options?: AssetResolveOptions,
+): AssetMetadata {
+  return getAsset(asset3DKey, options);
+}
+
+export function isRegisteredSpatialAssetKey(key: string): boolean {
+  if (!hasAsset(key)) return false;
+  return isSpatialAssetType(getAsset(key).type);
 }
