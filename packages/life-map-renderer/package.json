@@ -1,0 +1,21 @@
+{
+  "name": "@life-community-os/life-map-renderer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Replaceable Life Map spatial renderer boundary — no map SDK, no tenant content",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@life-community-os/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}
