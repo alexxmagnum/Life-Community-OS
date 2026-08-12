@@ -16,6 +16,7 @@ export * from "./contribution";
 export * from "./tenant-configuration";
 export * from "./housing";
 export * from "./housing-operations";
+export * from "./life-map";
 export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";
