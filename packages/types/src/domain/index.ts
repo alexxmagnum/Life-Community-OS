@@ -219,3 +219,24 @@ export {
   filterHomeFeed,
   placeHomeSponsor,
 } from "./home-feed";
+export type {
+  LifeMapGeoPosition,
+  LifeMapLocalAnchor,
+  LifeMapPosition,
+  LifeMapBounds,
+  LifeMapCameraPose,
+  LifeMapLayerId,
+  LifeMapLayer,
+  LifeMapObjectType,
+  LifeMapObjectState,
+  LifeMapDomainRef,
+  LifeMapObject,
+  LifeMapActionKind,
+  LifeMapInteraction,
+  LifeMapTerritory,
+} from "./life-map";
+export {
+  LIFE_MAP_LAYER_IDS,
+  LIFE_MAP_OBJECT_TYPES,
+  LIFE_MAP_ACTION_KINDS,
+} from "./life-map";

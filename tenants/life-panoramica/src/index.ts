@@ -54,6 +54,8 @@ export {
   CAPABILITIES,
   canAccessMunicipalityModule,
   canAccessSecurityModule,
+  canAccessHousingModule,
+  canAccessLifeMapModule,
   capabilitiesForRole,
   type CapabilityKey,
   type DemoRole,

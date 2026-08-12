@@ -44,6 +44,12 @@ export const CAPABILITIES = {
   housingSave: "housing.save",
   /** Administer Housing module settings / moderation. */
   housingManage: "housing.manage",
+  /**
+   * Life Map — spatial twin (availability gated by module enablement).
+   */
+  lifeMapView: "lifeMap.view",
+  lifeMapInteract: "lifeMap.interact",
+  lifeMapManage: "lifeMap.manage",
   channelView: "community.channel.view",
   channelCreate: "community.channel.create",
   channelPublish: "community.channel.publish",
@@ -95,6 +101,9 @@ const memberCaps: CapabilityKey[] = [
   CAPABILITIES.housingEditOwnListing,
   CAPABILITIES.housingContact,
   CAPABILITIES.housingSave,
+  /** Ready when `lifeMap` feature flag is enabled — no UI yet. */
+  CAPABILITIES.lifeMapView,
+  CAPABILITIES.lifeMapInteract,
   CAPABILITIES.channelView,
   CAPABILITIES.residencyClaim,
 ];
@@ -116,6 +125,7 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.manageEnter,
     CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.housingManage,
+    CAPABILITIES.lifeMapManage,
   ],
   administrator: [
     ...memberCaps,
@@ -129,6 +139,7 @@ const roleCapabilities: Record<DemoRole, CapabilityKey[]> = {
     CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.manageEnter,
     CAPABILITIES.housingManage,
+    CAPABILITIES.lifeMapManage,
     // Ready when `securityModule` feature flag is enabled — no UI yet.
     CAPABILITIES.securityView,
     CAPABILITIES.securityNoticesView,
@@ -164,6 +175,16 @@ export function canAccessHousingModule(input: {
 }): boolean {
   return (
     input.featureEnabled && input.hasCapability(CAPABILITIES.housingView)
+  );
+}
+
+/** Life Map visibility — feature/module flag + view capability (fail closed). */
+export function canAccessLifeMapModule(input: {
+  featureEnabled: boolean;
+  hasCapability: (key: CapabilityKey | string) => boolean;
+}): boolean {
+  return (
+    input.featureEnabled && input.hasCapability(CAPABILITIES.lifeMapView)
   );
 }
 

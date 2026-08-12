@@ -55,6 +55,11 @@ export type TenantFeatureFlags = {
    * Reference demo: ON — tenant activation config in `./housing`.
    */
   housing: boolean;
+  /**
+   * Life Map — spatial digital twin (premium).
+   * Fail closed until a tenant explicitly enables it.
+   */
+  lifeMap: boolean;
 };
 
 /**
@@ -88,6 +93,8 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   participationTrust: true,
   intelligentDiffusion: true,
   housing: true,
+  /** Premium spatial twin — prepared, not activated. */
+  lifeMap: false,
 };
 
 /** Minimal community showcase — core living modules only (future tenants). */
@@ -100,4 +107,5 @@ export const lifePanoramicaFeaturesMinimal: TenantFeatureFlags = {
   recommendations: false,
   work: false,
   housing: false,
+  lifeMap: false,
 };

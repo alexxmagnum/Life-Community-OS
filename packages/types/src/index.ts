@@ -24,6 +24,13 @@ export {
   placeHomeSponsor,
 } from "./domain/home-feed";
 
+/** Life Map spatial twin constants (contracts foundation — no UI / SDK). */
+export {
+  LIFE_MAP_LAYER_IDS,
+  LIFE_MAP_OBJECT_TYPES,
+  LIFE_MAP_ACTION_KINDS,
+} from "./domain/life-map";
+
 /** Channel boundary validators (ADR-035) — required before persistence. */
 export {
   CHANNEL_OWNER_COMPATIBILITY,

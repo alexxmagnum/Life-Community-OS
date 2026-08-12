@@ -117,6 +117,13 @@ const CAP = {
   housingContact: "housing.contact",
   housingSave: "housing.save",
   housingManage: "housing.manage",
+  /**
+   * Life Map — spatial digital twin surface (premium, fail closed).
+   * Transversal projection layer — not owned by Community/Housing/Services.
+   */
+  lifeMapView: "lifeMap.view",
+  lifeMapInteract: "lifeMap.interact",
+  lifeMapManage: "lifeMap.manage",
 } as const;
 
 function mod(module: PlatformModule): PlatformModule {
@@ -703,6 +710,30 @@ export const PLATFORM_MODULE_REGISTRY: readonly PlatformModule[] = [
       copy: {},
       zones: [],
     },
+  }),
+
+  /**
+   * Life Map — optional premium spatial twin of the Territory.
+   * Projects existing modules into space; never owns business data.
+   * defaultEnabled false → fail closed until a tenant turns the feature on.
+   * No navigation / UI / map SDK in this foundation slice.
+   */
+  mod({
+    id: "lifeMap",
+    name: "Life Map",
+    description:
+      "Spatial digital twin of the territory — live layers for places, experiences, services, housing, and community.",
+    category: "lifestyle",
+    status: "optional",
+    defaultEnabled: false,
+    dependencies: [],
+    featureFlagKeys: ["lifeMap"],
+    capabilityKeys: [
+      CAP.lifeMapView,
+      CAP.lifeMapInteract,
+      CAP.lifeMapManage,
+    ],
+    configurationSchema: {},
   }),
 ];
 
