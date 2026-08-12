@@ -5,6 +5,9 @@
  *   Platform modules (existence) + TenantConfiguration (availability)
  *   + catalogs (content) + capabilities (action-gated leaves).
  *
+ * H1 note: hamburger should not fully duplicate bottom nav. Phase 2 safe
+ * cleanup removes confirmed false leaves; full Life overflow reshape is later.
+ *
  * Does not replace explorer-nav / official-entities / service-near-hubs.
  * Does not grant Permissions.
  */
@@ -176,16 +179,25 @@ export function projectMemberNavigation(
   // ── AREA 1 — Community Explorer ─────────────────────────────
 
   if (moduleOn(configuration, "community")) {
-    /** Canonical Community Hub areas (D.0.7.1.1) — same model as Community Hub chips. */
+    /**
+     * H1 Phase 2 (safe): hamburger Comunidad leaves are Belong shortcuts.
+     * Omit nav-only duplicates / Operate-owned surfaces from the menu:
+     * - participacion → same decide landing as propuestas (D5 still open for area merge)
+     * - espacios → Operate via Reservas → /resources (not a Belong root)
+     * Deep links `/community?tab=*` remain resolved in community-hub.
+     */
+    const omitFromHamburger = new Set(["c-participacion", "c-espacios"]);
     const children: ProjectedNavLeaf[] = listCommunityHubNavLeaves(
       configuration,
       isFeatureEnabled,
-    ).map((leaf) => ({
-      id: leaf.id,
-      label: leaf.label,
-      icon: leaf.icon as ProjectedNavIcon,
-      href: leaf.href,
-    }));
+    )
+      .filter((leaf) => !omitFromHamburger.has(leaf.id))
+      .map((leaf) => ({
+        id: leaf.id,
+        label: leaf.label,
+        icon: leaf.icon as ProjectedNavIcon,
+        href: leaf.href,
+      }));
     if (children.length > 0) {
       categories.push({
         id: "community",
@@ -266,12 +278,8 @@ export function projectMemberNavigation(
       description: "Qué puedes usar y cuándo está libre",
       children: [
         {
-          id: "res-sports",
-          label: "Instalaciones",
-          icon: "sport",
-          href: "/resources",
-        },
-        {
+          // IA Phase 1: was two leaves (Instalaciones + Espacios comunes) both → /resources.
+          // Keep one existing label; booking vocabulary (D1) remains pending.
           id: "res-common",
           label: "Espacios comunes",
           icon: "place",
@@ -367,23 +375,12 @@ export function projectMemberNavigation(
   // ── AREA 2 — Personal account (inside hamburger) ────────────
 
   if (moduleOn(configuration, "identity")) {
+    // H1 Phase 2 (safe): collapse multiple /me-only leaves into one profile entry.
     const children: ProjectedNavLeaf[] = [
       {
-        id: "p-identity",
-        label: "Mi identidad",
+        id: "p-profile",
+        label: "Mi perfil",
         icon: "people",
-        href: "/me",
-      },
-      {
-        id: "p-residency",
-        label: "Mi hogar",
-        icon: "pin",
-        href: "/me",
-      },
-      {
-        id: "p-interests",
-        label: "Mis intereses",
-        icon: "games",
         href: "/me",
       },
       {
@@ -410,12 +407,6 @@ export function projectMemberNavigation(
         label: "Mis guardados",
         icon: "info",
         href: moduleOn(configuration, "experiences") ? "/experiences" : "/me",
-      },
-      {
-        id: "p-settings",
-        label: "Configuración",
-        icon: "service",
-        href: "/me",
       },
       {
         id: "p-sign-out",

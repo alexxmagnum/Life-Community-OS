@@ -15,8 +15,8 @@ import {
   listOfficialContent,
   listOfficialEntities,
   listParticipacionContent,
+  communityHubSectionIdForArea,
   resolveCommunityHubArea,
-  type CommunityHubAreaId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -154,27 +154,15 @@ export function CommunityHubScreen() {
       return () => window.clearTimeout(t);
     }
 
-    // Every canonical area keeps a landing layer — areas are the navigation
-    // contract and are never rewritten here.
-    const sectionByTab: Record<CommunityHubAreaId, string> = {
-      // Alerts and closing decisions live in "Ahora mismo".
-      actualidad: "plaza-important",
-      conversaciones: "plaza-activity",
-      grupos: "plaza-people",
-      propuestas: "plaza-participate",
-      participacion: "plaza-participate",
-      canales: "plaza-official",
-      espacios: "plaza-explore",
-      mascotas: "plaza-explore",
-    };
-
+    // Every canonical area keeps a landing layer — section map lives in
+    // community-hub (Belong compatibility). Areas are never rewritten here.
     if (resolvedTab === "grupos") setExpandGroups(true);
     if (resolvedTab === "actualidad" || resolvedTab === "conversaciones") {
       setExpandPlaza(true);
     }
     if (resolvedTab === "mascotas") setPetsOpen(true);
 
-    const id = sectionByTab[resolvedTab];
+    const id = communityHubSectionIdForArea(resolvedTab);
     const t = window.setTimeout(() => {
       document
         .getElementById(id)
@@ -219,8 +207,13 @@ export function CommunityHubScreen() {
     mascotasItems.length > 0;
   const showExperiences = isFeatureEnabled("experiences") && experienceCount > 0;
   const showServices = isModuleEnabled("services");
-  // Housing is an extension point: it only becomes a door once its module ships.
-  const showHousing = isModuleEnabled("housing");
+  /**
+   * Housing / Living (D13) — no product surface yet (`/housing` is not shipped).
+   * Keep the door closed even if a future module flag appears, until D13 ownership
+   * is decided and a real screen exists. Do not invent Housing IA here.
+   */
+  const housingSurfaceReady = false;
+  const showHousing = housingSurfaceReady && isModuleEnabled("housing");
   const showOfficial =
     officialEntities.length > 0 || officialNotices.length > 0 || showChannels;
   const showExplore =

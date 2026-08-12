@@ -3,12 +3,21 @@
  *
  * Canonical Community area model for Life Panoramica.
  * Single source of truth for:
- *   - Community Hub chips
+ *   - Community Hub deep links (`/community?tab=`)
  *   - Hamburger Comunidad leaves (Navigation Projector)
  *   - Module Registry deep-link targets
+ *   - Belong H1 layer / scroll-section compatibility maps
+ *
+ * H1 ownership (Belong): plaza, groups, decide, official entry.
+ * Target visible layers (future reshape): Ahora · Grupos · Proponer · Oficial.
+ * Eight area ids remain for deep-link compatibility (D5/D6 pending).
+ * Housing (D13) is not a Community Explorar peer.
  *
  * Community is the place neighbours live the territory.
  * Communication remains a contextual capability — not this hub.
+ *
+ * Compatibility phase: expose Belong mappings without changing UI, routes,
+ * or ConversationExperience. DOM section ids stay `plaza-*` until FASE C.
  */
 
 import type { TenantConfiguration } from "@life-community-os/types";
@@ -37,6 +46,95 @@ export const COMMUNITY_HUB_AREA_IDS = [
 ] as const;
 
 export type CommunityHubAreaId = (typeof COMMUNITY_HUB_AREA_IDS)[number];
+
+/**
+ * H1 Belong layers (product grammar). Not DOM ids — UI still uses plaza-* sections.
+ * Plaza feed placement and Explorar remain outside this quartet until decided.
+ */
+export const COMMUNITY_BELONG_LAYER_IDS = [
+  "ahora",
+  "grupos",
+  "proponer",
+  "oficial",
+] as const;
+
+export type CommunityBelongLayerId =
+  (typeof COMMUNITY_BELONG_LAYER_IDS)[number];
+
+/**
+ * Scroll landing ids on CommunityScreen (DOM contract).
+ * Kept as plaza-* for anchor / deep-link stability until FASE C.
+ */
+export const COMMUNITY_HUB_SECTION_IDS = {
+  ahora: "plaza-important",
+  plaza: "plaza-activity",
+  grupos: "plaza-people",
+  proponer: "plaza-participate",
+  oficial: "plaza-official",
+  explore: "plaza-explore",
+} as const;
+
+export type CommunityHubSectionId =
+  (typeof COMMUNITY_HUB_SECTION_IDS)[keyof typeof COMMUNITY_HUB_SECTION_IDS];
+
+/**
+ * Canonical area → current scroll section (compatibility; identical to prior
+ * inline map in CommunityScreen).
+ */
+export const COMMUNITY_HUB_AREA_SECTION: Record<
+  CommunityHubAreaId,
+  CommunityHubSectionId
+> = {
+  actualidad: COMMUNITY_HUB_SECTION_IDS.ahora,
+  conversaciones: COMMUNITY_HUB_SECTION_IDS.plaza,
+  grupos: COMMUNITY_HUB_SECTION_IDS.grupos,
+  propuestas: COMMUNITY_HUB_SECTION_IDS.proponer,
+  participacion: COMMUNITY_HUB_SECTION_IDS.proponer,
+  canales: COMMUNITY_HUB_SECTION_IDS.oficial,
+  espacios: COMMUNITY_HUB_SECTION_IDS.explore,
+  mascotas: COMMUNITY_HUB_SECTION_IDS.explore,
+};
+
+export function communityHubSectionIdForArea(
+  areaId: CommunityHubAreaId,
+): CommunityHubSectionId {
+  return COMMUNITY_HUB_AREA_SECTION[areaId];
+}
+
+/**
+ * Conceptual Belong ownership for each area id.
+ * Does not change UI — documents migration target for adapters / future FASE C.
+ */
+export type CommunityBelongOwnership =
+  | { kind: "belong"; layer: CommunityBelongLayerId }
+  | {
+      kind: "pending";
+      /** Product decision id or short reason — not user-facing copy. */
+      reason: "plaza" | "D5" | "D6" | "mascotas" | "D13" | "closing-peek";
+    }
+  | { kind: "outside"; owner: "operate" | "life" | "housing" };
+
+export const COMMUNITY_HUB_AREA_BELONG: Record<
+  CommunityHubAreaId,
+  CommunityBelongOwnership
+> = {
+  actualidad: { kind: "belong", layer: "ahora" },
+  grupos: { kind: "belong", layer: "grupos" },
+  propuestas: { kind: "belong", layer: "proponer" },
+  canales: { kind: "belong", layer: "oficial" },
+  /** Same land as Proponer until D5; ownership still pending merge vs alias-only. */
+  participacion: { kind: "pending", reason: "D5" },
+  /** Plaza feed — Belong content; parent layer undecided (Ahora vs own block). */
+  conversaciones: { kind: "pending", reason: "plaza" },
+  espacios: { kind: "outside", owner: "operate" },
+  mascotas: { kind: "pending", reason: "mascotas" },
+};
+
+export function communityBelongOwnershipForArea(
+  areaId: CommunityHubAreaId,
+): CommunityBelongOwnership {
+  return COMMUNITY_HUB_AREA_BELONG[areaId];
+}
 
 export type CommunityHubAreaIcon = ExplorerNavLeaf["icon"] | "family";
 
@@ -174,6 +272,7 @@ export function listVisibleCommunityHubAreas(
 /**
  * Legacy / alternate tab ids → canonical Community Hub area.
  * Preserves existing deep links without parallel routes.
+ * H1 layer aliases resolve to today's area ids (no new public paths).
  */
 const LEGACY_TAB_MAP: Record<string, CommunityHubAreaId> = {
   feed: "actualidad",
@@ -187,6 +286,10 @@ const LEGACY_TAB_MAP: Record<string, CommunityHubAreaId> = {
   pets: "mascotas",
   participation: "participacion",
   spaces: "espacios",
+  // H1 Belong layer aliases → current areas (FASE B compatibility)
+  ahora: "actualidad",
+  proponer: "propuestas",
+  oficial: "canales",
 };
 
 export function resolveCommunityHubArea(
