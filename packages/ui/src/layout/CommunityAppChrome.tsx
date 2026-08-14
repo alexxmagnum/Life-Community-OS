@@ -289,29 +289,19 @@ export function CommunityAppHeader({
                 )}
                 aria-label={menuLabel}
               >
-                {/* 3D glass menu — thin slices with extra vertical gap */}
+                {/* Classic hamburger — three horizontal lines */}
                 <span
-                  className="flex w-[55px] flex-col items-center gap-[3px] mix-blend-screen"
+                  className={cn(
+                    "flex w-[22px] flex-col gap-[5px]",
+                    overHero
+                      ? "text-[#F7FAFA] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                      : "text-[var(--color-text-primary)]",
+                  )}
                   aria-hidden
                 >
-                  {[0, 1, 2].map((slice) => (
-                    <span
-                      key={slice}
-                      className="relative h-[10px] w-full overflow-hidden"
-                    >
-                      <img
-                        src="/tenants/life-panoramica/glyphs/menu.webp?v=premium-menu1"
-                        alt=""
-                        draggable={false}
-                        className="absolute left-0 max-w-none"
-                        style={{
-                          width: 55,
-                          height: 55,
-                          top: -(slice * (55 / 3) + 55 / 6 - 5),
-                        }}
-                      />
-                    </span>
-                  ))}
+                  <span className="h-[2px] w-full rounded-full bg-current" />
+                  <span className="h-[2px] w-full rounded-full bg-current" />
+                  <span className="h-[2px] w-full rounded-full bg-current" />
                 </span>
               </button>
             ) : null}
