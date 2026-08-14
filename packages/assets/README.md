@@ -9,7 +9,32 @@ One registry serves:
 - **UI** — `card` / `scene` / `symbol` / `object` / `hero` / `branding` (AssetPad, hubs)
 - **Life Map** — `spatial_object` / `terrain` / `building` / `avatar` via `LifeMapObject.asset3DKey`
 
-Spatial entries may carry optional `spatial` metadata (category, scale, orientation, anchor, LOD, future `modelPath`). No second library.
+## Spatial Asset Library
+
+Platform vocabulary (no binaries) for reusable twin objects:
+
+Categories: `terrain` · `building` · `place` · `mobility` · `community` · `recreation` · `nature` · `avatar` · `utility`
+
+```ts
+import {
+  buildSpatialAssetKey,
+  defineSpatialLibraryEntry,
+  SPATIAL_LIBRARY_CATEGORIES,
+} from "@life-community-os/assets";
+
+buildSpatialAssetKey({ category: "place", id: "restaurant" });
+// → "place.restaurant.spatial_object"
+
+defineSpatialLibraryEntry({
+  category: "recreation",
+  id: "golf",
+  subtype: "golf",
+  behaviour: "static",
+  interaction: "open",
+});
+```
+
+Keys are designed for `LifeMapObject.asset3DKey`. Optional `spatial` metadata on registry entries may include category, subtype, behaviour, interaction, scale, anchor, LOD, future `modelPath`.
 
 ## Usage
 

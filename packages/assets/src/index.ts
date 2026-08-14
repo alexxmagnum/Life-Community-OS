@@ -14,6 +14,8 @@ export type {
   AssetSurface,
   AssetSpatialCategory,
   AssetSpatialLodLevel,
+  AssetSpatialScale,
+  AssetSpatialAnchor,
   AssetSpatialMetadata,
   AssetScope,
   AssetMetadata,
@@ -32,6 +34,39 @@ export {
   TenantIsolationError,
   UnsafeAssetPathError,
 } from "./types";
+
+/** Spatial Asset Library — SaaS twin vocabulary (no binaries). */
+export type {
+  SpatialLibraryCategory,
+  SpatialBuildingSubtype,
+  SpatialPlaceSubtype,
+  SpatialRecreationSubtype,
+  SpatialMobilitySubtype,
+  SpatialCommunitySubtype,
+  SpatialNatureSubtype,
+  SpatialTerrainSubtype,
+  SpatialAvatarSubtype,
+  SpatialUtilitySubtype,
+  SpatialLibrarySubtype,
+  AssetSpatialBehaviour,
+  AssetSpatialInteractionCapability,
+  SpatialLibraryEntry,
+  SpatialAssetKeyParts,
+} from "./spatial-library";
+
+export {
+  SPATIAL_LIBRARY_CATEGORIES,
+  SPATIAL_LIBRARY_SUBTYPES_BY_CATEGORY,
+  ASSET_SPATIAL_BEHAVIOURS,
+  ASSET_SPATIAL_INTERACTIONS,
+  defaultSpatialRegistryTypeForCategory,
+  buildSpatialAssetKey,
+  isSpatialLibraryCategory,
+  listSpatialLibrarySubtypes,
+  isKnownSpatialLibrarySubtype,
+  validateSpatialLibraryMetadata,
+  defineSpatialLibraryEntry,
+} from "./spatial-library";
 
 export { assetRegistry, type AssetKey } from "./registry.generated";
 

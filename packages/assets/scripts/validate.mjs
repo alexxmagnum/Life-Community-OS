@@ -27,6 +27,23 @@ const VALID_TYPES = new Set([
   "avatar",
 ]);
 const SPATIAL_TYPES = new Set(["spatial_object", "terrain", "building", "avatar"]);
+const SPATIAL_LIBRARY_CATEGORIES = new Set([
+  "terrain",
+  "building",
+  "place",
+  "mobility",
+  "community",
+  "recreation",
+  "nature",
+  "avatar",
+  "utility",
+  // legacy aliases still accepted
+  "poi",
+  "structure",
+  "character",
+  "decoration",
+  "amenity",
+]);
 const VALID_SCOPES = new Set(["global", "tenant"]);
 const EXPECTED = {
   total: 48,
@@ -118,6 +135,22 @@ for (const key of keys) {
     } else {
       if (!a.spatial.category || typeof a.spatial.category !== "string") {
         err(`${key}: spatial.category required when spatial is set`);
+      } else if (!SPATIAL_LIBRARY_CATEGORIES.has(a.spatial.category)) {
+        warn(
+          `${key}: spatial.category "${a.spatial.category}" not in Spatial Library vocabulary`,
+        );
+      }
+      if (a.spatial.subtype !== undefined && typeof a.spatial.subtype !== "string") {
+        err(`${key}: spatial.subtype must be a string when set`);
+      }
+      if (a.spatial.behaviour !== undefined && typeof a.spatial.behaviour !== "string") {
+        err(`${key}: spatial.behaviour must be a string when set`);
+      }
+      if (
+        a.spatial.interaction !== undefined &&
+        typeof a.spatial.interaction !== "string"
+      ) {
+        err(`${key}: spatial.interaction must be a string when set`);
       }
       if (!SPATIAL_TYPES.has(a.type)) {
         warn(`${key}: spatial metadata on non-spatial type ${a.type}`);

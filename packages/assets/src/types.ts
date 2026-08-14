@@ -58,15 +58,29 @@ export const ASSET_TYPES: readonly AssetType[] = [
 export type AssetSurface = "ui" | "spatial";
 
 /**
- * Spatial taxonomy (optional metadata.category).
- * Independent from `domain` (professionals, sports, …).
+ * Spatial library category (SaaS vocabulary).
+ * Prefer these over legacy poi/structure aliases.
+ * Full taxonomy + subtypes: `./spatial-library`.
  */
 export type AssetSpatialCategory =
-  | "poi"
-  | "structure"
   | "terrain"
+  | "building"
+  | "place"
+  | "mobility"
+  | "community"
+  | "recreation"
+  | "nature"
+  | "avatar"
+  | "utility"
+  /** @deprecated Prefer `place` */
+  | "poi"
+  /** @deprecated Prefer `building` */
+  | "structure"
+  /** @deprecated Prefer `avatar` */
   | "character"
+  /** @deprecated Prefer `utility` */
   | "decoration"
+  /** @deprecated Prefer `utility` or `place` */
   | "amenity"
   | (string & {});
 
@@ -80,26 +94,41 @@ export type AssetSpatialLodLevel = {
   ref: string;
 };
 
+export type AssetSpatialScale = number | { x: number; y: number; z: number };
+
+/** Placement pivot relative to LifeMapObject.position. */
+export type AssetSpatialAnchor =
+  | "bottom"
+  | "center"
+  | "origin"
+  | (string & {});
+
 /**
- * Optional pose / mesh hints for Life Map renderers.
+ * Optional pose / mesh / taxonomy hints for Life Map renderers.
  * All fields optional until real GLB / LOD pipelines land.
+ * Category vocabulary: Spatial Asset Library (`./spatial-library`).
  */
 export type AssetSpatialMetadata = {
   category: AssetSpatialCategory;
+  /** Library subtype (e.g. house, restaurant, golf). */
+  subtype?: string;
+  /** Presentation behaviour — not AuthZ. */
+  behaviour?: string;
+  /** Advertised interaction affordance — not AuthZ. */
+  interaction?: string;
   /**
    * Future 3D model path (e.g. .glb) under the asset root.
    * Preview `path` on AssetMetadata may remain a webp billboard.
    */
   modelPath?: string;
   /** Uniform scale, or per-axis. */
-  scale?: number | { x: number; y: number; z: number };
+  scale?: AssetSpatialScale;
   orientation?: {
     headingDegrees?: number;
     pitchDegrees?: number;
     rollDegrees?: number;
   };
-  /** Placement pivot relative to LifeMapObject.position. */
-  anchor?: "bottom" | "center" | "origin" | (string & {});
+  anchor?: AssetSpatialAnchor;
   lod?: readonly AssetSpatialLodLevel[];
 };
 
