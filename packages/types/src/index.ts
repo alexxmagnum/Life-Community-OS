@@ -29,7 +29,20 @@ export {
   LIFE_MAP_LAYER_IDS,
   LIFE_MAP_OBJECT_TYPES,
   LIFE_MAP_ACTION_KINDS,
+  LIFE_MAP_BASE_LAYER_TYPES,
+  isLifeMapBaseLayerType,
 } from "./domain/life-map";
+
+/** Territory ingestion — external sources → LifeMapBaseLayer (no SDK / fetch). */
+export {
+  TERRITORY_IMPORT_LAYER_KINDS,
+  LIFE_MAP_BASE_LAYER_DEFAULT_Z_INDEX,
+  mapTerritoryImportKindToBaseLayerType,
+  assertSafeTerritoryDataRef,
+  validateTerritoryDataSource,
+  projectTerritoryLayerImport,
+  projectTerritoryLayerImports,
+} from "./domain/life-map-territory-ingestion";
 
 /** Life Map spatial object projection registry (not SoT — no UI / SDK). */
 export {

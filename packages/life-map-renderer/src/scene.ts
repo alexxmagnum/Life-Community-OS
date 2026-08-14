@@ -6,6 +6,8 @@
  */
 
 import type {
+  LifeMapBaseLayer,
+  LifeMapCoordinateReferenceSystem,
   LifeMapLayer,
   LifeMapObject,
   LifeMapTerritory,
@@ -27,6 +29,9 @@ export type LifeMapSceneLayer = {
 /**
  * Complete scene descriptor passed to `LifeMapRenderer.setScene`.
  * Engines may ignore fields they do not support yet.
+ *
+ * `layers` = Life OS product layers.
+ * `baseLayers` = physical territory (optional until real data exists).
  */
 export type LifeMapScene = {
   tenantId: string;
@@ -34,6 +39,10 @@ export type LifeMapScene = {
   camera: LifeMapRendererCamera;
   layers: readonly LifeMapSceneLayer[];
   objects: readonly LifeMapRenderableObject[];
+  /** Echo of territory CRS when set. */
+  crs?: LifeMapCoordinateReferenceSystem;
+  /** Physical base layers — engines without supportsBaseLayers ignore these. */
+  baseLayers?: readonly LifeMapBaseLayer[];
 };
 
 export type LifeMapSceneBuildInput = {
@@ -83,5 +92,9 @@ export function buildLifeMapScene(input: LifeMapSceneBuildInput): LifeMapScene {
         : undefined;
       return toLifeMapRenderableObject(object, asset);
     }),
+    ...(territory.crs ? { crs: territory.crs } : {}),
+    ...(territory.baseLayers && territory.baseLayers.length > 0
+      ? { baseLayers: [...territory.baseLayers] }
+      : {}),
   };
 }

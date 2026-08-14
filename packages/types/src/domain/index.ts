@@ -233,13 +233,39 @@ export type {
   LifeMapObject,
   LifeMapActionKind,
   LifeMapInteraction,
+  LifeMapCoordinateReferenceSystem,
+  LifeMapBaseLayerType,
+  LifeMapBaseLayerSourceType,
+  LifeMapBaseLayerStyle,
+  LifeMapBaseLayer,
   LifeMapTerritory,
 } from "./life-map";
 export {
   LIFE_MAP_LAYER_IDS,
   LIFE_MAP_OBJECT_TYPES,
   LIFE_MAP_ACTION_KINDS,
+  LIFE_MAP_BASE_LAYER_TYPES,
+  isLifeMapBaseLayerType,
 } from "./life-map";
+export type {
+  TerritoryDataProviderKind,
+  TerritoryDataFormat,
+  TerritoryDataSource,
+  TerritoryImportLayerKind,
+  TerritoryLayerImport,
+  TerritoryLayerImportIssueCode,
+  TerritoryLayerImportIssue,
+  TerritoryLayerImportResult,
+} from "./life-map-territory-ingestion";
+export {
+  TERRITORY_IMPORT_LAYER_KINDS,
+  LIFE_MAP_BASE_LAYER_DEFAULT_Z_INDEX,
+  mapTerritoryImportKindToBaseLayerType,
+  assertSafeTerritoryDataRef,
+  validateTerritoryDataSource,
+  projectTerritoryLayerImport,
+  projectTerritoryLayerImports,
+} from "./life-map-territory-ingestion";
 export type {
   LifeMapObjectProjectionInput,
   LifeMapObjectIssueCode,

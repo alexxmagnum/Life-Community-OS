@@ -25,6 +25,15 @@ export type LifeMapRendererCapabilities = {
   supportsLayerVisibility: boolean;
   /** True only when a real mesh/map engine is wired. */
   supportsRealtimeRender: boolean;
+  /**
+   * Engine can consume {@link import("@life-community-os/types").LifeMapBaseLayer}
+   * descriptors (physical territory). False for product-layer-only prototypes.
+   */
+  supportsBaseLayers: boolean;
+  /** Engine can render terrain / elevation base data when supplied. */
+  supportsTerrain: boolean;
+  /** Engine projects WGS84 (or territory CRS) into its world space. */
+  supportsGeoProjection: boolean;
 };
 
 export type LifeMapRendererInfo = {
@@ -63,6 +72,9 @@ const NULL_CAPABILITIES: LifeMapRendererCapabilities = {
   supportsAssetKeys: true,
   supportsLayerVisibility: true,
   supportsRealtimeRender: false,
+  supportsBaseLayers: false,
+  supportsTerrain: false,
+  supportsGeoProjection: false,
 };
 
 /**
