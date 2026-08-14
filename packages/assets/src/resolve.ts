@@ -10,6 +10,15 @@ import {
   UnsafeAssetPathError,
 } from "./types";
 import { assetRegistry, type AssetKey } from "./registry.generated";
+import {
+  ensureFoundationTenantAssetPacks,
+  getTenantAssetPack,
+  getTenantPackEntry,
+  tenantPackDefinesLogicalKey,
+  tenantPackEntryToMetadata,
+} from "./tenant-pack";
+
+ensureFoundationTenantAssetPacks();
 
 const ASSET_ROOT_PREFIX = "/assets/3d/";
 
@@ -55,16 +64,37 @@ function toMetadata(key: string, raw: (typeof assetRegistry)[AssetKey]): AssetMe
   };
 }
 
+function resolveFromTenantPack(
+  logicalKey: string,
+  requestedTenant: string,
+): AssetMetadata {
+  const entry = getTenantPackEntry(requestedTenant, logicalKey);
+  if (!entry) {
+    throw new MissingAssetError(logicalKey);
+  }
+  assertSafeAssetPath(entry.path);
+  if (entry.scope !== "tenant" || entry.tenant !== requestedTenant) {
+    throw new TenantIsolationError(logicalKey, requestedTenant, entry.tenant);
+  }
+  return tenantPackEntryToMetadata(logicalKey, entry);
+}
+
 /**
- * Resolve asset metadata by semantic key.
+ * Resolve asset metadata by semantic / logical key.
+ *
+ * Order:
+ * 1. Platform registry (generated)
+ * 2. Tenant asset pack for `options.tenant` (if key missing on platform)
+ *
  * Global keys resolve with or without tenant context.
- * Tenant-scoped keys require a matching `options.tenant` (fail-closed).
+ * Tenant-scoped keys (registry or pack) require matching tenant (fail-closed).
  */
 export function getAsset(key: AssetKey | string, options?: AssetResolveOptions): AssetMetadata {
   const requestedTenant = options?.tenant?.trim() || undefined;
+  const logicalKey = String(key);
 
   if (requestedTenant) {
-    const overrideKey = tenantOverrides[requestedTenant]?.[key];
+    const overrideKey = tenantOverrides[requestedTenant]?.[logicalKey];
     if (overrideKey && overrideKey in assetRegistry) {
       const overridden = assetRegistry[overrideKey as AssetKey];
       assertSafeAssetPath(overridden.path);
@@ -72,27 +102,45 @@ export function getAsset(key: AssetKey | string, options?: AssetResolveOptions):
     }
   }
 
-  if (!(key in assetRegistry)) {
-    throw new MissingAssetError(String(key));
+  if (logicalKey in assetRegistry) {
+    const raw = assetRegistry[logicalKey as AssetKey];
+    assertSafeAssetPath(raw.path);
+
+    if (raw.scope === "global") {
+      return toMetadata(logicalKey, raw);
+    }
+
+    if (!requestedTenant || raw.tenant !== requestedTenant) {
+      throw new TenantIsolationError(
+        logicalKey,
+        requestedTenant ?? "",
+        raw.tenant,
+      );
+    }
+
+    return toMetadata(logicalKey, raw);
   }
 
-  const raw = assetRegistry[key as AssetKey];
-  assertSafeAssetPath(raw.path);
-
-  if (raw.scope === "global") {
-    return toMetadata(String(key), raw);
+  // Platform miss → tenant pack (never without tenant context).
+  if (!requestedTenant) {
+    if (tenantPackDefinesLogicalKey(logicalKey)) {
+      throw new TenantIsolationError(logicalKey, "", null);
+    }
+    throw new MissingAssetError(logicalKey);
   }
 
-  // Tenant-scoped: require matching tenant context (no silent leak).
-  if (!requestedTenant || raw.tenant !== requestedTenant) {
-    throw new TenantIsolationError(
-      String(key),
-      requestedTenant ?? "",
-      raw.tenant,
-    );
-  }
+  return resolveFromTenantPack(logicalKey, requestedTenant);
+}
 
-  return toMetadata(String(key), raw);
+/**
+ * Resolve asset metadata by logical key + tenant context.
+ * Alias of {@link getAsset} for the TenantAssetPack contract.
+ */
+export function resolveAsset(
+  logicalKey: AssetKey | string,
+  options?: AssetResolveOptions,
+): AssetMetadata {
+  return getAsset(logicalKey, options);
 }
 
 /** Resolve public URL path for an asset key. */
@@ -111,17 +159,28 @@ export function listAssetKeys(): AssetKey[] {
 /**
  * Enumerate assets visible under the given tenant context.
  * Without tenant: platform/global only (tenant-scoped entries excluded).
- * With tenant: global + that tenant's scoped assets.
+ * With tenant: platform globals + matching platform tenant entries + that tenant's pack.
  */
 export function listAssets(options?: AssetResolveOptions): readonly AssetMetadata[] {
   const requestedTenant = options?.tenant?.trim() || undefined;
-  return listAssetKeys()
+  const fromPlatform = listAssetKeys()
     .filter((key) => {
       const raw = assetRegistry[key];
       if (raw.scope === "global") return true;
       return Boolean(requestedTenant && raw.tenant === requestedTenant);
     })
     .map((key) => getAsset(key, options));
+
+  if (!requestedTenant) return fromPlatform;
+
+  const pack = getTenantAssetPack(requestedTenant);
+  if (!pack) return fromPlatform;
+
+  const fromPack = Object.keys(pack.assets)
+    .filter((logicalKey) => !(logicalKey in assetRegistry))
+    .map((logicalKey) => getAsset(logicalKey, options));
+
+  return [...fromPlatform, ...fromPack];
 }
 
 /**
@@ -135,12 +194,19 @@ export function getAssetConceptId(meta: AssetMetadata | string): string {
   return `${parts[0]}.${parts[1]}`;
 }
 
+function isResolvableKey(key: string, options?: AssetResolveOptions): boolean {
+  if (key in assetRegistry) return true;
+  const tenant = options?.tenant?.trim();
+  if (!tenant) return false;
+  return Boolean(getTenantPackEntry(tenant, key));
+}
+
 /** Same concept, any type/variant — for family inspection. */
 export function getRelatedAssets(
   key: AssetKey | string,
   options?: AssetResolveOptions,
 ): readonly AssetMetadata[] {
-  if (!(key in assetRegistry)) return [];
+  if (!isResolvableKey(String(key), options)) return [];
   const conceptId = getAssetConceptId(String(key));
   return listAssets(options).filter((a) => getAssetConceptId(a) === conceptId);
 }
@@ -150,7 +216,7 @@ export function getAssetVariants(
   key: AssetKey | string,
   options?: AssetResolveOptions,
 ): readonly AssetMetadata[] {
-  if (!(key in assetRegistry)) return [];
+  if (!isResolvableKey(String(key), options)) return [];
   const base = getAsset(key, options);
   const conceptId = getAssetConceptId(base);
   return listAssets(options).filter(

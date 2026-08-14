@@ -22,6 +22,41 @@ const tenantOverrides = {};
 const BRANDING_SYMBOL = "branding.life-panoramica-symbol.branding.symbol";
 const BRANDING_WORDMARK = "branding.life-panoramica-wordmark.branding.wordmark";
 const PLATFORM_SCENE = "professionals.electrician.scene";
+const LOGICAL_BRANDING_SYMBOL = "branding.symbol";
+const LOGICAL_BRANDING_WORDMARK = "branding.wordmark";
+
+/** Mirrors packages/assets/src/tenant-pack.ts foundation pack. */
+const tenantPacks = {
+  "life-panoramica": {
+    tenant: "life-panoramica",
+    assets: {
+      [LOGICAL_BRANDING_SYMBOL]: {
+        path: registry[BRANDING_SYMBOL].path,
+        type: "branding",
+        domain: "branding",
+        variant: "symbol",
+        scope: "tenant",
+        tenant: "life-panoramica",
+        width: registry[BRANDING_SYMBOL].width,
+        height: registry[BRANDING_SYMBOL].height,
+      },
+      [LOGICAL_BRANDING_WORDMARK]: {
+        path: registry[BRANDING_WORDMARK].path,
+        type: "branding",
+        domain: "branding",
+        variant: "wordmark",
+        scope: "tenant",
+        tenant: "life-panoramica",
+        width: registry[BRANDING_WORDMARK].width,
+        height: registry[BRANDING_WORDMARK].height,
+      },
+    },
+  },
+};
+
+function packDefines(logicalKey) {
+  return Object.values(tenantPacks).some((p) => logicalKey in p.assets);
+}
 
 class MissingAssetError extends Error {
   constructor(k) {
@@ -49,7 +84,7 @@ function assertSafe(pathStr) {
   if (/^https?:\/\//i.test(pathStr)) throw new UnsafeAssetPathError(pathStr);
 }
 
-/** Mirrors packages/assets/src/resolve.ts fail-closed behaviour. */
+/** Mirrors packages/assets/src/resolve.ts — platform first, then tenant pack. */
 function getAsset(key, options = {}) {
   const requestedTenant = options.tenant?.trim() || undefined;
   if (requestedTenant) {
@@ -59,14 +94,27 @@ function getAsset(key, options = {}) {
       return { key: overrideKey, ...registry[overrideKey] };
     }
   }
-  if (!registry[key]) throw new MissingAssetError(key);
-  const raw = registry[key];
-  assertSafe(raw.path);
-  if (raw.scope === "global") return { key, ...raw };
-  if (!requestedTenant || raw.tenant !== requestedTenant) {
-    throw new TenantIsolationError(key);
+  if (registry[key]) {
+    const raw = registry[key];
+    assertSafe(raw.path);
+    if (raw.scope === "global") return { key, ...raw };
+    if (!requestedTenant || raw.tenant !== requestedTenant) {
+      throw new TenantIsolationError(key);
+    }
+    return { key, ...raw };
   }
-  return { key, ...raw };
+  if (!requestedTenant) {
+    if (packDefines(key)) throw new TenantIsolationError(key);
+    throw new MissingAssetError(key);
+  }
+  const entry = tenantPacks[requestedTenant]?.assets[key];
+  if (!entry) throw new MissingAssetError(key);
+  assertSafe(entry.path);
+  return { key, ...entry };
+}
+
+function resolveAsset(logicalKey, options) {
+  return getAsset(logicalKey, options);
 }
 
 function asset(key, options) {
@@ -75,13 +123,24 @@ function asset(key, options) {
 
 function listAssets(options = {}) {
   const requestedTenant = options.tenant?.trim() || undefined;
-  return Object.keys(registry)
+  const fromPlatform = Object.keys(registry)
     .filter((key) => {
       const raw = registry[key];
       if (raw.scope === "global") return true;
       return Boolean(requestedTenant && raw.tenant === requestedTenant);
     })
     .map((key) => getAsset(key, options));
+
+  if (!requestedTenant) return fromPlatform;
+
+  const pack = tenantPacks[requestedTenant];
+  if (!pack) return fromPlatform;
+
+  const fromPack = Object.keys(pack.assets)
+    .filter((logicalKey) => !registry[logicalKey])
+    .map((logicalKey) => getAsset(logicalKey, options));
+
+  return [...fromPlatform, ...fromPack];
 }
 
 function getAssetConceptId(meta) {
@@ -216,12 +275,15 @@ test("listAssets() without tenant → global only (46)", () => {
   assert.equal(assets.filter((a) => a.type === "branding").length, 0);
 });
 
-test("listAssets({ tenant }) includes that tenant branding", () => {
+test("listAssets({ tenant }) includes registry branding + pack logical keys", () => {
   const assets = listAssets({ tenant: "life-panoramica" });
-  assert.equal(assets.length, 48);
+  // 46 global + 2 legacy tenant keys + 2 logical pack keys
+  assert.equal(assets.length, 50);
   assert.equal(assets.filter((a) => a.scope === "global").length, 46);
-  assert.equal(assets.filter((a) => a.scope === "tenant").length, 2);
-  assert.equal(assets.filter((a) => a.type === "branding").length, 2);
+  assert.equal(assets.filter((a) => a.scope === "tenant").length, 4);
+  assert.equal(assets.filter((a) => a.type === "branding").length, 4);
+  assert.ok(assets.some((a) => a.key === LOGICAL_BRANDING_SYMBOL));
+  assert.ok(assets.some((a) => a.key === LOGICAL_BRANDING_WORDMARK));
 });
 
 test("listAssets({ tenant: other }) excludes Panoramica branding", () => {
@@ -270,10 +332,44 @@ test("tenant metadata preserved on branding when listed with tenant", () => {
   const branding = listAssets({ tenant: "life-panoramica" }).filter(
     (a) => a.type === "branding",
   );
-  assert.equal(branding.length, 2);
+  assert.equal(branding.length, 4);
   for (const b of branding) {
     assert.equal(b.scope, "tenant");
     assert.equal(b.tenant, "life-panoramica");
     assert.ok(b.path.includes("/tenants/life-panoramica/"));
   }
+});
+
+test("pack: resolveAsset(branding.symbol, { tenant }) works", () => {
+  const m = resolveAsset(LOGICAL_BRANDING_SYMBOL, { tenant: "life-panoramica" });
+  assert.equal(m.key, LOGICAL_BRANDING_SYMBOL);
+  assert.equal(m.scope, "tenant");
+  assert.equal(m.tenant, "life-panoramica");
+  assert.equal(m.path, registry[BRANDING_SYMBOL].path);
+});
+
+test("pack: branding.symbol without tenant → TenantIsolationError", () => {
+  assert.throws(
+    () => getAsset(LOGICAL_BRANDING_SYMBOL),
+    (e) => e.name === "TenantIsolationError",
+  );
+});
+
+test("pack: branding.symbol cross-tenant → MissingAssetError", () => {
+  assert.throws(
+    () => getAsset(LOGICAL_BRANDING_SYMBOL, { tenant: "future-community-a" }),
+    (e) => e.name === "MissingAssetError",
+  );
+});
+
+test("pack: platform key still preferred over pack", () => {
+  const m = getAsset(PLATFORM_SCENE, { tenant: "life-panoramica" });
+  assert.equal(m.scope, "global");
+  assert.equal(m.tenant, null);
+});
+
+test("legacy slug branding keys still resolve with tenant", () => {
+  const m = getAsset(BRANDING_SYMBOL, { tenant: "life-panoramica" });
+  assert.equal(m.scope, "tenant");
+  assert.match(m.key, /life-panoramica/);
 });

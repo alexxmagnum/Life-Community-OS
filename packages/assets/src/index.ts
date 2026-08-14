@@ -70,9 +70,24 @@ export {
 
 export { assetRegistry, type AssetKey } from "./registry.generated";
 
+export type {
+  TenantAssetPack,
+  TenantAssetPackEntry,
+} from "./tenant-pack";
+
+export {
+  registerTenantAssetPack,
+  getTenantAssetPack,
+  listRegisteredTenantAssetPacks,
+  getTenantPackEntry,
+  lifePanoramicaAssetPack,
+  ensureFoundationTenantAssetPacks,
+} from "./tenant-pack";
+
 export {
   asset,
   getAsset,
+  resolveAsset,
   hasAsset,
   listAssetKeys,
   listAssets,
