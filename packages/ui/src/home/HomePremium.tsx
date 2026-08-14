@@ -376,28 +376,15 @@ export function HomeRail({
 export type HomeMomentTone = "open" | "soon" | "calm";
 
 const MOMENT_BADGE: Record<HomeMomentTone, string> = {
-  open: "bg-[#00D8E8] text-[#001219] shadow-[0_0_8px_rgba(0,216,232,0.4)]",
-  soon: "bg-[#B7F22A] text-[#001219] shadow-[0_0_8px_rgba(183,242,42,0.4)]",
-  calm: "bg-[#E4F224] text-[#001219] shadow-[0_0_8px_rgba(228,242,36,0.35)]",
+  open: "bg-[var(--color-accent-cyan)] text-[var(--color-text-on-action)] shadow-[0_0_8px_color-mix(in_srgb,var(--color-accent-cyan)_40%,transparent)]",
+  soon: "bg-[var(--color-accent-lime)] text-[var(--color-text-on-action)] shadow-[0_0_8px_color-mix(in_srgb,var(--color-accent-lime)_40%,transparent)]",
+  calm: "bg-[var(--color-action-accent)] text-[var(--color-text-on-action)] shadow-[0_0_8px_color-mix(in_srgb,var(--color-action-accent)_35%,transparent)]",
 };
 
 const MOMENT_CTA: Record<HomeMomentTone, string> = {
-  open: "bg-[image:var(--gradient-brand)] text-[#001219] shadow-[0_0_12px_rgba(0,216,232,0.35)]",
-  soon: "bg-[linear-gradient(120deg,#56D93A,#B7F22A)] text-[#001219] shadow-[0_0_12px_rgba(183,242,42,0.3)]",
-  calm: "bg-[linear-gradient(120deg,#E4F224,#B7F22A)] text-[#001219] shadow-[0_0_12px_rgba(228,242,36,0.3)]",
-};
-
-/** Premium 3D clay glyphs — transparent assets, never flat icons in cyan discs. */
-const HOME_GLYPH_3D: Partial<Record<HomeGlyphName, string>> = {
-  coffee: "/tenants/life-panoramica/glyphs/coffee.png?v=premium-ref2",
-  trail: "/tenants/life-panoramica/glyphs/trail.png?v=premium-ref2",
-  golf: "/tenants/life-panoramica/glyphs/golf.png?v=premium-ref2",
-  calendar: "/tenants/life-panoramica/glyphs/calendar.png?v=premium-ref2",
-  dining: "/tenants/life-panoramica/intents/dining.png?v=premium-ref2",
-  compass: "/tenants/life-panoramica/intents/discover.png?v=premium-ref2",
-  people: "/tenants/life-panoramica/glyphs/people.png?v=premium-ref9",
-  ball: "/tenants/life-panoramica/glyphs/ball.png?v=premium-ref9",
-  camera: "/tenants/life-panoramica/glyphs/camera.png?v=premium-ref9",
+  open: "bg-[image:var(--gradient-brand)] text-[var(--color-text-on-action)] shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent-cyan)_35%,transparent)]",
+  soon: "bg-[image:linear-gradient(120deg,var(--color-feedback-success),var(--color-accent-lime))] text-[var(--color-text-on-action)] shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent-lime)_30%,transparent)]",
+  calm: "bg-[image:linear-gradient(120deg,var(--color-action-accent),var(--color-accent-lime))] text-[var(--color-text-on-action)] shadow-[0_0_12px_color-mix(in_srgb,var(--color-action-accent)_30%,transparent)]",
 };
 
 export type HomeMomentPerson = {
@@ -410,6 +397,7 @@ export type HomeMomentCardProps = {
   tone: HomeMomentTone;
   badgeLabel: string;
   glyph: HomeGlyphName;
+  /** Optional tenant-supplied 3D glyph asset. Falls back to vector HomeGlyph. */
   glyphImageUrl?: string;
   title: string;
   where: string;
@@ -439,7 +427,7 @@ export function HomeMomentCard({
   onCta,
 }: HomeMomentCardProps) {
   const faces = people.slice(0, 3);
-  const glyph3d = glyphImageUrl ?? HOME_GLYPH_3D[glyph];
+  const glyph3d = glyphImageUrl;
   return (
     <article className="relative flex h-[200px] w-[148px] shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/12 shadow-[0_10px_28px_rgba(0,0,0,0.4)]">
       <img
@@ -478,7 +466,7 @@ export function HomeMomentCard({
 
       <div className="relative z-[2] mt-auto flex flex-col px-2 pb-2 pt-6">
         <button type="button" onClick={onClick} className="block w-full text-left">
-          <span className="block truncate text-[12px] font-semibold leading-4 text-[#F7FAFA]">
+          <span className="block truncate text-[12px] font-semibold leading-4 text-[var(--color-text-inverse)]">
             {title}
           </span>
           <span className="mt-0.5 block truncate text-[9px] leading-3 text-white/70">
@@ -490,7 +478,7 @@ export function HomeMomentCard({
           {statusLabel ? (
             <>
               <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#B7F22A]"
+                className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent-lime)]"
                 aria-hidden
               />
               <span className="truncate text-[9px] leading-3 text-white/75">
@@ -507,12 +495,12 @@ export function HomeMomentCard({
                         key={person.id}
                         src={person.avatarUrl}
                         alt=""
-                        className="h-[14px] w-[14px] rounded-full object-cover ring-[1.5px] ring-[#001219]"
+                        className="h-[14px] w-[14px] rounded-full object-cover ring-[1.5px] ring-[var(--color-text-on-action)]"
                       />
                     ) : (
                       <span
                         key={person.id}
-                        className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-white/20 text-[6px] font-bold text-white ring-[1.5px] ring-[#001219]"
+                        className="flex h-[14px] w-[14px] items-center justify-center rounded-full bg-white/20 text-[6px] font-bold text-white ring-[1.5px] ring-[var(--color-text-on-action)]"
                       >
                         {person.name.slice(0, 1)}
                       </span>
@@ -553,6 +541,7 @@ export type HomeMoveCardProps = {
   /** @deprecated Dark-glass cards no longer use per-tone fills. Kept for API stability. */
   tone?: HomeMoveCardTone;
   glyph: HomeGlyphName;
+  /** Optional tenant-supplied 3D glyph asset. Falls back to vector HomeGlyph. */
   glyphImageUrl?: string;
   headline: string;
   meta: string;
@@ -575,7 +564,7 @@ export function HomeMoveCard({
   liked = false,
   onClick,
 }: HomeMoveCardProps) {
-  const glyph3d = glyphImageUrl ?? HOME_GLYPH_3D[glyph];
+  const glyph3d = glyphImageUrl;
   const isPerson = Boolean(personName);
 
   return (
@@ -680,6 +669,7 @@ export type HomeIntentCardProps = {
   glyph: HomeGlyphName;
   title: string;
   subtitle: string;
+  /** Optional tenant-supplied 3D glyph asset. Falls back to vector HomeGlyph. */
   imageUrl?: string;
   /** Optional photographic / metallic wash under the glass panel. */
   bgImageUrl?: string;
@@ -700,7 +690,7 @@ export function HomeIntentCard({
   bgImageUrl,
   onClick,
 }: HomeIntentCardProps) {
-  const glyph3d = imageUrl ?? HOME_GLYPH_3D[glyph];
+  const glyph3d = imageUrl;
 
   return (
     <button

@@ -17,7 +17,7 @@ import { useMediaLightbox, ZoomableImage } from "../media/MediaLightbox";
  */
 export type CommunityAppHeaderProps = {
   brandName: string;
-  /** Second wordmark line under the brand name (e.g. “PANORÁMICA”). */
+  /** Second wordmark line under the brand name (tenant-supplied). */
   brandSubName?: string;
   /** Tenant brand mark — replaces text when provided. */
   brandLogoUrl?: string;
@@ -158,11 +158,11 @@ export function CommunityAppHeader({
                   className="min-w-0 text-left active:opacity-80"
                   aria-label={brandLabel}
                 >
-                  <span className="life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[20px] font-normal uppercase leading-none tracking-[0.22em] text-[#F7FAFA]">
+                  <span className="life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[20px] font-normal uppercase leading-none tracking-[0.22em] text-[var(--color-text-inverse)]">
                     {brandName}
                   </span>
                   {brandSubName ? (
-                    <span className="life-logo__location mt-1.5 block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[9px] font-semibold uppercase leading-none tracking-[0.16em] text-[#F7FAFA]">
+                    <span className="life-logo__location mt-1.5 block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] text-[9px] font-semibold uppercase leading-none tracking-[0.16em] text-[var(--color-text-inverse)]">
                       {brandSubName}
                     </span>
                   ) : null}
@@ -195,7 +195,7 @@ export function CommunityAppHeader({
                     className={cn(
                       "block font-bold leading-none",
                       overHero
-                        ? "text-[13px] text-[#F7FAFA]"
+                        ? "text-[13px] text-[var(--color-text-inverse)]"
                         : "text-[14px] text-[var(--color-text-primary)]",
                     )}
                   >
@@ -224,7 +224,7 @@ export function CommunityAppHeader({
                 className={cn(
                   "relative flex shrink-0 items-center justify-center rounded-full transition-colors active:bg-white/10",
                   overHero
-                    ? "h-10 w-10 text-[#F7FAFA]"
+                    ? "h-10 w-10 text-[var(--color-text-inverse)]"
                     : "h-8 w-8 text-[var(--color-text-primary)]",
                 )}
                 aria-label={notificationsLabel}
@@ -246,7 +246,7 @@ export function CommunityAppHeader({
                 </svg>
                 {notificationCount > 0 ? (
                   <span
-                    className="absolute right-2 top-2 h-[7px] w-[7px] rounded-full bg-[#B7F22A] shadow-[0_0_12px_rgba(183,242,42,0.45)]"
+                    className="absolute right-2 top-2 h-[7px] w-[7px] rounded-full bg-[var(--color-accent-lime)] shadow-[0_0_12px_color-mix(in_srgb,var(--color-accent-lime)_45%,transparent)]"
                     aria-hidden
                   />
                 ) : null}
@@ -260,7 +260,7 @@ export function CommunityAppHeader({
                 className={cn(
                   "flex shrink-0 items-center justify-center overflow-hidden rounded-full transition-colors active:opacity-90",
                   overHero
-                    ? "h-9 w-9 border-2 border-[#00D8E8] shadow-[0_0_18px_rgba(0,216,232,0.22)]"
+                    ? "h-9 w-9 border-2 border-[var(--color-accent-cyan)] shadow-[0_0_18px_color-mix(in_srgb,var(--color-accent-cyan)_22%,transparent)]"
                     : "ml-0.5 h-[30px] w-[30px] bg-[var(--color-surface-glass-strong)] text-[var(--color-text-primary)] ring-1 ring-white/25",
                 )}
                 aria-label={profileLabel}
@@ -272,7 +272,7 @@ export function CommunityAppHeader({
                     className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
-                  <span className="text-[14px] font-semibold text-[#F7FAFA]">
+                  <span className="text-[14px] font-semibold text-[var(--color-text-inverse)]">
                     {(profileName ?? "?").slice(0, 1).toUpperCase()}
                   </span>
                 )}
@@ -294,7 +294,7 @@ export function CommunityAppHeader({
                   className={cn(
                     "flex w-[22px] flex-col gap-[5px]",
                     overHero
-                      ? "text-[#F7FAFA] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                      ? "text-[var(--color-text-inverse)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
                       : "text-[var(--color-text-primary)]",
                   )}
                   aria-hidden
@@ -750,8 +750,8 @@ function LeafIcon({ kind }: { kind?: AppMenuLeafIcon }) {
 }
 
 /**
- * Life Panoramica Community Explorer — floating left drawer.
- * Matches the product mock: brand mark, search, expandable categories.
+ * Community Explorer — floating left drawer.
+ * Brand copy and search placeholder are caller-supplied.
  */
 export function AppMenuSheet({
   open,
@@ -760,7 +760,7 @@ export function AppMenuSheet({
   brandLogoUrl,
   categories,
   items,
-  searchPlaceholder = "Buscar en Life Panoramica",
+  searchPlaceholder = "Buscar",
   closeLabel = "Cerrar",
 }: AppMenuSheetProps) {
   const lightbox = useMediaLightbox();

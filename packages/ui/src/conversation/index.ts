@@ -1,7 +1,7 @@
 /**
  * Shared Product — universal Conversation Experience (Phase 2.5.5).
  *
- * No tenant imports. No Panoramica data. Prop-driven only.
+ * No tenant imports. Prop-driven only.
  * ONE chat system. Context changes header / participants / permissions only.
  */
 

@@ -5,9 +5,9 @@ import { useId } from "react";
 import { cn } from "../lib/cn";
 
 export type LifeLogoProps = {
-  /** Primary wordmark line — rendered as LIFE. */
+  /** Primary wordmark line (tenant-supplied). */
   primary: string;
-  /** Secondary wordmark line — rendered as PANORÁMICA. */
+  /** Optional secondary wordmark line (tenant-supplied). */
   secondary?: string;
   /** Optional click target wrapping the whole mark. */
   onClick?: () => void;
@@ -15,14 +15,15 @@ export type LifeLogoProps = {
   label?: string;
   /**
    * Header density — fits logo + weather + actions on ~360–430px
-   * without truncating LIFE / PANORÁMICA.
+   * without truncating the wordmark.
    */
   compact?: boolean;
   className?: string;
 };
 
 /**
- * Life Panorámica brand mark — Motans geometric symbol + spaced wordmark.
+ * Brand mark — geometric symbol + spaced wordmark.
+ * Colours come from theme CSS variables; copy comes from props.
  */
 export function LifeLogo({
   primary,
@@ -43,7 +44,7 @@ export function LifeLogo({
       <span className="min-w-0 shrink">
         <span
           className={cn(
-            "life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] font-normal uppercase leading-none text-[#F7FAFA]",
+            "life-logo__name block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] font-normal uppercase leading-none text-[var(--color-text-inverse)]",
             compact
               ? "text-[20px] tracking-[0.22em]"
               : "text-[28px] tracking-[0.25em]",
@@ -54,7 +55,7 @@ export function LifeLogo({
         {secondary ? (
           <span
             className={cn(
-              "life-logo__location block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] font-semibold uppercase leading-none text-[#F7FAFA]",
+              "life-logo__location block font-[family-name:var(--font-brand),Montserrat,Inter,sans-serif] font-semibold uppercase leading-none text-[var(--color-text-inverse)]",
               compact
                 ? "mt-1.5 text-[9px] tracking-[0.16em]"
                 : "mt-[7px] text-[11px] tracking-[0.18em]",
@@ -94,10 +95,10 @@ export type LifeLogoSymbolProps = {
   title?: string;
 };
 
-/** Open geometric circle — thin Motans stroke, no fill. */
+/** Open geometric circle — thin stroke from theme brand gradient stops. */
 export function LifeLogoSymbol({ className, title }: LifeLogoSymbolProps) {
   const uid = useId().replace(/:/g, "");
-  const gradId = `life-motans-${uid}`;
+  const gradId = `life-logo-grad-${uid}`;
 
   return (
     <svg
@@ -120,9 +121,9 @@ export function LifeLogoSymbol({ className, title }: LifeLogoSymbolProps) {
           y2="42"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#00D8E8" />
-          <stop offset="52%" stopColor="#00C8B4" />
-          <stop offset="100%" stopColor="#B7F22A" />
+          <stop offset="0%" stopColor="var(--color-accent-cyan)" />
+          <stop offset="52%" stopColor="var(--color-accent-turquoise)" />
+          <stop offset="100%" stopColor="var(--color-accent-lime)" />
         </linearGradient>
       </defs>
       <path

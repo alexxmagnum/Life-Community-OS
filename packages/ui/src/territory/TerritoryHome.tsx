@@ -49,7 +49,7 @@ export type TerritoryHeroProps = {
   className?: string;
   /** Time-of-day greeting with member name — belonging overlay */
   greeting?: string;
-  /** One emotional line under the greeting ("Panorámica está viva hoy"). */
+  /** One emotional line under the greeting (tenant-supplied). */
   tagline?: string;
   areaLabel?: string;
   /** Living context next to the area ("3 planes cerca"). */
@@ -258,7 +258,7 @@ function HeroPillGlyph({ kind }: { kind?: HomeHeroPillIcon }) {
 export type HomeHeroStageProps = {
   slides: ReadonlyArray<HomeHeroSlide>;
   greeting: string;
-  /** Emotional second line ("Panorámica está viva hoy."). */
+  /** Emotional second line (tenant-supplied). */
   tagline?: string;
   /** Invitation line under the tagline. */
   description?: string;
@@ -388,7 +388,7 @@ export function HomeHeroStage({
         </p>
         {tagline ? (
           <h1
-            className="max-w-[16ch] whitespace-pre-line font-sans text-[clamp(22px,5.6vw,26px)] font-medium leading-[1.12] tracking-[-0.02em] text-[#F7FAFA]"
+            className="max-w-[16ch] whitespace-pre-line font-sans text-[clamp(22px,5.6vw,26px)] font-medium leading-[1.12] tracking-[-0.02em] text-[var(--color-text-inverse)]"
             style={{ textShadow: "0 1px 12px rgba(0,0,0,0.25)" }}
           >
             {tagline}
@@ -411,13 +411,15 @@ export function HomeHeroStage({
                   <span
                     className={cn(
                       "shrink-0 [&_svg]:h-3.5 [&_svg]:w-3.5",
-                      pill.icon === "sun" ? "text-[#F5D90A]" : "text-[#00D8E8]",
+                      pill.icon === "sun"
+                        ? "text-[var(--color-feedback-warning)]"
+                        : "text-[var(--color-accent-cyan)]",
                     )}
                     aria-hidden
                   >
                     <HeroPillGlyph kind={pill.icon} />
                   </span>
-                  <span className="min-w-0 text-[11px] font-semibold leading-[1.2] text-[#F7FAFA]">
+                  <span className="min-w-0 text-[11px] font-semibold leading-[1.2] text-[var(--color-text-inverse)]">
                     {label}
                   </span>
                 </>
@@ -453,7 +455,7 @@ export function HomeHeroStage({
               className={cn(
                 "rounded-full transition-all duration-300",
                 slideIndex === index
-                  ? "h-1.5 w-2.5 bg-[#00D8E8] shadow-[0_0_10px_rgba(0,216,232,0.4)]"
+                  ? "h-1.5 w-2.5 bg-[var(--color-accent-cyan)] shadow-[0_0_10px_color-mix(in_srgb,var(--color-accent-cyan)_40%,transparent)]"
                   : "h-1.5 w-1.5 bg-white/40",
               )}
               aria-label={`Imagen ${slideIndex + 1} de ${count}`}

@@ -46,7 +46,7 @@ export function MobileScreen({
 }
 
 export type ScreenHeaderProps = {
-  /** Soft context line (e.g. Life Panoramica) */
+  /** Soft context line (e.g. community name) */
   eyebrow?: string;
   title: string;
   subtitle?: string;
