@@ -2,17 +2,30 @@
  * Life Panoramica — Life Map territory foundation (tenant content only).
  *
  * Configures the spatial twin frame for this tenant: identity, prepared camera,
- * available layers, and basic visual knobs. No map SDK, UI, routes, renderer,
- * binary assets, or demo spatial objects.
+ * Life OS layers, and links to the Territory Data Package for real base data.
+ * No map SDK, UI, routes, renderer, binary assets, or invented geometry.
  *
  * Module remains fail-closed (`moduleEnabled: false`) until product activation.
  */
 
-import type { LifeMapLayer, LifeMapTerritory } from "@life-community-os/types";
+import type {
+  LifeMapBaseLayer,
+  LifeMapLayer,
+  LifeMapTerritory,
+} from "@life-community-os/types";
 
 import { CAPABILITIES } from "./capabilities";
 import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { lifePanoramicaFeatures } from "./features";
+import {
+  getLifePanoramicaTerritoryData,
+  lifePanoramicaTerritoryData,
+  listLifePanoramicaTerritoryDataSources,
+  listLifePanoramicaTerritoryLayerImports,
+  listLifePanoramicaTerritoryLayerSlots,
+  projectLifePanoramicaTerritoryBaseLayers,
+  type LifePanoramicaTerritoryDataPackage,
+} from "./life-map-territory-data";
 import { lifePanoramicaTheme } from "./theme";
 
 /**
@@ -26,22 +39,28 @@ export type LifePanoramicaLifeMapVisualConfig = {
   groundDetail: "soft" | "standard";
   /** Whether layer labels start visible when the map opens. */
   showLabelsByDefault: boolean;
-  /** Accent token key aligned with tenant brand modes (not a hex color). */
+  /** Accent token key aligned with tenant brand modes (not a hex brand lock). */
   accentToken: "cyan" | "lime" | "neutral";
 };
 
 /**
  * Full Life Map pack for Life Panoramica.
  * `territory` conforms to the platform `LifeMapTerritory` contract.
+ * `territoryData` holds tenant-owned source/import organization (empty until real data).
  */
 export type LifePanoramicaLifeMapConfig = {
   /** Resident-facing territory name (tenant content). */
   territoryName: string;
   visual: LifePanoramicaLifeMapVisualConfig;
   territory: LifeMapTerritory;
+  /**
+   * Tenant territory data package:
+   * `{ sources: [], layerImports: [], layers: planned slots }`.
+   */
+  territoryData: LifePanoramicaTerritoryDataPackage;
 };
 
-/** Layer catalogue prepared for this territory — no projected objects yet. */
+/** Layer catalogue prepared for this territory — Life OS product layers only. */
 export const lifePanoramicaLifeMapLayers: readonly LifeMapLayer[] = [
   {
     id: "places",
@@ -100,6 +119,12 @@ export const lifePanoramicaLifeMapLayers: readonly LifeMapLayer[] = [
 ];
 
 /**
+ * Resolved physical base layers on the territory frame.
+ * Empty until territoryData.layerImports project real refs.
+ */
+export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] = [];
+
+/**
  * Prepared camera inside the tenant local space.
  * Local anchors — not a map-vendor id and not survey-grade WGS84 yet.
  */
@@ -125,13 +150,15 @@ export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {
 
 /**
  * Platform territory frame for Life Panoramica.
- * `moduleEnabled` mirrors the tenant feature flag (prepared, not activated).
+ * `baseLayers` stay empty until real territorial data exists in territoryData.
  */
 export const lifePanoramicaLifeMapTerritory: LifeMapTerritory = {
   tenantId: DEMO_TENANT_ID,
   territoryId: DEMO_TERRITORY_ID,
   defaultCamera: lifePanoramicaPreparedCamera,
+  crs: "WGS84",
   layers: [...lifePanoramicaLifeMapLayers],
+  baseLayers: [...lifePanoramicaLifeMapBaseLayers],
   moduleEnabled: lifePanoramicaFeatures.lifeMap,
 };
 
@@ -140,6 +167,7 @@ export const lifePanoramicaLifeMap: LifePanoramicaLifeMapConfig = {
     lifePanoramicaTheme.identity?.territoryName ?? "Life Panoramica",
   visual: lifePanoramicaLifeMapVisual,
   territory: lifePanoramicaLifeMapTerritory,
+  territoryData: lifePanoramicaTerritoryData,
 };
 
 /** Convenience accessor — single territory for this tenant pack. */
@@ -150,3 +178,17 @@ export function getLifePanoramicaLifeMapTerritory(): LifeMapTerritory {
 export function getLifePanoramicaLifeMapConfig(): LifePanoramicaLifeMapConfig {
   return lifePanoramicaLifeMap;
 }
+
+/** Base-layer configuration slot — empty until real data refs are supplied. */
+export function listLifePanoramicaLifeMapBaseLayers(): readonly LifeMapBaseLayer[] {
+  return lifePanoramicaLifeMap.territory.baseLayers ?? [];
+}
+
+export {
+  getLifePanoramicaTerritoryData,
+  listLifePanoramicaTerritoryDataSources,
+  listLifePanoramicaTerritoryLayerImports,
+  listLifePanoramicaTerritoryLayerSlots,
+  projectLifePanoramicaTerritoryBaseLayers,
+  type LifePanoramicaTerritoryDataPackage,
+};

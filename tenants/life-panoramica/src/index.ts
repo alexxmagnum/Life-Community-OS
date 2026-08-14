@@ -18,6 +18,7 @@ export * from "./housing";
 export * from "./housing-operations";
 export * from "./life-map";
 export * from "./life-map-content";
+export * from "./life-map-territory-data";
 export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";
