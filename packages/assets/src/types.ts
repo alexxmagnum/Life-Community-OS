@@ -155,8 +155,9 @@ export type AssetMetadata = {
 
 export type AssetResolveOptions = {
   /**
-   * Active tenant slug (e.g. "life-panoramica").
-   * Used for tenant isolation and future tenant overrides of global concepts.
+   * Active tenant slug.
+   * Required to resolve or list `scope: "tenant"` assets (fail-closed).
+   * Optional for global/platform assets.
    */
   tenant?: string;
 };
@@ -193,8 +194,9 @@ export class TenantIsolationError extends Error {
   readonly assetTenant: string | null;
 
   constructor(assetKey: string, requestedTenant: string, assetTenant: string | null) {
+    const requested = requestedTenant.trim() || "(none)";
     super(
-      `[assets] Tenant isolation: "${assetKey}" belongs to tenant "${assetTenant ?? "null"}", not "${requestedTenant}"`,
+      `[assets] Tenant isolation: "${assetKey}" belongs to tenant "${assetTenant ?? "null"}", not "${requested}"`,
     );
     this.name = "TenantIsolationError";
     this.assetKey = assetKey;

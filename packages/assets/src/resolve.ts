@@ -57,7 +57,8 @@ function toMetadata(key: string, raw: (typeof assetRegistry)[AssetKey]): AssetMe
 
 /**
  * Resolve asset metadata by semantic key.
- * Global keys resolve for any tenant. Tenant branding never crosses tenants.
+ * Global keys resolve with or without tenant context.
+ * Tenant-scoped keys require a matching `options.tenant` (fail-closed).
  */
 export function getAsset(key: AssetKey | string, options?: AssetResolveOptions): AssetMetadata {
   const requestedTenant = options?.tenant?.trim() || undefined;
@@ -82,9 +83,13 @@ export function getAsset(key: AssetKey | string, options?: AssetResolveOptions):
     return toMetadata(String(key), raw);
   }
 
-  // Tenant-scoped asset (e.g. branding)
-  if (requestedTenant && raw.tenant !== requestedTenant) {
-    throw new TenantIsolationError(String(key), requestedTenant, raw.tenant);
+  // Tenant-scoped: require matching tenant context (no silent leak).
+  if (!requestedTenant || raw.tenant !== requestedTenant) {
+    throw new TenantIsolationError(
+      String(key),
+      requestedTenant ?? "",
+      raw.tenant,
+    );
   }
 
   return toMetadata(String(key), raw);
@@ -103,9 +108,20 @@ export function listAssetKeys(): AssetKey[] {
   return Object.keys(assetRegistry) as AssetKey[];
 }
 
-/** Enumerate all registered assets as readonly runtime metadata. */
-export function listAssets(): readonly AssetMetadata[] {
-  return listAssetKeys().map((key) => getAsset(key));
+/**
+ * Enumerate assets visible under the given tenant context.
+ * Without tenant: platform/global only (tenant-scoped entries excluded).
+ * With tenant: global + that tenant's scoped assets.
+ */
+export function listAssets(options?: AssetResolveOptions): readonly AssetMetadata[] {
+  const requestedTenant = options?.tenant?.trim() || undefined;
+  return listAssetKeys()
+    .filter((key) => {
+      const raw = assetRegistry[key];
+      if (raw.scope === "global") return true;
+      return Boolean(requestedTenant && raw.tenant === requestedTenant);
+    })
+    .map((key) => getAsset(key, options));
 }
 
 /**
@@ -120,24 +136,30 @@ export function getAssetConceptId(meta: AssetMetadata | string): string {
 }
 
 /** Same concept, any type/variant — for family inspection. */
-export function getRelatedAssets(key: AssetKey | string): readonly AssetMetadata[] {
+export function getRelatedAssets(
+  key: AssetKey | string,
+  options?: AssetResolveOptions,
+): readonly AssetMetadata[] {
   if (!(key in assetRegistry)) return [];
   const conceptId = getAssetConceptId(String(key));
-  return listAssets().filter((a) => getAssetConceptId(a) === conceptId);
+  return listAssets(options).filter((a) => getAssetConceptId(a) === conceptId);
 }
 
 /** Same concept + type — all registered variants. */
-export function getAssetVariants(key: AssetKey | string): readonly AssetMetadata[] {
+export function getAssetVariants(
+  key: AssetKey | string,
+  options?: AssetResolveOptions,
+): readonly AssetMetadata[] {
   if (!(key in assetRegistry)) return [];
-  const base = getAsset(key);
+  const base = getAsset(key, options);
   const conceptId = getAssetConceptId(base);
-  return listAssets().filter(
+  return listAssets(options).filter(
     (a) => getAssetConceptId(a) === conceptId && a.type === base.type,
   );
 }
 
-export function getRegistryStats() {
-  const metas = listAssets();
+export function getRegistryStats(options?: AssetResolveOptions) {
+  const metas = listAssets(options);
   const byType: Record<string, number> = {};
   let global = 0;
   let tenant = 0;
@@ -161,15 +183,19 @@ export function getRegistryStats() {
 }
 
 /** Filter registered assets by exact type. */
-export function listAssetsByType(type: AssetType): readonly AssetMetadata[] {
-  return listAssets().filter((a) => a.type === type);
+export function listAssetsByType(
+  type: AssetType,
+  options?: AssetResolveOptions,
+): readonly AssetMetadata[] {
+  return listAssets(options).filter((a) => a.type === type);
 }
 
 /** All spatial twin assets currently registered (may be empty until catalog ships). */
 export function listSpatialAssets(
   type?: SpatialAssetType,
+  options?: AssetResolveOptions,
 ): readonly AssetMetadata[] {
-  return listAssets().filter((a) => {
+  return listAssets(options).filter((a) => {
     if (!isSpatialAssetType(a.type)) return false;
     if (type !== undefined && a.type !== type) return false;
     return true;

@@ -19,6 +19,10 @@ const manifest = readJsonFile(manifestPath);
 const registry = manifest.assets;
 const tenantOverrides = {};
 
+const BRANDING_SYMBOL = "branding.life-panoramica-symbol.branding.symbol";
+const BRANDING_WORDMARK = "branding.life-panoramica-wordmark.branding.wordmark";
+const PLATFORM_SCENE = "professionals.electrician.scene";
+
 class MissingAssetError extends Error {
   constructor(k) {
     super(`Unknown assetKey: ${k}`);
@@ -45,6 +49,7 @@ function assertSafe(pathStr) {
   if (/^https?:\/\//i.test(pathStr)) throw new UnsafeAssetPathError(pathStr);
 }
 
+/** Mirrors packages/assets/src/resolve.ts fail-closed behaviour. */
 function getAsset(key, options = {}) {
   const requestedTenant = options.tenant?.trim() || undefined;
   if (requestedTenant) {
@@ -58,7 +63,7 @@ function getAsset(key, options = {}) {
   const raw = registry[key];
   assertSafe(raw.path);
   if (raw.scope === "global") return { key, ...raw };
-  if (requestedTenant && raw.tenant !== requestedTenant) {
+  if (!requestedTenant || raw.tenant !== requestedTenant) {
     throw new TenantIsolationError(key);
   }
   return { key, ...raw };
@@ -68,8 +73,26 @@ function asset(key, options) {
   return getAsset(key, options).path;
 }
 
+function listAssets(options = {}) {
+  const requestedTenant = options.tenant?.trim() || undefined;
+  return Object.keys(registry)
+    .filter((key) => {
+      const raw = registry[key];
+      if (raw.scope === "global") return true;
+      return Boolean(requestedTenant && raw.tenant === requestedTenant);
+    })
+    .map((key) => getAsset(key, options));
+}
+
+function getAssetConceptId(meta) {
+  const key = typeof meta === "string" ? meta : meta.key;
+  const parts = key.split(".");
+  if (parts.length < 2) return key;
+  return `${parts[0]}.${parts[1]}`;
+}
+
 test("1. professionals.electrician.scene → global path", () => {
-  const p = asset("professionals.electrician.scene");
+  const p = asset(PLATFORM_SCENE);
   assert.equal(
     p,
     "/assets/3d/platform/professionals/electrician/scene/electrician.webp",
@@ -105,17 +128,17 @@ test("5. professionals.waiter.scene.alternate-1 → alternate", () => {
   );
 });
 
-test("6. Life Panoramica symbol → tenant asset", () => {
-  const m = getAsset("branding.life-panoramica-symbol.branding.symbol");
+test("6. platform asset without tenant resolves", () => {
+  const m = getAsset(PLATFORM_SCENE);
+  assert.equal(m.scope, "global");
+  assert.equal(m.tenant, null);
+});
+
+test("7. tenant asset with matching tenant resolves", () => {
+  const m = getAsset(BRANDING_SYMBOL, { tenant: "life-panoramica" });
   assert.equal(m.scope, "tenant");
   assert.equal(m.tenant, "life-panoramica");
   assert.match(m.path, /^\/assets\/3d\/tenants\/life-panoramica\//);
-});
-
-test("7. Life Panoramica wordmark → tenant asset", () => {
-  const m = getAsset("branding.life-panoramica-wordmark.branding.wordmark");
-  assert.equal(m.scope, "tenant");
-  assert.equal(m.tenant, "life-panoramica");
 });
 
 test("8. unknown key → MissingAssetError", () => {
@@ -123,32 +146,43 @@ test("8. unknown key → MissingAssetError", () => {
 });
 
 test("9. global asset with tenant context still resolves global", () => {
-  const p = asset("professionals.electrician.scene", { tenant: "life-panoramica" });
+  const p = asset(PLATFORM_SCENE, { tenant: "life-panoramica" });
   assert.equal(
     p,
     "/assets/3d/platform/professionals/electrician/scene/electrician.webp",
   );
-  const p2 = asset("professionals.electrician.scene", { tenant: "future-community-a" });
+  const p2 = asset(PLATFORM_SCENE, { tenant: "future-community-a" });
   assert.equal(p, p2);
 });
 
-test("10. tenant A never receives tenant B branding", () => {
+test("10. tenant asset without tenant → TenantIsolationError", () => {
+  assert.throws(
+    () => getAsset(BRANDING_SYMBOL),
+    (e) => e.name === "TenantIsolationError",
+  );
+  assert.throws(
+    () => getAsset(BRANDING_WORDMARK),
+    (e) => e.name === "TenantIsolationError",
+  );
+});
+
+test("11. tenant asset cross-tenant → TenantIsolationError", () => {
   assert.throws(
     () =>
-      getAsset("branding.life-panoramica-symbol.branding.symbol", {
+      getAsset(BRANDING_SYMBOL, {
         tenant: "future-community-a",
       }),
     (e) => e.name === "TenantIsolationError",
   );
 });
 
-test("11. manifest path traversal rejected", () => {
+test("12. manifest path traversal rejected", () => {
   assert.throws(() => assertSafe("/assets/3d/../secret.webp"), (e) => e.name === "UnsafeAssetPathError");
   assert.throws(() => assertSafe("C:\\Windows\\x.webp"), (e) => e.name === "UnsafeAssetPathError");
   assert.throws(() => assertSafe("https://evil.example/x.webp"), (e) => e.name === "UnsafeAssetPathError");
 });
 
-test("12. all 48 manifest files exist under public/", () => {
+test("13. all 48 manifest files exist under public/", () => {
   const keys = Object.keys(registry);
   assert.equal(keys.length, 48);
   for (const key of keys) {
@@ -174,37 +208,42 @@ test("counts: 46 global / 2 tenant", () => {
   assert.equal(values.filter((a) => a.scope === "tenant").length, 2);
 });
 
-function listAssets() {
-  return Object.keys(registry).map((key) => ({ key, ...registry[key] }));
-}
-
-function getAssetConceptId(meta) {
-  const key = typeof meta === "string" ? meta : meta.key;
-  const parts = key.split(".");
-  if (parts.length < 2) return key;
-  return `${parts[0]}.${parts[1]}`;
-}
-
-test("listAssets().length === 48 with expected distribution", () => {
+test("listAssets() without tenant → global only (46)", () => {
   const assets = listAssets();
+  assert.equal(assets.length, 46);
+  assert.equal(assets.filter((a) => a.scope === "global").length, 46);
+  assert.equal(assets.filter((a) => a.scope === "tenant").length, 0);
+  assert.equal(assets.filter((a) => a.type === "branding").length, 0);
+});
+
+test("listAssets({ tenant }) includes that tenant branding", () => {
+  const assets = listAssets({ tenant: "life-panoramica" });
   assert.equal(assets.length, 48);
-  assert.equal(new Set(assets.map((a) => a.key)).size, 48);
   assert.equal(assets.filter((a) => a.scope === "global").length, 46);
   assert.equal(assets.filter((a) => a.scope === "tenant").length, 2);
-  assert.equal(assets.filter((a) => a.type === "symbol").length, 7);
-  assert.equal(assets.filter((a) => a.type === "card").length, 14);
-  assert.equal(assets.filter((a) => a.type === "object").length, 5);
-  assert.equal(assets.filter((a) => a.type === "scene").length, 20);
-  assert.equal(assets.filter((a) => a.type === "hero").length, 0);
   assert.equal(assets.filter((a) => a.type === "branding").length, 2);
 });
 
-test("filters derive from registry domains/tenants", () => {
-  const assets = listAssets();
-  const domains = [...new Set(assets.map((a) => a.domain))].sort();
-  const tenants = [...new Set(assets.filter((a) => a.tenant).map((a) => a.tenant))].sort();
+test("listAssets({ tenant: other }) excludes Panoramica branding", () => {
+  const assets = listAssets({ tenant: "future-community-a" });
+  assert.equal(assets.length, 46);
+  assert.equal(assets.filter((a) => a.type === "branding").length, 0);
+});
+
+test("filters derive from registry domains; visible tenants need context", () => {
+  const without = listAssets();
+  const domains = [...new Set(without.map((a) => a.domain))].sort();
   assert.ok(domains.includes("professionals"));
   assert.ok(domains.includes("sports"));
+  assert.deepEqual(
+    [...new Set(without.filter((a) => a.tenant).map((a) => a.tenant))],
+    [],
+  );
+
+  const withTenant = listAssets({ tenant: "life-panoramica" });
+  const tenants = [
+    ...new Set(withTenant.filter((a) => a.tenant).map((a) => a.tenant)),
+  ].sort();
   assert.deepEqual(tenants, ["life-panoramica"]);
 });
 
@@ -227,8 +266,10 @@ test("family grouping: waiter variants share concept; football not merged with w
   assert.ok(waiterVariants.some((a) => a.variant === "alternate-1"));
 });
 
-test("tenant metadata preserved on branding assets", () => {
-  const branding = listAssets().filter((a) => a.type === "branding");
+test("tenant metadata preserved on branding when listed with tenant", () => {
+  const branding = listAssets({ tenant: "life-panoramica" }).filter(
+    (a) => a.type === "branding",
+  );
   assert.equal(branding.length, 2);
   for (const b of branding) {
     assert.equal(b.scope, "tenant");
