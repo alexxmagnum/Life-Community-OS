@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * React MapLibre Life Map canvas — technical renderer preview.
- * Not Panoramica territory data. No invented GeoJSON / buildings.
+ * React MapLibre Life Map canvas — technical / territorial preview.
  */
 
 import type { LifeMapScene } from "@life-community-os/life-map-renderer";
+import type { TerritoryDataResolver } from "@life-community-os/types";
 import { useEffect, useRef, type CSSProperties } from "react";
 
 import { createMapLibreLifeMapRenderer } from "./create-maplibre-renderer";
 
 /**
  * Public MapLibre demo style — technical basemap only.
- * Not tenant territory, not Panoramica geometry, not a product SoT.
+ * Not tenant territory SoT; overlays come from LifeMapBaseLayer + resolver.
  */
 export const MAPLIBRE_TECHNICAL_PREVIEW_STYLE =
   "https://demotiles.maplibre.org/style.json";
@@ -22,10 +22,11 @@ export type MapLibreLifeMapCanvasProps = {
   className?: string;
   style?: CSSProperties;
   /**
-   * When true (dev preview), use MapLibre demotiles as a neutral basemap
-   * so pan/zoom are visible. Territory baseLayers stay empty until real dataRef.
+   * When true, use MapLibre demotiles as a neutral basemap under territory layers.
    */
   technicalBasemap?: boolean;
+  /** Injectable `dataRef` → payload resolver (tenant-owned). */
+  territoryDataResolver?: TerritoryDataResolver;
 };
 
 /**
@@ -37,6 +38,7 @@ export function MapLibreLifeMapCanvas({
   className,
   style,
   technicalBasemap = true,
+  territoryDataResolver,
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const rendererRef = useRef<ReturnType<
@@ -54,6 +56,7 @@ export function MapLibreLifeMapCanvas({
       ...(technicalBasemap
         ? { style: MAPLIBRE_TECHNICAL_PREVIEW_STYLE }
         : {}),
+      ...(territoryDataResolver ? { territoryDataResolver } : {}),
     });
     rendererRef.current = renderer;
     renderer.mount({ element: host });
@@ -63,7 +66,7 @@ export function MapLibreLifeMapCanvas({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [technicalBasemap]);
+  }, [technicalBasemap, territoryDataResolver]);
 
   useEffect(() => {
     rendererRef.current?.setScene(scene);
@@ -81,7 +84,7 @@ export function MapLibreLifeMapCanvas({
         ...style,
       }}
       data-life-map-engine="maplibre"
-      data-life-map-preview="technical"
+      data-life-map-preview="territory-roads-v1"
     />
   );
 }

@@ -8,6 +8,7 @@ import {
   MobileScreen,
 } from "@life-community-os/ui";
 import {
+  createLifePanoramicaTerritoryDataResolver,
   getLifePanoramicaLifeMapConfig,
   listLifePanoramicaSpatialObjects,
 } from "@life-community-os/tenant-life-panoramica";
@@ -36,6 +37,10 @@ export function LifeMapScreen() {
 
   const pack = useMemo(() => getLifePanoramicaLifeMapConfig(), []);
   const objects = useMemo(() => listLifePanoramicaSpatialObjects(), []);
+  const territoryDataResolver = useMemo(
+    () => createLifePanoramicaTerritoryDataResolver(),
+    [],
+  );
   const territory = pack.territory;
   const layers = territory.layers;
 
@@ -71,7 +76,7 @@ export function LifeMapScreen() {
         title="Life Map"
         subtitle={
           devPreview
-            ? `${pack.territoryName} · ${previewEngine === "maplibre" ? "MapLibre" : "Three"} preview (no territorio real)`
+            ? `${pack.territoryName} · ${previewEngine === "maplibre" ? "MapLibre roads v1" : "Three"} (OSM)`
             : pack.territoryName
         }
         onBack={() => router.push("/")}
@@ -82,6 +87,7 @@ export function LifeMapScreen() {
         territory={territory}
         objects={objects}
         previewUnlocked={devPreview}
+        territoryDataResolver={territoryDataResolver}
       />
 
       <section className="mt-5" aria-label="Capas del territorio">

@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import { buildLifeMapScene } from "@life-community-os/life-map-renderer";
+import type { TerritoryDataResolver } from "@life-community-os/types";
 import type { LifeMapObject, LifeMapTerritory } from "@life-community-os/types";
 import {
   getLifeMapDevEngine,
@@ -53,19 +54,22 @@ export type LifeMapViewportProps = {
   previewUnlocked?: boolean;
   /** Override engine; defaults to `getLifeMapDevEngine()`. */
   engine?: LifeMapDevEngine;
+  /** Tenant-injected territory data resolver (roads GeoJSON, …). */
+  territoryDataResolver?: TerritoryDataResolver;
 };
 
 /**
  * Spatial viewport — territory → scene → MapLibre (default) or Three preview.
- * Not Panoramica real territory data. Platform-neutral shell.
  */
 export function LifeMapViewport({
   territory,
   objects,
   previewUnlocked = false,
   engine: engineProp,
+  territoryDataResolver,
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
+  const hasRoads = (territory.baseLayers ?? []).some((l) => l.type === "roads");
 
   const scene = useMemo(() => {
     const frame: LifeMapTerritory = previewUnlocked
@@ -79,7 +83,7 @@ export function LifeMapViewport({
 
   return (
     <section
-      aria-label="Superficie espacial (preview técnico)"
+      aria-label="Superficie espacial Life Map"
       className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
       style={{ minHeight: "min(58vh, 480px)", height: "min(58vh, 480px)" }}
     >
@@ -87,6 +91,7 @@ export function LifeMapViewport({
         <MapLibreLifeMapCanvas
           scene={scene}
           technicalBasemap
+          territoryDataResolver={territoryDataResolver}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />
@@ -100,10 +105,13 @@ export function LifeMapViewport({
 
       <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.88)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
         <p className="font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-          Preview técnico · {engine === "maplibre" ? "MapLibre" : "Three"}
+          {engine === "maplibre" ? "MapLibre" : "Three"}
+          {hasRoads ? " · roads v1 (OSM)" : " · preview técnico"}
         </p>
         <p className="mt-0.5">
-          No es el territorio Panoramica real. Solo validación del renderer.
+          {hasRoads
+            ? "Capa territorial real: carreteras OSM. Sin edificios / golf / POIs."
+            : "Preview técnico del renderer. Sin territorio real todavía."}
         </p>
       </div>
     </section>

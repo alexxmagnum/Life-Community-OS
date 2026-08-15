@@ -19,6 +19,7 @@ import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { lifePanoramicaFeatures } from "./features";
 import {
   getLifePanoramicaTerritoryData,
+  getLifePanoramicaRoadsV1Bounds,
   lifePanoramicaTerritoryData,
   listLifePanoramicaTerritoryDataSources,
   listLifePanoramicaTerritoryLayerImports,
@@ -27,6 +28,21 @@ import {
   type LifePanoramicaTerritoryDataPackage,
 } from "./life-map-territory-data";
 import { lifePanoramicaTheme } from "./theme";
+
+const projectedBaseLayers = projectLifePanoramicaTerritoryBaseLayers();
+if (projectedBaseLayers.rejected.length > 0) {
+  throw new Error(
+    `[life-panoramica] Territory imports rejected: ${projectedBaseLayers.rejected
+      .map((r) => `${r.importId}:${r.issues.map((i) => i.code).join(",")}`)
+      .join("; ")}`,
+  );
+}
+
+const roadsBounds = getLifePanoramicaRoadsV1Bounds();
+const roadsCenter = {
+  lat: (roadsBounds.south + roadsBounds.north) / 2,
+  lng: (roadsBounds.west + roadsBounds.east) / 2,
+};
 
 /**
  * Tenant-local visual knobs for a future renderer.
@@ -120,25 +136,19 @@ export const lifePanoramicaLifeMapLayers: readonly LifeMapLayer[] = [
 
 /**
  * Resolved physical base layers on the territory frame.
- * Empty until territoryData.layerImports project real refs.
+ * Roads v1 from OSM extract via territory data package.
  */
-export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] = [];
+export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] =
+  projectedBaseLayers.layers;
 
 /**
- * Prepared camera inside the tenant local space.
- * Local anchors — not a map-vendor id and not survey-grade WGS84 yet.
+ * Prepared camera — WGS84 center/bounds from the real OSM roads extract.
  */
 const lifePanoramicaPreparedCamera = {
-  target: {
-    kind: "local" as const,
-    spaceId: DEMO_TERRITORY_ID,
-    x: 0,
-    y: 0,
-    z: 0,
-  },
-  distance: 1400,
-  headingDegrees: 28,
-  pitchDegrees: 52,
+  target: roadsCenter,
+  distance: 1800,
+  headingDegrees: 0,
+  pitchDegrees: 0,
 };
 
 export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {
@@ -150,13 +160,14 @@ export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {
 
 /**
  * Platform territory frame for Life Panoramica.
- * `baseLayers` stay empty until real territorial data exists in territoryData.
+ * `baseLayers` include OSM roads v1; other physical layers stay empty.
  */
 export const lifePanoramicaLifeMapTerritory: LifeMapTerritory = {
   tenantId: DEMO_TENANT_ID,
   territoryId: DEMO_TERRITORY_ID,
   defaultCamera: lifePanoramicaPreparedCamera,
   crs: "WGS84",
+  bounds: roadsBounds,
   layers: [...lifePanoramicaLifeMapLayers],
   baseLayers: [...lifePanoramicaLifeMapBaseLayers],
   moduleEnabled: lifePanoramicaFeatures.lifeMap,
@@ -186,6 +197,7 @@ export function listLifePanoramicaLifeMapBaseLayers(): readonly LifeMapBaseLayer
 
 export {
   getLifePanoramicaTerritoryData,
+  getLifePanoramicaRoadsV1Bounds,
   listLifePanoramicaTerritoryDataSources,
   listLifePanoramicaTerritoryLayerImports,
   listLifePanoramicaTerritoryLayerSlots,

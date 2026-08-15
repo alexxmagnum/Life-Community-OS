@@ -1,12 +1,8 @@
 /**
  * Life Panoramica — Territory Data Package.
  *
- * Tenant-owned organization for future real territorial datasets.
- * No geometry, coordinates, OSM extracts, or invented Panoramica shapes.
- *
- * When real files exist, add TerritoryDataSource + TerritoryLayerImport entries
- * and opaque dataRefs (e.g. tenant://life-panoramica/territory/roads/v1.geojson).
- * Core only understands platform contracts — never store payloads here.
+ * Tenant-owned organization for real territorial datasets.
+ * Payloads live under `territory/data/` — never in Core.
  */
 
 import type {
@@ -15,11 +11,16 @@ import type {
   TerritoryDataSource,
   TerritoryLayerImport,
 } from "@life-community-os/types";
-import { projectTerritoryLayerImports } from "@life-community-os/types";
+import {
+  projectTerritoryLayerImports,
+  validateTerritoryDataSource,
+} from "@life-community-os/types";
 
 import { DEMO_TERRITORY_ID } from "./demo-ids";
+import { LIFE_PANORAMICA_ROADS_DATA_REF } from "./life-map-territory-resolver";
+import roadsV1Manifest from "../territory/data/roads/v1/manifest.json";
 
-/** Physical layer kinds this tenant expects to receive (no payloads). */
+/** Physical layer kinds this tenant expects to receive. */
 export type LifePanoramicaTerritoryBaseKind =
   | "boundary"
   | "roads"
@@ -28,12 +29,12 @@ export type LifePanoramicaTerritoryBaseKind =
   | "green";
 
 /**
- * Planned base-layer slot — metadata only until a real source exists.
+ * Planned base-layer slot — metadata.
  * `dataRef: null` means “not supplied yet” (never invent a path with fake data).
  */
 export type LifePanoramicaTerritoryLayerSlot = {
   kind: LifePanoramicaTerritoryBaseKind;
-  /** Stable id for a future TerritoryLayerImport. */
+  /** Stable id for TerritoryLayerImport. */
   importId: string;
   /** Maps 1:1 to LifeMapBaseLayerType for these kinds. */
   baseLayerType: LifeMapBaseLayerType;
@@ -50,7 +51,7 @@ export type LifePanoramicaTerritoryLayerSlot = {
  */
 export type LifePanoramicaTerritoryDataPackage = {
   territoryId: string;
-  /** Declared CRS for future geo payloads (no bounds invented). */
+  /** Declared CRS for geo payloads. */
   crs: "WGS84";
   sources: readonly TerritoryDataSource[];
   /** Planned physical layers (boundary, roads, …). */
@@ -60,7 +61,7 @@ export type LifePanoramicaTerritoryDataPackage = {
 
 /**
  * Planned layer slots for Life Panoramica.
- * All `dataRef` are null — structure only.
+ * Only `roads` has a real dataRef in v1.
  */
 export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritoryLayerSlot[] =
   [
@@ -77,7 +78,7 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
       importId: "import-roads",
       baseLayerType: "roads",
       enabled: true,
-      dataRef: null,
+      dataRef: LIFE_PANORAMICA_ROADS_DATA_REF,
       label: "Calles internas",
     },
     {
@@ -106,20 +107,43 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
     },
   ];
 
-/** External datasets — empty until authorized real sources exist. */
+/** External datasets — OSM roads extract v1 only. */
 export const lifePanoramicaTerritoryDataSources: readonly TerritoryDataSource[] =
-  [];
+  [
+    {
+      id: "panoramica-osm-roads-v1",
+      provider: "osm",
+      format: "geojson",
+      sourceRef: LIFE_PANORAMICA_ROADS_DATA_REF,
+      crs: "WGS84",
+      version: "v1",
+      label: "OpenStreetMap highways (Urbanització Panoràmica AOI)",
+    },
+  ];
 
 /**
  * Import instructions (external → LifeMapBaseLayer).
- * Empty until real sourceRef / files exist for each slot.
+ * Roads only — no buildings / water / green / golf yet.
  */
 export const lifePanoramicaTerritoryLayerImports: readonly TerritoryLayerImport[] =
-  [];
+  [
+    {
+      id: "import-roads",
+      territoryId: DEMO_TERRITORY_ID,
+      sourceId: "panoramica-osm-roads-v1",
+      externalLayer: "roads.json",
+      layerKind: "roads",
+      targetType: "roads",
+      dataRef: LIFE_PANORAMICA_ROADS_DATA_REF,
+      sourceType: "vector",
+      visible: true,
+      zIndex: 20,
+      label: "Calles internas",
+    },
+  ];
 
 /**
  * Canonical territory data package for this tenant.
- * Keep sources / layerImports empty — no fake Panoramica geometry.
  */
 export const lifePanoramicaTerritoryData: LifePanoramicaTerritoryDataPackage = {
   territoryId: DEMO_TERRITORY_ID,
@@ -147,7 +171,7 @@ export function listLifePanoramicaTerritoryLayerImports(): readonly TerritoryLay
 
 /**
  * Project configured imports into LifeMapBaseLayer[].
- * Returns [] while imports remain empty — never invents geometry.
+ * Roads v1 only until more imports are added.
  */
 export function projectLifePanoramicaTerritoryBaseLayers(): {
   layers: LifeMapBaseLayer[];
@@ -156,7 +180,44 @@ export function projectLifePanoramicaTerritoryBaseLayers(): {
     issues: { code: string; message: string }[];
   }[];
 } {
+  for (const source of lifePanoramicaTerritoryData.sources) {
+    const sourceIssues = validateTerritoryDataSource(source);
+    if (sourceIssues.length > 0) {
+      throw new Error(
+        `[life-panoramica] Invalid TerritoryDataSource "${source.id}": ${sourceIssues
+          .map((i) => i.message)
+          .join("; ")}`,
+      );
+    }
+  }
+
   return projectTerritoryLayerImports(lifePanoramicaTerritoryData.layerImports, {
     expectedTerritoryId: DEMO_TERRITORY_ID,
   });
+}
+
+/** Bounding box from the real OSM roads extract (WGS84). */
+export function getLifePanoramicaRoadsV1Bounds(): {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+} {
+  const bbox = roadsV1Manifest.bbox;
+  if (!Array.isArray(bbox) || bbox.length !== 4) {
+    throw new Error("[life-panoramica] roads v1 manifest bbox is invalid");
+  }
+  const west = bbox[0];
+  const south = bbox[1];
+  const east = bbox[2];
+  const north = bbox[3];
+  if (
+    typeof west !== "number" ||
+    typeof south !== "number" ||
+    typeof east !== "number" ||
+    typeof north !== "number"
+  ) {
+    throw new Error("[life-panoramica] roads v1 manifest bbox must be numbers");
+  }
+  return { west, south, east, north };
 }

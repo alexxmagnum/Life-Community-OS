@@ -1,0 +1,28 @@
+{
+  "dataRef": "tenant://life-panoramica/base/roads/v1",
+  "kind": "roads",
+  "format": "geojson",
+  "crs": "WGS84",
+  "version": "v1",
+  "featureCount": 55,
+  "bbox": [
+    0.3402503,
+    40.5135081,
+    0.3972306,
+    40.565151
+  ],
+  "extractedAt": "2026-08-15T08:23:37.210Z",
+  "source": {
+    "provider": "osm",
+    "api": "https://api.openstreetmap.org/api/0.6/map",
+    "bbox": [
+      0.369504,
+      40.5387617,
+      0.389504,
+      40.5587617
+    ],
+    "bboxNote": "Derived from OSM Nominatim neighbourhood Urbanització Panoràmica (node); not manually invented",
+    "license": "ODbL 1.0",
+    "attribution": "© OpenStreetMap contributors"
+  }
+}
