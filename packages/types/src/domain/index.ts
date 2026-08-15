@@ -267,6 +267,28 @@ export {
   projectTerritoryLayerImports,
 } from "./life-map-territory-ingestion";
 export type {
+  TerritoryDataPayloadKind,
+  TerritoryGeoJsonPayload,
+  TerritoryVectorTilesPayload,
+  TerritoryRasterPayload,
+  TerritoryTiles3dPayload,
+  TerritoryDataPayload,
+  TerritoryDataResolveIssueCode,
+  TerritoryDataResolveIssue,
+  TerritoryDataResolveContext,
+  TerritoryDataResolveResult,
+  TerritoryDataResolver,
+  ResolvedLifeMapBaseLayer,
+} from "./life-map-territory-data-resolver";
+export {
+  TERRITORY_DATA_PAYLOAD_KINDS,
+  isTerritoryGeoJsonPayload,
+  createNullTerritoryDataResolver,
+  createStaticTerritoryDataResolver,
+  resolveLifeMapBaseLayer,
+  resolveLifeMapBaseLayers,
+} from "./life-map-territory-data-resolver";
+export type {
   LifeMapObjectProjectionInput,
   LifeMapObjectIssueCode,
   LifeMapObjectIssue,

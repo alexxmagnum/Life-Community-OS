@@ -44,6 +44,16 @@ export {
   projectTerritoryLayerImports,
 } from "./domain/life-map-territory-ingestion";
 
+/** Territory data resolver — opaque dataRef → payload (no SDK / tokens). */
+export {
+  TERRITORY_DATA_PAYLOAD_KINDS,
+  isTerritoryGeoJsonPayload,
+  createNullTerritoryDataResolver,
+  createStaticTerritoryDataResolver,
+  resolveLifeMapBaseLayer,
+  resolveLifeMapBaseLayers,
+} from "./domain/life-map-territory-data-resolver";
+
 /** Life Map spatial object projection registry (not SoT — no UI / SDK). */
 export {
   LIFE_MAP_DOMAIN_MODULE_BY_TYPE,

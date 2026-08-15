@@ -11,18 +11,27 @@ import {
   getLifePanoramicaLifeMapConfig,
   listLifePanoramicaSpatialObjects,
 } from "@life-community-os/tenant-life-panoramica";
+import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
+import {
+  getLifeMapDevEngine,
+  isLifeMapDevPreviewEnabled,
+} from "@/lib/life-map-dev";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Life Map experience shell — loads territory, layers, and spatial projections.
- * No map SDK, tiles, Three.js, or 3D renderer. Viewport is a future surface placeholder.
+ * Life Map experience shell.
+ * Production: fail-closed via module + feature flags.
+ * Local: optional NEXT_PUBLIC_LIFE_MAP_DEV=1 preview without flipping product flags.
  */
 export function LifeMapScreen() {
   const router = useRouter();
   const { isFeatureEnabled, isModuleEnabled, hasCapability } = useTenant();
 
+  const devPreview = isLifeMapDevPreviewEnabled();
+  const previewEngine = getLifeMapDevEngine();
   const moduleOn =
-    isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap");
+    devPreview ||
+    (isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap"));
   const canView = hasCapability(CAPABILITIES.lifeMapView);
 
   const pack = useMemo(() => getLifePanoramicaLifeMapConfig(), []);
@@ -60,44 +69,20 @@ export function LifeMapScreen() {
     <MobileScreen>
       <FlowScreenHeader
         title="Life Map"
-        subtitle={pack.territoryName}
+        subtitle={
+          devPreview
+            ? `${pack.territoryName} · ${previewEngine === "maplibre" ? "MapLibre" : "Three"} preview (no territorio real)`
+            : pack.territoryName
+        }
         onBack={() => router.push("/")}
         onExit={() => router.push("/")}
       />
 
-      {/* Future spatial viewport — not a map engine. */}
-      <section
-        aria-label="Superficie espacial"
-        className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
-        style={{
-          minHeight: "min(52vh, 420px)",
-          background:
-            "radial-gradient(120% 90% at 50% 20%, rgba(0, 216, 232, 0.14) 0%, transparent 55%), linear-gradient(165deg, #071D25 0%, #0B252D 48%, #000000 100%)",
-        }}
-      >
-        <div className="absolute inset-0 opacity-[0.35]" aria-hidden>
-          <div
-            className="h-full w-full"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
-              backgroundSize: "48px 48px",
-            }}
-          />
-        </div>
-        <div className="relative flex h-full min-h-[inherit] flex-col items-center justify-center px-6 py-10 text-center">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--color-accent-cyan,#00D8E8)]">
-            Superficie espacial
-          </p>
-          <p className="mt-2 max-w-xs text-[15px] leading-6 text-[var(--color-text-secondary)]">
-            El territorio y los objetos están cargados. El renderer llegará en una
-            fase posterior.
-          </p>
-          <p className="mt-4 text-[13px] text-[var(--color-text-tertiary)]">
-            {layers.length} capas · {objects.length} objetos
-          </p>
-        </div>
-      </section>
+      <LifeMapViewport
+        territory={territory}
+        objects={objects}
+        previewUnlocked={devPreview}
+      />
 
       <section className="mt-5" aria-label="Capas del territorio">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
@@ -137,10 +122,8 @@ export function LifeMapScreen() {
                 </p>
                 <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
                   {object.type}
+                  {object.asset3DKey ? ` · ${object.asset3DKey}` : ""}
                   {object.layerId ? ` · ${object.layerId}` : ""}
-                  {object.ref
-                    ? ` · ${object.ref.moduleId}/${object.ref.entityId}`
-                    : ""}
                 </p>
               </li>
             ))}
