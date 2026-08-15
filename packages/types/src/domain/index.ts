@@ -289,6 +289,49 @@ export {
   resolveLifeMapBaseLayers,
 } from "./life-map-territory-data-resolver";
 export type {
+  TerritoryBootstrapLocationInput,
+  TerritoryBootstrapProviderPreference,
+  TerritoryBootstrapRequest,
+  TerritoryBootstrapLayerStatus,
+  TerritoryBootstrapStatus,
+  TerritoryBootstrapGeneratedLayer,
+  TerritoryBootstrapWarningCode,
+  TerritoryBootstrapWarning,
+  TerritoryBootstrapResult,
+  TerritoryBootstrapService,
+} from "./life-map-territory-bootstrap";
+export {
+  TERRITORY_BOOTSTRAP_DEFAULT_PROVIDERS,
+  validateTerritoryBootstrapRequest,
+  createNullTerritoryBootstrapService,
+} from "./life-map-territory-bootstrap";
+export type {
+  TerritoryBootstrapLayerRequirement,
+  TerritoryBootstrapPlannedLayer,
+  TerritoryBootstrapPlan,
+  PlanTerritoryBootstrapOptions,
+} from "./life-map-territory-bootstrap-planner";
+export {
+  TERRITORY_BOOTSTRAP_REQUIRED_LAYERS,
+  TERRITORY_BOOTSTRAP_OPTIONAL_LAYERS,
+  TERRITORY_BOOTSTRAP_LAYER_PROVIDER_FALLBACKS,
+  planTerritoryBootstrap,
+} from "./life-map-territory-bootstrap-planner";
+export type {
+  TerritoryDataProviderFetchRequest,
+  TerritoryDataProviderFetchResult,
+  TerritoryDataProviderAdapter,
+  TerritoryBootstrapExecutionStatus,
+  TerritoryBootstrapFailedLayer,
+  TerritoryBootstrapExecutionResult,
+  TerritoryBootstrapExecuteContext,
+  TerritoryBootstrapExecutor,
+} from "./life-map-territory-bootstrap-executor";
+export {
+  createTerritoryBootstrapExecutor,
+  createNullTerritoryBootstrapExecutor,
+} from "./life-map-territory-bootstrap-executor";
+export type {
   LifeMapObjectProjectionInput,
   LifeMapObjectIssueCode,
   LifeMapObjectIssue,

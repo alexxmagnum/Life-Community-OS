@@ -54,6 +54,27 @@ export {
   resolveLifeMapBaseLayers,
 } from "./domain/life-map-territory-data-resolver";
 
+/** Territory bootstrap — SaaS plan for new territories (no providers / fetch). */
+export {
+  TERRITORY_BOOTSTRAP_DEFAULT_PROVIDERS,
+  validateTerritoryBootstrapRequest,
+  createNullTerritoryBootstrapService,
+} from "./domain/life-map-territory-bootstrap";
+
+/** Territory bootstrap planner — which layers/providers to attempt (no fetch). */
+export {
+  TERRITORY_BOOTSTRAP_REQUIRED_LAYERS,
+  TERRITORY_BOOTSTRAP_OPTIONAL_LAYERS,
+  TERRITORY_BOOTSTRAP_LAYER_PROVIDER_FALLBACKS,
+  planTerritoryBootstrap,
+} from "./domain/life-map-territory-bootstrap-planner";
+
+/** Territory bootstrap executor — run plan via injectable provider adapters. */
+export {
+  createTerritoryBootstrapExecutor,
+  createNullTerritoryBootstrapExecutor,
+} from "./domain/life-map-territory-bootstrap-executor";
+
 /** Life Map spatial object projection registry (not SoT — no UI / SDK). */
 export {
   LIFE_MAP_DOMAIN_MODULE_BY_TYPE,
