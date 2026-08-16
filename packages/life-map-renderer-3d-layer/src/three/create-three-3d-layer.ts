@@ -73,7 +73,6 @@ import {
 } from "./materials";
 import { pickBuildingIdAt } from "./selection";
 import {
-  createSpatialMarkerMaterial,
   createSpatialObjectMarker,
   createSpatialObjectsGroup,
 } from "./spatial-markers";
@@ -148,8 +147,6 @@ export function createThreeLifeMap3DLayer(
   let spatialGroup: Group | null = null;
   let materials: BuildingMaterials | null = null;
   let envMaterials: EnvironmentMaterials | null = null;
-  let spatialMaterial: ReturnType<typeof createSpatialMarkerMaterial> | null =
-    null;
   let raf = 0;
   let resizeObserver: ResizeObserver | null = null;
 
@@ -301,7 +298,13 @@ export function createThreeLifeMap3DLayer(
     const camX = perspective?.position.x ?? 0;
     const camZ = perspective?.position.z ?? 0;
 
-    for (const feature of input.buildings) {
+    const maxBuildings = quality === "mobile" ? 120 : 400;
+    const buildingList =
+      input.buildings.length > maxBuildings
+        ? input.buildings.slice(0, maxBuildings)
+        : input.buildings;
+
+    for (const feature of buildingList) {
       const resolved = resolveBuildingHeight(feature, defaultHeight);
       const local = lngLatToLocalMeters(
         feature.footprint[0]?.[0] ?? origin.lng,
@@ -387,7 +390,7 @@ export function createThreeLifeMap3DLayer(
       }
     }
 
-    if (showSpatialObjects && spatialGroup && spatialMaterial) {
+    if (showSpatialObjects && spatialGroup) {
       const fromInput = input.spatialObjects ?? [];
       const fromScene = spatialObjectsFromSceneObjects(
         (input.scene.objects ?? []) as Parameters<
@@ -396,10 +399,14 @@ export function createThreeLifeMap3DLayer(
       );
       const seen = new Set<string>();
       const merged = [...fromInput, ...fromScene];
+      const maxMarkers = quality === "mobile" ? 24 : 80;
+      let count = 0;
       for (const obj of merged) {
         if (seen.has(obj.id)) continue;
         seen.add(obj.id);
-        const marker = createSpatialObjectMarker(obj, origin, spatialMaterial);
+        if (count >= maxMarkers) break;
+        count += 1;
+        const marker = createSpatialObjectMarker(obj, origin);
         spatialGroup.add(marker);
         renderables.set(obj.id, {
           id: obj.id,
@@ -430,7 +437,6 @@ export function createThreeLifeMap3DLayer(
 
       materials = createBuildingMaterials(options.buildingMaterial);
       envMaterials = createEnvironmentMaterials();
-      spatialMaterial = createSpatialMarkerMaterial();
 
       threeScene = new Scene();
       threeScene.background = null;
@@ -620,8 +626,6 @@ export function createThreeLifeMap3DLayer(
       materials = null;
       if (envMaterials) disposeEnvironmentMaterials(envMaterials);
       envMaterials = null;
-      spatialMaterial?.dispose();
-      spatialMaterial = null;
       input = null;
       camera = null;
       lockedOrigin = null;

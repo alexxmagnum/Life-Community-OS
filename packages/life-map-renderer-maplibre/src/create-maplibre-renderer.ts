@@ -162,7 +162,7 @@ export function createMapLibreLifeMapRenderer(
         softenBuildingFills,
         softenEnvironmentFills,
       });
-      objectBindings = syncMapLibreObjectFrontier([...objects.values()]);
+      objectBindings = syncMapLibreObjectFrontier([...objects.values()], map);
 
       interaction?.detach();
       interaction = null;
@@ -295,7 +295,7 @@ export function createMapLibreLifeMapRenderer(
       }
       if (scene) {
         scene = { ...scene, objects: [...objects.values()] };
-        objectBindings = syncMapLibreObjectFrontier([...objects.values()]);
+        objectBindings = syncMapLibreObjectFrontier([...objects.values()], map);
       }
     },
 

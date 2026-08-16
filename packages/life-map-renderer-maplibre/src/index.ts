@@ -31,6 +31,8 @@ export {
   syncMapLibreObjectFrontier,
   mapLibreObjectSourceId,
   mapLibreObjectLayerId,
+  MAPLIBRE_OBJECTS_SOURCE_ID,
+  MAPLIBRE_OBJECTS_LAYER_ID,
   type MapLibreObjectBinding,
 } from "./object-frontier";
 

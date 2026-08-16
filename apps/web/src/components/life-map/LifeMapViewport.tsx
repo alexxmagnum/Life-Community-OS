@@ -2,7 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
-import { buildLifeMapScene } from "@life-community-os/life-map-renderer";
+import {
+  bridgeLifeMapObjectsToSpatial,
+  buildLifeMapScene,
+} from "@life-community-os/life-map-renderer";
 import type { TerritoryDataResolver } from "@life-community-os/types";
 import type { LifeMapObject, LifeMapTerritory } from "@life-community-os/types";
 import {
@@ -51,16 +54,24 @@ const ThreeLifeMapCanvas = dynamic(
 export type LifeMapViewportProps = {
   territory: LifeMapTerritory;
   objects: readonly LifeMapObject[];
-  /** When true, force moduleEnabled for local preview without flipping product flags. */
   previewUnlocked?: boolean;
-  /** Override engine; defaults to `getLifeMapDevEngine()`. */
   engine?: LifeMapDevEngine;
-  /** Tenant-injected territory data resolver (roads GeoJSON, …). */
   territoryDataResolver?: TerritoryDataResolver;
+  selectedObjectId?: string | null;
+  onObjectSelect?: (objectId: string | null) => void;
 };
 
+function territoryGeoOrigin(territory: LifeMapTerritory) {
+  const bounds = territory.bounds;
+  if (!bounds) return null;
+  return {
+    lat: (bounds.south + bounds.north) / 2,
+    lng: (bounds.west + bounds.east) / 2,
+  };
+}
+
 /**
- * Spatial viewport — territory → scene → MapLibre premium (default) or Three.
+ * Spatial viewport — territory → scene → MapLibre premium (+ optional Three world).
  */
 export function LifeMapViewport({
   territory,
@@ -68,6 +79,8 @@ export function LifeMapViewport({
   previewUnlocked = false,
   engine: engineProp,
   territoryDataResolver,
+  selectedObjectId = null,
+  onObjectSelect,
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
@@ -89,6 +102,20 @@ export function LifeMapViewport({
     });
   }, [territory, objects, previewUnlocked]);
 
+  const spatialObjects = useMemo(() => {
+    const origin = territoryGeoOrigin(territory);
+    return bridgeLifeMapObjectsToSpatial(objects, origin).map((o) => ({
+      id: o.id,
+      position: o.position,
+      asset3DKey: o.asset3DKey,
+      interactionType: o.interactionType,
+      category: o.category,
+      objectType: o.type,
+      availableActions: o.availableActions,
+      label: o.label,
+    }));
+  }, [objects, territory]);
+
   return (
     <section
       aria-label="Superficie espacial Life Map"
@@ -100,6 +127,9 @@ export function LifeMapViewport({
           scene={scene}
           territoryDataResolver={territoryDataResolver}
           hybrid3DOverlay={hybrid3D}
+          spatialObjects={spatialObjects}
+          selectedObjectId={selectedObjectId}
+          onObjectSelect={onObjectSelect}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />
@@ -108,20 +138,25 @@ export function LifeMapViewport({
           scene={scene}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
+          onObjectOpen={
+            onObjectSelect
+              ? (event) => onObjectSelect(event.object.objectId)
+              : undefined
+          }
         />
       )}
 
       <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.82)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
         <p className="font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
           Life Map
-          {hybrid3D ? " · volumen" : ""}
+          {hybrid3D ? " · twin 3D" : ""}
           {hasRoads || hasBuildings ? " · tu comunidad" : " · preview"}
         </p>
         <p className="mt-0.5">
           {hasRoads && hasBuildings
             ? hybrid3D
-              ? "Acerca el mapa: el volumen y el ambiente 3D cobran presencia."
-              : "Territorio real: caminos, agua, verde y edificios."
+              ? "Toca un lugar vivo para abrir su contexto."
+              : "Territorio real + objetos Life OS."
             : hasRoads
               ? "Capa territorial real: caminos OSM."
               : "Preview técnico del renderer."}

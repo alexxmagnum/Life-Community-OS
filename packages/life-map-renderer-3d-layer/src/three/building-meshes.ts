@@ -146,6 +146,14 @@ export function disposeObject3D(root: Object3D): void {
     const mesh = obj as Mesh;
     if (mesh.isMesh) {
       mesh.geometry?.dispose();
+      if (mesh.userData?.lifeMap3DOwnsMaterial) {
+        const mat = mesh.material;
+        if (Array.isArray(mat)) {
+          for (const m of mat) m.dispose();
+        } else if (mat) {
+          mat.dispose();
+        }
+      }
     }
   });
 }

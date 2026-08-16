@@ -12,6 +12,7 @@ import {
   waterFeaturesFromGeoJson,
   type LifeMap3DEnvironmentFeature,
   type LifeMap3DLayer,
+  type LifeMap3DSpatialObject,
 } from "@life-community-os/life-map-renderer-3d-layer";
 import type { TerritoryDataResolver } from "@life-community-os/types";
 import {
@@ -32,6 +33,7 @@ import {
   lifeMapPixelRatioForQuality,
   MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
 } from "./premium-style";
+import { MAPLIBRE_OBJECTS_LAYER_ID } from "./object-frontier";
 
 /** @deprecated Prefer premium local style; kept for debug demotiles toggle. */
 export { MAPLIBRE_TECHNICAL_PREVIEW_STYLE };
@@ -40,18 +42,13 @@ export type MapLibreLifeMapCanvasProps = {
   scene: LifeMapScene;
   className?: string;
   style?: CSSProperties;
-  /**
-   * When true, use MapLibre demotiles under territory (debug / GIS compare).
-   * Default false — Life Map premium local style.
-   */
   technicalBasemap?: boolean;
-  /** Injectable `dataRef` → payload resolver (tenant-owned). */
   territoryDataResolver?: TerritoryDataResolver;
-  /**
-   * Hybrid preview: transparent Three world (volume + environment).
-   * MapLibre remains the territorial source; Three owns experience.
-   */
   hybrid3DOverlay?: boolean;
+  /** Bridged Life OS spatial objects (geo). */
+  spatialObjects?: readonly LifeMap3DSpatialObject[];
+  selectedObjectId?: string | null;
+  onObjectSelect?: (objectId: string | null) => void;
 };
 
 function readMapLibreView(map: MapLibreMap) {
@@ -86,6 +83,9 @@ export function MapLibreLifeMapCanvas({
   technicalBasemap = false,
   territoryDataResolver,
   hybrid3DOverlay = false,
+  spatialObjects = [],
+  selectedObjectId = null,
+  onObjectSelect,
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -95,6 +95,10 @@ export function MapLibreLifeMapCanvas({
   const layer3dRef = useRef<LifeMap3DLayer | null>(null);
   const sceneRef = useRef(scene);
   sceneRef.current = scene;
+  const spatialRef = useRef(spatialObjects);
+  spatialRef.current = spatialObjects;
+  const onSelectRef = useRef(onObjectSelect);
+  onSelectRef.current = onObjectSelect;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -207,6 +211,7 @@ export function MapLibreLifeMapCanvas({
         buildings,
         water,
         green,
+        spatialObjects: [...spatialRef.current],
         scene: currentScene,
         camera: currentScene.camera,
       });
@@ -214,6 +219,9 @@ export function MapLibreLifeMapCanvas({
       layer3d.setVolumePresence?.(
         computeVolumePresence(map.getZoom(), map.getPitch()),
       );
+      if (selectedObjectId) {
+        layer3d.setSelected(selectedObjectId);
+      }
 
       const syncSpatialCamera = () => {
         const view = readMapLibreView(map);
@@ -268,11 +276,28 @@ export function MapLibreLifeMapCanvas({
       };
 
       const onClick = (event: MapMouseEvent) => {
+        // Prefer Life OS object circles on the territorial map.
+        const objectHits = map.queryRenderedFeatures(event.point, {
+          layers: map.getLayer(MAPLIBRE_OBJECTS_LAYER_ID)
+            ? [MAPLIBRE_OBJECTS_LAYER_ID]
+            : [],
+        });
+        const objectId =
+          (objectHits[0]?.properties?.objectId as string | undefined) ?? null;
+        if (objectId) {
+          layer3d.setSelected(objectId);
+          onSelectRef.current?.(objectId);
+          return;
+        }
+
         const { ndcX, ndcY } = eventToNdc(map, event);
         const hit = layer3d.pickAt(ndcX, ndcY);
         const nextId = hit?.id ?? null;
         const current = layer3d.getSelected();
-        layer3d.setSelected(nextId && nextId === current ? null : nextId);
+        const resolved =
+          nextId && nextId === current ? null : nextId;
+        layer3d.setSelected(resolved);
+        onSelectRef.current?.(resolved);
       };
 
       map.on("move", onMove);
@@ -293,9 +318,39 @@ export function MapLibreLifeMapCanvas({
 
     void setupHybrid();
 
+    // Non-hybrid: Life OS object taps on territorial map.
+    let detachObjectClick: (() => void) | null = null;
+    if (!hybrid3DOverlay) {
+      const map = renderer.getMap();
+      if (map) {
+        const onObjectClick = (event: MapMouseEvent) => {
+          if (!map.getLayer(MAPLIBRE_OBJECTS_LAYER_ID)) return;
+          const hits = map.queryRenderedFeatures(event.point, {
+            layers: [MAPLIBRE_OBJECTS_LAYER_ID],
+          });
+          const objectId =
+            (hits[0]?.properties?.objectId as string | undefined) ?? null;
+          onSelectRef.current?.(objectId);
+        };
+        const wait = () => {
+          if (map.loaded()) {
+            map.on("click", onObjectClick);
+            detachObjectClick = () => map.off("click", onObjectClick);
+          } else {
+            map.once("load", () => {
+              map.on("click", onObjectClick);
+              detachObjectClick = () => map.off("click", onObjectClick);
+            });
+          }
+        };
+        wait();
+      }
+    }
+
     return () => {
       cancelled = true;
       detachMapListeners?.();
+      detachObjectClick?.();
       layer3dRef.current?.dispose();
       layer3dRef.current = null;
       renderer.dispose();
@@ -306,6 +361,10 @@ export function MapLibreLifeMapCanvas({
   useEffect(() => {
     rendererRef.current?.setScene(scene);
   }, [scene]);
+
+  useEffect(() => {
+    layer3dRef.current?.setSelected(selectedObjectId ?? null);
+  }, [selectedObjectId]);
 
   return (
     <div

@@ -40,6 +40,34 @@ const territoryCenter = {
   lng: (territoryBounds.west + territoryBounds.east) / 2,
 };
 
+/** Real geo origin for local layout → WGS84 projection (OSM/Catastro bounds). */
+export function getLifePanoramicaTerritoryGeoOrigin(): {
+  lat: number;
+  lng: number;
+} {
+  return territoryCenter;
+}
+
+/**
+ * Project tenant-local layout metres to WGS84 around the real territory origin.
+ * Does not invent absolute GPS — relative to OSM/Catastro-derived center.
+ */
+export function projectLifePanoramicaLocalMetersToGeo(local: {
+  x: number;
+  y: number;
+  z?: number;
+}): { lat: number; lng: number; altitudeMeters?: number } {
+  const origin = territoryCenter;
+  const metersPerDegLat = 111_320;
+  const metersPerDegLng =
+    metersPerDegLat * Math.cos((origin.lat * Math.PI) / 180);
+  return {
+    lat: origin.lat + local.y / metersPerDegLat,
+    lng: origin.lng + local.x / Math.max(metersPerDegLng, 1e-6),
+    ...(typeof local.z === "number" ? { altitudeMeters: local.z } : {}),
+  };
+}
+
 /**
  * Tenant-local visual knobs for a future renderer.
  * Opaque style keys only — no textures, meshes, or vendor map styles.

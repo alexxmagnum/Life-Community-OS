@@ -1,28 +1,39 @@
 /**
- * Spatial object foundation for future LifeMapObject product entry.
+ * Spatial object foundation for LifeMapObject product entry.
  *
- * Phase 3: markers + interaction + interaction — not full product (Housing / POIs).
- * Stays inside the 3D package; does not widen Core contracts.
+ * Phase 4+: category-aware markers + interaction — not classic map pins.
  */
+
+import type { LifeMapActionKind, LifeMapObjectType } from "@life-community-os/types";
 
 export type LifeMap3DSpatialInteractionType = "select" | "open" | "none";
 
+export type LifeMap3DSpatialCategory =
+  | "places"
+  | "services"
+  | "community"
+  | "sports"
+  | "housing"
+  | "other";
+
 /**
  * Minimal spatial object the 3D world can place.
- * Maps cleanly to future LifeMapObject { id, position, asset3DKey, … }.
+ * Bridges from LifeMapObject via life-map-renderer helpers.
  */
 export type LifeMap3DSpatialObject = {
   id: string;
   position: { lat: number; lng: number };
   asset3DKey?: string;
   interactionType?: LifeMap3DSpatialInteractionType;
-  /** Optional label for future HUD — unused in Phase 3 mesh. */
+  category?: LifeMap3DSpatialCategory;
+  objectType?: LifeMapObjectType;
+  availableActions?: readonly LifeMapActionKind[];
   label?: string;
 };
 
 /**
- * Project opaque scene objects (LifeMapScene.objects) into spatial markers
- * when they carry geo positions. Non-geo / incomplete objects are skipped.
+ * Project opaque scene / product objects into spatial markers
+ * when they carry geo positions. Non-geo objects are skipped.
  */
 export function spatialObjectsFromSceneObjects(
   objects: readonly {
@@ -32,6 +43,8 @@ export function spatialObjectsFromSceneObjects(
     asset3DKey?: string;
     asset?: { assetKey?: string };
     label?: string;
+    type?: LifeMapObjectType;
+    availableActions?: readonly LifeMapActionKind[];
   }[],
 ): LifeMap3DSpatialObject[] {
   const out: LifeMap3DSpatialObject[] = [];
@@ -61,6 +74,10 @@ export function spatialObjectsFromSceneObjects(
       position: { lat: pos.lat, lng: pos.lng },
       ...(asset3DKey ? { asset3DKey } : {}),
       interactionType: "select",
+      ...(obj.type ? { objectType: obj.type } : {}),
+      ...(obj.availableActions
+        ? { availableActions: obj.availableActions }
+        : {}),
       ...(obj.label ? { label: obj.label } : {}),
     });
   }

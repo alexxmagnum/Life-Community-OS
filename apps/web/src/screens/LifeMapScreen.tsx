@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EmptyState,
@@ -8,41 +8,105 @@ import {
   MobileScreen,
 } from "@life-community-os/ui";
 import {
-  createLifePanoramicaTerritoryDataResolver,
-  getLifePanoramicaLifeMapConfig,
-  listLifePanoramicaSpatialObjects,
-} from "@life-community-os/tenant-life-panoramica";
+  buildLifeMapContextPanel,
+  buildLifeMapInteraction,
+  type LifeMapContextPanelModel,
+} from "@life-community-os/life-map-renderer";
+import type { LifeMapActionKind, LifeMapObject } from "@life-community-os/types";
+import { LifeMapContextPanel } from "@/components/life-map/LifeMapContextPanel";
 import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
 import {
   getLifeMapDevEngine,
   isLifeMapDevPreviewEnabled,
+  isLifeMapHybrid3DPreviewEnabled,
 } from "@/lib/life-map-dev";
+import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
+import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
+ensureLifeMapTenantPacksRegistered();
+
 /**
- * Life Map experience shell.
- * Production: fail-closed via module + feature flags.
- * Local: optional NEXT_PUBLIC_LIFE_MAP_DEV=1 preview without flipping product flags.
+ * Life Map experience shell — tenant pack driven (multi-tenant ready).
  */
 export function LifeMapScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, isModuleEnabled, hasCapability } = useTenant();
+  const {
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    configuration,
+    demoPersonId,
+  } = useTenant();
 
   const devPreview = isLifeMapDevPreviewEnabled();
   const previewEngine = getLifeMapDevEngine();
+  const hybrid3D = isLifeMapHybrid3DPreviewEnabled();
   const moduleOn =
     devPreview ||
     (isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap"));
   const canView = hasCapability(CAPABILITIES.lifeMapView);
 
-  const pack = useMemo(() => getLifePanoramicaLifeMapConfig(), []);
-  const objects = useMemo(() => listLifePanoramicaSpatialObjects(), []);
-  const territoryDataResolver = useMemo(
-    () => createLifePanoramicaTerritoryDataResolver(),
-    [],
+  const pack = useMemo(
+    () => resolveLifeMapTenantPack(configuration.tenantId),
+    [configuration.tenantId],
   );
-  const territory = pack.territory;
-  const layers = territory.layers;
+
+  const objects = useMemo(() => pack?.listObjects() ?? [], [pack]);
+  const territoryDataResolver = useMemo(
+    () => pack?.createTerritoryDataResolver(),
+    [pack],
+  );
+
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(
+    null,
+  );
+
+  const selectedObject: LifeMapObject | null = useMemo(() => {
+    if (!selectedObjectId) return null;
+    return objects.find((o) => o.objectId === selectedObjectId) ?? null;
+  }, [objects, selectedObjectId]);
+
+  const contextModel: LifeMapContextPanelModel | null = useMemo(() => {
+    if (!selectedObject) return null;
+    return buildLifeMapContextPanel(selectedObject);
+  }, [selectedObject]);
+
+  const onObjectSelect = useCallback((objectId: string | null) => {
+    setSelectedObjectId(objectId);
+  }, []);
+
+  const onContextAction = useCallback(
+    (action: LifeMapActionKind) => {
+      if (!selectedObject) return;
+      const intent = buildLifeMapInteraction({
+        object: selectedObject,
+        action,
+        actorPersonId: demoPersonId,
+      });
+
+      // Domain handoff — map never owns booking / messaging SoT.
+      if (action === "open" || action === "navigate") {
+        const entityId = intent.ref?.entityId;
+        if (intent.ref?.moduleId === "community" && entityId) {
+          router.push(`/local/${entityId}`);
+          return;
+        }
+        if (intent.ref?.moduleId === "resources" && entityId) {
+          router.push(`/resources/${entityId}`);
+          return;
+        }
+        if (intent.ref?.moduleId === "housing" && entityId) {
+          router.push(`/housing/${entityId}`);
+          return;
+        }
+      }
+      if (action === "message" && intent.ref?.entityId) {
+        router.push(`/local/${intent.ref.entityId}`);
+      }
+    },
+    [selectedObject, demoPersonId, router],
+  );
 
   if (!moduleOn) {
     return (
@@ -70,13 +134,35 @@ export function LifeMapScreen() {
     );
   }
 
+  if (!pack) {
+    return (
+      <MobileScreen>
+        <EmptyState
+          title="Life Map no configurado"
+          description="Este tenant aún no tiene un pack territorial registrado."
+          actionLabel="Volver al inicio"
+          onAction={() => router.push("/")}
+        />
+      </MobileScreen>
+    );
+  }
+
+  const territory = pack.territory;
+  const layers = territory.layers;
+
   return (
     <MobileScreen>
       <FlowScreenHeader
         title="Life Map"
         subtitle={
           devPreview
-            ? `${pack.territoryName} · ${previewEngine === "maplibre" ? "MapLibre roads v1" : "Three"} (OSM)`
+            ? `${pack.territoryName} · ${
+                previewEngine === "maplibre"
+                  ? hybrid3D
+                    ? "Twin 3D"
+                    : "MapLibre"
+                  : "Three"
+              } (dev)`
             : pack.territoryName
         }
         onBack={() => router.push("/")}
@@ -88,7 +174,17 @@ export function LifeMapScreen() {
         objects={objects}
         previewUnlocked={devPreview}
         territoryDataResolver={territoryDataResolver}
+        selectedObjectId={selectedObjectId}
+        onObjectSelect={onObjectSelect}
       />
+
+      {contextModel ? (
+        <LifeMapContextPanel
+          model={contextModel}
+          onAction={onContextAction}
+          onClose={() => setSelectedObjectId(null)}
+        />
+      ) : null}
 
       <section className="mt-5" aria-label="Capas del territorio">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
@@ -113,7 +209,7 @@ export function LifeMapScreen() {
 
       <section className="mt-5 pb-6" aria-label="Objetos espaciales">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-          Objetos
+          Vida de la comunidad
         </h2>
         {objects.length === 0 ? (
           <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
@@ -122,15 +218,20 @@ export function LifeMapScreen() {
         ) : (
           <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
             {objects.map((object) => (
-              <li key={object.objectId} className="py-2.5">
-                <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
-                  {object.label ?? object.objectId}
-                </p>
-                <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                  {object.type}
-                  {object.asset3DKey ? ` · ${object.asset3DKey}` : ""}
-                  {object.layerId ? ` · ${object.layerId}` : ""}
-                </p>
+              <li key={object.objectId}>
+                <button
+                  type="button"
+                  className="w-full py-2.5 text-left"
+                  onClick={() => setSelectedObjectId(object.objectId)}
+                >
+                  <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+                    {object.label ?? object.objectId}
+                  </p>
+                  <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+                    {object.type}
+                    {object.asset3DKey ? ` · ${object.asset3DKey}` : ""}
+                  </p>
+                </button>
               </li>
             ))}
           </ul>

@@ -34,3 +34,37 @@ export type {
   CreateLifeMapRendererOptions,
 } from "./renderer";
 export { createNullLifeMapRenderer } from "./renderer";
+
+export type { LifeMapGeoOrigin, LifeMapLocalMeters } from "./local-to-geo";
+export {
+  localMetersToGeo,
+  resolveLifeMapPositionToGeo,
+} from "./local-to-geo";
+
+export type {
+  LifeMapSpatialCategory,
+  LifeMapSpatialInteractionType,
+  LifeMapSpatialBridgeObject,
+} from "./life-os-objects";
+export {
+  lifeMapSpatialCategoryForType,
+  lifeMapInteractionTypeForActions,
+  bridgeLifeMapObjectToSpatial,
+  bridgeLifeMapObjectsToSpatial,
+} from "./life-os-objects";
+
+export type { LifeMapContextPanelModel } from "./interaction";
+export {
+  buildLifeMapContextPanel,
+  buildLifeMapInteraction,
+} from "./interaction";
+
+export type {
+  LifeMapPerformanceBudget,
+  LifeMapDataVersionHint,
+} from "./performance";
+export {
+  LIFE_MAP_PERFORMANCE_BUDGETS,
+  lifeMapCacheKey,
+  capLifeMapCollection,
+} from "./performance";
