@@ -25,6 +25,9 @@ importers:
       '@life-community-os/life-map-renderer':
         specifier: workspace:*
         version: link:../../packages/life-map-renderer
+      '@life-community-os/life-map-renderer-3d-layer':
+        specifier: workspace:*
+        version: link:../../packages/life-map-renderer-3d-layer
       '@life-community-os/life-map-renderer-maplibre':
         specifier: workspace:*
         version: link:../../packages/life-map-renderer-maplibre

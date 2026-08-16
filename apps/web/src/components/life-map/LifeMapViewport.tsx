@@ -8,6 +8,7 @@ import {
 } from "@life-community-os/life-map-renderer";
 import type { TerritoryDataResolver } from "@life-community-os/types";
 import type { LifeMapObject, LifeMapTerritory } from "@life-community-os/types";
+import { createWebLifeMapAssetResolver } from "@/lib/life-map-asset-resolver";
 import {
   getLifeMapDevEngine,
   isLifeMapHybrid3DPreviewEnabled,
@@ -116,6 +117,11 @@ export function LifeMapViewport({
     }));
   }, [objects, territory]);
 
+  const assetResolver = useMemo(
+    () => createWebLifeMapAssetResolver(territory.tenantId),
+    [territory.tenantId],
+  );
+
   return (
     <section
       aria-label="Superficie espacial Life Map"
@@ -130,6 +136,8 @@ export function LifeMapViewport({
           spatialObjects={spatialObjects}
           selectedObjectId={selectedObjectId}
           onObjectSelect={onObjectSelect}
+          assetResolver={assetResolver}
+          cinematicEntrance={hybrid3D}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />
@@ -155,7 +163,7 @@ export function LifeMapViewport({
         <p className="mt-0.5">
           {hasRoads && hasBuildings
             ? hybrid3D
-              ? "Toca un lugar vivo para abrir su contexto."
+              ? "Entra en tu comunidad. Toca un lugar vivo para abrirlo."
               : "Territorio real + objetos Life OS."
             : hasRoads
               ? "Capa territorial real: caminos OSM."

@@ -16,6 +16,7 @@
     "@life-community-os/database": "workspace:*",
     "@life-community-os/design-tokens": "workspace:*",
     "@life-community-os/life-map-renderer": "workspace:*",
+    "@life-community-os/life-map-renderer-3d-layer": "workspace:*",
     "@life-community-os/life-map-renderer-maplibre": "workspace:*",
     "@life-community-os/life-map-renderer-three": "workspace:*",
     "@life-community-os/tenant-life-panoramica": "workspace:*",

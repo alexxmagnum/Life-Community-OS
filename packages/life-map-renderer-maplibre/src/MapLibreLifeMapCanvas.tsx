@@ -10,6 +10,7 @@ import {
   createThreeLifeMap3DLayer,
   greenFeaturesFromGeoJson,
   waterFeaturesFromGeoJson,
+  type LifeMap3DAssetResolver,
   type LifeMap3DEnvironmentFeature,
   type LifeMap3DLayer,
   type LifeMap3DSpatialObject,
@@ -49,6 +50,10 @@ export type MapLibreLifeMapCanvasProps = {
   spatialObjects?: readonly LifeMap3DSpatialObject[];
   selectedObjectId?: string | null;
   onObjectSelect?: (objectId: string | null) => void;
+  /** asset3DKey resolver — registry or procedural. */
+  assetResolver?: LifeMap3DAssetResolver;
+  /** Run cinematic entrance into the territory (hybrid). Default true. */
+  cinematicEntrance?: boolean;
 };
 
 function readMapLibreView(map: MapLibreMap) {
@@ -86,6 +91,8 @@ export function MapLibreLifeMapCanvas({
   spatialObjects = [],
   selectedObjectId = null,
   onObjectSelect,
+  assetResolver,
+  cinematicEntrance = true,
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -139,9 +146,28 @@ export function MapLibreLifeMapCanvas({
       await waitForMap();
       if (cancelled) return;
 
-      // Cinematic open into 3D world — then pitch tracks zoom fluidly.
+      // Cinematic entrance — arrive into the community (not "open map").
       const openPitch = LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
-      if (map.getPitch() < openPitch - 2) {
+      if (cinematicEntrance) {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        const bearing = map.getBearing();
+        map.jumpTo({
+          center,
+          zoom: Math.max(3, zoom - LIFE_MAP_PREMIUM_CAMERA.entranceStartZoomDelta),
+          pitch: LIFE_MAP_PREMIUM_CAMERA.entranceStartPitch,
+          bearing:
+            bearing + LIFE_MAP_PREMIUM_CAMERA.entranceStartBearingOffset,
+        });
+        map.easeTo({
+          center,
+          zoom,
+          pitch: openPitch,
+          bearing,
+          duration: LIFE_MAP_PREMIUM_CAMERA.entranceDurationMs,
+          essential: true,
+        });
+      } else if (map.getPitch() < openPitch - 2) {
         map.easeTo({
           pitch: openPitch,
           duration: LIFE_MAP_PREMIUM_CAMERA.hybridPitchDurationMs,
@@ -198,6 +224,7 @@ export function MapLibreLifeMapCanvas({
         showTerrain: true,
         showEnvironment: true,
         showSpatialObjects: true,
+        ...(assetResolver ? { assetResolver } : {}),
         buildingMaterial: {
           color: LIFE_MAP_PREMIUM_PALETTE.buildings,
           selectedColor: LIFE_MAP_PREMIUM_PALETTE.buildingsSelected,
@@ -356,7 +383,7 @@ export function MapLibreLifeMapCanvas({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [technicalBasemap, territoryDataResolver, hybrid3DOverlay]);
+  }, [technicalBasemap, territoryDataResolver, hybrid3DOverlay, assetResolver, cinematicEntrance]);
 
   useEffect(() => {
     rendererRef.current?.setScene(scene);

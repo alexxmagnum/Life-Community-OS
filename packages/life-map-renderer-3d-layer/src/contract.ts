@@ -21,6 +21,7 @@ import type { LifeMap3DEnvironmentFeature } from "./environment";
 import type { LifeMap3DMapLibreView } from "./maplibre-sync";
 import type { LifeMap3DSpatialObject } from "./spatial-object";
 import type { LifeMap3DElevationSource } from "./terrain";
+import type { LifeMap3DAssetResolver } from "./asset-visual";
 
 export type { LifeMap3DMapLibreView };
 
@@ -86,8 +87,10 @@ export type LifeMap3DLayerOptions = {
   showTerrain?: boolean;
   /** Environment pads + sparse vegetation. Default true. */
   showEnvironment?: boolean;
-  /** Spatial object markers. Default true when input has objects. */
+  /** Spatial object markers / Life OS meshes. Default true when input has objects. */
   showSpatialObjects?: boolean;
+  /** Optional asset3DKey → visual resolver (registry / procedural). */
+  assetResolver?: LifeMap3DAssetResolver;
 };
 
 export type LifeMap3DLayerInfo = {

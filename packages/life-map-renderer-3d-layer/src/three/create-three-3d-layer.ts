@@ -66,17 +66,21 @@ import {
   createEnvironmentPadMesh,
   createVegetationInstances,
 } from "./environment-meshes";
+import { createLifeOsSpatialMesh } from "./life-os-meshes";
 import {
+  buildingVariantIndex,
   createBuildingMaterials,
   disposeBuildingMaterials,
   type BuildingMaterials,
 } from "./materials";
 import { pickBuildingIdAt } from "./selection";
-import {
-  createSpatialObjectMarker,
-  createSpatialObjectsGroup,
-} from "./spatial-markers";
+import { createSpatialObjectsGroup } from "./spatial-markers";
 import { createFlatTerrainMesh } from "./terrain-mesh";
+import {
+  resolveLifeMap3DAssetVisual,
+  type LifeMap3DAssetResolver,
+} from "../asset-visual";
+import { LIFE_MAP_3D_VEGETATION } from "../environment";
 
 function resolveHostElement(host: LifeMap3DLayerHost): HTMLElement {
   if (host.element instanceof HTMLElement) return host.element;
@@ -124,6 +128,7 @@ export function createThreeLifeMap3DLayer(
   const showTerrain = options.showTerrain !== false;
   const showEnvironment = options.showEnvironment !== false;
   const showSpatialObjects = options.showSpatialObjects !== false;
+  const assetResolver: LifeMap3DAssetResolver | undefined = options.assetResolver;
   const pixelRatioCap =
     options.pixelRatio ?? (quality === "mobile" ? 1.5 : 2);
   const defaultHeight =
@@ -212,6 +217,10 @@ export function createThreeLifeMap3DLayer(
     if (!materials) return null;
     if (selectedId === id) return materials.selected;
     if (hoveredId === id) return materials.hover;
+    if (materials.variants.length > 0) {
+      const idx = buildingVariantIndex(id, materials.variants.length);
+      return materials.variants[idx] ?? materials.default;
+    }
     return materials.default;
   }
 
@@ -254,15 +263,16 @@ export function createThreeLifeMap3DLayer(
       materials.default,
       materials.hover,
       materials.selected,
+      ...materials.variants,
     ]) {
       mat.opacity = opacity;
       mat.transparent = opacity < 1;
       mat.needsUpdate = true;
     }
     if (envMaterials) {
-      envMaterials.water.opacity = 0.62 * Math.max(amount, 0.2);
-      envMaterials.green.opacity = 0.42 * Math.max(amount, 0.2);
-      envMaterials.terrain.opacity = 0.28 * Math.max(amount, 0.15);
+      envMaterials.water.opacity = 0.68 * Math.max(amount, 0.2);
+      envMaterials.green.opacity = 0.5 * Math.max(amount, 0.2);
+      envMaterials.terrain.opacity = 0.32 * Math.max(amount, 0.15);
       envMaterials.water.needsUpdate = true;
       envMaterials.green.needsUpdate = true;
       envMaterials.terrain.needsUpdate = true;
@@ -376,7 +386,11 @@ export function createThreeLifeMap3DLayer(
       const vegetation = createVegetationInstances(
         input.green ?? [],
         origin,
-        envMaterials.vegetation,
+        envMaterials.vegetationCanopy,
+        envMaterials.vegetationTrunk,
+        quality === "mobile"
+          ? Math.min(24, LIFE_MAP_3D_VEGETATION.maxInstances)
+          : LIFE_MAP_3D_VEGETATION.maxInstances,
       );
       if (vegetation) {
         environmentGroup.add(vegetation);
@@ -406,7 +420,12 @@ export function createThreeLifeMap3DLayer(
         seen.add(obj.id);
         if (count >= maxMarkers) break;
         count += 1;
-        const marker = createSpatialObjectMarker(obj, origin);
+        const resolved = resolveLifeMap3DAssetVisual(
+          obj.asset3DKey,
+          assetResolver,
+        );
+        const visualKind = resolved?.visualKind ?? "generic";
+        const marker = createLifeOsSpatialMesh(obj, origin, visualKind);
         spatialGroup.add(marker);
         renderables.set(obj.id, {
           id: obj.id,
@@ -440,7 +459,10 @@ export function createThreeLifeMap3DLayer(
 
       threeScene = new Scene();
       threeScene.background = null;
-      threeScene.fog = new FogExp2(0xe8e4d8, quality === "mobile" ? 0.0018 : 0.0012);
+      threeScene.fog = new FogExp2(
+        0xe6e0d2,
+        quality === "mobile" ? 0.0015 : 0.00105,
+      );
 
       perspective = new PerspectiveCamera(50, 1, 1, 50_000);
       rootGroup = new Group();
@@ -458,13 +480,13 @@ export function createThreeLifeMap3DLayer(
       rootGroup.add(buildingsGroup);
       rootGroup.add(spatialGroup);
 
-      threeScene.add(new HemisphereLight(0xf5f1e8, 0xb8a990, 0.62));
-      threeScene.add(new AmbientLight(0xffffff, 0.3));
+      threeScene.add(new HemisphereLight(0xfff6ea, 0xb5a68c, 0.72));
+      threeScene.add(new AmbientLight(0xffffff, 0.26));
       const sun = new DirectionalLight(
-        0xfff4e6,
-        quality === "mobile" ? 0.72 : 0.95,
+        0xfff1dc,
+        quality === "mobile" ? 0.78 : 1.05,
       );
-      sun.position.set(160, 280, 100);
+      sun.position.set(180, 300, 110);
       if (softShadows) {
         sun.castShadow = true;
         sun.shadow.mapSize.set(1024, 1024);

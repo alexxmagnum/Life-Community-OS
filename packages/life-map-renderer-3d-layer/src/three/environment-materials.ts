@@ -1,5 +1,5 @@
 /**
- * Environment materials — water depth cue + soft vegetation (premium spatial, not photo-real).
+ * Environment materials — resort water, soft green, terrain.
  */
 
 import { Color, MeshStandardMaterial } from "three";
@@ -7,7 +7,8 @@ import { Color, MeshStandardMaterial } from "three";
 export type EnvironmentMaterials = {
   water: MeshStandardMaterial;
   green: MeshStandardMaterial;
-  vegetation: MeshStandardMaterial;
+  vegetationCanopy: MeshStandardMaterial;
+  vegetationTrunk: MeshStandardMaterial;
   terrain: MeshStandardMaterial;
 };
 
@@ -16,37 +17,42 @@ export function createEnvironmentMaterials(options?: {
   greenColor?: string;
   terrainColor?: string;
 }): EnvironmentMaterials {
-  const waterColor = options?.waterColor ?? "#6ba8c4";
-  const greenColor = options?.greenColor ?? "#8faf7a";
-  const terrainColor = options?.terrainColor ?? "#e8e4d8";
+  const waterColor = options?.waterColor ?? "#5f9bb8";
+  const greenColor = options?.greenColor ?? "#7fa56e";
+  const terrainColor = options?.terrainColor ?? "#e4dfd0";
 
   return {
     water: new MeshStandardMaterial({
       color: new Color(waterColor),
-      roughness: 0.18,
-      metalness: 0.35,
+      roughness: 0.12,
+      metalness: 0.42,
       transparent: true,
-      opacity: 0.62,
-      envMapIntensity: 0.8,
+      opacity: 0.68,
+      envMapIntensity: 1.1,
     }),
     green: new MeshStandardMaterial({
       color: new Color(greenColor),
-      roughness: 0.88,
+      roughness: 0.86,
       metalness: 0.02,
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.5,
     }),
-    vegetation: new MeshStandardMaterial({
-      color: new Color("#6d8f5c"),
-      roughness: 0.82,
+    vegetationCanopy: new MeshStandardMaterial({
+      color: new Color("#6a8f5c"),
+      roughness: 0.78,
+      metalness: 0.02,
+    }),
+    vegetationTrunk: new MeshStandardMaterial({
+      color: new Color("#8a7358"),
+      roughness: 0.9,
       metalness: 0.02,
     }),
     terrain: new MeshStandardMaterial({
       color: new Color(terrainColor),
-      roughness: 0.94,
+      roughness: 0.95,
       metalness: 0.02,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.32,
     }),
   };
 }
@@ -56,6 +62,7 @@ export function disposeEnvironmentMaterials(
 ): void {
   materials.water.dispose();
   materials.green.dispose();
-  materials.vegetation.dispose();
+  materials.vegetationCanopy.dispose();
+  materials.vegetationTrunk.dispose();
   materials.terrain.dispose();
 }

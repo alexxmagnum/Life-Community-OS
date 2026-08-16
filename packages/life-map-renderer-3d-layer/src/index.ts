@@ -35,6 +35,8 @@ export type {
 } from "./environment";
 export { LIFE_MAP_3D_VEGETATION } from "./environment";
 
+export { buildingFeaturesFromGeoJson } from "./geojson-buildings";
+
 export {
   waterFeaturesFromGeoJson,
   greenFeaturesFromGeoJson,
@@ -87,7 +89,16 @@ export {
   lngLatToLocalMeters,
 } from "./projection";
 
-export { buildingFeaturesFromGeoJson } from "./geojson-buildings";
+export type {
+  LifeMap3DAssetVisualKind,
+  LifeMap3DAssetResolveResult,
+  LifeMap3DAssetResolver,
+} from "./asset-visual";
+export {
+  inferLifeMap3DAssetVisualKind,
+  createProceduralLifeMap3DAssetResolver,
+  resolveLifeMap3DAssetVisual,
+} from "./asset-visual";
 
 export {
   applyMapLibreViewToPerspective,

@@ -222,8 +222,13 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   /** Opening move duration (ms). 0 = snap (SSR / first paint). */
   openDurationMs: 1100,
   /** Hybrid: gentle pitch so volume reads without a hard cut. */
-  hybridPitchDegrees: 52,
-  hybridPitchDurationMs: 1600,
+  hybridPitchDegrees: 54,
+  hybridPitchDurationMs: 1800,
+  /** Cinematic entrance — arrive into the community. */
+  entranceStartZoomDelta: 1.15,
+  entranceStartPitch: 16,
+  entranceStartBearingOffset: -28,
+  entranceDurationMs: 2200,
   /** Volume presence: buildings gain extrusion as user approaches. */
   volumeZoomStart: 13.4,
   volumeZoomFull: 15.4,
@@ -231,7 +236,7 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   volumePitchFull: 48,
   /** Dynamic pitch curve for 2D → 3D spatial transition. */
   spatialPitchAtZoomStart: 22,
-  spatialPitchAtZoomFull: 52,
+  spatialPitchAtZoomFull: 54,
   spatialPitchZoomStart: 13.2,
   spatialPitchZoomFull: 15.6,
 } as const;
