@@ -1,0 +1,28 @@
+{
+  "dataRef": "tenant://life-panoramica/base/water/v1",
+  "kind": "water",
+  "format": "geojson",
+  "crs": "WGS84",
+  "version": "v1",
+  "featureCount": 11,
+  "bbox": [
+    0.1863605,
+    40.4764649,
+    0.4812871,
+    40.5981148
+  ],
+  "extractedAt": "2026-08-16T17:38:40.983Z",
+  "source": {
+    "provider": "osm",
+    "api": "https://api.openstreetmap.org/api/0.6/map",
+    "bbox": [
+      0.36,
+      40.53,
+      0.395,
+      40.565
+    ],
+    "bboxNote": "Expanded Urbanitzacio Panoramica AOI (Nominatim neighbourhood context); not hand-drawn",
+    "license": "ODbL 1.0",
+    "attribution": "(c) OpenStreetMap contributors"
+  }
+}

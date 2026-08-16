@@ -19,7 +19,9 @@ import {
 import { DEMO_TERRITORY_ID } from "./demo-ids";
 import {
   LIFE_PANORAMICA_BUILDINGS_DATA_REF,
+  LIFE_PANORAMICA_GREEN_DATA_REF,
   LIFE_PANORAMICA_ROADS_DATA_REF,
+  LIFE_PANORAMICA_WATER_DATA_REF,
 } from "./life-map-territory-resolver";
 import roadsV1Manifest from "../territory/data/roads/v1/manifest.json";
 import buildingsV1Manifest from "../territory/data/buildings/v1/manifest.json";
@@ -65,7 +67,9 @@ export type LifePanoramicaTerritoryDataPackage = {
 
 /**
  * Planned layer slots for Life Panoramica.
- * `roads` (OSM) and `buildings` (Cadastre) have real dataRefs in v1.
+ * Real: roads, buildings, water, green.
+ * Prepared null: boundary (no authorized perimeter). Golf/terrain: see
+ * `territory/data/golf|terrain/v1/SOURCE.md` (not base-layer refs).
  */
 export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritoryLayerSlot[] =
   [
@@ -98,7 +102,7 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
       importId: "import-water",
       baseLayerType: "water",
       enabled: true,
-      dataRef: null,
+      dataRef: LIFE_PANORAMICA_WATER_DATA_REF,
       label: "Agua",
     },
     {
@@ -106,12 +110,12 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
       importId: "import-green",
       baseLayerType: "green",
       enabled: true,
-      dataRef: null,
-      label: "Zonas verdes / golf",
+      dataRef: LIFE_PANORAMICA_GREEN_DATA_REF,
+      label: "Zonas verdes",
     },
   ];
 
-/** External datasets — OSM roads + Cadastre buildings (v1). */
+/** External datasets registered for imports. */
 export const lifePanoramicaTerritoryDataSources: readonly TerritoryDataSource[] =
   [
     {
@@ -132,11 +136,29 @@ export const lifePanoramicaTerritoryDataSources: readonly TerritoryDataSource[] 
       version: "v1",
       label: "Cadastre buildings (Urbanització Panoràmica AOI)",
     },
+    {
+      id: "panoramica-osm-water-v1",
+      provider: "osm",
+      format: "geojson",
+      sourceRef: LIFE_PANORAMICA_WATER_DATA_REF,
+      crs: "WGS84",
+      version: "v1",
+      label: "OpenStreetMap water (Urbanització Panoràmica AOI)",
+    },
+    {
+      id: "panoramica-osm-green-v1",
+      provider: "osm",
+      format: "geojson",
+      sourceRef: LIFE_PANORAMICA_GREEN_DATA_REF,
+      crs: "WGS84",
+      version: "v1",
+      label: "OpenStreetMap green (Urbanització Panoràmica AOI)",
+    },
   ];
 
 /**
  * Import instructions (external → LifeMapBaseLayer).
- * Roads + buildings — water / green / golf still empty.
+ * Boundary / golf / terrain remain without imports until authorized data exists.
  */
 export const lifePanoramicaTerritoryLayerImports: readonly TerritoryLayerImport[] =
   [
@@ -165,6 +187,32 @@ export const lifePanoramicaTerritoryLayerImports: readonly TerritoryLayerImport[
       visible: true,
       zIndex: 40,
       label: "Edificios",
+    },
+    {
+      id: "import-water",
+      territoryId: DEMO_TERRITORY_ID,
+      sourceId: "panoramica-osm-water-v1",
+      externalLayer: "water.json",
+      layerKind: "water",
+      targetType: "water",
+      dataRef: LIFE_PANORAMICA_WATER_DATA_REF,
+      sourceType: "vector",
+      visible: true,
+      zIndex: 10,
+      label: "Agua",
+    },
+    {
+      id: "import-green",
+      territoryId: DEMO_TERRITORY_ID,
+      sourceId: "panoramica-osm-green-v1",
+      externalLayer: "green.json",
+      layerKind: "green",
+      targetType: "green",
+      dataRef: LIFE_PANORAMICA_GREEN_DATA_REF,
+      sourceType: "vector",
+      visible: true,
+      zIndex: 15,
+      label: "Zonas verdes",
     },
   ];
 
@@ -197,7 +245,6 @@ export function listLifePanoramicaTerritoryLayerImports(): readonly TerritoryLay
 
 /**
  * Project configured imports into LifeMapBaseLayer[].
- * Roads + buildings v1.
  */
 export function projectLifePanoramicaTerritoryBaseLayers(): {
   layers: LifeMapBaseLayer[];

@@ -115,7 +115,7 @@ export function LifeMapViewport({
         </p>
         <p className="mt-0.5">
           {hasRoads && hasBuildings
-            ? "Capas reales: carreteras OSM + edificios Catastro."
+            ? "Capas reales: roads, buildings, water, green (OSM/Catastro)."
             : hasRoads
               ? "Capa territorial real: carreteras OSM."
               : "Preview técnico del renderer. Sin territorio real todavía."}

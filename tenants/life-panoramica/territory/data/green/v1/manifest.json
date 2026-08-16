@@ -1,0 +1,28 @@
+{
+  "dataRef": "tenant://life-panoramica/base/green/v1",
+  "kind": "green",
+  "format": "geojson",
+  "crs": "WGS84",
+  "version": "v1",
+  "featureCount": 3,
+  "bbox": [
+    0.2701073,
+    40.4991394,
+    0.402309,
+    40.5949196
+  ],
+  "extractedAt": "2026-08-16T17:38:40.990Z",
+  "source": {
+    "provider": "osm",
+    "api": "https://api.openstreetmap.org/api/0.6/map",
+    "bbox": [
+      0.36,
+      40.53,
+      0.395,
+      40.565
+    ],
+    "bboxNote": "Expanded Urbanitzacio Panoramica AOI (Nominatim neighbourhood context); not hand-drawn",
+    "license": "ODbL 1.0",
+    "attribution": "(c) OpenStreetMap contributors"
+  }
+}
