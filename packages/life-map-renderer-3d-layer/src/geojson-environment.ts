@@ -1,19 +1,15 @@
 /**
- * Helpers to map opaque GeoJSON building footprints → LifeMap3DBuildingFeature.
- * No tenant knowledge — host supplies already-resolved GeoJSON.
+ * GeoJSON → environment features (water / green). No tenant knowledge.
  */
 
-import { buildingHeightFromProperties } from "./building-height";
-import type { LifeMap3DBuildingFeature } from "./buildings";
+import type { LifeMap3DEnvironmentFeature } from "./environment";
 import { outerRingsFromGeometry } from "./geo-rings";
 
-/**
- * Convert a GeoJSON Feature / FeatureCollection (opaque) into building features.
- * Only Polygon / MultiPolygon geometries are accepted.
- */
-export function buildingFeaturesFromGeoJson(
+function featuresFromCollection(
   geojson: unknown,
-): LifeMap3DBuildingFeature[] {
+  kind: LifeMap3DEnvironmentFeature["kind"],
+  idPrefix: string,
+): LifeMap3DEnvironmentFeature[] {
   if (!geojson || typeof geojson !== "object") return [];
 
   const root = geojson as {
@@ -28,7 +24,7 @@ export function buildingFeaturesFromGeoJson(
         ? [geojson]
         : [];
 
-  const out: LifeMap3DBuildingFeature[] = [];
+  const out: LifeMap3DEnvironmentFeature[] = [];
 
   for (let i = 0; i < features.length; i++) {
     const f = features[i] as {
@@ -40,24 +36,36 @@ export function buildingFeaturesFromGeoJson(
     if (!f || f.type !== "Feature" || !f.geometry) continue;
 
     const props = f.properties ?? {};
-    const id =
+    const baseId =
       (typeof f.id === "string" && f.id) ||
       (typeof f.id === "number" && String(f.id)) ||
       (typeof props.id === "string" && props.id) ||
-      `building-${i}`;
+      `${idPrefix}-${i}`;
 
     const rings = outerRingsFromGeometry(f.geometry);
     for (let r = 0; r < rings.length; r++) {
       const footprint = rings[r];
       if (!footprint) continue;
       out.push({
-        id: rings.length > 1 ? `${id}:${r}` : String(id),
+        id: rings.length > 1 ? `${baseId}:${r}` : String(baseId),
+        kind,
         footprint,
-        heightMeters: buildingHeightFromProperties(props),
         properties: props,
       });
     }
   }
 
   return out;
+}
+
+export function waterFeaturesFromGeoJson(
+  geojson: unknown,
+): LifeMap3DEnvironmentFeature[] {
+  return featuresFromCollection(geojson, "water", "water");
+}
+
+export function greenFeaturesFromGeoJson(
+  geojson: unknown,
+): LifeMap3DEnvironmentFeature[] {
+  return featuresFromCollection(geojson, "green", "green");
 }

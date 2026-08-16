@@ -222,13 +222,18 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   /** Opening move duration (ms). 0 = snap (SSR / first paint). */
   openDurationMs: 1100,
   /** Hybrid: gentle pitch so volume reads without a hard cut. */
-  hybridPitchDegrees: 48,
-  hybridPitchDurationMs: 1400,
+  hybridPitchDegrees: 52,
+  hybridPitchDurationMs: 1600,
   /** Volume presence: buildings gain extrusion as user approaches. */
-  volumeZoomStart: 13.6,
-  volumeZoomFull: 15.2,
-  volumePitchStart: 18,
-  volumePitchFull: 42,
+  volumeZoomStart: 13.4,
+  volumeZoomFull: 15.4,
+  volumePitchStart: 16,
+  volumePitchFull: 48,
+  /** Dynamic pitch curve for 2D → 3D spatial transition. */
+  spatialPitchAtZoomStart: 22,
+  spatialPitchAtZoomFull: 52,
+  spatialPitchZoomStart: 13.2,
+  spatialPitchZoomFull: 15.6,
 } as const;
 
 export function computeVolumePresence(zoom: number, pitchDegrees: number): number {
@@ -252,4 +257,30 @@ export function computeVolumePresence(zoom: number, pitchDegrees: number): numbe
   );
   // Approach (zoom) leads; pitch supports cinematic volume.
   return Math.min(1, zoomT * 0.75 + pitchT * 0.35);
+}
+
+/**
+ * Target pitch for fluid MapLibre → Three world feel (zoom-dependent).
+ */
+export function computeSpatialPitchDegrees(zoom: number): number {
+  const {
+    spatialPitchAtZoomStart,
+    spatialPitchAtZoomFull,
+    spatialPitchZoomStart,
+    spatialPitchZoomFull,
+  } = LIFE_MAP_PREMIUM_CAMERA;
+  const t = Math.min(
+    1,
+    Math.max(
+      0,
+      (zoom - spatialPitchZoomStart) /
+        (spatialPitchZoomFull - spatialPitchZoomStart),
+    ),
+  );
+  // Smoothstep easing — cinematic, mobile-friendly.
+  const eased = t * t * (3 - 2 * t);
+  return (
+    spatialPitchAtZoomStart +
+    (spatialPitchAtZoomFull - spatialPitchAtZoomStart) * eased
+  );
 }

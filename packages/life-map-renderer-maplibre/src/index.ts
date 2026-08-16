@@ -59,6 +59,7 @@ export {
   detectLifeMapRenderQuality,
   lifeMapPixelRatioForQuality,
   computeVolumePresence,
+  computeSpatialPitchDegrees,
   premiumPaintForBaseType,
   type LifeMapRenderQuality,
   type LifeMapPremiumBaseLayerType,

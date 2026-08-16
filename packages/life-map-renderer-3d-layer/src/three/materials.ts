@@ -1,5 +1,5 @@
 /**
- * Soft resort building materials for the Three.js 3D layer.
+ * Soft premium building materials — Apple Vision / spatial, not photoreal.
  */
 
 import { Color, MeshStandardMaterial } from "three";
@@ -28,29 +28,29 @@ export function createBuildingMaterials(
   return {
     default: new MeshStandardMaterial({
       color: new Color(color),
-      roughness: 0.78,
-      metalness: 0.04,
+      roughness: 0.72,
+      metalness: 0.05,
       transparent: opacity < 1,
       opacity,
-      envMapIntensity: 0.35,
+      envMapIntensity: 0.4,
     }),
     hover: new MeshStandardMaterial({
       color: new Color(hoverColor),
-      roughness: 0.68,
-      metalness: 0.06,
+      roughness: 0.62,
+      metalness: 0.07,
       transparent: opacity < 1,
       opacity: Math.min(1, opacity + 0.03),
       emissive: new Color(hoverColor),
-      emissiveIntensity: 0.06,
+      emissiveIntensity: 0.07,
     }),
     selected: new MeshStandardMaterial({
       color: new Color(selectedColor),
-      roughness: 0.55,
-      metalness: 0.08,
+      roughness: 0.5,
+      metalness: 0.1,
       transparent: opacity < 1,
-      opacity: Math.min(1, opacity + 0.04),
+      opacity: Math.min(1, opacity + 0.05),
       emissive: new Color(selectedColor),
-      emissiveIntensity: 0.12,
+      emissiveIntensity: 0.14,
     }),
   };
 }

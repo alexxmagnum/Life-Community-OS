@@ -5,12 +5,23 @@
 import { Raycaster, Vector2, type Camera, type Object3D } from "three";
 
 import { findBuildingId } from "./building-meshes";
+import { LIFE_MAP_3D_SPATIAL_USERDATA_KEY } from "./spatial-markers";
 
 const raycaster = new Raycaster();
 const pointer = new Vector2();
 
+function findSpatialId(object: Object3D): string | null {
+  let current: Object3D | null = object;
+  while (current) {
+    const id = current.userData?.[LIFE_MAP_3D_SPATIAL_USERDATA_KEY];
+    if (typeof id === "string" && id.length > 0) return id;
+    current = current.parent;
+  }
+  return null;
+}
+
 /**
- * Pick a building id under NDC coordinates (x,y ∈ [-1, 1], y up).
+ * Pick a building or spatial object id under NDC coordinates (x,y ∈ [-1, 1], y up).
  */
 export function pickBuildingIdAt(
   ndcX: number,
@@ -22,8 +33,10 @@ export function pickBuildingIdAt(
   raycaster.setFromCamera(pointer, camera);
   const hits = raycaster.intersectObjects([...roots], true);
   for (const hit of hits) {
-    const id = findBuildingId(hit.object);
-    if (id) return id;
+    const buildingId = findBuildingId(hit.object);
+    if (buildingId) return buildingId;
+    const spatialId = findSpatialId(hit.object);
+    if (spatialId) return spatialId;
   }
   return null;
 }

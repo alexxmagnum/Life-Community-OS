@@ -75,6 +75,10 @@ export type SyncMapLibreBaseLayersOptions = {
    * When true (hybrid 3D), keep building footprints subtle so volume reads first.
    */
   softenBuildingFills?: boolean;
+  /**
+   * When true (hybrid 3D), keep water/green fills subtle under 3D pads.
+   */
+  softenEnvironmentFills?: boolean;
 };
 
 export function mapLibreSourceIdForBaseLayer(layerId: string): string {
@@ -145,6 +149,7 @@ function applyPremiumPaint(
   map: MapLibreMap,
   binding: MapLibreBaseLayerBinding,
   softenBuildingFills: boolean,
+  softenEnvironmentFills: boolean,
 ): void {
   const paint = premiumPaintForBaseType(
     binding.type as LifeMapPremiumBaseLayerType,
@@ -158,7 +163,21 @@ function applyPremiumPaint(
   }
   if (binding.type === "buildings" && softenBuildingFills) {
     try {
-      map.setPaintProperty(binding.layerId, "fill-opacity", 0.22);
+      map.setPaintProperty(binding.layerId, "fill-opacity", 0.18);
+    } catch {
+      // ignore
+    }
+  }
+  if (
+    softenEnvironmentFills &&
+    (binding.type === "water" || binding.type === "green")
+  ) {
+    try {
+      map.setPaintProperty(
+        binding.layerId,
+        "fill-opacity",
+        binding.type === "water" ? 0.28 : 0.22,
+      );
     } catch {
       // ignore
     }
@@ -177,6 +196,7 @@ export function syncMapLibreBaseLayers(
 ): MapLibreBaseLayerBinding[] {
   const payloadByRef = buildPayloadLookup(options);
   const softenBuildingFills = Boolean(options?.softenBuildingFills);
+  const softenEnvironmentFills = Boolean(options?.softenEnvironmentFills);
 
   const planned = (baseLayers ?? [])
     .map((layer) => {
@@ -268,7 +288,7 @@ export function syncMapLibreBaseLayers(
       "visibility",
       binding.visible ? "visible" : "none",
     );
-    applyPremiumPaint(map, binding, softenBuildingFills);
+    applyPremiumPaint(map, binding, softenBuildingFills, softenEnvironmentFills);
   }
 
   return planned;

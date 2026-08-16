@@ -1,10 +1,11 @@
 /**
  * LifeMap3DLayer — hybrid overlay contract.
  *
- * MapLibre (or any 2D territorial renderer) remains the geographic source.
- * This layer only turns territory footprints into volume + selection.
+ * MapLibre remains the geographic source of truth.
+ * This layer owns volume, materials, atmosphere, and 3D interaction.
  *
  * No tenants, Housing, UI, GIS APIs, or MapLibre replacement.
+ * No Core Territory contract changes.
  */
 
 import type {
@@ -16,7 +17,10 @@ import type {
   LifeMap3DBuildingFeature,
   LifeMap3DBuildingMaterialHint,
 } from "./buildings";
+import type { LifeMap3DEnvironmentFeature } from "./environment";
 import type { LifeMap3DMapLibreView } from "./maplibre-sync";
+import type { LifeMap3DSpatialObject } from "./spatial-object";
+import type { LifeMap3DElevationSource } from "./terrain";
 
 export type { LifeMap3DMapLibreView };
 
@@ -26,23 +30,36 @@ export type LifeMap3DLayerHost = {
   element?: unknown;
 };
 
+export type LifeMap3DRenderableKind =
+  | "building-extrusion"
+  | "water-pad"
+  | "green-pad"
+  | "vegetation"
+  | "terrain"
+  | "spatial-marker";
+
 /**
  * Engine-agnostic descriptor of a mounted 3D object.
- * Concrete engines attach an opaque `handle` (e.g. THREE.Object3D).
  */
 export type LifeMap3DRenderableObject = {
   id: string;
-  kind: "building-extrusion";
+  kind: LifeMap3DRenderableKind;
   selectable: boolean;
   selected: boolean;
-  heightMeters: number;
+  heightMeters?: number;
   handle?: unknown;
 };
 
 export type LifeMap3DLayerInput = {
-  /** Building footprints already resolved by the host (e.g. from TerritoryDataResolver). */
+  /** Building footprints already resolved by the host. */
   buildings: readonly LifeMap3DBuildingFeature[];
-  /** Current Life Map scene (territory frame + product objects — 3D layer may ignore products). */
+  /** Optional water polygons for 3D depth cue. */
+  water?: readonly LifeMap3DEnvironmentFeature[];
+  /** Optional green polygons for pads + sparse vegetation. */
+  green?: readonly LifeMap3DEnvironmentFeature[];
+  /** Future LifeMapObject entry — markers only in Phase 3. */
+  spatialObjects?: readonly LifeMap3DSpatialObject[];
+  /** Current Life Map scene (territory frame + product objects). */
   scene: LifeMapScene;
   /** Camera / frame used for geo→local projection. */
   camera: LifeMapRendererCamera;
@@ -61,6 +78,16 @@ export type LifeMap3DLayerOptions = {
   quality?: "mobile" | "desktop";
   /** Override DPR clamp (quality still applies a max). */
   pixelRatio?: number;
+  /**
+   * Elevation source. Default: flat (never invent DEM).
+   */
+  elevationSource?: LifeMap3DElevationSource;
+  /** Soften terrain plane under volume. Default true. */
+  showTerrain?: boolean;
+  /** Environment pads + sparse vegetation. Default true. */
+  showEnvironment?: boolean;
+  /** Spatial object markers. Default true when input has objects. */
+  showSpatialObjects?: boolean;
 };
 
 export type LifeMap3DLayerInfo = {
@@ -70,11 +97,15 @@ export type LifeMap3DLayerInfo = {
     supportsBuildingExtrusion: boolean;
     supportsSelection: boolean;
     supportsRealtimeRender: boolean;
+    supportsTerrain: boolean;
+    supportsEnvironment: boolean;
+    supportsSpatialObjects: boolean;
+    supportsLod: boolean;
   };
 };
 
 /**
- * Hybrid 3D overlay — volume and interaction above a territorial map.
+ * Hybrid 3D overlay — volume, environment, and interaction above a territorial map.
  */
 export type LifeMap3DLayer = {
   readonly info: LifeMap3DLayerInfo;
@@ -85,22 +116,10 @@ export type LifeMap3DLayer = {
   getRenderables(): readonly LifeMap3DRenderableObject[];
   setSelected(objectId: string | null): void;
   getSelected(): string | null;
-  /** Soft hover highlight (desktop). Optional on engines without hover. */
   setHovered?(objectId: string | null): void;
   getHovered?(): string | null;
-  /**
-   * 0..1 volume presence for 2D→3D approach (zoom / pitch driven by host).
-   */
   setVolumePresence?(amount: number): void;
-  /**
-   * Pick by normalized device coordinates in the overlay
-   * (x,y in [-1, 1], origin center, y up) — host maps pointer events.
-   */
   pickAt(ndcX: number, ndcY: number): LifeMap3DRenderableObject | null;
-  /**
-   * Sync overlay camera with a live MapLibre view (hybrid mode).
-   * Optional — engines without MapLibre bridge may omit.
-   */
   syncMapLibreView?(view: LifeMap3DMapLibreView): void;
   dispose(): void;
 };

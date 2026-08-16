@@ -1,10 +1,12 @@
 /**
  * @life-community-os/life-map-renderer-3d-layer
  *
- * Hybrid 3D overlay: territorial map (MapLibre) stays 2D source of truth;
- * this package adds building extrusion + selection via Three.js.
+ * Hybrid 3D world: MapLibre stays territorial SoT;
+ * this package adds terrain foundation, building volume, environment,
+ * atmosphere, LOD, and spatial-object markers via Three.js.
  *
  * No tenants, Housing, UI, GIS APIs, or MapLibre replacement.
+ * No invented DEM heights.
  */
 
 export type {
@@ -18,7 +20,57 @@ export {
 } from "./buildings";
 
 export type {
+  LifeMap3DBuildingHeightSource,
+  LifeMap3DBuildingHeightResult,
+} from "./building-height";
+export {
+  LIFE_MAP_3D_VISUAL_FALLBACK_HEIGHT_METERS,
+  buildingHeightFromProperties,
+  resolveBuildingHeight,
+} from "./building-height";
+
+export type {
+  LifeMap3DEnvironmentKind,
+  LifeMap3DEnvironmentFeature,
+} from "./environment";
+export { LIFE_MAP_3D_VEGETATION } from "./environment";
+
+export {
+  waterFeaturesFromGeoJson,
+  greenFeaturesFromGeoJson,
+} from "./geojson-environment";
+
+export type {
+  LifeMap3DLodLevel,
+  LifeMap3DLodPolicy,
+} from "./lod";
+export {
+  LIFE_MAP_3D_DEFAULT_LOD_POLICY,
+  LIFE_MAP_3D_MOBILE_LOD_POLICY,
+  resolveLifeMap3DLod,
+  horizontalDistanceMeters,
+} from "./lod";
+
+export type {
+  LifeMap3DElevationSourceKind,
+  LifeMap3DElevationSource,
+  LifeMap3DTerrainBoundsMeters,
+} from "./terrain";
+export {
+  createFlatElevationSource,
+  createPreparedDemElevationSource,
+  terrainBoundsFromCamera,
+} from "./terrain";
+
+export type {
+  LifeMap3DSpatialInteractionType,
+  LifeMap3DSpatialObject,
+} from "./spatial-object";
+export { spatialObjectsFromSceneObjects } from "./spatial-object";
+
+export type {
   LifeMap3DLayerHost,
+  LifeMap3DRenderableKind,
   LifeMap3DRenderableObject,
   LifeMap3DLayerInput,
   LifeMap3DLayerOptions,

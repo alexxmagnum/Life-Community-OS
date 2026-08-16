@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * React MapLibre Life Map canvas — premium territory + optional Three volume.
+ * React MapLibre Life Map canvas — premium territory + optional Three world.
  */
 
 import type { LifeMapScene } from "@life-community-os/life-map-renderer";
 import {
   buildingFeaturesFromGeoJson,
   createThreeLifeMap3DLayer,
+  greenFeaturesFromGeoJson,
+  waterFeaturesFromGeoJson,
+  type LifeMap3DEnvironmentFeature,
   type LifeMap3DLayer,
 } from "@life-community-os/life-map-renderer-3d-layer";
 import type { TerritoryDataResolver } from "@life-community-os/types";
@@ -20,6 +23,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 
 import { createMapLibreLifeMapRenderer } from "./create-maplibre-renderer";
 import {
+  computeSpatialPitchDegrees,
   computeVolumePresence,
   detectLifeMapRenderQuality,
   LIFE_MAP_PREMIUM_CAMERA,
@@ -44,8 +48,8 @@ export type MapLibreLifeMapCanvasProps = {
   /** Injectable `dataRef` → payload resolver (tenant-owned). */
   territoryDataResolver?: TerritoryDataResolver;
   /**
-   * Hybrid preview: transparent Three overlay with building extrusions.
-   * MapLibre remains the territorial source; Three only adds volume + selection.
+   * Hybrid preview: transparent Three world (volume + environment).
+   * MapLibre remains the territorial source; Three owns experience.
    */
   hybrid3DOverlay?: boolean;
 };
@@ -104,7 +108,7 @@ export function MapLibreLifeMapCanvas({
         ? MAPLIBRE_TECHNICAL_PREVIEW_STYLE
         : LIFE_MAP_PREMIUM_STYLE,
       softenBuildingFills: hybrid3DOverlay,
-      // Hybrid owns building pick in Three; avoid double selection UX.
+      softenEnvironmentFills: hybrid3DOverlay,
       enablePremiumInteraction: !hybrid3DOverlay,
       ...(territoryDataResolver ? { territoryDataResolver } : {}),
     });
@@ -114,6 +118,7 @@ export function MapLibreLifeMapCanvas({
 
     let cancelled = false;
     let detachMapListeners: (() => void) | null = null;
+    let pitchEaseTimer: ReturnType<typeof setTimeout> | null = null;
 
     const setupHybrid = async () => {
       if (!hybrid3DOverlay || cancelled) return;
@@ -130,29 +135,32 @@ export function MapLibreLifeMapCanvas({
       await waitForMap();
       if (cancelled) return;
 
-      // Cinematic pitch into volume — mobile-friendly duration.
-      const targetPitch = LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
-      if (map.getPitch() < targetPitch - 2) {
+      // Cinematic open into 3D world — then pitch tracks zoom fluidly.
+      const openPitch = LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
+      if (map.getPitch() < openPitch - 2) {
         map.easeTo({
-          pitch: targetPitch,
+          pitch: openPitch,
           duration: LIFE_MAP_PREMIUM_CAMERA.hybridPitchDurationMs,
           essential: true,
         });
       }
 
       const currentScene = sceneRef.current;
-      const buildingLayers = (currentScene.baseLayers ?? []).filter(
-        (layer) => layer.type === "buildings",
+      const wantedTypes = new Set(["buildings", "water", "green"]);
+      const envLayers = (currentScene.baseLayers ?? []).filter((layer) =>
+        wantedTypes.has(layer.type),
       );
 
       let buildings = buildingFeaturesFromGeoJson({
         type: "FeatureCollection",
         features: [],
       });
+      let water: LifeMap3DEnvironmentFeature[] = [];
+      let green: LifeMap3DEnvironmentFeature[] = [];
 
-      if (buildingLayers.length > 0 && territoryDataResolver) {
+      if (envLayers.length > 0 && territoryDataResolver) {
         const resolved = await resolveLifeMapBaseLayers(
-          buildingLayers,
+          envLayers,
           territoryDataResolver,
           {
             tenantId: currentScene.tenantId,
@@ -161,20 +169,31 @@ export function MapLibreLifeMapCanvas({
         );
         if (cancelled) return;
         for (const item of resolved) {
-          if (item.payload && isTerritoryGeoJsonPayload(item.payload)) {
+          if (!item.payload || !isTerritoryGeoJsonPayload(item.payload)) {
+            continue;
+          }
+          const geojson = item.payload.geojson;
+          if (item.layer.type === "buildings") {
             buildings = [
               ...buildings,
-              ...buildingFeaturesFromGeoJson(item.payload.geojson),
+              ...buildingFeaturesFromGeoJson(geojson),
             ];
+          } else if (item.layer.type === "water") {
+            water = [...water, ...waterFeaturesFromGeoJson(geojson)];
+          } else if (item.layer.type === "green") {
+            green = [...green, ...greenFeaturesFromGeoJson(geojson)];
           }
         }
       }
 
       const layer3d = createThreeLifeMap3DLayer({
-        id: "life-map.3d-layer.hybrid-preview",
+        id: "life-map.3d-layer.hybrid-world",
         selectable: true,
         quality,
         pixelRatio: lifeMapPixelRatioForQuality(quality),
+        showTerrain: true,
+        showEnvironment: true,
+        showSpatialObjects: true,
         buildingMaterial: {
           color: LIFE_MAP_PREMIUM_PALETTE.buildings,
           selectedColor: LIFE_MAP_PREMIUM_PALETTE.buildingsSelected,
@@ -186,6 +205,8 @@ export function MapLibreLifeMapCanvas({
       layer3d.mount({ element: overlayHost });
       layer3d.setInput({
         buildings,
+        water,
+        green,
         scene: currentScene,
         camera: currentScene.camera,
       });
@@ -194,12 +215,38 @@ export function MapLibreLifeMapCanvas({
         computeVolumePresence(map.getZoom(), map.getPitch()),
       );
 
+      const syncSpatialCamera = () => {
+        const view = readMapLibreView(map);
+        layer3d.syncMapLibreView?.(view);
+        layer3d.setVolumePresence?.(
+          computeVolumePresence(view.zoom, view.pitchDegrees),
+        );
+
+        // Fluid 2D→3D: pitch eases toward zoom-dependent spatial target.
+        const targetPitch = computeSpatialPitchDegrees(view.zoom);
+        if (Math.abs(view.pitchDegrees - targetPitch) > 2.5) {
+          if (pitchEaseTimer) clearTimeout(pitchEaseTimer);
+          pitchEaseTimer = setTimeout(() => {
+            if (cancelled) return;
+            map.easeTo({
+              pitch: targetPitch,
+              duration: quality === "mobile" ? 420 : 650,
+              essential: true,
+            });
+          }, quality === "mobile" ? 120 : 80);
+        }
+      };
+
       const onMove = () => {
         const view = readMapLibreView(map);
         layer3d.syncMapLibreView?.(view);
         layer3d.setVolumePresence?.(
           computeVolumePresence(view.zoom, view.pitchDegrees),
         );
+      };
+
+      const onZoomEnd = () => {
+        syncSpatialCamera();
       };
 
       const onMouseMove = (event: MapMouseEvent) => {
@@ -225,21 +272,22 @@ export function MapLibreLifeMapCanvas({
         const hit = layer3d.pickAt(ndcX, ndcY);
         const nextId = hit?.id ?? null;
         const current = layer3d.getSelected();
-        layer3d.setSelected(
-          nextId && nextId === current ? null : nextId,
-        );
+        layer3d.setSelected(nextId && nextId === current ? null : nextId);
       };
 
       map.on("move", onMove);
+      map.on("zoomend", onZoomEnd);
       map.on("mousemove", onMouseMove);
       map.on("mouseout", onMouseLeave);
       map.on("click", onClick);
       detachMapListeners = () => {
         map.off("move", onMove);
+        map.off("zoomend", onZoomEnd);
         map.off("mousemove", onMouseMove);
         map.off("mouseout", onMouseLeave);
         map.off("click", onClick);
         map.getCanvas().style.cursor = "";
+        if (pitchEaseTimer) clearTimeout(pitchEaseTimer);
       };
     };
 
@@ -271,7 +319,7 @@ export function MapLibreLifeMapCanvas({
       }}
       data-life-map-engine="maplibre"
       data-life-map-preview={
-        hybrid3DOverlay ? "premium-hybrid-3d" : "premium-territory"
+        hybrid3DOverlay ? "premium-hybrid-3d-world" : "premium-territory"
       }
       data-life-map-hybrid-3d={hybrid3DOverlay ? "1" : "0"}
     >

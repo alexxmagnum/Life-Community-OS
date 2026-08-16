@@ -79,6 +79,10 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
    */
   softenBuildingFills?: boolean;
   /**
+   * Soften 2D water/green fills when 3D environment pads are active.
+   */
+  softenEnvironmentFills?: boolean;
+  /**
    * Enable premium hover/tap on building footprints (2D path).
    * Default true. Hybrid hosts may disable and own picking in Three.
    */
@@ -114,6 +118,7 @@ export function createMapLibreLifeMapRenderer(
   let interaction: LifeMapInteractionHandle | null = null;
   let hasOpenedCamera = false;
   const softenBuildingFills = options.softenBuildingFills === true;
+  const softenEnvironmentFills = options.softenEnvironmentFills === true;
 
   const resolver =
     options.territoryDataResolver ?? createNullTerritoryDataResolver();
@@ -155,6 +160,7 @@ export function createMapLibreLifeMapRenderer(
       baseBindings = syncMapLibreBaseLayers(map, currentScene.baseLayers, {
         resolvedLayers: lastResolved,
         softenBuildingFills,
+        softenEnvironmentFills,
       });
       objectBindings = syncMapLibreObjectFrontier([...objects.values()]);
 

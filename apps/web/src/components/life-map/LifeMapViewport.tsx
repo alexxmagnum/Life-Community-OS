@@ -120,7 +120,7 @@ export function LifeMapViewport({
         <p className="mt-0.5">
           {hasRoads && hasBuildings
             ? hybrid3D
-              ? "Acerca el mapa para sentir el volumen de los edificios."
+              ? "Acerca el mapa: el volumen y el ambiente 3D cobran presencia."
               : "Territorio real: caminos, agua, verde y edificios."
             : hasRoads
               ? "Capa territorial real: caminos OSM."
