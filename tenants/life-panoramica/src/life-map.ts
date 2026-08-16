@@ -18,12 +18,8 @@ import { CAPABILITIES } from "./capabilities";
 import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { lifePanoramicaFeatures } from "./features";
 import {
-  getLifePanoramicaTerritoryData,
-  getLifePanoramicaRoadsV1Bounds,
+  getLifePanoramicaTerritoryBounds,
   lifePanoramicaTerritoryData,
-  listLifePanoramicaTerritoryDataSources,
-  listLifePanoramicaTerritoryLayerImports,
-  listLifePanoramicaTerritoryLayerSlots,
   projectLifePanoramicaTerritoryBaseLayers,
   type LifePanoramicaTerritoryDataPackage,
 } from "./life-map-territory-data";
@@ -38,10 +34,10 @@ if (projectedBaseLayers.rejected.length > 0) {
   );
 }
 
-const roadsBounds = getLifePanoramicaRoadsV1Bounds();
-const roadsCenter = {
-  lat: (roadsBounds.south + roadsBounds.north) / 2,
-  lng: (roadsBounds.west + roadsBounds.east) / 2,
+const territoryBounds = getLifePanoramicaTerritoryBounds();
+const territoryCenter = {
+  lat: (territoryBounds.south + territoryBounds.north) / 2,
+  lng: (territoryBounds.west + territoryBounds.east) / 2,
 };
 
 /**
@@ -136,17 +132,17 @@ export const lifePanoramicaLifeMapLayers: readonly LifeMapLayer[] = [
 
 /**
  * Resolved physical base layers on the territory frame.
- * Roads v1 from OSM extract via territory data package.
+ * Roads v1 (OSM) + buildings v1 (Cadastre) via territory data package.
  */
 export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] =
   projectedBaseLayers.layers;
 
 /**
- * Prepared camera — WGS84 center/bounds from the real OSM roads extract.
+ * Prepared camera — WGS84 center/bounds from real roads + buildings extracts.
  */
 const lifePanoramicaPreparedCamera = {
-  target: roadsCenter,
-  distance: 1800,
+  target: territoryCenter,
+  distance: 1400,
   headingDegrees: 0,
   pitchDegrees: 0,
 };
@@ -160,14 +156,14 @@ export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {
 
 /**
  * Platform territory frame for Life Panoramica.
- * `baseLayers` include OSM roads v1; other physical layers stay empty.
+ * `baseLayers` include OSM roads v1 + Cadastre buildings v1.
  */
 export const lifePanoramicaLifeMapTerritory: LifeMapTerritory = {
   tenantId: DEMO_TENANT_ID,
   territoryId: DEMO_TERRITORY_ID,
   defaultCamera: lifePanoramicaPreparedCamera,
   crs: "WGS84",
-  bounds: roadsBounds,
+  bounds: territoryBounds,
   layers: [...lifePanoramicaLifeMapLayers],
   baseLayers: [...lifePanoramicaLifeMapBaseLayers],
   moduleEnabled: lifePanoramicaFeatures.lifeMap,
@@ -194,13 +190,3 @@ export function getLifePanoramicaLifeMapConfig(): LifePanoramicaLifeMapConfig {
 export function listLifePanoramicaLifeMapBaseLayers(): readonly LifeMapBaseLayer[] {
   return lifePanoramicaLifeMap.territory.baseLayers ?? [];
 }
-
-export {
-  getLifePanoramicaTerritoryData,
-  getLifePanoramicaRoadsV1Bounds,
-  listLifePanoramicaTerritoryDataSources,
-  listLifePanoramicaTerritoryLayerImports,
-  listLifePanoramicaTerritoryLayerSlots,
-  projectLifePanoramicaTerritoryBaseLayers,
-  type LifePanoramicaTerritoryDataPackage,
-};

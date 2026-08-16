@@ -70,6 +70,9 @@ export function LifeMapViewport({
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
   const hasRoads = (territory.baseLayers ?? []).some((l) => l.type === "roads");
+  const hasBuildings = (territory.baseLayers ?? []).some(
+    (l) => l.type === "buildings",
+  );
 
   const scene = useMemo(() => {
     const frame: LifeMapTerritory = previewUnlocked
@@ -106,12 +109,16 @@ export function LifeMapViewport({
       <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.88)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
         <p className="font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
           {engine === "maplibre" ? "MapLibre" : "Three"}
-          {hasRoads ? " · roads v1 (OSM)" : " · preview técnico"}
+          {hasRoads || hasBuildings
+            ? " · territorio real"
+            : " · preview técnico"}
         </p>
         <p className="mt-0.5">
-          {hasRoads
-            ? "Capa territorial real: carreteras OSM. Sin edificios / golf / POIs."
-            : "Preview técnico del renderer. Sin territorio real todavía."}
+          {hasRoads && hasBuildings
+            ? "Capas reales: carreteras OSM + edificios Catastro."
+            : hasRoads
+              ? "Capa territorial real: carreteras OSM."
+              : "Preview técnico del renderer. Sin territorio real todavía."}
         </p>
       </div>
     </section>

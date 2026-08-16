@@ -17,8 +17,12 @@ import {
 } from "@life-community-os/types";
 
 import { DEMO_TERRITORY_ID } from "./demo-ids";
-import { LIFE_PANORAMICA_ROADS_DATA_REF } from "./life-map-territory-resolver";
+import {
+  LIFE_PANORAMICA_BUILDINGS_DATA_REF,
+  LIFE_PANORAMICA_ROADS_DATA_REF,
+} from "./life-map-territory-resolver";
 import roadsV1Manifest from "../territory/data/roads/v1/manifest.json";
+import buildingsV1Manifest from "../territory/data/buildings/v1/manifest.json";
 
 /** Physical layer kinds this tenant expects to receive. */
 export type LifePanoramicaTerritoryBaseKind =
@@ -61,7 +65,7 @@ export type LifePanoramicaTerritoryDataPackage = {
 
 /**
  * Planned layer slots for Life Panoramica.
- * Only `roads` has a real dataRef in v1.
+ * `roads` (OSM) and `buildings` (Cadastre) have real dataRefs in v1.
  */
 export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritoryLayerSlot[] =
   [
@@ -86,7 +90,7 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
       importId: "import-buildings",
       baseLayerType: "buildings",
       enabled: true,
-      dataRef: null,
+      dataRef: LIFE_PANORAMICA_BUILDINGS_DATA_REF,
       label: "Edificios",
     },
     {
@@ -107,7 +111,7 @@ export const lifePanoramicaTerritoryLayerSlots: readonly LifePanoramicaTerritory
     },
   ];
 
-/** External datasets — OSM roads extract v1 only. */
+/** External datasets — OSM roads + Cadastre buildings (v1). */
 export const lifePanoramicaTerritoryDataSources: readonly TerritoryDataSource[] =
   [
     {
@@ -119,11 +123,20 @@ export const lifePanoramicaTerritoryDataSources: readonly TerritoryDataSource[] 
       version: "v1",
       label: "OpenStreetMap highways (Urbanització Panoràmica AOI)",
     },
+    {
+      id: "panoramica-catastro-buildings-v1",
+      provider: "catastro",
+      format: "geojson",
+      sourceRef: LIFE_PANORAMICA_BUILDINGS_DATA_REF,
+      crs: "WGS84",
+      version: "v1",
+      label: "Cadastre buildings (Urbanització Panoràmica AOI)",
+    },
   ];
 
 /**
  * Import instructions (external → LifeMapBaseLayer).
- * Roads only — no buildings / water / green / golf yet.
+ * Roads + buildings — water / green / golf still empty.
  */
 export const lifePanoramicaTerritoryLayerImports: readonly TerritoryLayerImport[] =
   [
@@ -139,6 +152,19 @@ export const lifePanoramicaTerritoryLayerImports: readonly TerritoryLayerImport[
       visible: true,
       zIndex: 20,
       label: "Calles internas",
+    },
+    {
+      id: "import-buildings",
+      territoryId: DEMO_TERRITORY_ID,
+      sourceId: "panoramica-catastro-buildings-v1",
+      externalLayer: "buildings.json",
+      layerKind: "buildings",
+      targetType: "buildings",
+      dataRef: LIFE_PANORAMICA_BUILDINGS_DATA_REF,
+      sourceType: "vector",
+      visible: true,
+      zIndex: 40,
+      label: "Edificios",
     },
   ];
 
@@ -171,7 +197,7 @@ export function listLifePanoramicaTerritoryLayerImports(): readonly TerritoryLay
 
 /**
  * Project configured imports into LifeMapBaseLayer[].
- * Roads v1 only until more imports are added.
+ * Roads + buildings v1.
  */
 export function projectLifePanoramicaTerritoryBaseLayers(): {
   layers: LifeMapBaseLayer[];
@@ -196,16 +222,12 @@ export function projectLifePanoramicaTerritoryBaseLayers(): {
   });
 }
 
-/** Bounding box from the real OSM roads extract (WGS84). */
-export function getLifePanoramicaRoadsV1Bounds(): {
-  west: number;
-  south: number;
-  east: number;
-  north: number;
-} {
-  const bbox = roadsV1Manifest.bbox;
+function readManifestBbox(
+  bbox: unknown,
+  label: string,
+): { west: number; south: number; east: number; north: number } {
   if (!Array.isArray(bbox) || bbox.length !== 4) {
-    throw new Error("[life-panoramica] roads v1 manifest bbox is invalid");
+    throw new Error(`[life-panoramica] ${label} manifest bbox is invalid`);
   }
   const west = bbox[0];
   const south = bbox[1];
@@ -217,7 +239,48 @@ export function getLifePanoramicaRoadsV1Bounds(): {
     typeof east !== "number" ||
     typeof north !== "number"
   ) {
-    throw new Error("[life-panoramica] roads v1 manifest bbox must be numbers");
+    throw new Error(`[life-panoramica] ${label} manifest bbox must be numbers`);
   }
   return { west, south, east, north };
+}
+
+/** Bounding box from the real OSM roads extract (WGS84). */
+export function getLifePanoramicaRoadsV1Bounds(): {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+} {
+  return readManifestBbox(roadsV1Manifest.bbox, "roads v1");
+}
+
+/** Bounding box from the real Cadastre buildings extract (WGS84). */
+export function getLifePanoramicaBuildingsV1Bounds(): {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+} {
+  return readManifestBbox(buildingsV1Manifest.bbox, "buildings v1");
+}
+
+/**
+ * Framing for /map over Panoramica — buildings AOI (Cadastre) with light pad.
+ * Roads may extend outside; camera stays focused on the urbanización.
+ */
+export function getLifePanoramicaTerritoryBounds(): {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+} {
+  const buildings = getLifePanoramicaBuildingsV1Bounds();
+  const padLng = Math.max((buildings.east - buildings.west) * 0.2, 0.002);
+  const padLat = Math.max((buildings.north - buildings.south) * 0.2, 0.002);
+  return {
+    west: buildings.west - padLng,
+    south: buildings.south - padLat,
+    east: buildings.east + padLng,
+    north: buildings.north + padLat,
+  };
 }

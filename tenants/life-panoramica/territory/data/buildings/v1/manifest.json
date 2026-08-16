@@ -1,0 +1,29 @@
+{
+  "dataRef": "tenant://life-panoramica/base/buildings/v1",
+  "kind": "buildings",
+  "format": "geojson",
+  "crs": "WGS84",
+  "version": "v1",
+  "featureCount": 82,
+  "bbox": [
+    0.364369,
+    40.53709,
+    0.390769,
+    40.559331
+  ],
+  "extractedAt": "2026-08-16T15:06:18.701Z",
+  "source": {
+    "provider": "catastro",
+    "api": "https://ovc.catastro.meh.es/INSPIRE/wfsBU.aspx",
+    "typeName": "bu:Building",
+    "bbox": [
+      0.369504,
+      40.5387617,
+      0.389504,
+      40.5587617
+    ],
+    "bboxNote": "Same Urbanitzacio Panoramica AOI as roads v1 (Nominatim neighbourhood); not manually invented",
+    "license": "Spanish Cadastre open data / INSPIRE",
+    "attribution": "(c) Direccion General del Catastro"
+  }
+}
