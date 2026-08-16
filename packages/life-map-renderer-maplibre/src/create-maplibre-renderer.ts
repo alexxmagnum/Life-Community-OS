@@ -36,25 +36,14 @@ import {
 } from "./base-layer-binder";
 import { applyLifeMapCameraToMapLibre } from "./camera-adapter";
 import {
+  attachLifeMapPremiumInteraction,
+  type LifeMapInteractionHandle,
+} from "./map-interaction";
+import {
   type MapLibreObjectBinding,
   syncMapLibreObjectFrontier,
 } from "./object-frontier";
-
-/** Minimal style — no external basemap tiles, no OSM connection. */
-const EMPTY_MAP_STYLE = {
-  version: 8 as const,
-  name: "life-map-empty",
-  sources: {},
-  layers: [
-    {
-      id: "lm-background",
-      type: "background" as const,
-      paint: {
-        "background-color": "#e7e5e4",
-      },
-    },
-  ],
-};
+import { LIFE_MAP_PREMIUM_STYLE } from "./premium-style";
 
 function resolveHostElement(host: LifeMapRendererHost): HTMLElement {
   if (host.element instanceof HTMLElement) {
@@ -77,7 +66,7 @@ function resolveHostElement(host: LifeMapRendererHost): HTMLElement {
 export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions & {
   /**
    * Optional MapLibre style override.
-   * Default is an empty local style (no remote tiles).
+   * Default is the Life Map premium local style (no demotiles).
    */
   style?: StyleSpecification | string;
   /**
@@ -85,6 +74,23 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
    * Defaults to null resolver (empty layers until wired).
    */
   territoryDataResolver?: TerritoryDataResolver;
+  /**
+   * Soften 2D building fills when a Three volume overlay is active.
+   */
+  softenBuildingFills?: boolean;
+  /**
+   * Enable premium hover/tap on building footprints (2D path).
+   * Default true. Hybrid hosts may disable and own picking in Three.
+   */
+  enablePremiumInteraction?: boolean;
+};
+
+/**
+ * Create a MapLibre Life Map renderer implementing {@link LifeMapRenderer}.
+ */
+export type MapLibreLifeMapRendererHandle = LifeMapRenderer & {
+  /** Live MapLibre map instance when mounted — for hybrid overlays. */
+  getMap(): MapLibreMap | null;
 };
 
 /**
@@ -92,7 +98,7 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
  */
 export function createMapLibreLifeMapRenderer(
   options: CreateMapLibreLifeMapRendererOptions = {},
-): LifeMapRenderer {
+): MapLibreLifeMapRendererHandle {
   let hostEl: HTMLElement | null = null;
   let map: MapLibreMap | null = null;
   let resizeObserver: ResizeObserver | null = null;
@@ -105,6 +111,9 @@ export function createMapLibreLifeMapRenderer(
   let objectBindings: MapLibreObjectBinding[] = [];
   let lastResolved: ResolvedLifeMapBaseLayer[] = [];
   let syncGeneration = 0;
+  let interaction: LifeMapInteractionHandle | null = null;
+  let hasOpenedCamera = false;
+  const softenBuildingFills = options.softenBuildingFills === true;
 
   const resolver =
     options.territoryDataResolver ?? createNullTerritoryDataResolver();
@@ -145,10 +154,22 @@ export function createMapLibreLifeMapRenderer(
 
       baseBindings = syncMapLibreBaseLayers(map, currentScene.baseLayers, {
         resolvedLayers: lastResolved,
+        softenBuildingFills,
       });
       objectBindings = syncMapLibreObjectFrontier([...objects.values()]);
+
+      interaction?.detach();
+      interaction = null;
+      if (options.enablePremiumInteraction !== false) {
+        interaction = attachLifeMapPremiumInteraction(map, baseBindings);
+      }
+
       if (camera) {
-        applyLifeMapCameraToMapLibre(map, camera);
+        applyLifeMapCameraToMapLibre(map, camera, {
+          immediate: !hasOpenedCamera ? false : true,
+          durationMs: hasOpenedCamera ? 0 : undefined,
+        });
+        hasOpenedCamera = true;
       }
     };
 
@@ -165,6 +186,9 @@ export function createMapLibreLifeMapRenderer(
 
   function tearDownMap(): void {
     syncGeneration += 1;
+    interaction?.detach();
+    interaction = null;
+    hasOpenedCamera = false;
     resizeObserver?.disconnect();
     resizeObserver = null;
     if (map) {
@@ -188,11 +212,12 @@ export function createMapLibreLifeMapRenderer(
 
       map = new MapLibreMap({
         container: hostEl,
-        style: options.style ?? EMPTY_MAP_STYLE,
+        style: options.style ?? LIFE_MAP_PREMIUM_STYLE,
         center: [0, 0],
         zoom: 2,
         attributionControl: false,
         interactive: true,
+        fadeDuration: 280,
       });
 
       resizeObserver = new ResizeObserver(() => {
@@ -277,6 +302,10 @@ export function createMapLibreLifeMapRenderer(
       scene = null;
       camera = null;
       objects.clear();
+    },
+
+    getMap() {
+      return map;
     },
   };
 }

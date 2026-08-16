@@ -22,3 +22,16 @@ export function isLifeMapDevPreviewEnabled(): boolean {
     process.env.NEXT_PUBLIC_LIFE_MAP_DEV === "1"
   );
 }
+
+/**
+ * Hybrid MapLibre + Three building extrusion overlay (dev preview only).
+ * Default on when Life Map dev preview is enabled and engine is MapLibre.
+ * Opt out with `NEXT_PUBLIC_LIFE_MAP_3D=0`.
+ */
+export function isLifeMapHybrid3DPreviewEnabled(): boolean {
+  if (!isLifeMapDevPreviewEnabled()) return false;
+  if (getLifeMapDevEngine() !== "maplibre") return false;
+  const value = process.env.NEXT_PUBLIC_LIFE_MAP_3D?.trim().toLowerCase();
+  if (value === "0" || value === "false" || value === "off") return false;
+  return true;
+}

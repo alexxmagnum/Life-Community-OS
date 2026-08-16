@@ -142,9 +142,9 @@ export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] =
  */
 const lifePanoramicaPreparedCamera = {
   target: territoryCenter,
-  distance: 1400,
-  headingDegrees: 0,
-  pitchDegrees: 0,
+  distance: 1600,
+  headingDegrees: -16,
+  pitchDegrees: 28,
 };
 
 export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {

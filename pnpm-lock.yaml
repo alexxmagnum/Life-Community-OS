@@ -162,11 +162,36 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/life-map-renderer-3d-layer:
+    dependencies:
+      '@life-community-os/life-map-renderer':
+        specifier: workspace:*
+        version: link:../life-map-renderer
+      '@life-community-os/types':
+        specifier: workspace:*
+        version: link:../types
+      three:
+        specifier: ^0.175.0
+        version: 0.175.0
+    devDependencies:
+      '@life-community-os/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/three':
+        specifier: ^0.175.0
+        version: 0.175.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   packages/life-map-renderer-maplibre:
     dependencies:
       '@life-community-os/life-map-renderer':
         specifier: workspace:*
         version: link:../life-map-renderer
+      '@life-community-os/life-map-renderer-3d-layer':
+        specifier: workspace:*
+        version: link:../life-map-renderer-3d-layer
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../types

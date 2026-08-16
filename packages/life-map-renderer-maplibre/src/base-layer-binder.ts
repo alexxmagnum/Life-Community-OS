@@ -3,6 +3,7 @@
  *
  * Applies resolved GeoJSON payloads when provided.
  * Does NOT fetch or resolve `dataRef` itself — resolver is injected upstream.
+ * Paint comes from the Life Map premium style system.
  */
 
 import type {
@@ -18,6 +19,11 @@ import type {
   LineLayerSpecification,
   Map as MapLibreMap,
 } from "maplibre-gl";
+
+import {
+  premiumPaintForBaseType,
+  type LifeMapPremiumBaseLayerType,
+} from "./premium-style";
 
 /** Base layer kinds this MapLibre foundation binds (no terrain yet). */
 export const MAPLIBRE_BOUND_BASE_LAYER_TYPES = [
@@ -65,6 +71,10 @@ export type SyncMapLibreBaseLayersOptions = {
   resolvedByDataRef?: ReadonlyMap<string, TerritoryDataPayload>;
   /** Preferred: resolved base layers from TerritoryDataResolver. */
   resolvedLayers?: readonly ResolvedLifeMapBaseLayer[];
+  /**
+   * When true (hybrid 3D), keep building footprints subtle so volume reads first.
+   */
+  softenBuildingFills?: boolean;
 };
 
 export function mapLibreSourceIdForBaseLayer(layerId: string): string {
@@ -131,6 +141,30 @@ function geoJsonDataForPayload(
   return EMPTY_FEATURE_COLLECTION;
 }
 
+function applyPremiumPaint(
+  map: MapLibreMap,
+  binding: MapLibreBaseLayerBinding,
+  softenBuildingFills: boolean,
+): void {
+  const paint = premiumPaintForBaseType(
+    binding.type as LifeMapPremiumBaseLayerType,
+  );
+  for (const [key, value] of Object.entries(paint)) {
+    try {
+      map.setPaintProperty(binding.layerId, key, value);
+    } catch {
+      // Layer may not support the property yet — ignore.
+    }
+  }
+  if (binding.type === "buildings" && softenBuildingFills) {
+    try {
+      map.setPaintProperty(binding.layerId, "fill-opacity", 0.22);
+    } catch {
+      // ignore
+    }
+  }
+}
+
 /**
  * Sync planned base layers onto a MapLibre map.
  * Uses resolved GeoJSON when supplied; otherwise empty FeatureCollection.
@@ -142,6 +176,7 @@ export function syncMapLibreBaseLayers(
   options?: SyncMapLibreBaseLayersOptions,
 ): MapLibreBaseLayerBinding[] {
   const payloadByRef = buildPayloadLookup(options);
+  const softenBuildingFills = Boolean(options?.softenBuildingFills);
 
   const planned = (baseLayers ?? [])
     .map((layer) => {
@@ -182,6 +217,8 @@ export function syncMapLibreBaseLayers(
       map.addSource(binding.sourceId, {
         type: "geojson",
         data: data as typeof EMPTY_FEATURE_COLLECTION,
+        // Stable ids for feature-state hover / selection.
+        generateId: true,
       });
     } else {
       const source = map.getSource(binding.sourceId) as GeoJSONSource;
@@ -195,26 +232,21 @@ export function syncMapLibreBaseLayers(
         lifeMapDataRef: binding.dataRef,
         lifeMapBaseLayerType: binding.type,
       };
+      const paint = premiumPaintForBaseType(
+        binding.type as LifeMapPremiumBaseLayerType,
+      );
 
       if (isLineBaseType(binding.type)) {
         const lineLayer: LineLayerSpecification = {
           id: binding.layerId,
           type: "line",
           source: binding.sourceId,
-          layout: { visibility },
-          paint:
-            binding.type === "roads"
-              ? {
-                  "line-color": "#6b7280",
-                  "line-width": 1.5,
-                  "line-opacity": 0.85,
-                }
-              : {
-                  "line-color": "#292524",
-                  "line-width": 2,
-                  "line-opacity": 0.9,
-                  "line-dasharray": [2, 1],
-                },
+          layout: {
+            visibility,
+            "line-cap": "round",
+            "line-join": "round",
+          },
+          paint: paint as LineLayerSpecification["paint"],
           metadata,
         };
         map.addLayer(lineLayer);
@@ -224,33 +256,19 @@ export function syncMapLibreBaseLayers(
           type: "fill",
           source: binding.sourceId,
           layout: { visibility },
-          paint:
-            binding.type === "water"
-              ? {
-                  "fill-color": "#7dd3fc",
-                  "fill-opacity": 0.55,
-                }
-              : binding.type === "buildings"
-                ? {
-                    "fill-color": "#d6d3d1",
-                    "fill-opacity": 0.75,
-                    "fill-outline-color": "#a8a29e",
-                  }
-                : {
-                    "fill-color": "#86efac",
-                    "fill-opacity": 0.45,
-                  },
+          paint: paint as FillLayerSpecification["paint"],
           metadata,
         };
         map.addLayer(fillLayer);
       }
-    } else {
-      map.setLayoutProperty(
-        binding.layerId,
-        "visibility",
-        binding.visible ? "visible" : "none",
-      );
     }
+
+    map.setLayoutProperty(
+      binding.layerId,
+      "visibility",
+      binding.visible ? "visible" : "none",
+    );
+    applyPremiumPaint(map, binding, softenBuildingFills);
   }
 
   return planned;
@@ -262,10 +280,11 @@ export function syncMapLibreBaseLayers(
 export function syncMapLibreResolvedBaseLayers(
   map: MapLibreMap,
   resolvedLayers: readonly ResolvedLifeMapBaseLayer[],
+  options?: Pick<SyncMapLibreBaseLayersOptions, "softenBuildingFills">,
 ): MapLibreBaseLayerBinding[] {
   return syncMapLibreBaseLayers(
     map,
     resolvedLayers.map((r) => r.layer),
-    { resolvedLayers },
+    { resolvedLayers, ...options },
   );
 }

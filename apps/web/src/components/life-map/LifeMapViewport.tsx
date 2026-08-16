@@ -7,6 +7,7 @@ import type { TerritoryDataResolver } from "@life-community-os/types";
 import type { LifeMapObject, LifeMapTerritory } from "@life-community-os/types";
 import {
   getLifeMapDevEngine,
+  isLifeMapHybrid3DPreviewEnabled,
   type LifeMapDevEngine,
 } from "@/lib/life-map-dev";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -21,9 +22,9 @@ const MapLibreLifeMapCanvas = dynamic(
     loading: () => (
       <div
         className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-tertiary)]"
-        style={{ background: "#e7e5e4" }}
+        style={{ background: "#e8e4d8" }}
       >
-        Preparando MapLibre preview…
+        Entrando en tu comunidad…
       </div>
     ),
   },
@@ -59,7 +60,7 @@ export type LifeMapViewportProps = {
 };
 
 /**
- * Spatial viewport — territory → scene → MapLibre (default) or Three preview.
+ * Spatial viewport — territory → scene → MapLibre premium (default) or Three.
  */
 export function LifeMapViewport({
   territory,
@@ -69,6 +70,10 @@ export function LifeMapViewport({
   territoryDataResolver,
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
+  const hybrid3D =
+    engine === "maplibre" &&
+    previewUnlocked &&
+    isLifeMapHybrid3DPreviewEnabled();
   const hasRoads = (territory.baseLayers ?? []).some((l) => l.type === "roads");
   const hasBuildings = (territory.baseLayers ?? []).some(
     (l) => l.type === "buildings",
@@ -88,13 +93,13 @@ export function LifeMapViewport({
     <section
       aria-label="Superficie espacial Life Map"
       className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
-      style={{ minHeight: "min(58vh, 480px)", height: "min(58vh, 480px)" }}
+      style={{ minHeight: "min(62vh, 520px)", height: "min(62vh, 520px)" }}
     >
       {engine === "maplibre" ? (
         <MapLibreLifeMapCanvas
           scene={scene}
-          technicalBasemap
           territoryDataResolver={territoryDataResolver}
+          hybrid3DOverlay={hybrid3D}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />
@@ -106,19 +111,20 @@ export function LifeMapViewport({
         />
       )}
 
-      <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.88)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
+      <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.82)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
         <p className="font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-          {engine === "maplibre" ? "MapLibre" : "Three"}
-          {hasRoads || hasBuildings
-            ? " · territorio real"
-            : " · preview técnico"}
+          Life Map
+          {hybrid3D ? " · volumen" : ""}
+          {hasRoads || hasBuildings ? " · tu comunidad" : " · preview"}
         </p>
         <p className="mt-0.5">
           {hasRoads && hasBuildings
-            ? "Capas reales: roads, buildings, water, green (OSM/Catastro)."
+            ? hybrid3D
+              ? "Acerca el mapa para sentir el volumen de los edificios."
+              : "Territorio real: caminos, agua, verde y edificios."
             : hasRoads
-              ? "Capa territorial real: carreteras OSM."
-              : "Preview técnico del renderer. Sin territorio real todavía."}
+              ? "Capa territorial real: caminos OSM."
+              : "Preview técnico del renderer."}
         </p>
       </div>
     </section>

@@ -1,0 +1,24 @@
+{
+  "name": "@life-community-os/life-map-renderer-3d-layer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hybrid 3D overlay layer for Life Map — volume/interaction above territorial MapLibre (no tenant / GIS / UI)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@life-community-os/life-map-renderer": "workspace:*",
+    "@life-community-os/types": "workspace:*",
+    "three": "^0.175.0"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "@types/three": "^0.175.0",
+    "typescript": "^5.8.2"
+  }
+}

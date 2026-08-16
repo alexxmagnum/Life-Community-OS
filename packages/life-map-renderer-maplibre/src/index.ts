@@ -10,6 +10,7 @@ export {
   createMapLibreLifeMapRenderer,
   MapLibreLifeMapRenderer,
   type CreateMapLibreLifeMapRendererOptions,
+  type MapLibreLifeMapRendererHandle,
 } from "./create-maplibre-renderer";
 
 export {
@@ -36,10 +37,29 @@ export {
 export {
   applyLifeMapCameraToMapLibre,
   distanceToMapLibreZoom,
+  type ApplyLifeMapCameraOptions,
 } from "./camera-adapter";
 
 export {
   MapLibreLifeMapCanvas,
-  MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
   type MapLibreLifeMapCanvasProps,
 } from "./MapLibreLifeMapCanvas";
+
+export {
+  attachLifeMapPremiumInteraction,
+  type LifeMapInteractionHandle,
+} from "./map-interaction";
+
+export {
+  LIFE_MAP_PREMIUM_STYLE,
+  LIFE_MAP_PREMIUM_PALETTE,
+  LIFE_MAP_PREMIUM_TERRAIN,
+  LIFE_MAP_PREMIUM_CAMERA,
+  MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
+  detectLifeMapRenderQuality,
+  lifeMapPixelRatioForQuality,
+  computeVolumePresence,
+  premiumPaintForBaseType,
+  type LifeMapRenderQuality,
+  type LifeMapPremiumBaseLayerType,
+} from "./premium-style";
