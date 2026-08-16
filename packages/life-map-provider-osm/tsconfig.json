@@ -1,0 +1,10 @@
+{
+  "extends": "../config/typescript/library.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "src",
+    "lib": ["ES2022"]
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

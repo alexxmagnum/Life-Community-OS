@@ -1,0 +1,23 @@
+{
+  "name": "@life-community-os/life-map-provider-osm",
+  "version": "0.0.0",
+  "private": true,
+  "description": "OSM TerritoryDataProviderAdapter — OpenStreetMap provider frontier (no HTTP / Overpass yet)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "tsx --test ./src/adapter.test.ts ./src/capabilities.test.ts"
+  },
+  "dependencies": {
+    "@life-community-os/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}
