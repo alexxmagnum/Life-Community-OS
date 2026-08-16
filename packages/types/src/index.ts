@@ -75,6 +75,14 @@ export {
   createNullTerritoryBootstrapExecutor,
 } from "./domain/life-map-territory-bootstrap-executor";
 
+/** Territory location resolver — AOI before geographic providers (no geocoding). */
+export {
+  TERRITORY_LOCATION_PROVIDER_KINDS,
+  validateTerritoryLocationQuery,
+  validateTerritoryAreaOfInterest,
+  createNullTerritoryLocationResolver,
+} from "./domain/life-map-territory-location";
+
 /** Life Map spatial object projection registry (not SoT — no UI / SDK). */
 export {
   LIFE_MAP_DOMAIN_MODULE_BY_TYPE,

@@ -332,6 +332,22 @@ export {
   createNullTerritoryBootstrapExecutor,
 } from "./life-map-territory-bootstrap-executor";
 export type {
+  TerritoryLocationProviderKind,
+  TerritoryLocationSource,
+  TerritoryLocationQuery,
+  TerritoryAreaOfInterest,
+  TerritoryLocationWarningCode,
+  TerritoryLocationWarning,
+  TerritoryLocationResolveResult,
+  TerritoryLocationResolver,
+} from "./life-map-territory-location";
+export {
+  TERRITORY_LOCATION_PROVIDER_KINDS,
+  validateTerritoryLocationQuery,
+  validateTerritoryAreaOfInterest,
+  createNullTerritoryLocationResolver,
+} from "./life-map-territory-location";
+export type {
   LifeMapObjectProjectionInput,
   LifeMapObjectIssueCode,
   LifeMapObjectIssue,
