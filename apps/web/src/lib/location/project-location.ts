@@ -1,17 +1,18 @@
 /**
- * Project Location (SoT) → LifeMapObject (spatial twin representation).
+ * Project Location (SoT) → LifeMapObject via Experience Resolver.
  * MapLibre / Three consume LifeMapObject; they never own Location.
  */
 
 import {
   projectLifeMapObject,
+  type LifeMapActionKind,
   type LifeMapObject,
   type LifeMapObjectType,
   type Location,
   type LocationType,
 } from "@life-community-os/types";
 
-import { locationCategoryLabel } from "./category-labels";
+import { resolveLocationExperience } from "./experience-resolver";
 
 function lifeMapTypeForLocation(type: LocationType): LifeMapObjectType {
   switch (type) {
@@ -29,45 +30,12 @@ function lifeMapTypeForLocation(type: LocationType): LifeMapObjectType {
   }
 }
 
-function assetKeyForCategory(category: string, type: LocationType): string {
-  const key = category.toLowerCase();
-  if (key.includes("restaurant") || key.includes("lounge") || key.includes("ikon")) {
-    return "place.restaurant.spatial_object";
-  }
-  if (key.includes("pool") || key.includes("piscina")) {
-    return "recreation.pool.spatial_object";
-  }
-  if (key.includes("golf")) return "recreation.golf.spatial_object";
-  if (key.includes("padel") || key.includes("tennis") || key.includes("sports")) {
-    return "recreation.padel.spatial_object";
-  }
-  if (key.includes("cafe") || key.includes("club")) {
-    return "place.clubhouse.spatial_object";
-  }
-  if (
-    key.includes("electrician") ||
-    key.includes("veterinary") ||
-    key.includes("vet") ||
-    key.includes("service")
-  ) {
-    return "place.service.spatial_object";
-  }
-  if (key.includes("facility") || key.includes("shop")) {
-    return type === "facility"
-      ? "recreation.padel.spatial_object"
-      : "place.shop.spatial_object";
-  }
-  if (type === "service") return "place.service.spatial_object";
-  if (type === "facility") return "recreation.padel.spatial_object";
-  if (type === "event") return "community.gathering.spatial_object";
-  return "place.restaurant.spatial_object";
-}
-
 export function projectLocationToLifeMapObject(
   location: Location,
   territoryId: string,
 ): LifeMapObject | null {
   try {
+    const experience = resolveLocationExperience(location);
     const type = lifeMapTypeForLocation(location.type);
     return projectLifeMapObject({
       tenantId: location.tenantId,
@@ -79,8 +47,8 @@ export function projectLocationToLifeMapObject(
         lng: location.longitude,
       },
       label: location.name,
-      asset3DKey: assetKeyForCategory(location.category, location.type),
-      availableActions: ["open", "navigate"],
+      asset3DKey: experience.representationKey,
+      availableActions: [...experience.availableActions],
       ref: {
         moduleId:
           type === "service"
@@ -111,27 +79,22 @@ export function projectLocationsToLifeMapObjects(
   return objects;
 }
 
+/** Context-card enrichment driven entirely by Location + Experience Resolver. */
 export function locationContextEnrichment(location: Location): {
   label: string;
   summary: string;
   experienceTag: string;
   categoryHint: string;
   heroTone: string;
+  availableActions: LifeMapActionKind[];
 } {
+  const experience = resolveLocationExperience(location);
   return {
     label: location.name,
-    summary: location.geocodeDisplayName ?? location.address,
-    experienceTag: locationCategoryLabel(location.category),
-    categoryHint:
-      location.type === "business"
-        ? "Negocio"
-        : location.type === "service"
-          ? "Servicio"
-          : location.type === "facility"
-            ? "Instalación"
-            : location.type === "event"
-              ? "Evento"
-              : "Lugar",
-    heroTone: "#c4a890",
+    summary: `${experience.summary} · ${location.geocodeDisplayName ?? location.address}`,
+    experienceTag: experience.categoryLabel,
+    categoryHint: experience.typeHint,
+    heroTone: experience.heroTone,
+    availableActions: [...experience.availableActions],
   };
 }

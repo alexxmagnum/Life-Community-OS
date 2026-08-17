@@ -26,3 +26,11 @@ export {
   openDirectionsUrl,
 } from "./category-labels";
 export type { LocationCategoryValue } from "./category-labels";
+export {
+  resolveLocationExperience,
+  openLocationContact,
+} from "./experience-resolver";
+export type {
+  LocationExperienceType,
+  LocationExperienceRepresentation,
+} from "./experience-resolver";

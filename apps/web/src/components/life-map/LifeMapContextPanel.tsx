@@ -19,7 +19,7 @@ export type LifeMapContextPanelProps = {
 const ACTION_LABEL: Record<LifeMapActionKind, string> = {
   open: "Abrir ficha",
   navigate: "Cómo llegar",
-  message: "Mensaje",
+  message: "Contacto",
   join: "Unirme",
   reserve: "Reservar (próximamente)",
 };

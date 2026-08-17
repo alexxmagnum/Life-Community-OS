@@ -54,6 +54,7 @@ export function BusinessRegistrationScreen() {
   const [type, setType] = useState<LocationType>("business");
   const [category, setCategory] = useState<string>("restaurant");
   const [address, setAddress] = useState("");
+  const [contact, setContact] = useState("");
   const [preview, setPreview] = useState<AddressGeocodeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
@@ -116,6 +117,7 @@ export function BusinessRegistrationScreen() {
         geocodeProvider: preview.provider,
         geocodeSourceRef: preview.sourceRef,
         geocodeDisplayName: preview.displayName,
+        ...(contact.trim() ? { contact: contact.trim() } : {}),
       });
       router.push(`/map?focus=${encodeURIComponent(location.id)}`);
     } catch (err) {
@@ -197,6 +199,19 @@ export function BusinessRegistrationScreen() {
               setPreview(null);
             }}
             placeholder="Calle, ciudad, provincia, país"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
+            Contacto (opcional)
+          </span>
+          <input
+            className={fieldClass}
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            placeholder="Teléfono, email o web"
+            autoComplete="tel"
           />
         </label>
 

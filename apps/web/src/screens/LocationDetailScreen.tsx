@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Location ficha — business / service / facility detail from Location SoT.
+ * Location ficha — driven by Location SoT + Experience Resolver.
  */
 
 import { useMemo } from "react";
@@ -14,18 +14,11 @@ import {
 } from "@life-community-os/ui";
 import {
   getLocation,
-  locationCategoryLabel,
   openDirectionsUrl,
+  openLocationContact,
+  resolveLocationExperience,
 } from "@/lib/location";
 import { useTenant } from "@/providers/TenantProvider";
-
-const TYPE_LABEL: Record<string, string> = {
-  business: "Negocio",
-  service: "Servicio",
-  facility: "Instalación",
-  event: "Evento",
-  "community-place": "Lugar comunitario",
-};
 
 export function LocationDetailScreen() {
   const router = useRouter();
@@ -38,7 +31,12 @@ export function LocationDetailScreen() {
     [configuration.tenantId, locationId],
   );
 
-  if (!location) {
+  const experience = useMemo(
+    () => (location ? resolveLocationExperience(location) : null),
+    [location],
+  );
+
+  if (!location || !experience) {
     return (
       <MobileScreen>
         <FlowScreenHeader
@@ -56,14 +54,11 @@ export function LocationDetailScreen() {
     );
   }
 
-  const typeLabel = TYPE_LABEL[location.type] ?? "Lugar";
-  const categoryLabel = locationCategoryLabel(location.category);
-
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={location.name}
-        subtitle={typeLabel}
+        subtitle={experience.typeHint}
         onBack={() =>
           router.push(`/map?focus=${encodeURIComponent(location.id)}`)
         }
@@ -74,8 +69,7 @@ export function LocationDetailScreen() {
         <div
           className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
           style={{
-            background:
-              "linear-gradient(135deg, #c4a890 0%, #f5f1e8 72%)",
+            background: `linear-gradient(135deg, ${experience.heroTone} 0%, #f5f1e8 72%)`,
             minHeight: 140,
           }}
           aria-hidden
@@ -83,13 +77,13 @@ export function LocationDetailScreen() {
 
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-            {categoryLabel}
+            {experience.categoryLabel}
           </p>
           <h1 className="mt-1 text-[22px] font-semibold text-[var(--color-text-primary)]">
             {location.name}
           </h1>
           <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
-            {location.geocodeDisplayName ?? location.address}
+            {experience.summary}
           </p>
         </div>
 
@@ -98,9 +92,20 @@ export function LocationDetailScreen() {
             Dirección
           </p>
           <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
-            {location.address}
+            {location.geocodeDisplayName ?? location.address}
           </p>
         </div>
+
+        {location.contact ? (
+          <div className="rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
+            <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+              Contacto
+            </p>
+            <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
+              {location.contact}
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           <button
@@ -125,6 +130,15 @@ export function LocationDetailScreen() {
           >
             Cómo llegar
           </button>
+          {location.contact ? (
+            <button
+              type="button"
+              className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
+              onClick={() => openLocationContact(location.contact)}
+            >
+              Contacto
+            </button>
+          ) : null}
         </div>
       </section>
 

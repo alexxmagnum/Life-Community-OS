@@ -56,6 +56,11 @@ export type Location = {
   geocodeSourceRef?: string;
   /** Provider display name for confirmation UI. */
   geocodeDisplayName?: string;
+  /**
+   * Optional contact handle — phone, email, or URL.
+   * When present, context cards may offer a contact action.
+   */
+  contact?: string;
   createdAt?: IsoDateTimeString;
   updatedAt?: IsoDateTimeString;
 };
@@ -148,11 +153,13 @@ export type CreateLocationInput = {
   geocodeProvider?: string;
   geocodeSourceRef?: string;
   geocodeDisplayName?: string;
+  contact?: string;
   id?: DomainId;
 };
 
 export function createLocation(input: CreateLocationInput): Location {
   const now = new Date().toISOString();
+  const contact = input.contact?.trim();
   const location: Location = {
     id: input.id?.trim() || `loc-${cryptoRandomId()}`,
     tenantId: input.tenantId.trim(),
@@ -166,6 +173,7 @@ export function createLocation(input: CreateLocationInput): Location {
     geocodeProvider: input.geocodeProvider,
     geocodeSourceRef: input.geocodeSourceRef,
     geocodeDisplayName: input.geocodeDisplayName,
+    ...(contact ? { contact } : {}),
     createdAt: now,
     updatedAt: now,
   };

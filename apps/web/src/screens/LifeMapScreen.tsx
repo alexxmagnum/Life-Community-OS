@@ -32,13 +32,14 @@ import { isLifeMapExperienceUnlocked } from "@/lib/life-map-dev";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
 import {
-  buildLocationFilterChips,
   getLocation,
-  locationCategoryLabel,
   locationContextEnrichment,
   openDirectionsUrl,
+  openLocationContact,
   projectLocationsToLifeMapObjects,
   useTenantLocations,
+  buildLocationFilterChips,
+  locationCategoryLabel,
 } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -210,6 +211,10 @@ export function LifeMapScreen() {
           "_blank",
           "noopener,noreferrer",
         );
+        return;
+      }
+      if (action === "message") {
+        openLocationContact(location.contact);
       }
     },
     [selectedObject, configuration.tenantId, router],
