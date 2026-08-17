@@ -13,6 +13,7 @@
   "dependencies": {
     "@life-community-os/auth": "workspace:*",
     "@life-community-os/assets": "workspace:*",
+    "@life-community-os/address-geocoder": "workspace:*",
     "@life-community-os/database": "workspace:*",
     "@life-community-os/design-tokens": "workspace:*",
     "@life-community-os/life-map-renderer": "workspace:*",

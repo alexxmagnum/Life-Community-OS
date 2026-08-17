@@ -1,4 +1,14 @@
 export type {
+  AddressGeocodeProviderId,
+  AddressGeocodeQuery,
+  AddressGeocodeBoundingBox,
+  AddressGeocodeResult,
+  AddressGeocoder,
+  AddressGeocodeConfig,
+} from "./address-geocoder";
+export { validateAddressGeocodeQuery } from "./address-geocoder";
+
+export type {
   TenantResolutionSource,
   TenantContext,
   PlatformContext,

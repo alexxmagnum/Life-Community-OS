@@ -1,6 +1,19 @@
 export type * from "./domain";
 export type * from "./platform";
 
+/** Runtime helpers for Location (map SoT). */
+export {
+  LOCATION_TYPES,
+  LOCATION_VISIBILITIES,
+  isLocationType,
+  isLocationVisibility,
+  validateLocation,
+  createLocation,
+} from "./domain/location";
+
+/** Address geocoder contract helpers. */
+export { validateAddressGeocodeQuery } from "./platform/address-geocoder";
+
 /** Runtime helpers for Local Discovery (platform capability). */
 export {
   filterLocalEntities,

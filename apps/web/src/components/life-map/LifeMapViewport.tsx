@@ -110,7 +110,9 @@ export function LifeMapViewport({
 
   const spatialObjects = useMemo(() => {
     const origin = territoryGeoOrigin(territory);
-    return bridgeLifeMapObjectsToSpatial(objects, origin).map((o) => ({
+    // Location SoT — all mapped places are heroes (cap for performance).
+    const source = objects.slice(0, 12);
+    return bridgeLifeMapObjectsToSpatial(source, origin).map((o) => ({
       id: o.id,
       position: o.position,
       asset3DKey: o.asset3DKey,

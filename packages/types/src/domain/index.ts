@@ -3,6 +3,22 @@ export type { Tenant, TenantStatus } from "./tenant";
 export type { Territory } from "./territory";
 export type { CommunityArea } from "./community-area";
 export type { Address } from "./address";
+export type {
+  Location,
+  LocationType,
+  LocationVisibility,
+  LocationIssue,
+  LocationIssueCode,
+  CreateLocationInput,
+} from "./location";
+export {
+  LOCATION_TYPES,
+  LOCATION_VISIBILITIES,
+  isLocationType,
+  isLocationVisibility,
+  validateLocation,
+  createLocation,
+} from "./location";
 export type { Property } from "./property";
 export type {
   PropertyPersonRelationship,
