@@ -19,3 +19,10 @@ export {
   EXAMPLE_IKON_NAME,
 } from "./example-ikon";
 export { useTenantLocations } from "./use-tenant-locations";
+export {
+  LOCATION_CATEGORY_OPTIONS,
+  locationCategoryLabel,
+  buildLocationFilterChips,
+  openDirectionsUrl,
+} from "./category-labels";
+export type { LocationCategoryValue } from "./category-labels";

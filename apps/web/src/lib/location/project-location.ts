@@ -11,6 +11,8 @@ import {
   type LocationType,
 } from "@life-community-os/types";
 
+import { locationCategoryLabel } from "./category-labels";
+
 function lifeMapTypeForLocation(type: LocationType): LifeMapObjectType {
   switch (type) {
     case "business":
@@ -36,11 +38,24 @@ function assetKeyForCategory(category: string, type: LocationType): string {
     return "recreation.pool.spatial_object";
   }
   if (key.includes("golf")) return "recreation.golf.spatial_object";
-  if (key.includes("padel") || key.includes("tennis")) {
+  if (key.includes("padel") || key.includes("tennis") || key.includes("sports")) {
     return "recreation.padel.spatial_object";
   }
   if (key.includes("cafe") || key.includes("club")) {
     return "place.clubhouse.spatial_object";
+  }
+  if (
+    key.includes("electrician") ||
+    key.includes("veterinary") ||
+    key.includes("vet") ||
+    key.includes("service")
+  ) {
+    return "place.service.spatial_object";
+  }
+  if (key.includes("facility") || key.includes("shop")) {
+    return type === "facility"
+      ? "recreation.padel.spatial_object"
+      : "place.shop.spatial_object";
   }
   if (type === "service") return "place.service.spatial_object";
   if (type === "facility") return "recreation.padel.spatial_object";
@@ -105,8 +120,8 @@ export function locationContextEnrichment(location: Location): {
 } {
   return {
     label: location.name,
-    summary: location.address,
-    experienceTag: location.category,
+    summary: location.geocodeDisplayName ?? location.address,
+    experienceTag: locationCategoryLabel(location.category),
     categoryHint:
       location.type === "business"
         ? "Negocio"

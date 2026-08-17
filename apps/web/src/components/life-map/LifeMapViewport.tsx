@@ -69,6 +69,11 @@ export type LifeMapViewportProps = {
   territoryDataResolver?: TerritoryDataResolver;
   selectedObjectId?: string | null;
   onObjectSelect?: (objectId: string | null) => void;
+  /**
+   * Selected Location id for framing — camera target is applied via
+   * territory.defaultCamera on the scene (product discovery).
+   */
+  focusLocationId?: string | null;
   dataVersion?: string;
   territoryName?: string;
 };
@@ -90,9 +95,11 @@ export function LifeMapViewport({
   territoryDataResolver,
   selectedObjectId = null,
   onObjectSelect,
+  focusLocationId: _focusLocationId = null,
   dataVersion = "v1",
   territoryName,
 }: LifeMapViewportProps) {
+  void _focusLocationId;
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
     engine === "maplibre" && isLifeMapHybrid3DPreviewEnabled();

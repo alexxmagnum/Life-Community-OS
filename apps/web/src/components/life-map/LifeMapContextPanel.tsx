@@ -35,7 +35,7 @@ export function LifeMapContextPanel({
   return (
     <aside
       className="mt-4 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-sm"
-      aria-label="Experiencia del objeto espacial"
+      aria-label="Información del lugar"
     >
       <div
         className="relative h-[120px] w-full overflow-hidden"

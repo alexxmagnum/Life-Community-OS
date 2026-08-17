@@ -82,24 +82,60 @@ function IconProfile() {
   );
 }
 
+function IconMap() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5Z"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 4.5v13M15 6.5v13"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function buildNav(flags: {
   services: boolean;
   showCreate: boolean;
+  showMap: boolean;
 }): NavItem[] {
-  /** High-frequency destinations — Comunidad opens Community Hub (/community). */
+  /** Map-first community OS — high-frequency destinations only. */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
-    {
+  ];
+  if (flags.showMap) {
+    items.push({
+      id: "map",
+      label: "Mapa",
+      href: "/map",
+      icon: <IconMap />,
+    });
+  } else {
+    items.push({
       id: "community",
       label: "Comunidad",
       href: "/community",
       icon: <IconCommunity />,
-    },
-  ];
+    });
+  }
   if (flags.showCreate) {
     items.push({ id: "create", label: "Crear", href: "#create", icon: "+" });
   }
-  if (flags.services) {
+  if (flags.showMap) {
+    items.push({
+      id: "community",
+      label: "Comunidad",
+      href: "/community",
+      icon: <IconCommunity />,
+    });
+  } else if (flags.services) {
     items.push({
       id: "services",
       label: "Servicios",
@@ -112,6 +148,9 @@ function buildNav(flags: {
 }
 
 function activeFromPath(pathname: string): NavItemId {
+  if (pathname.startsWith("/map")) return "map";
+  if (pathname.startsWith("/locations")) return "map";
+  if (pathname.startsWith("/business")) return "map";
   if (pathname.startsWith("/services")) return "services";
   if (pathname.startsWith("/marketplace")) return "services";
   if (pathname.startsWith("/resources")) return "services";
@@ -296,6 +335,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
+    if (isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap")) {
+      practical.push({
+        id: "register-business",
+        title: "Registrar negocio",
+        description: "Dirección real → aparece en el mapa",
+        icon: "📍",
+        onSelect: () => router.push("/business/register"),
+      });
+    }
+
     const sections: CreateActionSection[] = [];
     if (life.length) {
       sections.push({
@@ -327,8 +376,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
       buildNav({
         services: isModuleEnabled("services"),
         showCreate: createActionCount > 0,
+        showMap: isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap"),
       }),
-    [createActionCount, isModuleEnabled],
+    [createActionCount, isModuleEnabled, isFeatureEnabled],
   );
 
   useEffect(() => {

@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Life Map — Locations (SoT) projected onto tenant territory + 3D visual layer.
- * Works for any tenant; never hardcodes community places.
+ * Life Map — community OS surface driven by Location (SoT).
+ * Explore → filter → select → ficha / directions → register business.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -10,12 +10,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   EmptyState,
+  FilterChipRow,
   FlowScreenHeader,
   MobileScreen,
+  ScreenSearch,
 } from "@life-community-os/ui";
 import {
   buildLifeMapContextPanel,
-  buildLifeMapInteraction,
   emitLifeMapTelemetry,
   type LifeMapContextPanelModel,
 } from "@life-community-os/life-map-renderer";
@@ -31,8 +32,11 @@ import { isLifeMapExperienceUnlocked } from "@/lib/life-map-dev";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
 import {
+  buildLocationFilterChips,
   getLocation,
+  locationCategoryLabel,
   locationContextEnrichment,
+  openDirectionsUrl,
   projectLocationsToLifeMapObjects,
   useTenantLocations,
 } from "@/lib/location";
@@ -40,9 +44,6 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 ensureLifeMapTenantPacksRegistered();
 
-/**
- * Life Map — living community twin driven by Location domain.
- */
 export function LifeMapScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,7 +52,6 @@ export function LifeMapScreen() {
     isModuleEnabled,
     hasCapability,
     configuration,
-    demoPersonId,
   } = useTenant();
 
   const featureOn = isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap");
@@ -75,31 +75,66 @@ export function LifeMapScreen() {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(
     null,
   );
+  const [query, setQuery] = useState("");
+  const [filterId, setFilterId] = useState("all");
+
+  const filteredLocations = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return locations.filter((location) => {
+      if (filterId !== "all" && location.category.toLowerCase() !== filterId) {
+        return false;
+      }
+      if (!q) return true;
+      return (
+        location.name.toLowerCase().includes(q) ||
+        location.address.toLowerCase().includes(q) ||
+        locationCategoryLabel(location.category).toLowerCase().includes(q)
+      );
+    });
+  }, [locations, query, filterId]);
+
+  const filterChips = useMemo(
+    () => buildLocationFilterChips(locations.map((l) => l.category)),
+    [locations],
+  );
+
+  const focusLocation: Location | null = useMemo(() => {
+    if (selectedObjectId) {
+      return (
+        filteredLocations.find((l) => l.id === selectedObjectId) ??
+        locations.find((l) => l.id === selectedObjectId) ??
+        null
+      );
+    }
+    return filteredLocations[0] ?? locations[0] ?? null;
+  }, [selectedObjectId, filteredLocations, locations]);
 
   const territory: LifeMapTerritory | null = useMemo(() => {
     if (!pack) return null;
     const base = pack.territory;
-    const focus = locations[0];
-    if (!focus) return base;
+    if (!focusLocation) return base;
     return {
       ...base,
       defaultCamera: {
         ...base.defaultCamera,
-        target: { lat: focus.latitude, lng: focus.longitude },
-        distance: 420,
-        headingDegrees: base.defaultCamera?.headingDegrees ?? -18,
-        pitchDegrees: base.defaultCamera?.pitchDegrees ?? 56,
+        target: {
+          lat: focusLocation.latitude,
+          lng: focusLocation.longitude,
+        },
+        distance: 320,
+        headingDegrees: base.defaultCamera?.headingDegrees ?? -22,
+        pitchDegrees: base.defaultCamera?.pitchDegrees ?? 58,
       },
     };
-  }, [pack, locations]);
+  }, [pack, focusLocation]);
 
   const objects: LifeMapObject[] = useMemo(() => {
     if (!territory) return [];
     return projectLocationsToLifeMapObjects(
-      locations,
+      filteredLocations,
       territory.territoryId,
     );
-  }, [locations, territory]);
+  }, [filteredLocations, territory]);
 
   const locationById = useMemo(() => {
     const map = new Map<string, Location>();
@@ -117,9 +152,9 @@ export function LifeMapScreen() {
     const location = locationById.get(selectedObject.objectId);
     const enrichment = location
       ? locationContextEnrichment(location)
-      : pack?.enrichContext?.(selectedObject) ?? null;
+      : null;
     return buildLifeMapContextPanel(selectedObject, enrichment);
-  }, [selectedObject, locationById, pack]);
+  }, [selectedObject, locationById]);
 
   useEffect(() => {
     if (!pack) return;
@@ -133,10 +168,10 @@ export function LifeMapScreen() {
 
   useEffect(() => {
     const focus = searchParams.get("focus");
-    if (focus && objects.some((o) => o.objectId === focus)) {
+    if (focus && locations.some((l) => l.id === focus)) {
       setSelectedObjectId(focus);
     }
-  }, [searchParams, objects]);
+  }, [searchParams, locations]);
 
   const onObjectSelect = useCallback(
     (objectId: string | null) => {
@@ -163,28 +198,29 @@ export function LifeMapScreen() {
         configuration.tenantId,
         selectedObject.objectId,
       );
-      if (location && (action === "open" || action === "navigate")) {
-        // Location ficha — stay on map with context card (no local-entity hardwire).
+      if (!location) return;
+
+      if (action === "open") {
+        router.push(`/locations/${encodeURIComponent(location.id)}`);
         return;
       }
-      const intent = buildLifeMapInteraction({
-        object: selectedObject,
-        action,
-        actorPersonId: demoPersonId,
-      });
-      if (action === "message" && intent.ref?.entityId) {
-        router.push(`/business/register`);
+      if (action === "navigate") {
+        window.open(
+          openDirectionsUrl(location.latitude, location.longitude),
+          "_blank",
+          "noopener,noreferrer",
+        );
       }
     },
-    [selectedObject, demoPersonId, router, configuration.tenantId],
+    [selectedObject, configuration.tenantId, router],
   );
 
   if (!experienceOn) {
     return (
       <MobileScreen>
         <EmptyState
-          title="Life Map no está disponible"
-          description="Esta comunidad aún no ha activado el mapa espacial."
+          title="El mapa no está disponible"
+          description="Esta comunidad aún no ha activado el mapa."
           actionLabel="Volver al inicio"
           onAction={() => router.push("/")}
         />
@@ -197,7 +233,7 @@ export function LifeMapScreen() {
       <MobileScreen>
         <EmptyState
           title="Sin acceso"
-          description="No puedes ver Life Map con tu cuenta actual."
+          description="No puedes ver el mapa con tu cuenta actual."
           actionLabel="Volver al inicio"
           onAction={() => router.push("/")}
         />
@@ -209,8 +245,8 @@ export function LifeMapScreen() {
     return (
       <MobileScreen>
         <EmptyState
-          title="Life Map no configurado"
-          description="Este tenant aún no tiene un pack territorial registrado."
+          title="Mapa no configurado"
+          description="Esta comunidad aún no tiene territorio preparado."
           actionLabel="Volver al inicio"
           onAction={() => router.push("/")}
         />
@@ -227,6 +263,22 @@ export function LifeMapScreen() {
         onExit={() => router.push("/")}
       />
 
+      <div className="mt-3 space-y-3">
+        <ScreenSearch
+          value={query}
+          onChange={setQuery}
+          placeholder="Buscar negocios, servicios…"
+          label="Buscar en el mapa"
+        />
+        {filterChips.length > 1 ? (
+          <FilterChipRow
+            items={filterChips}
+            activeId={filterId}
+            onChange={setFilterId}
+          />
+        ) : null}
+      </div>
+
       <LifeMapViewport
         territory={territory}
         objects={objects}
@@ -234,7 +286,8 @@ export function LifeMapScreen() {
         territoryDataResolver={territoryDataResolver}
         selectedObjectId={selectedObjectId}
         onObjectSelect={onObjectSelect}
-        dataVersion={`loc-${locations.length}-${seedReady ? "ready" : "boot"}`}
+        focusLocationId={selectedObjectId}
+        dataVersion={`loc-${filteredLocations.length}-${seedReady ? "ready" : "boot"}`}
         territoryName={pack.territoryName}
       />
 
@@ -247,10 +300,10 @@ export function LifeMapScreen() {
         />
       ) : null}
 
-      <section className="mt-5" aria-label="Locations en el mapa">
+      <section className="mt-5" aria-label="Lugares en el mapa">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-            En el mapa
+            En tu comunidad
           </h2>
           <Link
             href="/business/register"
@@ -263,24 +316,28 @@ export function LifeMapScreen() {
           {locations.length === 0
             ? seedReady
               ? seedError
-                ? `No se pudo geocodificar el ejemplo (${seedError}). Registra un negocio con su dirección.`
-                : "Aún no hay Locations. Registra el primer negocio."
-              : "Geocodificando ubicaciones…"
-            : `${locations.length} ubicación${locations.length === 1 ? "" : "es"} con coordenadas reales`}
+                ? "No pudimos cargar el ejemplo. Registra un negocio con su dirección."
+                : "Aún no hay lugares. Sé el primero en publicar."
+              : "Preparando el mapa…"
+            : filteredLocations.length === 0
+              ? "Ningún resultado con este filtro."
+              : `${filteredLocations.length} lugar${filteredLocations.length === 1 ? "" : "es"} en el mapa`}
         </p>
       </section>
 
-      <section className="mt-5 pb-6" aria-label="Negocios y lugares">
+      <section className="mt-5 pb-6" aria-label="Lista de lugares">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
           Descubre
         </h2>
-        {locations.length === 0 ? (
+        {filteredLocations.length === 0 ? (
           <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-            Los negocios aparecen automáticamente tras geocodificar su dirección.
+            {locations.length === 0
+              ? "Los negocios y servicios aparecen al registrar su dirección."
+              : "Prueba otro filtro o búsqueda."}
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
-            {locations.map((location) => (
+            {filteredLocations.map((location) => (
               <li key={location.id}>
                 <button
                   type="button"
@@ -291,7 +348,8 @@ export function LifeMapScreen() {
                     {location.name}
                   </p>
                   <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                    {location.category} · {location.address}
+                    {locationCategoryLabel(location.category)} ·{" "}
+                    {location.address}
                   </p>
                 </button>
               </li>

@@ -17,18 +17,12 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import { getAddressGeocoder, saveLocation } from "@/lib/location";
+import {
+  getAddressGeocoder,
+  LOCATION_CATEGORY_OPTIONS,
+  saveLocation,
+} from "@/lib/location";
 import { useTenant } from "@/providers/TenantProvider";
-
-const CATEGORY_OPTIONS = [
-  { value: "restaurant", label: "Restaurante / Lounge" },
-  { value: "cafe", label: "Café" },
-  { value: "shop", label: "Comercio" },
-  { value: "sports", label: "Deporte" },
-  { value: "service", label: "Servicio" },
-  { value: "facility", label: "Instalación" },
-  { value: "other", label: "Otro" },
-] as const;
 
 const TYPE_LABEL: Record<LocationType, string> = {
   business: "Negocio",
@@ -37,6 +31,19 @@ const TYPE_LABEL: Record<LocationType, string> = {
   event: "Evento",
   "community-place": "Lugar comunitario",
 };
+
+function defaultTypeForCategory(category: string): LocationType {
+  if (category === "facility" || category === "sports") return "facility";
+  if (
+    category === "electrician" ||
+    category === "veterinary" ||
+    category === "service"
+  ) {
+    return "service";
+  }
+  if (category === "other") return "community-place";
+  return "business";
+}
 
 export function BusinessRegistrationScreen() {
   const router = useRouter();
@@ -86,7 +93,7 @@ export function BusinessRegistrationScreen() {
       }
       setPreview(result);
     } catch {
-      setError("No se pudo consultar el geocoder. Inténtalo de nuevo.");
+      setError("No se pudo consultar la ubicación. Inténtalo de nuevo.");
     } finally {
       setSearching(false);
     }
@@ -142,6 +149,27 @@ export function BusinessRegistrationScreen() {
 
         <label className="block">
           <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
+            Categoría
+          </span>
+          <select
+            className={fieldClass}
+            value={category}
+            onChange={(e) => {
+              const next = e.target.value;
+              setCategory(next);
+              setType(defaultTypeForCategory(next));
+            }}
+          >
+            {LOCATION_CATEGORY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
             Tipo
           </span>
           <select
@@ -152,23 +180,6 @@ export function BusinessRegistrationScreen() {
             {LOCATION_TYPES.map((value) => (
               <option key={value} value={value}>
                 {TYPE_LABEL[value]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block">
-          <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Categoría
-          </span>
-          <select
-            className={fieldClass}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            {CATEGORY_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
               </option>
             ))}
           </select>
@@ -212,21 +223,21 @@ export function BusinessRegistrationScreen() {
             <p className="mt-1 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
               {confirmationLine}
             </p>
-            <p className="mt-2 font-mono text-[12px] text-[var(--color-text-tertiary)]">
-              {preview.latitude.toFixed(6)}, {preview.longitude.toFixed(6)}
-            </p>
           </div>
         ) : null}
 
         {error ? (
-          <p className="text-[14px] text-[var(--color-feedback-danger,#b42318)]" role="alert">
+          <p
+            className="text-[14px] text-[var(--color-feedback-danger,#b42318)]"
+            role="alert"
+          >
             {error}
           </p>
         ) : null}
       </section>
 
       <ScreenPrimaryAction
-        label={saving ? "Guardando…" : "Guardar en el mapa"}
+        label={saving ? "Publicando…" : "Publicar en el mapa"}
         onClick={() => void onSave()}
         disabled={!canConfirm || saving}
       />

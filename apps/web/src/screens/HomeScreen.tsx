@@ -272,7 +272,7 @@ export function HomeScreen() {
             title="Cerca de ti"
             actionLabel="Ver mapa"
             actionGlyph="map"
-            onAction={() => router.push("/discover")}
+            onAction={() => router.push("/map")}
           />
           <HomeRail>
             {nearby.map((place) => (
