@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Spatial viewport — territory → MapLibre premium + hybrid Three world.
+ * Customer demo surface: immersive community, not technical preview chrome.
+ */
+
 import dynamic from "next/dynamic";
 import { useMemo } from "react";
 import {
@@ -25,8 +30,11 @@ const MapLibreLifeMapCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-tertiary)]"
-        style={{ background: "#e8e4d8" }}
+        className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-secondary)]"
+        style={{
+          background:
+            "linear-gradient(160deg, #ebe4d4 0%, #d9e0d2 48%, #c9d6d8 100%)",
+        }}
       >
         Entrando en tu comunidad…
       </div>
@@ -46,7 +54,7 @@ const ThreeLifeMapCanvas = dynamic(
         className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-tertiary)]"
         style={{ background: "#070B0E" }}
       >
-        Preparando superficie espacial…
+        Preparando la experiencia…
       </div>
     ),
   },
@@ -55,12 +63,14 @@ const ThreeLifeMapCanvas = dynamic(
 export type LifeMapViewportProps = {
   territory: LifeMapTerritory;
   objects: readonly LifeMapObject[];
+  /** Unlock when tenant feature is on or local demo gate is set. */
   previewUnlocked?: boolean;
   engine?: LifeMapDevEngine;
   territoryDataResolver?: TerritoryDataResolver;
   selectedObjectId?: string | null;
   onObjectSelect?: (objectId: string | null) => void;
   dataVersion?: string;
+  territoryName?: string;
 };
 
 function territoryGeoOrigin(territory: LifeMapTerritory) {
@@ -72,9 +82,6 @@ function territoryGeoOrigin(territory: LifeMapTerritory) {
   };
 }
 
-/**
- * Spatial viewport — territory → scene → MapLibre premium (+ optional Three world).
- */
 export function LifeMapViewport({
   territory,
   objects,
@@ -84,21 +91,17 @@ export function LifeMapViewport({
   selectedObjectId = null,
   onObjectSelect,
   dataVersion = "v1",
+  territoryName,
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
-    engine === "maplibre" &&
-    previewUnlocked &&
-    isLifeMapHybrid3DPreviewEnabled();
-  const hasRoads = (territory.baseLayers ?? []).some((l) => l.type === "roads");
-  const hasBuildings = (territory.baseLayers ?? []).some(
-    (l) => l.type === "buildings",
-  );
+    engine === "maplibre" && isLifeMapHybrid3DPreviewEnabled();
 
   const scene = useMemo(() => {
-    const frame: LifeMapTerritory = previewUnlocked
-      ? { ...territory, moduleEnabled: true }
-      : territory;
+    const frame: LifeMapTerritory =
+      previewUnlocked || territory.moduleEnabled
+        ? { ...territory, moduleEnabled: true }
+        : territory;
     return buildLifeMapScene({
       territory: frame,
       objects: [...objects],
@@ -124,11 +127,13 @@ export function LifeMapViewport({
     [territory.tenantId],
   );
 
+  const communityLabel = territoryName ?? "Tu comunidad";
+
   return (
     <section
-      aria-label="Superficie espacial Life Map"
-      className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
-      style={{ minHeight: "min(62vh, 520px)", height: "min(62vh, 520px)" }}
+      aria-label={`Mapa de ${communityLabel}`}
+      className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] shadow-[0_12px_40px_rgba(40,36,28,0.08)]"
+      style={{ minHeight: "min(72vh, 640px)", height: "min(72vh, 640px)" }}
     >
       {engine === "maplibre" ? (
         <MapLibreLifeMapCanvas
@@ -157,20 +162,12 @@ export function LifeMapViewport({
         />
       )}
 
-      <div className="pointer-events-none absolute left-3 top-3 z-10 max-w-[85%] rounded-md border border-black/10 bg-[rgba(255,255,255,0.82)] px-2.5 py-1.5 text-[11px] leading-snug text-[var(--color-text-secondary)] shadow-sm backdrop-blur-sm">
-        <p className="font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-          Life Map
-          {hybrid3D ? " · twin 3D" : ""}
-          {hasRoads || hasBuildings ? " · tu comunidad" : " · preview"}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(180deg,transparent,rgba(28,26,22,0.55))] px-4 pb-4 pt-10">
+        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/80">
+          {communityLabel}
         </p>
-        <p className="mt-0.5">
-          {hasRoads && hasBuildings
-            ? hybrid3D
-              ? "Entra en tu comunidad. Toca un lugar vivo para abrirlo."
-              : "Territorio real + objetos Life OS."
-            : hasRoads
-              ? "Capa territorial real: caminos OSM."
-              : "Preview técnico del renderer."}
+        <p className="mt-1 max-w-[22rem] text-[14px] leading-snug text-white">
+          Explora lugares, actividades y servicios de tu comunidad.
         </p>
       </div>
     </section>

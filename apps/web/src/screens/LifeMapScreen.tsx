@@ -17,9 +17,7 @@ import type { LifeMapActionKind, LifeMapObject } from "@life-community-os/types"
 import { LifeMapContextPanel } from "@/components/life-map/LifeMapContextPanel";
 import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
 import {
-  getLifeMapDevEngine,
-  isLifeMapDevPreviewEnabled,
-  isLifeMapHybrid3DPreviewEnabled,
+  isLifeMapExperienceUnlocked,
 } from "@/lib/life-map-dev";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
@@ -27,8 +25,20 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 ensureLifeMapTenantPacksRegistered();
 
+const TYPE_LABEL: Record<LifeMapObject["type"], string> = {
+  place: "Lugar",
+  service: "Servicio",
+  experience: "Experiencia",
+  resource: "Instalación",
+  community: "Aviso",
+  official: "Oficial",
+  housing: "Vivienda",
+  decoration: "Espacio",
+  poi: "Punto",
+};
+
 /**
- * Life Map experience shell — tenant pack driven (multi-tenant ready).
+ * Life Map — customer demo of the living community twin.
  */
 export function LifeMapScreen() {
   const router = useRouter();
@@ -40,12 +50,8 @@ export function LifeMapScreen() {
     demoPersonId,
   } = useTenant();
 
-  const devPreview = isLifeMapDevPreviewEnabled();
-  const previewEngine = getLifeMapDevEngine();
-  const hybrid3D = isLifeMapHybrid3DPreviewEnabled();
-  const moduleOn =
-    devPreview ||
-    (isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap"));
+  const featureOn = isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap");
+  const experienceOn = isLifeMapExperienceUnlocked(featureOn);
   const canView = hasCapability(CAPABILITIES.lifeMapView);
 
   const pack = useMemo(
@@ -102,11 +108,22 @@ export function LifeMapScreen() {
     [objects, pack],
   );
 
+  const highlightPlaces = useMemo(() => {
+    return objects.filter(
+      (o) =>
+        o.type === "place" ||
+        o.type === "resource" ||
+        o.type === "service" ||
+        o.type === "experience" ||
+        o.type === "official",
+    );
+  }, [objects]);
+
   const communityPulse = useMemo(() => {
     const experiences = objects.filter((o) => o.type === "experience").length;
     const alerts = objects.filter((o) => o.type === "community").length;
-    const services = objects.filter((o) => o.type === "service").length;
-    return { experiences, alerts, services };
+    const places = objects.filter((o) => o.type === "place").length;
+    return { experiences, alerts, places };
   }, [objects]);
 
   const onContextAction = useCallback(
@@ -118,7 +135,6 @@ export function LifeMapScreen() {
         actorPersonId: demoPersonId,
       });
 
-      // Domain handoff — map never owns booking / messaging SoT.
       if (action === "open" || action === "navigate" || action === "join") {
         const entityId = intent.ref?.entityId;
         if (
@@ -159,7 +175,7 @@ export function LifeMapScreen() {
     [selectedObject, demoPersonId, router],
   );
 
-  if (!moduleOn) {
+  if (!experienceOn) {
     return (
       <MobileScreen>
         <EmptyState
@@ -199,23 +215,12 @@ export function LifeMapScreen() {
   }
 
   const territory = pack.territory;
-  const layers = territory.layers;
 
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Life Map"
-        subtitle={
-          devPreview
-            ? `${pack.territoryName} · ${
-                previewEngine === "maplibre"
-                  ? hybrid3D
-                    ? "Twin 3D"
-                    : "MapLibre"
-                  : "Three"
-              } (dev)`
-            : pack.territoryName
-        }
+        title={pack.territoryName}
+        subtitle="Tu comunidad en vivo"
         onBack={() => router.push("/")}
         onExit={() => router.push("/")}
       />
@@ -223,11 +228,12 @@ export function LifeMapScreen() {
       <LifeMapViewport
         territory={territory}
         objects={objects}
-        previewUnlocked={devPreview}
+        previewUnlocked={experienceOn}
         territoryDataResolver={territoryDataResolver}
         selectedObjectId={selectedObjectId}
         onObjectSelect={onObjectSelect}
         dataVersion={pack.dataVersion}
+        territoryName={pack.territoryName}
       />
 
       {contextModel ? (
@@ -235,63 +241,45 @@ export function LifeMapScreen() {
           model={contextModel}
           onAction={onContextAction}
           onClose={() => setSelectedObjectId(null)}
+          customerDemo
         />
       ) : null}
 
-      <section className="mt-5" aria-label="Pulso de la comunidad">
+      <section className="mt-5" aria-label="Ahora en la comunidad">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
           Ahora en la comunidad
         </h2>
-        <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
-          {communityPulse.experiences} experiencias · {communityPulse.alerts}{" "}
-          avisos · {communityPulse.services} servicios en el twin
+        <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+          {communityPulse.places} lugares · {communityPulse.experiences}{" "}
+          experiencias
+          {communityPulse.alerts > 0
+            ? ` · ${communityPulse.alerts} avisos activos`
+            : ""}
         </p>
       </section>
 
-      <section className="mt-5" aria-label="Capas del territorio">
+      <section className="mt-5 pb-6" aria-label="Lugares de la comunidad">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-          Capas
+          Descubre
         </h2>
-        <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
-          {layers.map((layer) => (
-            <li
-              key={layer.id}
-              className="flex items-center justify-between py-2.5 text-[15px]"
-            >
-              <span className="font-medium text-[var(--color-text-primary)]">
-                {layer.label ?? layer.id}
-              </span>
-              <span className="text-[13px] text-[var(--color-text-tertiary)]">
-                {layer.visible ? "Visible" : "Oculta"}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="mt-5 pb-6" aria-label="Objetos espaciales">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-          Vida de la comunidad
-        </h2>
-        {objects.length === 0 ? (
+        {highlightPlaces.length === 0 ? (
           <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">
-            No hay proyecciones espaciales cargadas.
+            Aún no hay lugares publicados en el mapa.
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
-            {objects.map((object) => (
+            {highlightPlaces.map((object) => (
               <li key={object.objectId}>
                 <button
                   type="button"
-                  className="w-full py-2.5 text-left"
+                  className="w-full py-3 text-left"
                   onClick={() => setSelectedObjectId(object.objectId)}
                 >
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
                     {object.label ?? object.objectId}
                   </p>
                   <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                    {object.type}
-                    {object.asset3DKey ? ` · ${object.asset3DKey}` : ""}
+                    {TYPE_LABEL[object.type] ?? "Espacio"}
                   </p>
                 </button>
               </li>

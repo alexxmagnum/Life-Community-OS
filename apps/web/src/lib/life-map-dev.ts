@@ -1,14 +1,15 @@
 /**
- * Local-only Life Map visual preview gate.
- * Production stays fail-closed via tenant `lifeMap: false` + module registry.
+ * Life Map experience gates.
+ * Panoramica customer demo uses MapLibre + hybrid Three by default.
+ * Production tenants stay fail-closed via their own `lifeMap` feature flag.
  */
 
-/** Dev spatial engine for `/map` technical preview. */
+/** Spatial engine for `/map`. */
 export type LifeMapDevEngine = "maplibre" | "three";
 
 /**
- * Which renderer `/map` mounts in development.
- * Default: MapLibre (Phase 10.11). Set `NEXT_PUBLIC_LIFE_MAP_ENGINE=three` to restore Three.
+ * Which renderer `/map` mounts.
+ * Default: MapLibre (territorial SoT). Set `NEXT_PUBLIC_LIFE_MAP_ENGINE=three` for legacy prototype.
  */
 export function getLifeMapDevEngine(): LifeMapDevEngine {
   const value = process.env.NEXT_PUBLIC_LIFE_MAP_ENGINE?.trim().toLowerCase();
@@ -16,6 +17,10 @@ export function getLifeMapDevEngine(): LifeMapDevEngine {
   return "maplibre";
 }
 
+/**
+ * Legacy local unlock when tenant `lifeMap` feature is still off.
+ * Prefer enabling the tenant feature for customer demos.
+ */
 export function isLifeMapDevPreviewEnabled(): boolean {
   return (
     process.env.NODE_ENV === "development" &&
@@ -24,14 +29,17 @@ export function isLifeMapDevPreviewEnabled(): boolean {
 }
 
 /**
- * Hybrid MapLibre + Three building extrusion overlay (dev preview only).
- * Default on when Life Map dev preview is enabled and engine is MapLibre.
+ * Hybrid MapLibre + Three world — customer demo default.
  * Opt out with `NEXT_PUBLIC_LIFE_MAP_3D=0`.
  */
 export function isLifeMapHybrid3DPreviewEnabled(): boolean {
-  if (!isLifeMapDevPreviewEnabled()) return false;
   if (getLifeMapDevEngine() !== "maplibre") return false;
   const value = process.env.NEXT_PUBLIC_LIFE_MAP_3D?.trim().toLowerCase();
   if (value === "0" || value === "false" || value === "off") return false;
   return true;
+}
+
+/** Customer-facing experience unlock (feature OR local demo gate). */
+export function isLifeMapExperienceUnlocked(featureEnabled: boolean): boolean {
+  return featureEnabled || isLifeMapDevPreviewEnabled();
 }

@@ -29,7 +29,6 @@ import { useEffect, useRef, type CSSProperties } from "react";
 
 import { createMapLibreLifeMapRenderer } from "./create-maplibre-renderer";
 import {
-  computeSpatialPitchDegrees,
   computeVolumePresence,
   detectLifeMapRenderQuality,
   LIFE_MAP_PREMIUM_CAMERA,
@@ -136,7 +135,6 @@ export function MapLibreLifeMapCanvas({
 
     let cancelled = false;
     let detachMapListeners: (() => void) | null = null;
-    let pitchEaseTimer: ReturnType<typeof setTimeout> | null = null;
 
     const setupHybrid = async () => {
       if (!hybrid3DOverlay || cancelled) return;
@@ -295,20 +293,8 @@ export function MapLibreLifeMapCanvas({
         layer3d.setVolumePresence?.(
           computeVolumePresence(view.zoom, view.pitchDegrees),
         );
-
-        // Fluid 2D→3D: pitch eases toward zoom-dependent spatial target.
-        const targetPitch = computeSpatialPitchDegrees(view.zoom);
-        if (Math.abs(view.pitchDegrees - targetPitch) > 2.5) {
-          if (pitchEaseTimer) clearTimeout(pitchEaseTimer);
-          pitchEaseTimer = setTimeout(() => {
-            if (cancelled) return;
-            map.easeTo({
-              pitch: targetPitch,
-              duration: quality === "mobile" ? 420 : 650,
-              essential: true,
-            });
-          }, quality === "mobile" ? 120 : 80);
-        }
+        // Customer demo: do not auto-fight the user's pitch after entrance.
+        // Volume presence alone keeps the 3D read stable.
       };
 
       const onMove = () => {
@@ -378,7 +364,6 @@ export function MapLibreLifeMapCanvas({
         map.off("mouseout", onMouseLeave);
         map.off("click", onClick);
         map.getCanvas().style.cursor = "";
-        if (pitchEaseTimer) clearTimeout(pitchEaseTimer);
       };
     };
 

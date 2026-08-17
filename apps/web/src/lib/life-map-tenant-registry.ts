@@ -28,7 +28,7 @@ export function ensureLifeMapTenantPacksRegistered(): void {
       listObjects: () => listLifePanoramicaSpatialObjects(),
       createTerritoryDataResolver: () =>
         createLifePanoramicaTerritoryDataResolver(),
-      dataVersion: "panoramica-twin-v2",
+      dataVersion: "panoramica-demo-v1",
       enrichContext: (object) => enrichLifePanoramicaLifeMapContext(object),
     };
   });

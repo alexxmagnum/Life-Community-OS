@@ -12,6 +12,8 @@ export type LifeMapContextPanelProps = {
   model: LifeMapContextPanelModel;
   onAction: (action: LifeMapActionKind) => void;
   onClose: () => void;
+  /** Hide technical twin keys in customer demos. */
+  customerDemo?: boolean;
 };
 
 const ACTION_LABEL: Record<LifeMapActionKind, string> = {
@@ -26,6 +28,7 @@ export function LifeMapContextPanel({
   model,
   onAction,
   onClose,
+  customerDemo = false,
 }: LifeMapContextPanelProps) {
   const tone = model.heroTone ?? "#c4b8a4";
 
@@ -81,7 +84,7 @@ export function LifeMapContextPanel({
           {model.summary}
         </p>
 
-        {model.asset3DKey ? (
+        {model.asset3DKey && !customerDemo ? (
           <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
             Twin · {model.asset3DKey}
           </p>

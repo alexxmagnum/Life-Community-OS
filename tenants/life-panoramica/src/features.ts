@@ -93,8 +93,11 @@ export const lifePanoramicaFeatures: TenantFeatureFlags = {
   participationTrust: true,
   intelligentDiffusion: true,
   housing: true,
-  /** Premium spatial twin — prepared, not activated. */
-  lifeMap: false,
+  /**
+   * Life Map — spatial digital twin (premium).
+   * Reference demo: ON — customer-ready community experience.
+   */
+  lifeMap: true,
 };
 
 /** Minimal community showcase — core living modules only (future tenants). */

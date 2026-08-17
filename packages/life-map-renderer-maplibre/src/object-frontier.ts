@@ -1,7 +1,7 @@
 /**
  * Life OS object frontier for MapLibre.
  *
- * Renders soft geo markers (circles) — not classic pins.
+ * Soft geo presence + readable labels — not classic pins.
  * Local anchors without geo are skipped until projected by the host.
  */
 
@@ -10,6 +10,7 @@ import type {
   CircleLayerSpecification,
   GeoJSONSource,
   Map as MapLibreMap,
+  SymbolLayerSpecification,
 } from "maplibre-gl";
 
 /** Stable MapLibre custom-layer / source id for a Life OS object. */
@@ -23,6 +24,7 @@ export function mapLibreObjectLayerId(objectId: string): string {
 
 export const MAPLIBRE_OBJECTS_SOURCE_ID = "lm-life-os-objects";
 export const MAPLIBRE_OBJECTS_LAYER_ID = "lm-life-os-objects-circle";
+export const MAPLIBRE_OBJECTS_LABEL_LAYER_ID = "lm-life-os-objects-label";
 
 /**
  * Planned object binding — hook for marker / symbol / custom layer.
@@ -75,6 +77,8 @@ function colorForType(type: LifeMapRenderableObject["type"]): string {
     case "community":
     case "experience":
       return "#7a6b8f";
+    case "official":
+      return "#8a7a68";
     case "housing":
     case "decoration":
       return "#8a7d6a";
@@ -84,7 +88,7 @@ function colorForType(type: LifeMapRenderableObject["type"]): string {
 }
 
 /**
- * Sync Life OS objects onto MapLibre as soft territorial markers.
+ * Sync Life OS objects onto MapLibre as soft territorial markers + labels.
  * Geo positions only — host must project local→geo before renderable sync if needed.
  */
 export function syncMapLibreObjectFrontier(
@@ -107,7 +111,7 @@ export function syncMapLibreObjectFrontier(
         properties: {
           objectId: o.objectId,
           type: o.type,
-          label: o.label ?? o.objectId,
+          label: o.label ?? "",
           color: colorForType(o.type),
         },
         geometry: {
@@ -144,19 +148,61 @@ export function syncMapLibreObjectFrontier(
           ["linear"],
           ["zoom"],
           13,
-          5,
-          16,
-          9,
+          6,
+          15.5,
+          11,
         ],
         "circle-color": ["get", "color"],
-        "circle-opacity": 0.82,
-        "circle-stroke-width": 1.5,
-        "circle-stroke-color": "#f5f1e8",
-        "circle-stroke-opacity": 0.9,
+        "circle-opacity": 0.78,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#f7f3ea",
+        "circle-stroke-opacity": 0.95,
       },
       metadata: { lifeMapObjects: true },
     };
     map.addLayer(layer);
+  }
+
+  if (!map.getLayer(MAPLIBRE_OBJECTS_LABEL_LAYER_ID)) {
+    const labels: SymbolLayerSpecification = {
+      id: MAPLIBRE_OBJECTS_LABEL_LAYER_ID,
+      type: "symbol",
+      source: MAPLIBRE_OBJECTS_SOURCE_ID,
+      layout: {
+        "text-field": ["get", "label"],
+        "text-size": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          13,
+          11,
+          15.5,
+          13,
+        ],
+        "text-offset": [0, 1.15],
+        "text-anchor": "top",
+        "text-font": ["Open Sans Regular", "Arial Unicode MS Regular"],
+        "text-max-width": 10,
+        "text-allow-overlap": false,
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": "#3d3a34",
+        "text-halo-color": "rgba(247, 243, 234, 0.92)",
+        "text-halo-width": 1.4,
+        "text-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          13.2,
+          0,
+          13.8,
+          0.95,
+        ],
+      },
+      metadata: { lifeMapObjects: true },
+    };
+    map.addLayer(labels);
   }
 
   return bindings;

@@ -77,6 +77,7 @@ export function lifeMapPixelRatioForQuality(
 export const LIFE_MAP_PREMIUM_STYLE: StyleSpecification = {
   version: 8,
   name: "life-map-premium",
+  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   sources: {},
   layers: [
     {
@@ -222,21 +223,21 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   /** Opening move duration (ms). 0 = snap (SSR / first paint). */
   openDurationMs: 1100,
   /** Hybrid: gentle pitch so volume reads without a hard cut. */
-  hybridPitchDegrees: 54,
-  hybridPitchDurationMs: 1800,
+  hybridPitchDegrees: 52,
+  hybridPitchDurationMs: 2000,
   /** Cinematic entrance — arrive into the community. */
-  entranceStartZoomDelta: 1.15,
-  entranceStartPitch: 16,
-  entranceStartBearingOffset: -28,
-  entranceDurationMs: 2200,
+  entranceStartZoomDelta: 1.35,
+  entranceStartPitch: 12,
+  entranceStartBearingOffset: -22,
+  entranceDurationMs: 2800,
   /** Volume presence: buildings gain extrusion as user approaches. */
-  volumeZoomStart: 13.4,
-  volumeZoomFull: 15.4,
-  volumePitchStart: 16,
+  volumeZoomStart: 13.2,
+  volumeZoomFull: 15.2,
+  volumePitchStart: 14,
   volumePitchFull: 48,
-  /** Dynamic pitch curve for 2D → 3D spatial transition. */
+  /** Dynamic pitch curve for 2D → 3D spatial transition (hint only). */
   spatialPitchAtZoomStart: 22,
-  spatialPitchAtZoomFull: 54,
+  spatialPitchAtZoomFull: 52,
   spatialPitchZoomStart: 13.2,
   spatialPitchZoomFull: 15.6,
 } as const;

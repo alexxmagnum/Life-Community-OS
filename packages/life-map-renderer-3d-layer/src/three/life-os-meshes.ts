@@ -258,6 +258,8 @@ export function createLifeOsSpatialMesh(
   );
   root.name = `life-os:${object.id}`;
   root.position.set(x, 0, z);
+  // Human-scale presence at community zoom (not GIS pin size).
+  root.scale.setScalar(1.55);
   tagSpatial(root, object);
   return root;
 }
