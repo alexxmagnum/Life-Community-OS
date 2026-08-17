@@ -60,6 +60,7 @@ export type LifeMapViewportProps = {
   territoryDataResolver?: TerritoryDataResolver;
   selectedObjectId?: string | null;
   onObjectSelect?: (objectId: string | null) => void;
+  dataVersion?: string;
 };
 
 function territoryGeoOrigin(territory: LifeMapTerritory) {
@@ -82,6 +83,7 @@ export function LifeMapViewport({
   territoryDataResolver,
   selectedObjectId = null,
   onObjectSelect,
+  dataVersion = "v1",
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
@@ -138,6 +140,7 @@ export function LifeMapViewport({
           onObjectSelect={onObjectSelect}
           assetResolver={assetResolver}
           cinematicEntrance={hybrid3D}
+          dataVersion={dataVersion}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />

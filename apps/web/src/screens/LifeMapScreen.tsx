@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EmptyState,
@@ -10,6 +10,7 @@ import {
 import {
   buildLifeMapContextPanel,
   buildLifeMapInteraction,
+  emitLifeMapTelemetry,
   type LifeMapContextPanelModel,
 } from "@life-community-os/life-map-renderer";
 import type { LifeMapActionKind, LifeMapObject } from "@life-community-os/types";
@@ -69,12 +70,44 @@ export function LifeMapScreen() {
 
   const contextModel: LifeMapContextPanelModel | null = useMemo(() => {
     if (!selectedObject) return null;
-    return buildLifeMapContextPanel(selectedObject);
-  }, [selectedObject]);
+    const enrichment = pack?.enrichContext?.(selectedObject) ?? null;
+    return buildLifeMapContextPanel(selectedObject, enrichment);
+  }, [selectedObject, pack]);
 
-  const onObjectSelect = useCallback((objectId: string | null) => {
-    setSelectedObjectId(objectId);
-  }, []);
+  useEffect(() => {
+    if (!pack) return;
+    emitLifeMapTelemetry({
+      type: "life_map.opened",
+      tenantId: pack.tenantId,
+      territoryId: pack.territory.territoryId,
+      dataVersion: pack.dataVersion,
+    });
+  }, [pack]);
+
+  const onObjectSelect = useCallback(
+    (objectId: string | null) => {
+      setSelectedObjectId(objectId);
+      if (objectId && pack) {
+        const obj = objects.find((o) => o.objectId === objectId);
+        if (obj) {
+          emitLifeMapTelemetry({
+            type: "life_map.object_selected",
+            tenantId: pack.tenantId,
+            objectId: obj.objectId,
+            objectType: obj.type,
+          });
+        }
+      }
+    },
+    [objects, pack],
+  );
+
+  const communityPulse = useMemo(() => {
+    const experiences = objects.filter((o) => o.type === "experience").length;
+    const alerts = objects.filter((o) => o.type === "community").length;
+    const services = objects.filter((o) => o.type === "service").length;
+    return { experiences, alerts, services };
+  }, [objects]);
 
   const onContextAction = useCallback(
     (action: LifeMapActionKind) => {
@@ -86,8 +119,15 @@ export function LifeMapScreen() {
       });
 
       // Domain handoff — map never owns booking / messaging SoT.
-      if (action === "open" || action === "navigate") {
+      if (action === "open" || action === "navigate" || action === "join") {
         const entityId = intent.ref?.entityId;
+        if (
+          intent.ref?.moduleId === "community" &&
+          intent.ref.entityKind === "community_alert"
+        ) {
+          router.push("/community?tab=actualidad");
+          return;
+        }
         if (intent.ref?.moduleId === "community" && entityId) {
           router.push(`/local/${entityId}`);
           return;
@@ -95,6 +135,17 @@ export function LifeMapScreen() {
         if (intent.ref?.moduleId === "resources" && entityId) {
           router.push(`/resources/${entityId}`);
           return;
+        }
+        if (intent.ref?.moduleId === "experiences" && entityId) {
+          router.push(`/experiences/${entityId}`);
+          return;
+        }
+        if (intent.ref?.moduleId === "official") {
+          const slug = intent.ref.entityKind;
+          if (slug) {
+            router.push(`/official/${slug}`);
+            return;
+          }
         }
         if (intent.ref?.moduleId === "housing" && entityId) {
           router.push(`/housing/${entityId}`);
@@ -176,6 +227,7 @@ export function LifeMapScreen() {
         territoryDataResolver={territoryDataResolver}
         selectedObjectId={selectedObjectId}
         onObjectSelect={onObjectSelect}
+        dataVersion={pack.dataVersion}
       />
 
       {contextModel ? (
@@ -185,6 +237,16 @@ export function LifeMapScreen() {
           onClose={() => setSelectedObjectId(null)}
         />
       ) : null}
+
+      <section className="mt-5" aria-label="Pulso de la comunidad">
+        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+          Ahora en la comunidad
+        </h2>
+        <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
+          {communityPulse.experiences} experiencias · {communityPulse.alerts}{" "}
+          avisos · {communityPulse.services} servicios en el twin
+        </p>
+      </section>
 
       <section className="mt-5" aria-label="Capas del territorio">
         <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">

@@ -1,9 +1,10 @@
 /**
  * Life Map asset3DKey → 3D visual resolver (web host).
- * Uses Asset Registry when present; otherwise procedural Spatial Library visuals.
+ * Asset Library → registry/spatial catalog → visualKind (+ optional glTF).
  */
 
 import {
+  ensurePlatformSpatialCatalog,
   resolveLifeMapAsset3DKey,
 } from "@life-community-os/assets";
 import {
@@ -11,6 +12,8 @@ import {
   inferLifeMap3DAssetVisualKind,
   type LifeMap3DAssetResolver,
 } from "@life-community-os/life-map-renderer-3d-layer";
+
+ensurePlatformSpatialCatalog();
 
 export function createWebLifeMapAssetResolver(
   tenantId?: string,
@@ -25,6 +28,9 @@ export function createWebLifeMapAssetResolver(
       return {
         key: meta.key,
         path: meta.path,
+        ...(meta.spatial?.modelPath
+          ? { modelPath: meta.spatial.modelPath }
+          : {}),
         visualKind: inferLifeMap3DAssetVisualKind(asset3DKey),
         labelHint: meta.spatial?.category,
       };

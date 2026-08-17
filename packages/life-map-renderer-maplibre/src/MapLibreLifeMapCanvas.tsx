@@ -6,6 +6,10 @@
 
 import type { LifeMapScene } from "@life-community-os/life-map-renderer";
 import {
+  emitLifeMapTelemetry,
+  lifeMapCacheKey,
+} from "@life-community-os/life-map-renderer";
+import {
   buildingFeaturesFromGeoJson,
   createThreeLifeMap3DLayer,
   greenFeaturesFromGeoJson,
@@ -54,6 +58,8 @@ export type MapLibreLifeMapCanvasProps = {
   assetResolver?: LifeMap3DAssetResolver;
   /** Run cinematic entrance into the territory (hybrid). Default true. */
   cinematicEntrance?: boolean;
+  /** Opaque pack version for cache / telemetry. */
+  dataVersion?: string;
 };
 
 function readMapLibreView(map: MapLibreMap) {
@@ -93,6 +99,7 @@ export function MapLibreLifeMapCanvas({
   onObjectSelect,
   assetResolver,
   cinematicEntrance = true,
+  dataVersion = "v1",
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -216,6 +223,11 @@ export function MapLibreLifeMapCanvas({
         }
       }
 
+      const cacheHint = {
+        territoryId: currentScene.territoryId,
+        version: dataVersion,
+      };
+
       const layer3d = createThreeLifeMap3DLayer({
         id: "life-map.3d-layer.hybrid-world",
         selectable: true,
@@ -234,14 +246,41 @@ export function MapLibreLifeMapCanvas({
       });
       layer3dRef.current = layer3d;
       layer3d.mount({ element: overlayHost });
+
+      // Progressive load: volumes first, then environment pads.
       layer3d.setInput({
         buildings,
-        water,
-        green,
+        water: [],
+        green: [],
         spatialObjects: [...spatialRef.current],
         scene: currentScene,
         camera: currentScene.camera,
       });
+      emitLifeMapTelemetry({
+        type: "life_map.layer_loaded",
+        tenantId: currentScene.tenantId,
+        layer: "buildings",
+        featureCount: buildings.length,
+        cacheKey: lifeMapCacheKey(cacheHint, "buildings"),
+      });
+
+      if (!cancelled && (water.length > 0 || green.length > 0)) {
+        layer3d.setInput({
+          buildings,
+          water,
+          green,
+          spatialObjects: [...spatialRef.current],
+          scene: currentScene,
+          camera: currentScene.camera,
+        });
+        emitLifeMapTelemetry({
+          type: "life_map.layer_loaded",
+          tenantId: currentScene.tenantId,
+          layer: "environment",
+          featureCount: water.length + green.length,
+          cacheKey: lifeMapCacheKey(cacheHint, "environment"),
+        });
+      }
       layer3d.syncMapLibreView?.(readMapLibreView(map));
       layer3d.setVolumePresence?.(
         computeVolumePresence(map.getZoom(), map.getPitch()),
@@ -383,7 +422,7 @@ export function MapLibreLifeMapCanvas({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [technicalBasemap, territoryDataResolver, hybrid3DOverlay, assetResolver, cinematicEntrance]);
+  }, [technicalBasemap, territoryDataResolver, hybrid3DOverlay, assetResolver, cinematicEntrance, dataVersion]);
 
   useEffect(() => {
     rendererRef.current?.setScene(scene);

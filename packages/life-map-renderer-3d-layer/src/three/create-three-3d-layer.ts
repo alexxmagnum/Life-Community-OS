@@ -8,6 +8,10 @@
 
 import type { LifeMapRendererCamera } from "@life-community-os/life-map-renderer";
 import {
+  LIFE_MAP_PERFORMANCE_BUDGETS,
+  emitLifeMapTelemetry,
+} from "@life-community-os/life-map-renderer";
+import {
   AmbientLight,
   Color,
   DirectionalLight,
@@ -78,9 +82,11 @@ import { createSpatialObjectsGroup } from "./spatial-markers";
 import { createFlatTerrainMesh } from "./terrain-mesh";
 import {
   resolveLifeMap3DAssetVisual,
+  isLifeMapGltfModelPath,
   type LifeMap3DAssetResolver,
 } from "../asset-visual";
 import { LIFE_MAP_3D_VEGETATION } from "../environment";
+import { loadLifeMapGltfModel } from "./gltf-asset";
 
 function resolveHostElement(host: LifeMap3DLayerHost): HTMLElement {
   if (host.element instanceof HTMLElement) return host.element;
@@ -124,13 +130,16 @@ export function createThreeLifeMap3DLayer(
 ): LifeMap3DLayer {
   const selectable = options.selectable !== false;
   const quality = options.quality ?? "desktop";
-  const softShadows = quality === "desktop";
+  const budget =
+    quality === "mobile"
+      ? LIFE_MAP_PERFORMANCE_BUDGETS.mobile
+      : LIFE_MAP_PERFORMANCE_BUDGETS.desktop;
+  const softShadows = budget.enableShadows;
   const showTerrain = options.showTerrain !== false;
   const showEnvironment = options.showEnvironment !== false;
   const showSpatialObjects = options.showSpatialObjects !== false;
   const assetResolver: LifeMap3DAssetResolver | undefined = options.assetResolver;
-  const pixelRatioCap =
-    options.pixelRatio ?? (quality === "mobile" ? 1.5 : 2);
+  const pixelRatioCap = options.pixelRatio ?? budget.maxPixelRatio;
   const defaultHeight =
     options.defaultBuildingHeightMeters ??
     LIFE_MAP_3D_DEFAULT_BUILDING_HEIGHT_METERS;
@@ -308,7 +317,7 @@ export function createThreeLifeMap3DLayer(
     const camX = perspective?.position.x ?? 0;
     const camZ = perspective?.position.z ?? 0;
 
-    const maxBuildings = quality === "mobile" ? 120 : 400;
+    const maxBuildings = budget.maxBuildingMeshes;
     const buildingList =
       input.buildings.length > maxBuildings
         ? input.buildings.slice(0, maxBuildings)
@@ -388,9 +397,10 @@ export function createThreeLifeMap3DLayer(
         origin,
         envMaterials.vegetationCanopy,
         envMaterials.vegetationTrunk,
-        quality === "mobile"
-          ? Math.min(24, LIFE_MAP_3D_VEGETATION.maxInstances)
-          : LIFE_MAP_3D_VEGETATION.maxInstances,
+        Math.min(
+          budget.maxVegetationInstances,
+          LIFE_MAP_3D_VEGETATION.maxInstances,
+        ),
       );
       if (vegetation) {
         environmentGroup.add(vegetation);
@@ -413,7 +423,7 @@ export function createThreeLifeMap3DLayer(
       );
       const seen = new Set<string>();
       const merged = [...fromInput, ...fromScene];
-      const maxMarkers = quality === "mobile" ? 24 : 80;
+      const maxMarkers = budget.maxSpatialMarkers;
       let count = 0;
       for (const obj of merged) {
         if (seen.has(obj.id)) continue;
@@ -434,6 +444,18 @@ export function createThreeLifeMap3DLayer(
           selected: selectedId === obj.id,
           handle: marker,
         });
+        if (isLifeMapGltfModelPath(resolved?.modelPath) && resolved?.modelPath) {
+          const modelPath = resolved.modelPath;
+          void loadLifeMapGltfModel(modelPath).then((gltfRoot) => {
+            if (!gltfRoot || !spatialGroup) return;
+            // Soft upgrade — keep procedural if already disposed.
+            if (!renderables.has(obj.id)) return;
+            while (marker.children.length > 0) {
+              marker.remove(marker.children[0]!);
+            }
+            marker.add(gltfRoot);
+          });
+        }
       }
     }
 
@@ -500,8 +522,15 @@ export function createThreeLifeMap3DLayer(
       }
       threeScene.add(sun);
 
+      emitLifeMapTelemetry({
+        type: "life_map.budget_applied",
+        quality,
+        maxBuildings: budget.maxBuildingMeshes,
+        maxMarkers: budget.maxSpatialMarkers,
+      });
+
       renderer = new WebGLRenderer({
-        antialias: quality === "desktop",
+        antialias: budget.enableAntialias,
         alpha: true,
         powerPreference:
           quality === "mobile" ? "low-power" : "high-performance",

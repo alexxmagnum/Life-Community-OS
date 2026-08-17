@@ -9,18 +9,25 @@
 export type LifeMap3DAssetVisualKind =
   | "restaurant"
   | "cafe"
+  | "shop"
   | "pool"
   | "golf"
   | "padel"
   | "clubhouse"
   | "service"
   | "house"
+  | "security"
+  | "event"
+  | "alert"
+  | "path"
   | "generic";
 
 export type LifeMap3DAssetResolveResult = {
   key: string;
-  /** Public path when registry has a binary — optional. */
+  /** Public preview path when registry has a billboard — optional. */
   path?: string;
+  /** Optional glTF/GLB under /assets/3d/ — loaded when present. */
+  modelPath?: string;
   visualKind: LifeMap3DAssetVisualKind;
   labelHint?: string;
 };
@@ -39,9 +46,15 @@ export function inferLifeMap3DAssetVisualKind(
   const key = asset3DKey.toLowerCase();
   if (key.includes("restaurant") || key.includes("ikon")) return "restaurant";
   if (key.includes("cafe") || key.includes("clubhouse")) return "cafe";
+  if (key.includes("shop") || key.includes("market") || key.includes("bakery"))
+    return "shop";
   if (key.includes("pool")) return "pool";
   if (key.includes("golf")) return "golf";
   if (key.includes("padel") || key.includes("tennis")) return "padel";
+  if (key.includes("security")) return "security";
+  if (key.includes("alert")) return "alert";
+  if (key.includes("gathering") || key.includes("event")) return "event";
+  if (key.includes("path") || key.includes("nature")) return "path";
   if (key.includes("service") || key.includes("garden")) return "service";
   if (key.includes("house") || key.includes("building")) return "house";
   if (key.includes("place.")) return "restaurant";
@@ -75,4 +88,10 @@ export function resolveLifeMap3DAssetVisual(
     }
   }
   return createProceduralLifeMap3DAssetResolver()(asset3DKey);
+}
+
+export function isLifeMapGltfModelPath(path: string | undefined): boolean {
+  if (!path) return false;
+  const lower = path.toLowerCase();
+  return lower.endsWith(".glb") || lower.endsWith(".gltf");
 }

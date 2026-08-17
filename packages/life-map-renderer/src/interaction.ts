@@ -127,9 +127,10 @@ function experienceForObject(object: LifeMapObject): {
 
 export function buildLifeMapContextPanel(
   object: LifeMapObject,
+  enrichment?: Partial<LifeMapContextPanelModel> | null,
 ): LifeMapContextPanelModel {
   const experience = experienceForObject(object);
-  return {
+  const base: LifeMapContextPanelModel = {
     objectId: object.objectId,
     label: object.label ?? object.objectId,
     type: object.type,
@@ -141,6 +142,24 @@ export function buildLifeMapContextPanel(
     summary: experience.summary,
     experienceTag: experience.experienceTag,
     heroTone: experience.heroTone,
+  };
+  if (!enrichment) return base;
+  return {
+    ...base,
+    ...enrichment,
+    availableActions: enrichment.availableActions ?? base.availableActions,
+  };
+}
+
+export function mergeLifeMapContextPanel(
+  base: LifeMapContextPanelModel,
+  enrichment?: Partial<LifeMapContextPanelModel> | null,
+): LifeMapContextPanelModel {
+  if (!enrichment) return base;
+  return {
+    ...base,
+    ...enrichment,
+    availableActions: enrichment.availableActions ?? base.availableActions,
   };
 }
 

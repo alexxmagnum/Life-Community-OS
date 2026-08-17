@@ -102,3 +102,11 @@ export {
   getRegistryStats,
   assertSafeAssetPath,
 } from "./resolve";
+
+export {
+  ensurePlatformSpatialCatalog,
+  getSpatialCatalogAsset,
+  hasSpatialCatalogAsset,
+  listSpatialCatalogAssets,
+  registerSpatialCatalogAsset,
+} from "./spatial-catalog";

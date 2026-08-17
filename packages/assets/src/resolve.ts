@@ -17,8 +17,15 @@ import {
   tenantPackDefinesLogicalKey,
   tenantPackEntryToMetadata,
 } from "./tenant-pack";
+import {
+  ensurePlatformSpatialCatalog,
+  getSpatialCatalogAsset,
+  hasSpatialCatalogAsset,
+  listSpatialCatalogAssets,
+} from "./spatial-catalog";
 
 ensureFoundationTenantAssetPacks();
+ensurePlatformSpatialCatalog();
 
 const ASSET_ROOT_PREFIX = "/assets/3d/";
 
@@ -121,6 +128,16 @@ export function getAsset(key: AssetKey | string, options?: AssetResolveOptions):
     return toMetadata(logicalKey, raw);
   }
 
+  // Spatial catalog (platform Life Map keys) — before tenant pack / miss.
+  const spatial = getSpatialCatalogAsset(logicalKey);
+  if (spatial) {
+    assertSafeAssetPath(spatial.path);
+    if (spatial.spatial?.modelPath) {
+      assertSafeAssetPath(spatial.spatial.modelPath);
+    }
+    return spatial;
+  }
+
   // Platform miss → tenant pack (never without tenant context).
   if (!requestedTenant) {
     if (tenantPackDefinesLogicalKey(logicalKey)) {
@@ -149,11 +166,16 @@ export function asset(key: AssetKey | string, options?: AssetResolveOptions): st
 }
 
 export function hasAsset(key: string): key is AssetKey {
-  return Object.prototype.hasOwnProperty.call(assetRegistry, key);
+  if (Object.prototype.hasOwnProperty.call(assetRegistry, key)) return true;
+  return hasSpatialCatalogAsset(key);
 }
 
 export function listAssetKeys(): AssetKey[] {
-  return Object.keys(assetRegistry) as AssetKey[];
+  const keys = new Set<string>([
+    ...Object.keys(assetRegistry),
+    ...listSpatialCatalogAssets().map((a) => a.key),
+  ]);
+  return [...keys] as AssetKey[];
 }
 
 /**
@@ -163,7 +185,8 @@ export function listAssetKeys(): AssetKey[] {
  */
 export function listAssets(options?: AssetResolveOptions): readonly AssetMetadata[] {
   const requestedTenant = options?.tenant?.trim() || undefined;
-  const fromPlatform = listAssetKeys()
+  const platformKeys = Object.keys(assetRegistry) as AssetKey[];
+  const fromUiRegistry = platformKeys
     .filter((key) => {
       const raw = assetRegistry[key];
       if (raw.scope === "global") return true;
@@ -171,13 +194,19 @@ export function listAssets(options?: AssetResolveOptions): readonly AssetMetadat
     })
     .map((key) => getAsset(key, options));
 
+  const fromSpatial = listSpatialCatalogAssets();
+  const fromPlatform = [...fromUiRegistry, ...fromSpatial];
+
   if (!requestedTenant) return fromPlatform;
 
   const pack = getTenantAssetPack(requestedTenant);
   if (!pack) return fromPlatform;
 
   const fromPack = Object.keys(pack.assets)
-    .filter((logicalKey) => !(logicalKey in assetRegistry))
+    .filter(
+      (logicalKey) =>
+        !(logicalKey in assetRegistry) && !hasSpatialCatalogAsset(logicalKey),
+    )
     .map((logicalKey) => getAsset(logicalKey, options));
 
   return [...fromPlatform, ...fromPack];
@@ -196,6 +225,7 @@ export function getAssetConceptId(meta: AssetMetadata | string): string {
 
 function isResolvableKey(key: string, options?: AssetResolveOptions): boolean {
   if (key in assetRegistry) return true;
+  if (hasSpatialCatalogAsset(key)) return true;
   const tenant = options?.tenant?.trim();
   if (!tenant) return false;
   return Boolean(getTenantPackEntry(tenant, key));

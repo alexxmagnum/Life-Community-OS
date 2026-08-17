@@ -27,6 +27,19 @@ export type LifeMapTenantPack = {
   createTerritoryDataResolver: () => TerritoryDataResolver;
   /** Opaque content version for cache / CDN keys. */
   dataVersion: string;
+  /** Optional CDN base for streaming assets (Phase 12). */
+  assetCdnBaseUrl?: string;
+  /** Optional domain enrichment for context cards (tenant-owned). */
+  enrichContext?: (
+    object: LifeMapObject,
+  ) => Partial<{
+    label: string;
+    summary: string;
+    experienceTag: string;
+    heroTone: string;
+    imageUrl: string;
+    categoryHint: string;
+  }> | null;
 };
 
 type PackFactory = () => LifeMapTenantPack;

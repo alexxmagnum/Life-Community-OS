@@ -5,6 +5,7 @@
 
 import {
   BoxGeometry,
+  ConeGeometry,
   CylinderGeometry,
   Group,
   Mesh,
@@ -24,12 +25,17 @@ import { LIFE_MAP_3D_SPATIAL_USERDATA_KEY } from "./spatial-markers";
 const KIND_COLOR: Record<LifeMap3DAssetVisualKind, string> = {
   restaurant: "#b8a090",
   cafe: "#c4b4a0",
+  shop: "#b8a890",
   pool: "#7eb0c4",
   golf: "#8faf7a",
   padel: "#7a9e8a",
   clubhouse: "#c8b8a4",
   service: "#b0a088",
   house: "#d2c6b4",
+  security: "#9a8a7a",
+  event: "#a89888",
+  alert: "#c47868",
+  path: "#8faf9a",
   generic: "#a8c4c8",
 };
 
@@ -147,6 +153,54 @@ function buildGeneric(color: string): Group {
   return g;
 }
 
+function buildShop(color: string): Group {
+  const g = new Group();
+  const body = new Mesh(new BoxGeometry(4.2, 2.6, 3.4), mat(color));
+  body.position.y = 1.3;
+  const awning = new Mesh(new BoxGeometry(4.6, 0.2, 1.2), mat("#c45c5c"));
+  awning.position.set(0, 2.5, 1.6);
+  g.add(body, awning);
+  return g;
+}
+
+function buildSecurity(color: string): Group {
+  const g = new Group();
+  const post = new Mesh(new CylinderGeometry(0.35, 0.45, 3.2, 8), mat(color));
+  post.position.y = 1.6;
+  const lamp = new Mesh(new SphereGeometry(0.45, 10, 8), mat("#f0e6d4", { metalness: 0.25 }));
+  lamp.position.y = 3.4;
+  g.add(post, lamp);
+  return g;
+}
+
+function buildEvent(color: string): Group {
+  const g = new Group();
+  const base = new Mesh(new CylinderGeometry(2.2, 2.4, 0.35, 12), mat(color));
+  base.position.y = 0.18;
+  const pole = new Mesh(new CylinderGeometry(0.08, 0.08, 3.4, 6), mat("#e8e4d8"));
+  pole.position.y = 1.9;
+  const banner = new Mesh(new BoxGeometry(1.6, 1.0, 0.08), mat("#c4a070"));
+  banner.position.set(0.7, 2.8, 0);
+  g.add(base, pole, banner);
+  return g;
+}
+
+function buildAlert(color: string): Group {
+  const g = new Group();
+  const cone = new Mesh(new ConeGeometry(1.2, 2.4, 8), mat(color));
+  cone.position.y = 1.2;
+  g.add(cone);
+  return g;
+}
+
+function buildPath(color: string): Group {
+  const g = new Group();
+  const marker = new Mesh(new CylinderGeometry(0.9, 1.1, 0.4, 10), mat(color));
+  marker.position.y = 0.2;
+  g.add(marker);
+  return g;
+}
+
 export function createLifeOsSpatialMesh(
   object: LifeMap3DSpatialObject,
   origin: LifeMap3DProjectionOrigin,
@@ -163,6 +217,9 @@ export function createLifeOsSpatialMesh(
     case "clubhouse":
       root = buildCafe(color);
       break;
+    case "shop":
+      root = buildShop(color);
+      break;
     case "pool":
       root = buildPool(color);
       break;
@@ -177,6 +234,18 @@ export function createLifeOsSpatialMesh(
       break;
     case "service":
       root = buildService(color);
+      break;
+    case "security":
+      root = buildSecurity(color);
+      break;
+    case "event":
+      root = buildEvent(color);
+      break;
+    case "alert":
+      root = buildAlert(color);
+      break;
+    case "path":
+      root = buildPath(color);
       break;
     default:
       root = buildGeneric(color);

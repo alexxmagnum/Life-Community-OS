@@ -5,6 +5,7 @@
 
 import {
   createLifePanoramicaTerritoryDataResolver,
+  enrichLifePanoramicaLifeMapContext,
   getLifePanoramicaLifeMapConfig,
   listLifePanoramicaSpatialObjects,
 } from "@life-community-os/tenant-life-panoramica";
@@ -27,7 +28,8 @@ export function ensureLifeMapTenantPacksRegistered(): void {
       listObjects: () => listLifePanoramicaSpatialObjects(),
       createTerritoryDataResolver: () =>
         createLifePanoramicaTerritoryDataResolver(),
-      dataVersion: "panoramica-territory-v1",
+      dataVersion: "panoramica-twin-v2",
+      enrichContext: (object) => enrichLifePanoramicaLifeMapContext(object),
     };
   });
 }

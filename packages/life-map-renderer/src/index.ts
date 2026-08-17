@@ -57,6 +57,7 @@ export type { LifeMapContextPanelModel } from "./interaction";
 export {
   buildLifeMapContextPanel,
   buildLifeMapInteraction,
+  mergeLifeMapContextPanel,
 } from "./interaction";
 
 export type {
@@ -68,3 +69,9 @@ export {
   lifeMapCacheKey,
   capLifeMapCollection,
 } from "./performance";
+
+export type { LifeMapTelemetryEvent, LifeMapTelemetrySink } from "./telemetry";
+export {
+  subscribeLifeMapTelemetry,
+  emitLifeMapTelemetry,
+} from "./telemetry";

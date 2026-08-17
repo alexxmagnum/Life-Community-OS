@@ -35,15 +35,24 @@ export function LifeMapContextPanel({
       aria-label="Experiencia del objeto espacial"
     >
       <div
-        className="relative h-[88px] w-full"
+        className="relative h-[120px] w-full overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${tone} 0%, #f5f1e8 72%)`,
         }}
         aria-hidden
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.35),transparent_55%)]" />
+        {model.imageUrl ? (
+          // Domain-provided imagery (tenant catalog). Next Image optional later.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={model.imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-88"
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_20%,rgba(20,18,14,0.45)_100%)]" />
         {model.experienceTag ? (
-          <span className="absolute bottom-3 left-4 rounded-full bg-[rgba(255,255,255,0.82)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+          <span className="absolute bottom-3 left-4 rounded-full bg-[rgba(255,255,255,0.88)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
             {model.experienceTag}
           </span>
         ) : null}

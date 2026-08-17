@@ -98,6 +98,7 @@ export {
   inferLifeMap3DAssetVisualKind,
   createProceduralLifeMap3DAssetResolver,
   resolveLifeMap3DAssetVisual,
+  isLifeMapGltfModelPath,
 } from "./asset-visual";
 
 export {
