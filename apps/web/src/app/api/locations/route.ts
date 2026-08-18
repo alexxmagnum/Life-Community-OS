@@ -29,6 +29,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated.error;
+
   let body: CreateLocationInput;
   try {
     body = (await request.json()) as CreateLocationInput;
@@ -41,7 +45,7 @@ export async function POST(request: Request) {
       tenantId: resolveTenantPublicId(
         body.tenantId ||
           resolveRequestTenantSlug(request) ||
-          "life-panoramica",
+          gated.actor.tenantSlug,
       ),
     });
     return NextResponse.json({ location }, { status: 201 });

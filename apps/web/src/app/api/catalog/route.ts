@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdminMutation } from "@/lib/auth/mutation-gate";
 import {
   bootstrapAllCatalogs,
   bootstrapTenantCatalog,
@@ -40,6 +41,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const gated = await requireAdminMutation(request);
+  if ("error" in gated) return gated.error;
+
   let body: {
     tenantId?: string;
     domain?: string;
@@ -65,7 +69,7 @@ export async function PUT(request: Request) {
   const tenantId = resolveTenantPublicId(
     body.tenantId ||
       resolveRequestTenantSlug(request) ||
-      "life-panoramica",
+      gated.actor.tenantSlug,
   );
   await writeCatalog(tenantId, body.domain, body.items);
   return NextResponse.json({

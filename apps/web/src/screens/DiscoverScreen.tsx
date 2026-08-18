@@ -11,6 +11,7 @@ import {
   listTrustedHelp,
   rankLocalEntitiesForTerritory,
   spotsLeft,
+  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   ActivityCard,
@@ -24,6 +25,8 @@ import {
   NeighbourTipCard,
   ScreenSearch,
 } from "@life-community-os/ui";
+import { useTenantLocations } from "@/lib/location";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
@@ -33,8 +36,17 @@ import { useExperienceParticipation } from "@/providers/ExperienceParticipationP
  */
 export function DiscoverScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const {
+    isFeatureEnabled,
+    hasCapability,
+    demoPersonId,
+    tenantSlug,
+    configuration,
+  } = useTenant();
   const { getViewerState } = useExperienceParticipation();
+  const { items: catalogExperiences, ready: catalogReady } =
+    useCatalogDomain<Experience>("experiences");
+  const { allLocations } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -47,32 +59,83 @@ export function DiscoverScreen() {
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
-    return rankLocalEntitiesForTerritory(listNearYou(query), demoPersonId);
-  }, [canLocal, query, demoPersonId]);
+    if (tenantSlug !== "life-panoramica") {
+      const q = query.trim().toLowerCase();
+      return allLocations
+        .filter((loc) => {
+          if (loc.visibility === "private") return false;
+          if (!q) return true;
+          return (
+            loc.name.toLowerCase().includes(q) ||
+            (loc.areaLabel ?? "").toLowerCase().includes(q) ||
+            loc.category.toLowerCase().includes(q)
+          );
+        })
+        .slice(0, 12)
+        .map((loc) => ({
+          id: loc.id,
+          name: loc.name,
+          categoryLabel: loc.category,
+          areaLabel: loc.areaLabel ?? configuration.branding.name,
+          story: loc.summary ?? "",
+          imageUrl: loc.imageUrl,
+          recommendedBy: undefined as string | undefined,
+          verified: true,
+          trustNote: undefined as string | undefined,
+          href: `/locations/${loc.id}`,
+        }));
+    }
+    return rankLocalEntitiesForTerritory(listNearYou(query), demoPersonId).map(
+      (place) => ({
+        ...place,
+        href: `/near/place/${place.id}`,
+      }),
+    );
+  }, [
+    canLocal,
+    query,
+    demoPersonId,
+    tenantSlug,
+    allLocations,
+    configuration.branding.name,
+  ]);
 
   const neighbourTips = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("recommendations")) return [];
+    if (tenantSlug !== "life-panoramica") return [];
     return listNeighbourRecommendations(query);
-  }, [canLocal, isFeatureEnabled, query]);
+  }, [canLocal, isFeatureEnabled, query, tenantSlug]);
 
   const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
     const q = query.trim().toLowerCase();
-    return listDiscoverableExperiences({
-      includeSessionCreated: sessionReady,
-    }).filter((e) => {
+    const source =
+      catalogReady && catalogExperiences.length > 0
+        ? catalogExperiences
+        : listDiscoverableExperiences({
+            includeSessionCreated: sessionReady,
+          });
+    return source.filter((e) => {
       if (!q) return true;
       return (
         e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        e.areaLabel.toLowerCase().includes(q)
+        (e.location ?? "").toLowerCase().includes(q) ||
+        (e.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled, hasCapability, sessionReady]);
+  }, [
+    query,
+    isFeatureEnabled,
+    hasCapability,
+    sessionReady,
+    catalogExperiences,
+    catalogReady,
+  ]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
+    if (tenantSlug !== "life-panoramica") return [];
     const q = query.trim().toLowerCase();
     return listGroups().filter((g) => {
       if (!q) return true;
@@ -81,15 +144,16 @@ export function DiscoverScreen() {
         g.description.toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled]);
+  }, [query, isFeatureEnabled, tenantSlug]);
 
   const trustedHelp = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("services")) return [];
+    if (tenantSlug !== "life-panoramica") return [];
     return rankLocalEntitiesForTerritory(
       listTrustedHelp(query),
       demoPersonId,
     );
-  }, [canLocal, isFeatureEnabled, query, demoPersonId]);
+  }, [canLocal, isFeatureEnabled, query, demoPersonId, tenantSlug]);
 
   const hasPlans = experiences.length > 0 || groups.length > 0;
   const hasAnything =
@@ -144,7 +208,13 @@ export function DiscoverScreen() {
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
-                    onClick={() => router.push(`/near/place/${place.id}`)}
+                    onClick={() =>
+                      router.push(
+                        "href" in place && place.href
+                          ? place.href
+                          : `/near/place/${place.id}`,
+                      )
+                    }
                   />
                 ))}
               </LocalLifeRail>

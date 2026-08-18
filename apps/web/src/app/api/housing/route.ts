@@ -21,6 +21,10 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated.error;
+
   let body: Partial<HousingTenantState> & { tenantId?: string };
   try {
     body = (await request.json()) as Partial<HousingTenantState> & {
@@ -32,7 +36,7 @@ export async function PUT(request: Request) {
   const tenantId = resolveTenantPublicId(
     body.tenantId ||
       resolveRequestTenantSlug(request) ||
-      "life-panoramica",
+      gated.actor.tenantSlug,
   );
   const current = await readHousingState(tenantId);
   const next = await writeHousingState(tenantId, {

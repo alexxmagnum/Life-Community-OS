@@ -33,6 +33,10 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
+  const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated.error;
+
   const { key } = await params;
   if (!ALLOWED.has(key)) {
     return NextResponse.json({ error: "unknown_key" }, { status: 404 });
@@ -46,7 +50,7 @@ export async function PUT(request: Request, { params }: Params) {
   const tenantId = resolveTenantPublicId(
     body.tenantId ||
       resolveRequestTenantSlug(request) ||
-      "life-panoramica",
+      gated.actor.tenantSlug,
   );
   await writeDurableJson(tenantId, key, body.value ?? null);
   return NextResponse.json({ tenantId, key, ok: true });
