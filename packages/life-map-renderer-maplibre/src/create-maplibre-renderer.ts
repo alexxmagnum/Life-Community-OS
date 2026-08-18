@@ -92,6 +92,10 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
    * Hit data remains in the source when needed.
    */
   hideObjectCircles?: boolean;
+  /**
+   * Skip first camera apply — host owns cinematic territory→community→social.
+   */
+  deferInitialCamera?: boolean;
 };
 
 /**
@@ -125,6 +129,7 @@ export function createMapLibreLifeMapRenderer(
   const softenBuildingFills = options.softenBuildingFills === true;
   const softenEnvironmentFills = options.softenEnvironmentFills === true;
   const hideObjectCircles = options.hideObjectCircles === true;
+  const deferInitialCamera = options.deferInitialCamera === true;
 
   const resolver =
     options.territoryDataResolver ?? createNullTerritoryDataResolver();
@@ -170,8 +175,8 @@ export function createMapLibreLifeMapRenderer(
       });
       objectBindings = syncMapLibreObjectFrontier([...objects.values()], map, {
         hidden: hideObjectCircles,
-        // HTML place chips own names in hybrid — avoid duplicate GIS labels.
-        showPlaceLabels: !hideObjectCircles,
+        // Commercial pins + labels — MapLibre owns place identity.
+        showPlaceLabels: true,
       });
 
       interaction?.detach();
@@ -181,12 +186,15 @@ export function createMapLibreLifeMapRenderer(
       }
 
       if (camera) {
-        applyLifeMapCameraToMapLibre(map, camera, {
-          immediate: !hasOpenedCamera ? false : true,
-          durationMs: hasOpenedCamera ? 0 : undefined,
-          // Community pose must not be GIS-capped below focus zoom.
-          maxZoom: LIFE_MAP_PREMIUM_CAMERA.maxFitZoom,
-        });
+        const skipOpen = deferInitialCamera && !hasOpenedCamera;
+        if (!skipOpen) {
+          applyLifeMapCameraToMapLibre(map, camera, {
+            immediate: hasOpenedCamera,
+            durationMs: hasOpenedCamera ? 0 : undefined,
+            // Community pose must not be GIS-capped below focus zoom.
+            maxZoom: LIFE_MAP_PREMIUM_CAMERA.maxFitZoom,
+          });
+        }
         hasOpenedCamera = true;
       }
     };

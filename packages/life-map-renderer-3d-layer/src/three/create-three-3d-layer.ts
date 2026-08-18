@@ -133,7 +133,8 @@ export function createThreeLifeMap3DLayer(
     quality === "mobile"
       ? LIFE_MAP_PERFORMANCE_BUDGETS.mobile
       : LIFE_MAP_PERFORMANCE_BUDGETS.desktop;
-  const softShadows = budget.enableShadows;
+  // Commercial Earth: no studio shadow theater.
+  const softShadows = false;
   const showTerrain = options.showTerrain !== false;
   const showEnvironment = options.showEnvironment !== false;
   const showSpatialObjects = options.showSpatialObjects !== false;
@@ -535,25 +536,15 @@ export function createThreeLifeMap3DLayer(
       rootGroup.add(buildingsGroup);
       rootGroup.add(spatialGroup);
 
-      // Soft daylight for premium places on real Earth.
-      threeScene.add(new HemisphereLight(0xf0f4ff, 0x3a4a40, 0.95));
-      threeScene.add(new AmbientLight(0xfff8ef, 0.45));
+      // Soft daylight — Earth, not studio diorama.
+      threeScene.add(new HemisphereLight(0xf4f7fa, 0x4a5a48, 0.7));
+      threeScene.add(new AmbientLight(0xfff8ef, 0.32));
       const sun = new DirectionalLight(
         0xfff0d8,
-        quality === "mobile" ? 1.15 : 1.45,
+        quality === "mobile" ? 0.55 : 0.7,
       );
       sun.position.set(140, 280, 90);
-      if (softShadows) {
-        sun.castShadow = true;
-        sun.shadow.mapSize.set(1024, 1024);
-        sun.shadow.camera.near = 10;
-        sun.shadow.camera.far = 900;
-        sun.shadow.camera.left = -260;
-        sun.shadow.camera.right = 260;
-        sun.shadow.camera.top = 260;
-        sun.shadow.camera.bottom = -260;
-        sun.shadow.bias = -0.0002;
-      }
+      sun.castShadow = false;
       threeScene.add(sun);
 
       emitLifeMapTelemetry({

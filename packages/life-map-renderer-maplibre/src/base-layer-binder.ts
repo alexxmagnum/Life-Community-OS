@@ -14,6 +14,7 @@ import type {
 } from "@life-community-os/types";
 import { isTerritoryGeoJsonPayload } from "@life-community-os/types";
 import type {
+  FillExtrusionLayerSpecification,
   FillLayerSpecification,
   GeoJSONSource,
   LineLayerSpecification,
@@ -21,6 +22,7 @@ import type {
 } from "maplibre-gl";
 
 import {
+  LIFE_MAP_PREMIUM_PALETTE,
   premiumPaintForBaseType,
   type LifeMapPremiumBaseLayerType,
 } from "./premium-style";
@@ -87,6 +89,10 @@ export function mapLibreSourceIdForBaseLayer(layerId: string): string {
 
 export function mapLibreLayerIdForBaseLayer(layerId: string): string {
   return `lm-base-lyr:${layerId}`;
+}
+
+export function mapLibreExtrusionLayerIdForBaseLayer(layerId: string): string {
+  return `lm-base-lyr:${layerId}:extrusion`;
 }
 
 /**
@@ -228,7 +234,12 @@ export function syncMapLibreBaseLayers(
     .sort((a, b) => a.zIndex - b.zIndex);
 
   const keepSourceIds = new Set(planned.map((b) => b.sourceId));
-  const keepLayerIds = new Set(planned.map((b) => b.layerId));
+  const keepLayerIds = new Set([
+    ...planned.map((b) => b.layerId),
+    ...planned
+      .filter((b) => b.type === "buildings")
+      .map((b) => mapLibreExtrusionLayerIdForBaseLayer(b.baseLayerId)),
+  ]);
   const style = map.getStyle();
   if (!style) {
     return planned;
@@ -294,8 +305,86 @@ export function syncMapLibreBaseLayers(
           layout: { visibility },
           paint: paint as FillLayerSpecification["paint"],
           metadata,
+          // Footprints stay under extrusion; hide fill when extrusion is on.
+          ...(binding.type === "buildings"
+            ? { maxzoom: 15.6 }
+            : {}),
         };
         map.addLayer(fillLayer);
+      }
+    }
+
+    // Real building mass on the map — commercial Earth feel (no floating toys).
+    if (binding.type === "buildings") {
+      const extrusionId = mapLibreExtrusionLayerIdForBaseLayer(
+        binding.baseLayerId,
+      );
+      if (!map.getLayer(extrusionId)) {
+        const extrusion: FillExtrusionLayerSpecification = {
+          id: extrusionId,
+          type: "fill-extrusion",
+          source: binding.sourceId,
+          minzoom: 15.4,
+          layout: {
+            visibility: binding.visible ? "visible" : "none",
+          },
+          paint: {
+            "fill-extrusion-color": [
+              "case",
+              ["boolean", ["feature-state", "selected"], false],
+              LIFE_MAP_PREMIUM_PALETTE.buildingsSelected,
+              ["boolean", ["feature-state", "hover"], false],
+              LIFE_MAP_PREMIUM_PALETTE.buildingsHover,
+              LIFE_MAP_PREMIUM_PALETTE.buildingsExtrusion,
+            ],
+            "fill-extrusion-height": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15.4,
+              0,
+              16.2,
+              [
+                "coalesce",
+                ["get", "height"],
+                ["*", ["coalesce", ["get", "building:levels"], 3], 3],
+                9,
+              ],
+              18,
+              [
+                "coalesce",
+                ["get", "height"],
+                ["*", ["coalesce", ["get", "building:levels"], 3], 3],
+                11,
+              ],
+            ],
+            "fill-extrusion-base": 0,
+            "fill-extrusion-opacity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              15.4,
+              0,
+              16,
+              0.78,
+              17.5,
+              0.88,
+            ],
+          },
+          metadata: {
+            lifeMapBaseLayerId: binding.baseLayerId,
+            lifeMapDataRef: binding.dataRef,
+            lifeMapBaseLayerType: "buildings",
+            lifeMapExtrusion: true,
+          },
+        };
+        map.addLayer(extrusion);
+      } else {
+        map.setLayoutProperty(
+          extrusionId,
+          "visibility",
+          binding.visible ? "visible" : "none",
+        );
       }
     }
 

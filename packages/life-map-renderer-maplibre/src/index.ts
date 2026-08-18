@@ -69,3 +69,10 @@ export {
   type LifeMapRenderQuality,
   type LifeMapPremiumBaseLayerType,
 } from "./premium-style";
+
+export {
+  LIFE_MAP_COMMERCIAL_LOD,
+  resolveLifeMapCommercialLod,
+  shouldShowGrounded3dAccents,
+  type LifeMapCommercialLodBand,
+} from "./commercial-lod";

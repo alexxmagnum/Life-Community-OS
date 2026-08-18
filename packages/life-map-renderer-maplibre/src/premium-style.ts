@@ -19,28 +19,29 @@ export type LifeMapPremiumBaseLayerType =
   | "green"
   | "boundary";
 
-/** Soft lifestyle ground — the canvas under owned territory GeoJSON. */
+/** Soft lifestyle ground — community canvas under owned territory GeoJSON. */
 export const LIFE_MAP_PREMIUM_TERRAIN = {
-  background: "#e7efe4",
-  backgroundDeep: "#d5e2d0",
+  background: "#dce8d6",
+  backgroundDeep: "#c5d6bc",
 } as const;
 
 /**
  * Layer palette — Apple Maps / lifestyle community, not CAD/GIS.
  */
 export const LIFE_MAP_PREMIUM_PALETTE = {
-  water: "#7eb8d4",
-  waterDeep: "#5a9ab8",
-  green: "#8fbc7a",
-  greenDeep: "#6f9a5c",
-  roadsPrimary: "#f7f4ee",
+  water: "#6aa8c8",
+  waterDeep: "#4a8eb0",
+  green: "#7eae6a",
+  greenDeep: "#5f8f4e",
+  roadsPrimary: "#f8f5f0",
   roadsSecondary: "#efeae2",
-  roadsEdge: "#c8c0b4",
-  buildings: "#d8d2c8",
-  buildingsOutline: "#b0a898",
-  buildingsHover: "#e4ded4",
-  buildingsSelected: "#3aa8a0",
-  boundary: "#9a9288",
+  roadsEdge: "#c4bbae",
+  buildings: "#cfc8be",
+  buildingsOutline: "#a89f92",
+  buildingsHover: "#ddd6cc",
+  buildingsSelected: "#2f9aa0",
+  buildingsExtrusion: "#c2bbb0",
+  boundary: "#8e867c",
 } as const;
 
 export type LifeMapRenderQuality = "mobile" | "desktop";
@@ -225,7 +226,7 @@ export function premiumPaintForBaseType(
 }
 
 /**
- * Camera framing for “entering my community” — not GIS inspect zoom.
+ * Camera framing for “entering my community” — territory → community → social.
  */
 export const LIFE_MAP_PREMIUM_CAMERA = {
   /** Extra breathing room around territory bounds (tooling only). */
@@ -233,27 +234,36 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   /** Neighborhood → street discovery range. */
   maxFitZoom: 19.2,
   openDurationMs: 1100,
-  hybridPitchDegrees: 52,
+  hybridPitchDegrees: 48,
   hybridPitchDurationMs: 1600,
-  /** Recognizable Panorámica — owned territory GeoJSON as the living map. */
-  communityFocusZoom: 15.85,
-  communityFocusPitch: 48,
+  /** Stage A — territory overview (roads / green / water readable). */
+  territoryOverviewZoom: 13.35,
+  territoryOverviewPitch: 28,
+  territoryOverviewDurationMs: 0,
+  /** Stage B — community frame. */
+  communityFocusZoom: 15.45,
+  communityFocusPitch: 42,
   communityFocusBearing: -18,
-  explorationMinZoom: 14.2,
-  explorationMaxZoom: 18.8,
-  entranceStartZoomDelta: 0.9,
-  entranceStartPitch: 32,
-  entranceStartBearingOffset: -6,
+  communityFocusDurationMs: 1600,
+  /** Stage C — social living zone. */
+  socialZoneZoom: 16.55,
+  socialZonePitch: 52,
+  socialZoneDurationMs: 1400,
+  explorationMinZoom: 12.5,
+  explorationMaxZoom: 19.2,
+  entranceStartZoomDelta: 1.6,
+  entranceStartPitch: 22,
+  entranceStartBearingOffset: -10,
   entranceDurationMs: 1700,
-  /** Volume presence — places rise as we enter the living zone. */
-  volumeZoomStart: 14.5,
-  volumeZoomFull: 16.8,
-  volumePitchStart: 20,
+  /** Volume presence — building mass strengthens as we enter. */
+  volumeZoomStart: 14.2,
+  volumeZoomFull: 16.6,
+  volumePitchStart: 18,
   volumePitchFull: 50,
-  spatialPitchAtZoomStart: 28,
+  spatialPitchAtZoomStart: 24,
   spatialPitchAtZoomFull: 55,
-  spatialPitchZoomStart: 14.8,
-  spatialPitchZoomFull: 17.2,
+  spatialPitchZoomStart: 14.2,
+  spatialPitchZoomFull: 17.0,
 } as const;
 
 export function computeVolumePresence(zoom: number, pitchDegrees: number): number {

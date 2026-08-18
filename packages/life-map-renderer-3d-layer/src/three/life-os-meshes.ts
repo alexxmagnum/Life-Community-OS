@@ -1,9 +1,17 @@
 /**
- * Life OS spatial meshes — premium venue catalog entry point.
- * Identity per LifeMapObject visual kind (restaurant / pool / sports / service).
+ * Life OS spatial meshes — grounded commercial accents (not toy venues).
+ * Anchored to Location lat/lng via lngLatToLocalMeters (same origin as MapLibre sync).
+ * Prefer MapLibre premium pins; these only appear at street zoom when needed.
  */
 
-import { Group, Mesh, MeshStandardMaterial, type Material } from "three";
+import {
+  CylinderGeometry,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  SphereGeometry,
+  type Material,
+} from "three";
 
 import type { LifeMap3DAssetVisualKind } from "../asset-visual";
 import {
@@ -12,7 +20,6 @@ import {
 } from "../projection";
 import type { LifeMap3DSpatialObject } from "../spatial-object";
 import { LIFE_MAP_3D_SPATIAL_USERDATA_KEY } from "./spatial-markers";
-import { buildPremiumPlaceByKind } from "./premium-place-catalog";
 
 const KIND_COLOR: Record<LifeMap3DAssetVisualKind, string> = {
   restaurant: "#c47848",
@@ -32,22 +39,50 @@ const KIND_COLOR: Record<LifeMap3DAssetVisualKind, string> = {
 };
 
 /**
- * Calibration scale — places as accents on real Earth (not toy diorama).
- * restaurant ×1.85 · pool ×1.85 · sports ×1.85 · services ×1.35
+ * Build a grounded premium pin — disk on ground + short stem + soft head.
+ * No floating furniture / diorama plates.
  */
-const KIND_SCALE: Partial<Record<LifeMap3DAssetVisualKind, number>> = {
-  restaurant: 2.15,
-  cafe: 2.0,
-  clubhouse: 2.0,
-  pool: 2.2,
-  golf: 1.85,
-  padel: 2.15,
-  service: 1.55,
-  security: 1.4,
-  house: 1.6,
-  event: 1.7,
-  shop: 1.7,
-};
+function buildGroundedPremiumPin(color: string): Group {
+  const g = new Group();
+  const disc = new Mesh(
+    new CylinderGeometry(1.1, 1.1, 0.08, 24),
+    new MeshStandardMaterial({
+      color: "#f7f2ea",
+      roughness: 0.85,
+      metalness: 0.02,
+      transparent: true,
+      opacity: 0.92,
+    }),
+  );
+  disc.position.y = 0.04;
+
+  const stem = new Mesh(
+    new CylinderGeometry(0.14, 0.18, 2.4, 12),
+    new MeshStandardMaterial({
+      color,
+      roughness: 0.4,
+      metalness: 0.12,
+      emissive: color,
+      emissiveIntensity: 0.06,
+    }),
+  );
+  stem.position.y = 1.25;
+
+  const head = new Mesh(
+    new SphereGeometry(0.55, 18, 14),
+    new MeshStandardMaterial({
+      color,
+      roughness: 0.35,
+      metalness: 0.1,
+      emissive: color,
+      emissiveIntensity: 0.08,
+    }),
+  );
+  head.position.y = 2.55;
+
+  g.add(disc, stem, head);
+  return g;
+}
 
 function tagSpatial(root: Group | Mesh, object: LifeMap3DSpatialObject) {
   root.userData[LIFE_MAP_3D_SPATIAL_USERDATA_KEY] = object.id;
@@ -58,7 +93,7 @@ function tagSpatial(root: Group | Mesh, object: LifeMap3DSpatialObject) {
     const mesh = child as Mesh;
     if (mesh.isMesh) {
       mesh.userData[LIFE_MAP_3D_SPATIAL_USERDATA_KEY] = object.id;
-      mesh.castShadow = true;
+      mesh.castShadow = false;
       mesh.receiveShadow = true;
     }
   });
@@ -71,9 +106,9 @@ export function createLifeOsSpatialMesh(
   _sharedMaterial?: Material,
 ): Group {
   const color = KIND_COLOR[visualKind] ?? KIND_COLOR.generic;
-  const body = buildPremiumPlaceByKind(visualKind, color);
-  const scale = KIND_SCALE[visualKind] ?? 1.5;
-  body.scale.setScalar(scale);
+  const body = buildGroundedPremiumPin(color);
+  // Human-scale accent on real Earth — never toy-diorama size.
+  body.scale.setScalar(0.55);
 
   const root = new Group();
   root.name = `life-os:${object.id}`;
@@ -82,7 +117,8 @@ export function createLifeOsSpatialMesh(
     object.position.lat,
     origin,
   );
-  root.position.set(x, 0.02, z);
+  // Sit on the ground plane — no floating Y offset.
+  root.position.set(x, 0, z);
   root.add(body);
   tagSpatial(root, object);
   return root;
@@ -90,7 +126,7 @@ export function createLifeOsSpatialMesh(
 
 /** Soft selection emphasis for place heroes. */
 export function setLifeOsSpatialSelected(root: Group, selected: boolean): void {
-  root.scale.setScalar(selected ? 1.06 : 1);
+  root.scale.setScalar(selected ? 1.08 : 1);
   root.traverse((child) => {
     const mesh = child as Mesh;
     if (!mesh.isMesh) return;
@@ -100,7 +136,6 @@ export function setLifeOsSpatialSelected(root: Group, selected: boolean): void {
       material.userData.lifeOsBaseEmissive = material.emissiveIntensity;
     }
     const base = material.userData.lifeOsBaseEmissive as number;
-    material.emissiveIntensity = selected ? Math.min(0.5, base + 0.2) : base;
-    material.needsUpdate = true;
+    material.emissiveIntensity = selected ? base + 0.12 : base;
   });
 }

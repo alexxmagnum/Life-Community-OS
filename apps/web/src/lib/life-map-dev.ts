@@ -29,14 +29,14 @@ export function isLifeMapDevPreviewEnabled(): boolean {
 }
 
 /**
- * Hybrid MapLibre + Three world — customer demo default.
- * Opt out with `NEXT_PUBLIC_LIFE_MAP_3D=0`.
+ * Hybrid MapLibre + Three overlay.
+ * Commercial visual lock: map-first by default (premium pins / extrusions).
+ * Opt in with `NEXT_PUBLIC_LIFE_MAP_3D=1` only when professional grounded assets exist.
  */
 export function isLifeMapHybrid3DPreviewEnabled(): boolean {
   if (getLifeMapDevEngine() !== "maplibre") return false;
   const value = process.env.NEXT_PUBLIC_LIFE_MAP_3D?.trim().toLowerCase();
-  if (value === "0" || value === "false" || value === "off") return false;
-  return true;
+  return value === "1" || value === "true" || value === "on";
 }
 
 /** Customer-facing experience unlock (feature OR local demo gate). */

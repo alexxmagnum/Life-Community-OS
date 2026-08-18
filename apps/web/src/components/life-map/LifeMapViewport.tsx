@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * Spatial viewport — real Earth MapLibre + premium Three place overlay.
- * Customer demo surface: immersive community, not technical preview chrome.
+ * Spatial viewport — real community map (MapLibre) + optional street-level accents.
+ * Commercial product surface: "mi comunidad digital", not a technical diorama.
  */
 
 import dynamic from "next/dynamic";
@@ -30,10 +30,10 @@ const MapLibreLifeMapCanvas = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-secondary)]"
+        className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-white/80"
         style={{
           background:
-            "linear-gradient(160deg, #1a2420 0%, #243830 48%, #1e2a38 100%)",
+            "linear-gradient(165deg, #1a2820 0%, #243a30 45%, #1c2834 100%)",
         }}
       >
         Entrando en tu comunidad…
@@ -161,15 +161,19 @@ export function LifeMapViewport({
   return (
     <section
       aria-label={`Mapa de ${communityLabel}`}
-      className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] shadow-[0_12px_40px_rgba(40,36,28,0.08)]"
-      style={{ minHeight: "min(72vh, 640px)", height: "min(72vh, 640px)" }}
+      className="relative mt-2 overflow-hidden rounded-[24px] border border-black/[0.04]"
+      style={{
+        minHeight: "min(82vh, 760px)",
+        height: "min(82vh, 760px)",
+        boxShadow: "0 12px 40px rgba(18, 22, 18, 0.14)",
+      }}
     >
       {waitForPlaces ? (
         <div
-          className="absolute inset-0 flex items-center justify-center text-[14px] text-[var(--color-text-secondary)]"
+          className="absolute inset-0 flex items-center justify-center text-[14px] text-white/80"
           style={{
             background:
-              "linear-gradient(160deg, #1a2420 0%, #243830 48%, #1e2a38 100%)",
+              "linear-gradient(165deg, #1a2820 0%, #243a30 45%, #1c2834 100%)",
           }}
         >
           Cargando lugares de tu comunidad…
@@ -183,7 +187,7 @@ export function LifeMapViewport({
           selectedObjectId={selectedObjectId}
           onObjectSelect={onObjectSelect}
           assetResolver={assetResolver}
-          cinematicEntrance={hybrid3D}
+          cinematicEntrance
           dataVersion={dataVersion}
           focusCameraTarget={focusCameraTarget}
           className="absolute inset-0"
@@ -202,10 +206,10 @@ export function LifeMapViewport({
         />
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(180deg,transparent,rgba(22,20,16,0.5))] px-4 pb-4 pt-12">
-        <p className="text-[13px] font-medium text-white/90">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(180deg,transparent_0%,rgba(16,18,16,0.45)_100%)] px-4 pb-5 pt-16">
+        <p className="text-[13px] font-medium tracking-wide text-white/90">
           {objects.length > 0
-            ? "Toca un lugar para descubrirlo"
+            ? "Explora tu comunidad"
             : "Tu comunidad, en vivo"}
         </p>
       </div>

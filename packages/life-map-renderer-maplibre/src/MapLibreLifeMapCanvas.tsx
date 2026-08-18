@@ -29,6 +29,9 @@ import { useEffect, useRef, type CSSProperties } from "react";
 
 import { createMapLibreLifeMapRenderer } from "./create-maplibre-renderer";
 import {
+  shouldShowGrounded3dAccents,
+} from "./commercial-lod";
+import {
   computeVolumePresence,
   detectLifeMapRenderQuality,
   LIFE_MAP_PREMIUM_CAMERA,
@@ -62,29 +65,97 @@ export type MapLibreLifeMapCanvasProps = {
   focusCameraTarget?: { lat: number; lng: number } | null;
 };
 
-/** Composition: first frame locks onto IKON (primary place). */
+/** First frame: social cluster center (not a single toy venue). */
 function heroSpatialForFirstFrame(
   objects: readonly LifeMap3DSpatialObject[],
 ): readonly LifeMap3DSpatialObject[] {
-  const ikon =
-    objects.find((item) => (item.label ?? "").toLowerCase().includes("ikon")) ??
-    objects.find((item) =>
-      (item.asset3DKey ?? "").toLowerCase().includes("restaurant"),
+  if (objects.length === 0) return [];
+  const preferred = objects.filter((item) => {
+    const label = (item.label ?? "").toLowerCase();
+    const key = (item.asset3DKey ?? "").toLowerCase();
+    return (
+      label.includes("ikon") ||
+      key.includes("restaurant") ||
+      key.includes("pool") ||
+      key.includes("club")
     );
-  if (ikon) return [ikon];
-  const pool = objects.find((item) =>
-    (item.asset3DKey ?? "").toLowerCase().includes("pool"),
-  );
-  if (pool) return [pool];
-  return objects.slice(0, 1);
+  });
+  const pool = preferred.length > 0 ? preferred : objects;
+  return pool.slice(0, Math.min(5, pool.length));
 }
 
 function averageSpatialCenter(
   objects: readonly LifeMap3DSpatialObject[],
 ): { lat: number; lng: number } | null {
   if (objects.length === 0) return null;
-  const anchor = objects[0]!;
-  return { lat: anchor.position.lat, lng: anchor.position.lng };
+  let lat = 0;
+  let lng = 0;
+  for (const item of objects) {
+    lat += item.position.lat;
+    lng += item.position.lng;
+  }
+  return { lat: lat / objects.length, lng: lng / objects.length };
+}
+
+function runCommercialEntrance(
+  map: MapLibreMap,
+  focusCenter: { lat: number; lng: number },
+  focusBearing: number,
+): number {
+  const cam = LIFE_MAP_PREMIUM_CAMERA;
+  // Stage A — territory overview
+  map.jumpTo({
+    center: focusCenter,
+    zoom: cam.territoryOverviewZoom,
+    pitch: cam.territoryOverviewPitch,
+    bearing: focusBearing + cam.entranceStartBearingOffset,
+  });
+  // Stage B — community
+  map.easeTo({
+    center: focusCenter,
+    zoom: cam.communityFocusZoom,
+    pitch: cam.communityFocusPitch,
+    bearing: focusBearing,
+    duration: cam.communityFocusDurationMs,
+    essential: true,
+  });
+  // Stage C — social living zone
+  return window.setTimeout(() => {
+    try {
+      if (!map.getContainer()) return;
+    } catch {
+      return;
+    }
+    map.easeTo({
+      center: focusCenter,
+      zoom: cam.socialZoneZoom,
+      pitch: cam.socialZonePitch,
+      bearing: focusBearing,
+      duration: cam.socialZoneDurationMs,
+      essential: true,
+    });
+  }, cam.communityFocusDurationMs + 80);
+}
+
+function resolveFocusCenter(
+  scene: LifeMapScene,
+  map: MapLibreMap,
+  spatial: readonly LifeMap3DSpatialObject[],
+): { lat: number; lng: number } {
+  const focus = scene.camera.pose;
+  let focusCenter =
+    typeof (focus.target as { lng?: number }).lng === "number" &&
+    typeof (focus.target as { lat?: number }).lat === "number"
+      ? {
+          lng: (focus.target as { lng: number }).lng,
+          lat: (focus.target as { lat: number }).lat,
+        }
+      : { lng: map.getCenter().lng, lat: map.getCenter().lat };
+  if (spatial.length > 0) {
+    const heroCenter = averageSpatialCenter(heroSpatialForFirstFrame(spatial));
+    if (heroCenter) focusCenter = heroCenter;
+  }
+  return focusCenter;
 }
 
 function readMapLibreView(map: MapLibreMap) {
@@ -157,10 +228,12 @@ export function MapLibreLifeMapCanvas({
       style: technicalBasemap
         ? MAPLIBRE_TECHNICAL_PREVIEW_STYLE
         : resolveLifeMapBasemapStyle(),
-      softenBuildingFills: hybrid3DOverlay,
-      softenEnvironmentFills: hybrid3DOverlay,
-      enablePremiumInteraction: !hybrid3DOverlay,
-      hideObjectCircles: hybrid3DOverlay,
+      // Commercial lock: real map dominates — never mute territory for toys.
+      softenBuildingFills: false,
+      softenEnvironmentFills: false,
+      enablePremiumInteraction: true,
+      hideObjectCircles: false,
+      deferInitialCamera: cinematicEntrance,
       ...(territoryDataResolver ? { territoryDataResolver } : {}),
     });
     rendererRef.current = renderer;
@@ -169,6 +242,32 @@ export function MapLibreLifeMapCanvas({
 
     let cancelled = false;
     let detachMapListeners: (() => void) | null = null;
+    let entranceTimer: number | undefined;
+
+    const waitForMap = (map: MapLibreMap) =>
+      new Promise<void>((resolve) => {
+        if (map.loaded()) resolve();
+        else map.once("load", () => resolve());
+      });
+
+    const startCommercialEntrance = async () => {
+      if (!cinematicEntrance || cancelled) return;
+      const map = renderer.getMap();
+      if (!map) return;
+      await waitForMap(map);
+      if (cancelled) return;
+      const focus = sceneRef.current.camera.pose;
+      const focusCenter = resolveFocusCenter(
+        sceneRef.current,
+        map,
+        spatialRef.current,
+      );
+      const focusBearing =
+        focus.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing;
+      entranceTimer = runCommercialEntrance(map, focusCenter, focusBearing);
+    };
+
+    void startCommercialEntrance();
 
     const setupHybrid = async () => {
       if (!hybrid3DOverlay || cancelled) return;
@@ -176,61 +275,24 @@ export function MapLibreLifeMapCanvas({
       const overlayHost = overlayRef.current;
       if (!map || !overlayHost) return;
 
-      const waitForMap = () =>
-        new Promise<void>((resolve) => {
-          if (map.loaded()) resolve();
-          else map.once("load", () => resolve());
-        });
-
-      await waitForMap();
+      await waitForMap(map);
       if (cancelled) return;
 
-      // Prefer Location cluster from scene camera (set by product), not territory bounds.
-      const focus = sceneRef.current.camera.pose;
-      const spatial = spatialRef.current;
-      const openPitch =
-        focus.pitchDegrees ?? LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
-      let focusCenter =
-        typeof (focus.target as { lng?: number }).lng === "number" &&
-        typeof (focus.target as { lat?: number }).lat === "number"
-          ? {
-              lng: (focus.target as { lng: number }).lng,
-              lat: (focus.target as { lat: number }).lat,
-            }
-          : map.getCenter();
-      if (spatial.length > 0) {
-        const heroCenter = averageSpatialCenter(heroSpatialForFirstFrame(spatial));
-        if (heroCenter) focusCenter = heroCenter;
-      }
-      const focusZoom = LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom;
-      const focusBearing =
-        focus.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing;
-
-      if (cinematicEntrance) {
+      // Cinematic entrance owns camera — hybrid only syncs optional accents.
+      if (!cinematicEntrance) {
+        const focus = sceneRef.current.camera.pose;
+        const focusCenter = resolveFocusCenter(
+          sceneRef.current,
+          map,
+          spatialRef.current,
+        );
         map.jumpTo({
           center: focusCenter,
-          zoom: Math.max(
-            LIFE_MAP_PREMIUM_CAMERA.explorationMinZoom - 0.35,
-            focusZoom - LIFE_MAP_PREMIUM_CAMERA.entranceStartZoomDelta,
-          ),
-          pitch: LIFE_MAP_PREMIUM_CAMERA.entranceStartPitch,
+          zoom: LIFE_MAP_PREMIUM_CAMERA.socialZoneZoom,
+          pitch:
+            focus.pitchDegrees ?? LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees,
           bearing:
-            focusBearing + LIFE_MAP_PREMIUM_CAMERA.entranceStartBearingOffset,
-        });
-        map.easeTo({
-          center: focusCenter,
-          zoom: focusZoom,
-          pitch: openPitch,
-          bearing: focusBearing,
-          duration: LIFE_MAP_PREMIUM_CAMERA.entranceDurationMs,
-          essential: true,
-        });
-      } else {
-        map.jumpTo({
-          center: focusCenter,
-          zoom: focusZoom,
-          pitch: openPitch,
-          bearing: focusBearing,
+            focus.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing,
         });
       }
 
@@ -275,7 +337,8 @@ export function MapLibreLifeMapCanvas({
         }
       }
 
-      envSnapshotRef.current = { buildings: [], water: [], green: [] };
+      // Keep snapshot for telemetry; MapLibre fill-extrusion owns building mass.
+      envSnapshotRef.current = { buildings, water, green };
 
       const cacheHint = {
         territoryId: currentScene.territoryId,
@@ -289,7 +352,8 @@ export function MapLibreLifeMapCanvas({
         pixelRatio: lifeMapPixelRatioForQuality(quality),
         showTerrain: false,
         showEnvironment: false,
-        showSpatialObjects: true,
+        // Commercial lock: MapLibre pins own places — no procedural toys.
+        showSpatialObjects: false,
         ...(assetResolver ? { assetResolver } : {}),
         buildingMaterial: {
           color: "#5a564c",
@@ -300,19 +364,23 @@ export function MapLibreLifeMapCanvas({
       });
       layer3dRef.current = layer3d;
       layer3d.mount({ element: overlayHost });
-      // Real Earth is the product surface — never mute the basemap.
       map.getCanvas().style.opacity = "1";
       map.getCanvas().style.filter = "";
 
-      // Premium 3D places sit on real coordinates; MapLibre owns the world.
-      layer3d.setInput({
-        buildings: [],
-        water: [],
-        green: [],
-        spatialObjects: [...spatialRef.current],
-        scene: currentScene,
-        camera: currentScene.camera,
-      });
+      const pushSpatialForZoom = (zoom: number) => {
+        const show3d = shouldShowGrounded3dAccents(zoom);
+        layer3d.setInput({
+          // MapLibre owns city fabric — never reintroduce Three building toys.
+          buildings: [],
+          water: [],
+          green: [],
+          spatialObjects: show3d ? [...spatialRef.current] : [],
+          scene: currentScene,
+          camera: currentScene.camera,
+        });
+      };
+
+      pushSpatialForZoom(map.getZoom());
       emitLifeMapTelemetry({
         type: "life_map.layer_loaded",
         tenantId: currentScene.tenantId,
@@ -338,6 +406,7 @@ export function MapLibreLifeMapCanvas({
 
       const onZoomEnd = () => {
         const view = readMapLibreView(map);
+        pushSpatialForZoom(view.zoom);
         layer3d.syncMapLibreView?.(view);
         layer3d.setVolumePresence?.(
           Math.max(0.85, computeVolumePresence(view.zoom, view.pitchDegrees)),
@@ -435,6 +504,7 @@ export function MapLibreLifeMapCanvas({
 
     return () => {
       cancelled = true;
+      if (entranceTimer !== undefined) window.clearTimeout(entranceTimer);
       detachMapListeners?.();
       detachObjectClick?.();
       layer3dRef.current?.dispose();
@@ -448,38 +518,23 @@ export function MapLibreLifeMapCanvas({
     rendererRef.current?.setScene(scene);
   }, [scene]);
 
-  // Keep 3D place heroes in sync when Locations arrive/change.
+  // Keep optional 3D accents in sync — never fight the commercial camera.
   useEffect(() => {
     const layer = layer3dRef.current;
     const map = rendererRef.current?.getMap();
     const env = envSnapshotRef.current;
     if (!layer || !env) return;
+    const zoom = map?.getZoom() ?? 0;
     layer.setInput({
       buildings: [],
       water: [],
       green: [],
-      spatialObjects: [...spatialObjects],
+      spatialObjects: shouldShowGrounded3dAccents(zoom)
+        ? [...spatialObjects]
+        : [],
       scene,
       camera: scene.camera,
     });
-    if (map && spatialObjects.length > 0) {
-      const heroCenter = averageSpatialCenter(
-        heroSpatialForFirstFrame(spatialObjects),
-      );
-      if (!heroCenter) return;
-      map.easeTo({
-        center: [heroCenter.lng, heroCenter.lat],
-        zoom: LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom,
-        pitch:
-          scene.camera.pose.pitchDegrees ??
-          LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees,
-        bearing:
-          scene.camera.pose.headingDegrees ??
-          LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing,
-        duration: 900,
-        essential: true,
-      });
-    }
   }, [spatialObjects, scene]);
 
   useEffect(() => {
