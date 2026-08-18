@@ -12,7 +12,7 @@ type RpcClient = {
   rpc: (
     fn: string,
     args: Record<string, unknown>,
-  ) => Promise<{ error: { message: string } | null }>;
+  ) => PromiseLike<{ error: { message: string } | null }>;
 };
 
 export async function bindTenantRlsContext(
