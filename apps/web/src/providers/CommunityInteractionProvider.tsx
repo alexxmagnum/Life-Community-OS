@@ -172,11 +172,13 @@ export function CommunityInteractionProvider({
         (c) => c.id === id,
       );
       if (fromCatalog) return mergeContent(fromCatalog, overrides);
+      // Pack fallback is Panorámica-only — never leak into other tenants.
+      if (tenantSlug !== "life-panoramica") return undefined;
       const base = getCommunityContentById(id);
       if (!base) return undefined;
       return mergeContent(base, overrides);
     },
-    [overrides, catalogs.community],
+    [overrides, catalogs.community, tenantSlug],
   );
 
   const feedItems = useMemo(() => {
@@ -188,7 +190,9 @@ export function CommunityInteractionProvider({
         ? (catalogs.community as CommunityContent[]).filter(
             (c) => c.status === "published",
           )
-        : listPublishedCommunityContent();
+        : tenantSlug === "life-panoramica"
+          ? listPublishedCommunityContent()
+          : [];
     const catalog = baseCatalog.map((c) => mergeContent(c, overrides));
     const seen = new Set<string>();
     const merged: CommunityContent[] = [];
@@ -205,7 +209,7 @@ export function CommunityInteractionProvider({
         new Date(b.publishedAt ?? b.createdAt).getTime() -
         new Date(a.publishedAt ?? a.createdAt).getTime(),
     );
-  }, [overrides, catalogs.community, catalogReady]);
+  }, [overrides, catalogs.community, catalogReady, tenantSlug]);
 
   const getMyReaction = useCallback(
     (contentId: string) => overrides.reactions[contentId] ?? null,

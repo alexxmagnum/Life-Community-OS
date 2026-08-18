@@ -27,7 +27,7 @@ export function LoginScreen() {
       if (!res.ok) {
         setError(
           data.error === "auth_not_configured"
-            ? "Auth aún no está configurado en este entorno."
+            ? "El acceso aún no está disponible. Prueba unirte desde Perfil."
             : "No pudimos iniciar sesión. Revisa email y contraseña.",
         );
         return;

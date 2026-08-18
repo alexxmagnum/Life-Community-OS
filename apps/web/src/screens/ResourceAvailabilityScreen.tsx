@@ -7,6 +7,7 @@ import {
   formatResourceDate,
   getResourceById,
   listAvailabilityDates,
+  type CommunityResource,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   AvailabilityPicker,
@@ -17,6 +18,7 @@ import {
   TimeSlotSelector,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function ResourceAvailabilityScreen({
@@ -25,14 +27,20 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember } =
+  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember, tenantSlug } =
     useTenant();
+  const { items: catalogResources } =
+    useCatalogDomain<CommunityResource>("resources");
   const { getSlots } = useReservations();
   const dates = listAvailabilityDates(7);
   const [selectedDate, setSelectedDate] = useState(dates[0]!);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
-  const resource = getResourceById(resourceId);
+  const resource =
+    catalogResources.find((r) => r.id === resourceId) ??
+    (tenantSlug === "life-panoramica"
+      ? getResourceById(resourceId)
+      : undefined);
   const slots = useMemo(
     () => (resource ? getSlots(resource.id, selectedDate) : []),
     [getSlots, resource, selectedDate],

@@ -13,6 +13,7 @@ import {
   deriveReservationStatus,
   getAvailabilitySlots,
   getResourceById,
+  type CommunityResource,
   type Reservation,
   type ReservationStatus,
   type TimeSlot,
@@ -21,6 +22,7 @@ import {
   hydrateDurableState,
   pushDurableState,
 } from "@/lib/durable/client";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useTenant } from "@/providers/TenantProvider";
 
 const STORAGE_KEY = "lcos:resource-reservations";
@@ -76,8 +78,19 @@ function withDerivedStatus(r: Reservation): Reservation {
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
   const { tenantSlug } = useTenant();
+  const { items: catalogResources } =
+    useCatalogDomain<CommunityResource>("resources");
   const [store, setStore] = useState<ReservationStore>({ reservations: [] });
   const [hydrated, setHydrated] = useState(false);
+
+  const resolveResource = useCallback(
+    (resourceId: string) =>
+      catalogResources.find((r) => r.id === resourceId) ??
+      (tenantSlug === "life-panoramica"
+        ? getResourceById(resourceId)
+        : undefined),
+    [catalogResources, tenantSlug],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -162,7 +175,7 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
       start: string;
       end: string;
     }) => {
-      const resource = getResourceById(input.resourceId);
+      const resource = resolveResource(input.resourceId);
       if (!resource) return null;
 
       const slots = getAvailabilitySlots(
@@ -203,7 +216,7 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
       }));
       return reservation;
     },
-    [store.reservations],
+    [store.reservations, resolveResource],
   );
 
   const cancel = useCallback((reservationId: string) => {

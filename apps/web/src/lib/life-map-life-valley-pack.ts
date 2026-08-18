@@ -1,6 +1,5 @@
 /**
- * Minimal Life Valley Life Map pack — second-tenant validation.
- * Distinct camera / objects from Panorámica; null territory GeoJSON until Valley GIS lands.
+ * Life Valley Life Map pack — second product tenant.
  */
 
 import {
@@ -99,16 +98,16 @@ export function createLifeValleyLifeMapPack(): LifeMapTenantPack {
     territory: valleyTerritory,
     listObjects: () => listValleySpatialObjects(),
     createTerritoryDataResolver: () => createNullTerritoryDataResolver(),
-    dataVersion: "life-valley-minimal-v1",
+    dataVersion: "life-valley-rc-v1",
     enrichContext: (object) => ({
       label: object.label,
       summary:
         object.objectId === "lv-obj-cafe"
-          ? "Cafetería exclusiva del segundo tenant"
-          : "Núcleo social de Life Valley",
-      experienceTag: "valley",
+          ? "Café acogedor en el centro de Life Valley."
+          : "Plaza y punto de encuentro de la comunidad.",
+      experienceTag: "Comunidad",
       heroTone: "#1a6b4a",
-      categoryHint: object.type,
+      categoryHint: object.type === "place" ? "Lugar" : object.type,
     }),
   };
 }

@@ -31,6 +31,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     isModuleEnabled,
     hasCapability,
     demoMember,
+    tenantSlug,
   } = useTenant();
   const { items: catalogListings, ready: catalogReady } =
     useCatalogDomain<MarketplaceListing>("marketplace");
@@ -41,9 +42,14 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
 
   useEffect(() => {
     const fromCatalog = catalogListings.find((i) => i.id === listingId);
-    setListing(fromCatalog ?? getMarketplaceListingById(listingId));
+    setListing(
+      fromCatalog ??
+        (tenantSlug === "life-panoramica"
+          ? getMarketplaceListingById(listingId)
+          : undefined),
+    );
     setReady(catalogReady);
-  }, [listingId, catalogListings, catalogReady]);
+  }, [listingId, catalogListings, catalogReady, tenantSlug]);
 
   if (!isFeatureEnabled("marketplace")) {
     return (

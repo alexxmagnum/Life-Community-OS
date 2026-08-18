@@ -376,8 +376,8 @@ export function LifeMapScreen() {
           {locations.length === 0
             ? seedReady
               ? seedError
-                ? "No pudimos cargar el ejemplo. Registra un negocio con su dirección."
-                : "Aún no hay lugares. Sé el primero en publicar."
+                ? "No pudimos cargar los lugares. Puedes registrar un negocio con su dirección."
+                : "Aún no hay lugares. Sé el primero en publicar tu negocio."
               : "Preparando el mapa…"
             : filteredLocations.length === 0
               ? "Ningún resultado con este filtro."

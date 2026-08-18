@@ -25,7 +25,9 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { useTenantLocations } from "@/lib/location";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import type { Experience } from "@life-community-os/types";
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=80";
@@ -79,6 +81,9 @@ export function HomeScreen() {
     configuration,
   } = useTenant();
   const { allLocations } = useTenantLocations(configuration.tenantId);
+  const { items: catalogExperiences, ready: catalogReady } =
+    useCatalogDomain<Experience>("experiences");
+  const isPanoramica = tenantSlug === "life-panoramica";
 
   const [live, setLive] = useState(false);
   const [hour, setHour] = useState(18);
@@ -109,14 +114,71 @@ export function HomeScreen() {
 
   const frontDoorOpts = live ? LIVE_OPTS : HYDRATE_SAFE;
 
-  /** Open moments are the heart of Home — real experiences, real neighbours. */
+  /** Open moments — Panorámica pack or tenant catalog (never cross-tenant). */
   const moments = useMemo(() => {
     if (!canExperiences) return [];
-    return listHomeMomentCards({ limit: MOMENT_LIMIT, ...frontDoorOpts });
-  }, [canExperiences, frontDoorOpts]);
+    if (isPanoramica) {
+      return listHomeMomentCards({ limit: MOMENT_LIMIT, ...frontDoorOpts });
+    }
+    if (!catalogReady) return [];
+    return catalogExperiences.slice(0, MOMENT_LIMIT).map((experience) => ({
+      experience,
+      presentation: {
+        tone: "open" as const,
+        glyph: "people" as const,
+        whereLabel: experience.location,
+        statusLabel: "Abierto",
+        ctaLabel: "Ver",
+        badgeLabel: undefined as string | undefined,
+      },
+    }));
+  }, [
+    canExperiences,
+    isPanoramica,
+    frontDoorOpts,
+    catalogReady,
+    catalogExperiences,
+  ]);
 
-  const moves = useMemo(() => listHomeMoves(), []);
-  const intents = useMemo(() => listHomeIntents(), []);
+  const moves = useMemo(
+    () => (isPanoramica ? listHomeMoves() : []),
+    [isPanoramica],
+  );
+  const intents = useMemo(() => {
+    if (isPanoramica) return listHomeIntents();
+    return [
+      {
+        id: "valley-map",
+        title: "Mapa",
+        subtitle: "Lugares de tu comunidad",
+        tone: "discover" as const,
+        glyph: "compass" as const,
+        href: "/map",
+        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
+        bgImageUrl: undefined as string | undefined,
+      },
+      {
+        id: "valley-plans",
+        title: "Planes",
+        subtitle: "Lo que ocurre cerca",
+        tone: "plans" as const,
+        glyph: "calendar" as const,
+        href: "/experiences",
+        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
+        bgImageUrl: undefined as string | undefined,
+      },
+      {
+        id: "valley-discover",
+        title: "Descubrir",
+        subtitle: "Explora Life Valley",
+        tone: "discover" as const,
+        glyph: "compass" as const,
+        href: "/discover",
+        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
+        bgImageUrl: undefined as string | undefined,
+      },
+    ];
+  }, [isPanoramica]);
   const nearby = useMemo(() => {
     if (!canLocal) return [];
     // Panorámica pack nearby lists are tenant-specific; other tenants use Location SoT.
@@ -243,7 +305,9 @@ export function HomeScreen() {
                 glyph={presentation.glyph}
                 title={experience.title}
                 where={presentation.whereLabel ?? experience.location}
-                imageUrl={experience.imageUrl}
+                imageUrl={
+                  experience.imageUrl?.trim() || LOCATION_NEARBY_FALLBACK_IMAGE
+                }
                 people={experience.participants}
                 peopleLabel={`${experience.participantCount} vecinos van`}
                 statusLabel={presentation.statusLabel}
@@ -256,6 +320,7 @@ export function HomeScreen() {
       </section>
 
       {/* ── LA COMUNIDAD SE MUEVE — human activity, not a social feed ── */}
+      {moves.length > 0 ? (
       <section>
         <HomeSectionHead
           title="La comunidad se mueve"
@@ -279,6 +344,7 @@ export function HomeScreen() {
           ))}
         </HomeRail>
       </section>
+      ) : null}
 
       {/* ── QUÉ TE APETECE HACER — four intent doors, horizontal rail ── */}
       <section>

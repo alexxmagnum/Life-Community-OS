@@ -6,6 +6,7 @@ import {
   formatExperienceWhen,
   getExperienceById,
   spotsLeft,
+  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -17,6 +18,7 @@ import {
   ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
 export function ExperienceRegistrationScreen({
@@ -25,7 +27,8 @@ export function ExperienceRegistrationScreen({
   experienceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability, tenantSlug } = useTenant();
+  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const { getViewerState, join, getParticipation, setReminders } =
     useExperienceParticipation();
   const [reminders, setRemindersLocal] = useState(true);
@@ -41,7 +44,11 @@ export function ExperienceRegistrationScreen({
     );
   }
 
-  const experience = getExperienceById(experienceId);
+  const experience =
+    catalogExperiences.find((e) => e.id === experienceId) ??
+    (tenantSlug === "life-panoramica"
+      ? getExperienceById(experienceId)
+      : undefined);
 
   if (!experience) {
     return (

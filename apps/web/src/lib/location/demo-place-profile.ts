@@ -74,14 +74,11 @@ export function demoPlaceProfileFor(input: {
   id?: string;
   name?: string;
 }): DemoPlaceProfile | null {
-  // Production cutover: no demo copy unless explicitly opted in.
-  const demoOptIn =
-    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "1" ||
-    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "true";
-  if (process.env.NODE_ENV === "production" && !demoOptIn) {
-    return null;
-  }
-  if (process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "0") {
+  // Off only when explicitly disabled — RC demos need complete fichas.
+  if (
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "0" ||
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "false"
+  ) {
     return null;
   }
   const id = input.id ?? "";

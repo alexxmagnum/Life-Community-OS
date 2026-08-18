@@ -33,7 +33,8 @@ export function CommunityContentDetailScreen({
   contentId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoMember, configuration, tenantSlug } =
+    useTenant();
   const demoPersonId = demoMember.personId;
   const {
     getContent,
@@ -102,9 +103,10 @@ export function CommunityContentDetailScreen({
     );
   }
 
-  const linked = content.linkedExperienceId
-    ? getExperienceById(content.linkedExperienceId)
-    : undefined;
+  const linked =
+    content.linkedExperienceId && tenantSlug === "life-panoramica"
+      ? getExperienceById(content.linkedExperienceId)
+      : undefined;
 
   const canReact = hasCapability(CAPABILITIES.interactionReact);
   const canComment = hasCapability(CAPABILITIES.interactionComment);
@@ -112,7 +114,9 @@ export function CommunityContentDetailScreen({
   const canReport = hasCapability(CAPABILITIES.interactionReport);
 
   const zone =
-    content.areaLabel && content.areaLabel !== "Life Panoramica"
+    content.areaLabel &&
+    content.areaLabel !== "Life Panoramica" &&
+    content.areaLabel !== configuration.branding.name
       ? content.areaLabel
       : undefined;
 

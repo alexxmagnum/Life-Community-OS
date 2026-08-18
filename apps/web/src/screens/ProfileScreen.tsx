@@ -381,7 +381,7 @@ export function ProfileScreen() {
             <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
               {session?.configured
                 ? "Inicia sesión para sincronizar tu comunidad."
-                : "Únete localmente (membership durable). El primer miembro de un tenant vacío se convierte en administrador."}
+                : "Únete a esta comunidad. El primer miembro puede administrar el espacio."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {session?.configured ? (
@@ -415,14 +415,16 @@ export function ProfileScreen() {
         )}
       </section>
 
-      {process.env.NODE_ENV === "development" && roleSource === "demo" ? (
+      {process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "1" ||
+      process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "true"
+        ? (
         <>
           <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
             <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              Dev · persona
+              Probar como…
             </p>
             <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-              Solo en desarrollo. Cambia de persona para probar vínculos de hogar.
+              Solo con demo de roles activada. Cambia de persona o permisos.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {demoMembers.map((m) => (
@@ -444,10 +446,10 @@ export function ProfileScreen() {
 
           <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
             <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              Dev · rol
+              Rol de prueba
             </p>
             <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-              Solo en desarrollo. Simula permisos — independiente de tu hogar.
+              Simula permisos de la comunidad.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               {roles.map((r) => (

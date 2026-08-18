@@ -10,6 +10,7 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import {
   ensureCatalogSeeded,
+  writeCatalog,
   type CatalogDomain,
 } from "./server-catalog-repository";
 
@@ -22,7 +23,7 @@ const VALLEY_COMMUNITY = [
     type: "official_announcement",
     status: "published",
     title: "Bienvenida a Life Valley",
-    body: "Tenant de validación multi-tenant. Este contenido solo existe aquí.",
+    body: "Bienvenido a Life Valley. Aquí empiezas a descubrir tu comunidad.",
     areaLabel: "Centro Valle",
     authorName: "Life Valley",
     author: {
@@ -42,10 +43,10 @@ const VALLEY_EXPERIENCES = [
   {
     id: "lv-exp-walk",
     title: "Paseo del valle",
-    description: "Experiencia exclusiva del tenant Life Valley.",
+    description: "Camina con vecinos por el sendero al atardecer.",
     imageUrl: VALLEY_IMAGE,
     startsAt: new Date(Date.now() + 86400000).toISOString(),
-    location: "Sendero del valle",
+    location: "Plaza Life Valley",
     areaLabel: "Centro Valle",
     organizer: {
       id: "lv-org-valley",
@@ -70,7 +71,7 @@ const VALLEY_MARKETPLACE = [
     id: "lv-mp-bike",
     kind: "give",
     title: "Bicicleta Valley",
-    description: "Anuncio solo visible en Life Valley.",
+    description: "Bici en buen estado para alguien de la comunidad.",
     areaLabel: "Centro Valle",
     authorName: "Vecino Valley",
     imageUrl: VALLEY_IMAGE,
@@ -82,7 +83,7 @@ const VALLEY_RESOURCES = [
   {
     id: "lv-res-room",
     name: "Sala Valley",
-    description: "Recurso territorial del segundo tenant.",
+    description: "Sala comunitaria para reuniones y talleres.",
     imageUrl: VALLEY_IMAGE,
     location: "Centro comunitario",
     areaLabel: "Centro Valle",
@@ -122,7 +123,25 @@ export async function bootstrapTenantCatalog(
   tenantSlug: string,
   domain: CatalogDomain,
 ): Promise<unknown[]> {
-  return ensureCatalogSeeded(tenantSlug, domain, seedFor(tenantSlug, domain));
+  const seed = seedFor(tenantSlug, domain);
+  const items = await ensureCatalogSeeded(tenantSlug, domain, seed);
+  // RC: replace leftover validation/demo copy on Life Valley without new architecture.
+  if (tenantSlug === "life-valley" && valleyNeedsCommercialCopy(items)) {
+    await writeCatalog(tenantSlug, domain, seed);
+    return seed;
+  }
+  return items;
+}
+
+function valleyNeedsCommercialCopy(items: unknown[]): boolean {
+  const blob = JSON.stringify(items).toLowerCase();
+  return (
+    blob.includes("validación") ||
+    blob.includes("validacion") ||
+    blob.includes("multi-tenant") ||
+    blob.includes("exclusiva del tenant") ||
+    blob.includes("solo existe")
+  );
 }
 
 export async function bootstrapAllCatalogs(

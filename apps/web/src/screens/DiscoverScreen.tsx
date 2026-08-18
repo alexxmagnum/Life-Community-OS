@@ -103,9 +103,11 @@ export function DiscoverScreen() {
     const source =
       catalogReady && catalogExperiences.length > 0
         ? catalogExperiences
-        : listDiscoverableExperiences({
-            includeSessionCreated: sessionReady,
-          });
+        : tenantSlug === "life-panoramica"
+          ? listDiscoverableExperiences({
+              includeSessionCreated: sessionReady,
+            })
+          : [];
     return source.filter((e) => {
       if (!q) return true;
       return (
@@ -121,6 +123,7 @@ export function DiscoverScreen() {
     sessionReady,
     catalogExperiences,
     catalogReady,
+    tenantSlug,
   ]);
 
   const groups = useMemo(() => {
@@ -176,8 +179,12 @@ export function DiscoverScreen() {
               ? "Prueba con otras palabras."
               : "Cuando haya vida local, la verás aquí."
           }
-          actionLabel={query ? "Limpiar búsqueda" : undefined}
-          onAction={query ? () => setQuery("") : undefined}
+          actionLabel={
+            query ? "Limpiar búsqueda" : "Ver el mapa"
+          }
+          onAction={
+            query ? () => setQuery("") : () => router.push("/map")
+          }
         />
       ) : (
         <div className="space-y-10">

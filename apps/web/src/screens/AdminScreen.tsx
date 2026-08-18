@@ -29,6 +29,18 @@ const ROLES: MembershipRole[] = [
   "administrator",
 ];
 
+const ROLE_LABEL: Record<MembershipRole, string> = {
+  member: "Miembro",
+  group_manager: "Gestor de grupo",
+  moderator: "Moderador",
+  administrator: "Administrador",
+};
+
+const TENANT_LABEL: Record<string, string> = {
+  "life-panoramica": "Life Panorámica",
+  "life-valley": "Life Valley",
+};
+
 /**
  * Tenant admin surface — places, members, permissions.
  */
@@ -122,13 +134,15 @@ export function AdminScreen() {
       <section className="mt-4 space-y-4 pb-24">
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
-            Tenant activo
+            Comunidad activa
           </p>
           <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
-            {tenantSlug}
+            {configuration.branding.name ||
+              TENANT_LABEL[tenantSlug] ||
+              tenantSlug}
           </p>
           <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
-            Packs registrados: {packs.join(", ")}
+            Cambia de comunidad para administrar otro espacio.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {packs.map((slug) => (
@@ -145,7 +159,7 @@ export function AdminScreen() {
                   window.location.href = "/admin";
                 }}
               >
-                {slug}
+                {TENANT_LABEL[slug] || slug}
               </button>
             ))}
           </div>
@@ -187,7 +201,7 @@ export function AdminScreen() {
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
-                        {r}
+                        {ROLE_LABEL[r]}
                       </option>
                     ))}
                   </select>
@@ -199,7 +213,10 @@ export function AdminScreen() {
 
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
-            Locations ({seedReady ? allLocations.length : "…"})
+            Lugares ({seedReady ? allLocations.length : "…"})
+          </p>
+          <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+            Lugares publicados en el mapa de esta comunidad.
           </p>
           <ul className="mt-3 space-y-2">
             {allLocations.slice(0, 40).map((loc) => (

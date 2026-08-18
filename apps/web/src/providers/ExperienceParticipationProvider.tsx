@@ -110,11 +110,12 @@ export function ExperienceParticipationProvider({
 
   const resolveExperience = useCallback(
     (id: string): Experience | undefined => {
-      return (
-        catalogExperiences.find((e) => e.id === id) ?? getExperienceById(id)
-      );
+      const fromCatalog = catalogExperiences.find((e) => e.id === id);
+      if (fromCatalog) return fromCatalog;
+      if (tenantSlug !== "life-panoramica") return undefined;
+      return getExperienceById(id);
     },
-    [catalogExperiences],
+    [catalogExperiences, tenantSlug],
   );
 
   useEffect(() => {

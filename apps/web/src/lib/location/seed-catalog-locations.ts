@@ -66,7 +66,7 @@ const VALLEY_SEED_LOCATIONS: Array<{
     id: "lv-plaza",
     name: "Plaza Life Valley",
     category: "place",
-    summary: "Núcleo social del tenant de validación multi-tenant.",
+    summary: "Café de barrio y punto de encuentro de Life Valley.",
     areaLabel: "Centro Valle",
     dLat: 0,
     dLng: 0,
@@ -154,6 +154,12 @@ export async function ensureCatalogLocations(
         summary: place.summary,
         imageUrl: place.imageUrl,
         areaLabel: place.areaLabel,
+        ...(place.category === "cafe"
+          ? { hours: "Lun–Dom · 08:00–20:00", contact: "+34 960 000 200" }
+          : {
+              hours: "Acceso libre",
+              contact: "hola@lifevalley.community",
+            }),
       });
       created += 1;
     }
@@ -166,7 +172,10 @@ export async function ensureCatalogLocations(
     if (byName.has(entity.name.toLowerCase())) continue;
 
     const offset = OFFSETS[entity.id] ?? { dLat: 0.0005, dLng: 0.0005 };
-    await saveLocation({
+    const { enrichLocationFields } = await import(
+      "./enrich-location-presentation"
+    );
+    const draft = enrichLocationFields({
       id: locationId,
       tenantId: id,
       type: locationTypeFromLocalKind(entity.kind),
@@ -179,6 +188,24 @@ export async function ensureCatalogLocations(
       summary: entity.story,
       imageUrl: entity.imageUrl,
       areaLabel: entity.areaLabel,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as import("@life-community-os/types").Location);
+    await saveLocation({
+      id: draft.id,
+      tenantId: draft.tenantId,
+      type: draft.type,
+      name: draft.name,
+      address: draft.address,
+      latitude: draft.latitude,
+      longitude: draft.longitude,
+      category: draft.category,
+      visibility: draft.visibility,
+      summary: draft.summary,
+      imageUrl: draft.imageUrl,
+      areaLabel: draft.areaLabel,
+      hours: draft.hours,
+      contact: draft.contact,
     });
     created += 1;
   }

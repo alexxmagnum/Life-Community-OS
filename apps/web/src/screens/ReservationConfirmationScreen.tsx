@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatResourceDate,
   getResourceById,
+  type CommunityResource,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -14,6 +15,7 @@ import {
   ReservationSummary,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function ReservationConfirmationScreen({
@@ -23,7 +25,9 @@ export function ReservationConfirmationScreen({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability, tenantSlug } = useTenant();
+  const { items: catalogResources } =
+    useCatalogDomain<CommunityResource>("resources");
   const { reserve } = useReservations();
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +36,11 @@ export function ReservationConfirmationScreen({
   const start = searchParams.get("start") ?? "";
   const end = searchParams.get("end") ?? "";
 
-  const resource = getResourceById(resourceId);
+  const resource =
+    catalogResources.find((r) => r.id === resourceId) ??
+    (tenantSlug === "life-panoramica"
+      ? getResourceById(resourceId)
+      : undefined);
 
   const status = useMemo(() => {
     if (!resource) return "available" as const;

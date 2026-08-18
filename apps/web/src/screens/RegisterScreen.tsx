@@ -31,8 +31,8 @@ export function RegisterScreen() {
       if (!res.ok) {
         setError(
           data.error === "auth_not_configured"
-            ? "Auth aún no está configurado en este entorno."
-            : data.error || "No pudimos crear la cuenta.",
+            ? "El registro aún no está disponible. Prueba unirte desde Perfil."
+            : "No pudimos crear la cuenta. Revisa los datos e inténtalo de nuevo.",
         );
         return;
       }

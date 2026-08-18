@@ -37,6 +37,7 @@ export function ExperienceDetailScreen({
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    tenantSlug,
   } = useTenant();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const { allLocations } = useTenantLocations(configuration.tenantId);
@@ -45,7 +46,9 @@ export function ExperienceDetailScreen({
 
   const experience =
     catalogExperiences.find((e) => e.id === experienceId) ??
-    getExperienceById(experienceId);
+    (tenantSlug === "life-panoramica"
+      ? getExperienceById(experienceId)
+      : undefined);
 
   const venueLocationId = useMemo(() => {
     if (!experience?.location) return null;

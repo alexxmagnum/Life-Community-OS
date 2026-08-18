@@ -27,7 +27,8 @@ function isKind(value: string | null): value is MarketplaceListingKind {
 export function MarketplaceComposerScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoMember, configuration } =
+    useTenant();
 
   const initialKind = searchParams.get("kind");
   const [kind, setKind] = useState<MarketplaceListingKind>(
@@ -113,7 +114,7 @@ export function MarketplaceComposerScreen() {
         title: trimmedTitle,
         description: trimmedDescription,
         priceLabel: priceLabel.trim() || undefined,
-        areaLabel: demoMember.areaLabel || "Life Panoramica",
+        areaLabel: demoMember.areaLabel || configuration.branding.name || "Tu comunidad",
         authorName: demoMember.displayName,
         authorPersonId: demoMember.personId,
         authorAvatarUrl: demoMember.avatarUrl,
