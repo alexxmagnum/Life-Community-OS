@@ -18,7 +18,7 @@
 | SoT operativo | Memberships + catálogos tenant-scoped (API/file durable) · locations/manage cableados · conversaciones place con bridge durable (otros chats aún browser-local) |
 | Auth / RBAC | Memberships reales (file + Supabase mirror), mutation gates en writes, first-member → admin · `setRole` demo residual · RLS GUC no bound en paths service-role |
 | Life Map | MapLibre self-hosted; Location SoT merge; Valley map isolation |
-| Bloqueadores de “producto” | Conversaciones no-place aún localStorage; RLS no runtime-bound en service role; pack helpers Panorámica en screens; dualidad Location↔LocalEntity; tests escasos |
+| Bloqueadores de “producto” | RLS no runtime-bound en service role; pack helpers Panorámica en formatters/screens; dualidad Location↔LocalEntity residual; auth no enforced por defecto; tests de aislamiento aún mínimos |
 
 El monorepo tiene arquitectura de plataforma (packages / apps / tenants, Module Registry, TenantConfiguration, dominios en `@life-community-os/types`). Tras la ola SaaS 2026-08-18 opera **dos tenants** (Life Panorámica + Life Valley) con aislamiento de catálogo/mapa y memberships tenant-scoped — ya no es solo una reference app single-tenant.
 
@@ -26,11 +26,11 @@ El monorepo tiene arquitectura de plataforma (packages / apps / tenants, Module 
 
 - Real memberships (file-backed + optional Supabase mirror); local-join; first member of an empty tenant becomes administrator
 - Two tenants registered: `life-panoramica` + `life-valley` (catalog / map / Discover isolation)
-- Tenant-scoped catalog API + durable provider sync (reservations, experiences, community, housing-saves, place-conversations)
+- Tenant-scoped catalog API + durable provider sync (reservations, experiences, community, housing-saves, **all conversation domains**)
 - Admin memberships API/UI; Location manage surfaces; Valley map pack isolation
 - Mutation gates on durable/admin writes; Location SoT merge on map
 
-**Remaining gaps (honest):** marketplace / experience / neighbour conversations still pack `localStorage`; RLS `app_set_tenant_context` GUC exists but is not runtime-bound on service-role repository paths; several screens still import Panorámica pack helpers directly.
+**Remaining gaps (honest):** RLS `app_set_tenant_context` GUC exists but is not runtime-bound on service-role repository paths; several screens still import Panorámica pack helpers (formatters / demo catalogs as fallback); `LCOS_AUTH_REQUIRED` defaults off until cutover (`ADR-PRODUCTION-CUTOVER.md`).
 
 ---
 
