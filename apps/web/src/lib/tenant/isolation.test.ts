@@ -86,3 +86,32 @@ describe("location catalog id isolation", () => {
     assert.ok(!cafe.includes("life-panoramica"));
   });
 });
+
+describe("write tenant binding", () => {
+  it("rejects cross-tenant body vs request slug", async () => {
+    const { resolveWriteTenantId } = await import("./resolve-write-tenant");
+    const request = new Request("http://localhost/api/locations", {
+      headers: { "x-tenant-slug": "life-valley" },
+    });
+    const result = resolveWriteTenantId({
+      request,
+      bodyTenantId: "life-panoramica",
+      actorTenantSlug: "life-valley",
+    });
+    assert.ok("error" in result);
+  });
+
+  it("accepts matching tenant body", async () => {
+    const { resolveWriteTenantId } = await import("./resolve-write-tenant");
+    const request = new Request("http://localhost/api/locations", {
+      headers: { "x-tenant-slug": "life-valley" },
+    });
+    const result = resolveWriteTenantId({
+      request,
+      bodyTenantId: "life-valley",
+      actorTenantSlug: "life-valley",
+    });
+    assert.ok("tenantId" in result);
+    assert.equal(result.tenantId, "life-valley");
+  });
+});

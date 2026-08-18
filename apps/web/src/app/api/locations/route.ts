@@ -6,6 +6,7 @@ import {
 } from "@/lib/location/server-location-repository";
 import { resolveTenantPublicId } from "@/lib/tenant/ids";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
+import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
@@ -22,13 +23,14 @@ export async function GET(request: Request) {
   await ensureServerTenantLocations(tenantId);
   const locations = await listLocationsServer(tenantId);
   const visibility = url.searchParams.get("visibility");
+  const scoped = locations.filter((item) => item.tenantId === tenantId);
   const filtered =
     visibility === "map"
-      ? locations.filter(
+      ? scoped.filter(
           (item) =>
             item.visibility === "public" || item.visibility === "members",
         )
-      : locations;
+      : scoped;
   return NextResponse.json({ tenantId, locations: filtered });
 }
 
@@ -43,14 +45,17 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
+  const bound = resolveWriteTenantId({
+    request,
+    bodyTenantId: body.tenantId,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+
   try {
     const location = await saveLocationServer({
       ...body,
-      tenantId: resolveTenantPublicId(
-        body.tenantId ||
-          resolveRequestTenantSlug(request) ||
-          gated.actor.tenantSlug,
-      ),
+      tenantId: bound.tenantId,
     });
     return NextResponse.json({ location }, { status: 201 });
   } catch (err) {

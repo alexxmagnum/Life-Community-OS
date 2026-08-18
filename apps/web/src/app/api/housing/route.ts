@@ -33,11 +33,16 @@ export async function PUT(request: Request) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const tenantId = resolveTenantPublicId(
-    body.tenantId ||
-      resolveRequestTenantSlug(request) ||
-      gated.actor.tenantSlug,
+  const { resolveWriteTenantId } = await import(
+    "@/lib/tenant/resolve-write-tenant"
   );
+  const bound = resolveWriteTenantId({
+    request,
+    bodyTenantId: body.tenantId,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
   const current = await readHousingState(tenantId);
   const next = await writeHousingState(tenantId, {
     created: body.created ?? current.created,

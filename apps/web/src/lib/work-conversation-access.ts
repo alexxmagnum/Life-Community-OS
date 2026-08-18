@@ -4,11 +4,7 @@ import type {
   WorkConversationSnapshot,
 } from "@life-community-os/types";
 import { createWorkConversationAdapter } from "@life-community-os/types";
-import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
-  getWorkInterestedPersonIds,
-} from "@life-community-os/tenant-life-panoramica";
+import { getWorkInterestedPersonIds } from "@life-community-os/tenant-life-panoramica";
 
 type WorkPostLike = {
   id: string;
@@ -65,8 +61,8 @@ export function canOpenWorkConversation(input: {
     id: `ctx-service-${snapshot.id}`,
     contextType: "service" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
@@ -113,8 +109,8 @@ export function canViewWorkConversation(input: {
     id: `ctx-service-${snapshot.id}`,
     contextType: "service" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 

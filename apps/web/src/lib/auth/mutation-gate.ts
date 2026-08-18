@@ -36,3 +36,48 @@ export async function requireAdminMutation(
   }
   return gated;
 }
+
+/**
+ * Moderator/admin write gate.
+ * Pilot (auth off): same openness as {@link requireMutationActor}.
+ * Production (auth on): authenticated administrator or moderator.
+ */
+export async function requireModeratorMutation(
+  request: Request,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated;
+  if (!isAuthEnforced()) {
+    return gated;
+  }
+  if (
+    gated.actor.role !== "administrator" &&
+    gated.actor.role !== "moderator"
+  ) {
+    return {
+      error: NextResponse.json({ error: "forbidden" }, { status: 403 }),
+    };
+  }
+  return gated;
+}
+
+/**
+ * Administrator-only write gate (delete).
+ * Pilot (auth off): open like mutation actor.
+ * Production (auth on): authenticated administrator only.
+ */
+export async function requireAdministratorMutation(
+  request: Request,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated;
+  if (!isAuthEnforced()) {
+    return gated;
+  }
+  if (gated.actor.role !== "administrator") {
+    return {
+      error: NextResponse.json({ error: "forbidden" }, { status: 403 }),
+    };
+  }
+  return gated;
+}

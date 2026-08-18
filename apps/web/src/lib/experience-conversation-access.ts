@@ -1,9 +1,5 @@
 import type { Experience, TenantConfiguration } from "@life-community-os/types";
 import { createExperienceConversationAdapter } from "@life-community-os/types";
-import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
-} from "@life-community-os/tenant-life-panoramica";
 
 type ExperienceLike = {
   id: string;
@@ -42,7 +38,7 @@ export function canOpenExperienceConversation(input: {
 
   const snapshot = {
     ...input.experience,
-    tenantId: input.experience.tenantId ?? DEMO_TENANT_ID,
+    tenantId: input.experience.tenantId ?? input.configuration.tenantId,
     description: input.experience.description ?? "",
     location: input.experience.location ?? "",
     capacity: input.experience.capacity ?? 0,
@@ -63,8 +59,8 @@ export function canOpenExperienceConversation(input: {
     id: `ctx-experience-${snapshot.id}`,
     contextType: "experience" as const,
     contextId: snapshot.id,
-    tenantId: snapshot.tenantId ?? DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: snapshot.tenantId ?? input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 

@@ -4,8 +4,6 @@ import type {
 } from "@life-community-os/types";
 import { createMarketplaceConversationAdapter } from "@life-community-os/types";
 import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
   getMarketplaceInterestedPersonIds,
   type MarketplaceListing,
 } from "@life-community-os/tenant-life-panoramica";
@@ -42,8 +40,8 @@ export function canOpenMarketplaceConversation(input: {
     id: `ctx-marketplace-${snapshot.id}`,
     contextType: "marketplace" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
@@ -81,8 +79,8 @@ export function canViewMarketplaceConversation(input: {
     id: `ctx-marketplace-${snapshot.id}`,
     contextType: "marketplace" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 

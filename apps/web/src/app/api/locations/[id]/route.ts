@@ -6,11 +6,12 @@ import {
   saveLocationServer,
 } from "@/lib/location/server-location-repository";
 import {
-  requireAdministrator,
-  resolveRequestActor,
-} from "@/lib/auth/request-actor";
+  requireAdministratorMutation,
+  requireModeratorMutation,
+} from "@/lib/auth/mutation-gate";
 import { resolveTenantPublicId } from "@/lib/tenant/ids";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
+import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
@@ -28,25 +29,27 @@ export async function GET(request: Request, { params }: Params) {
   if (!location) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
+  // Isolation: never return a location that belongs to another tenant.
+  if (location.tenantId !== tenantId) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   return NextResponse.json({ location });
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const actor = await resolveRequestActor(request);
-  if (!actor.authenticated || (!requireAdministrator(actor) && actor.role !== "moderator")) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const gated = await requireModeratorMutation(request);
+  if ("error" in gated) return gated.error;
 
   const { id } = await params;
-  const url = new URL(request.url);
-  const tenantId = resolveTenantPublicId(
-    url.searchParams.get("tenantId") ??
-      resolveRequestTenantSlug(request) ??
-      actor.tenantSlug,
-  );
+  const bound = resolveWriteTenantId({
+    request,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
 
   const existing = await getLocationServer(tenantId, id);
-  if (!existing) {
+  if (!existing || existing.tenantId !== tenantId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -81,20 +84,19 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const actor = await resolveRequestActor(request);
-  if (!requireAdministrator(actor)) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const gated = await requireAdministratorMutation(request);
+  if ("error" in gated) return gated.error;
 
   const { id } = await params;
-  const url = new URL(request.url);
-  const tenantId = resolveTenantPublicId(
-    url.searchParams.get("tenantId") ??
-      resolveRequestTenantSlug(request) ??
-      actor.tenantSlug,
-  );
+  const bound = resolveWriteTenantId({
+    request,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
+
   const existing = await getLocationServer(tenantId, id);
-  if (!existing) {
+  if (!existing || existing.tenantId !== tenantId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   await removeLocationServer(tenantId, id);

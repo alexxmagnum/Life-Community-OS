@@ -4,8 +4,6 @@ import type {
 } from "@life-community-os/types";
 import { createOfficialConversationAdapter } from "@life-community-os/types";
 import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
   getOfficialConversationSnapshot,
   getPrimaryOfficialNoticeId,
   officialEntityModuleId,
@@ -59,8 +57,8 @@ export function canOpenOfficialConversation(input: {
     id: `ctx-official-${snapshot.id}`,
     contextType: "official" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
@@ -90,8 +88,8 @@ export function canViewOfficialConversation(input: {
     id: `ctx-official-${snapshot.id}`,
     contextType: "official" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 

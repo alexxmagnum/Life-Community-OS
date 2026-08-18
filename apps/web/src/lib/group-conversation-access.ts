@@ -4,8 +4,6 @@ import type {
 } from "@life-community-os/types";
 import { createGroupConversationAdapter } from "@life-community-os/types";
 import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
   getGroupConversationSnapshotParts,
   type CommunityGroup,
 } from "@life-community-os/tenant-life-panoramica";
@@ -44,8 +42,8 @@ export function canOpenGroupConversation(input: {
     id: `ctx-group-${snapshot.group.id}`,
     contextType: "group" as const,
     contextId: snapshot.group.id,
-    tenantId: snapshot.group.tenantId ?? DEMO_TENANT_ID,
-    territoryId: snapshot.group.territoryId ?? DEMO_TERRITORY_ID,
+    tenantId: snapshot.group.tenantId ?? input.configuration.tenantId,
+    territoryId: snapshot.group.territoryId ?? (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
@@ -77,8 +75,8 @@ export function canViewGroupConversation(input: {
     id: `ctx-group-${snapshot.group.id}`,
     contextType: "group" as const,
     contextId: snapshot.group.id,
-    tenantId: snapshot.group.tenantId ?? DEMO_TENANT_ID,
-    territoryId: snapshot.group.territoryId ?? DEMO_TERRITORY_ID,
+    tenantId: snapshot.group.tenantId ?? input.configuration.tenantId,
+    territoryId: snapshot.group.territoryId ?? (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 

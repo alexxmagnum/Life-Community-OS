@@ -194,12 +194,29 @@ export function TenantProvider({
   );
 
   const demoMembers = useMemo(() => listDemoMembers(), []);
-  const demoMember = useMemo(() => {
+  const demoMember = useMemo((): DemoMemberProfile => {
+    // Non-Panorámica tenants must not greet as Marta (Panorámica demo identity).
+    if (tenantSlug !== "life-panoramica") {
+      const brand = configuration.branding.name?.trim() || "Vecino";
+      return {
+        personId: `person-guest-${tenantSlug}`,
+        displayName: brand,
+        fullName: brand,
+        membershipLabel: `Miembro · ${brand}`,
+        areaLabel: configuration.branding.name ?? brand,
+        interests: [],
+        avatarUrl:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+        residencyStatusLabel: "Miembro de la comunidad",
+        residencyStatusKind: "verified",
+        narrativeKey: "marta",
+      };
+    }
     return (
       getDemoMemberByPersonId(demoPersonId) ??
       getDemoMemberByPersonId(DEMO_PERSON_MARTA)!
     );
-  }, [demoPersonId]);
+  }, [demoPersonId, tenantSlug, configuration.branding.name]);
 
   const value = useMemo(
     () => ({

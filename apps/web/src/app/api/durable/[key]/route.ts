@@ -5,6 +5,7 @@ import {
 } from "@/lib/durable/server-durable-store";
 import { resolveTenantPublicId } from "@/lib/tenant/ids";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
+import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
@@ -54,11 +55,12 @@ export async function PUT(request: Request, { params }: Params) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const tenantId = resolveTenantPublicId(
-    body.tenantId ||
-      resolveRequestTenantSlug(request) ||
-      gated.actor.tenantSlug,
-  );
-  await writeDurableJson(tenantId, key, body.value ?? null);
-  return NextResponse.json({ tenantId, key, ok: true });
+  const bound = resolveWriteTenantId({
+    request,
+    bodyTenantId: body.tenantId,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+  await writeDurableJson(bound.tenantId, key, body.value ?? null);
+  return NextResponse.json({ tenantId: bound.tenantId, key, ok: true });
 }

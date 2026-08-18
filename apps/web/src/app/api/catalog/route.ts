@@ -66,14 +66,18 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "items_required" }, { status: 400 });
   }
 
-  const tenantId = resolveTenantPublicId(
-    body.tenantId ||
-      resolveRequestTenantSlug(request) ||
-      gated.actor.tenantSlug,
+  const { resolveWriteTenantId } = await import(
+    "@/lib/tenant/resolve-write-tenant"
   );
-  await writeCatalog(tenantId, body.domain, body.items);
+  const bound = resolveWriteTenantId({
+    request,
+    bodyTenantId: body.tenantId,
+    actorTenantSlug: gated.actor.tenantSlug,
+  });
+  if ("error" in bound) return bound.error;
+  await writeCatalog(bound.tenantId, body.domain, body.items);
   return NextResponse.json({
-    tenantId,
+    tenantId: bound.tenantId,
     domain: body.domain,
     count: body.items.length,
   });

@@ -4,8 +4,6 @@ import type {
 } from "@life-community-os/types";
 import { createPlaceConversationAdapter } from "@life-community-os/types";
 import {
-  DEMO_TENANT_ID,
-  DEMO_TERRITORY_ID,
   getLocalEntityById,
   getPlaceParticipantPersonIds,
 } from "@life-community-os/tenant-life-panoramica";
@@ -42,8 +40,8 @@ export function canOpenPlaceConversation(input: {
     id: `ctx-place-${snapshot.id}`,
     contextType: "place" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
@@ -78,8 +76,8 @@ export function canViewPlaceConversation(input: {
     id: `ctx-place-${snapshot.id}`,
     contextType: "place" as const,
     contextId: snapshot.id,
-    tenantId: DEMO_TENANT_ID,
-    territoryId: DEMO_TERRITORY_ID,
+    tenantId: input.configuration.tenantId,
+    territoryId: (input.configuration.territory?.territoryId ?? input.configuration.tenantId),
     moduleId: adapter.getModuleId(),
   };
 
