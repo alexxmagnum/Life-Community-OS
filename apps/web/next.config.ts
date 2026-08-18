@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     "@life-community-os/database",
     "@life-community-os/design-tokens",
     "@life-community-os/tenant-life-panoramica",
+    "@life-community-os/tenant-life-valley",
     "@life-community-os/assets",
     "@life-community-os/life-map-renderer",
     "@life-community-os/life-map-renderer-maplibre",

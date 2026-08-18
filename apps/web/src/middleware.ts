@@ -15,6 +15,7 @@ const PUBLIC_PREFIXES = [
   "/api/locations",
   "/api/housing",
   "/api/durable",
+  "/api/catalog",
   "/_next",
   "/favicon",
   "/assets",
@@ -30,6 +31,8 @@ function isPublicPath(pathname: string): boolean {
 function resolveTenantSlug(request: NextRequest): string {
   const header = request.headers.get("x-tenant-slug")?.trim().toLowerCase();
   if (header) return header;
+  const cookie = request.cookies.get("lcos-tenant-slug")?.value?.trim().toLowerCase();
+  if (cookie) return cookie;
   const query = request.nextUrl.searchParams.get("tenant")?.trim().toLowerCase();
   if (query) return query;
   const fromEnv = process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG?.trim().toLowerCase();

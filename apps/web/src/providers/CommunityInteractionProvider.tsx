@@ -21,6 +21,7 @@ import {
   type ReactionKind,
 } from "@life-community-os/tenant-life-panoramica";
 import { useTenant } from "./TenantProvider";
+import { useTenantCatalogs } from "./CatalogProvider";
 import {
   hydrateDurableState,
   pushDurableState,
@@ -109,6 +110,7 @@ export function CommunityInteractionProvider({
   children: ReactNode;
 }) {
   const { demoPersonId, demoMember } = useTenant();
+  const { catalogs, ready: catalogReady } = useTenantCatalogs();
   const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
   const [hydrated, setHydrated] = useState(false);
 
@@ -140,26 +142,44 @@ export function CommunityInteractionProvider({
     (id: string) => {
       const created = overrides.created.find((c) => c.id === id);
       if (created) return mergeContent(created, overrides);
+      const fromCatalog = (catalogs.community as CommunityContent[]).find(
+        (c) => c.id === id,
+      );
+      if (fromCatalog) return mergeContent(fromCatalog, overrides);
       const base = getCommunityContentById(id);
       if (!base) return undefined;
       return mergeContent(base, overrides);
     },
-    [overrides],
+    [overrides, catalogs.community],
   );
 
   const feedItems = useMemo(() => {
     const publishedCreated = overrides.created.filter(
       (c) => c.status === "published",
     );
-    const catalog = listPublishedCommunityContent().map((c) =>
-      mergeContent(c, overrides),
-    );
-    return [...publishedCreated.map((c) => mergeContent(c, overrides)), ...catalog].sort(
+    const baseCatalog =
+      catalogReady && catalogs.community.length > 0
+        ? (catalogs.community as CommunityContent[]).filter(
+            (c) => c.status === "published",
+          )
+        : listPublishedCommunityContent();
+    const catalog = baseCatalog.map((c) => mergeContent(c, overrides));
+    const seen = new Set<string>();
+    const merged: CommunityContent[] = [];
+    for (const item of [
+      ...publishedCreated.map((c) => mergeContent(c, overrides)),
+      ...catalog,
+    ]) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      merged.push(item);
+    }
+    return merged.sort(
       (a, b) =>
         new Date(b.publishedAt ?? b.createdAt).getTime() -
         new Date(a.publishedAt ?? a.createdAt).getTime(),
     );
-  }, [overrides]);
+  }, [overrides, catalogs.community, catalogReady]);
 
   const getMyReaction = useCallback(
     (contentId: string) => overrides.reactions[contentId] ?? null,

@@ -44,6 +44,7 @@ export function ProfileScreen() {
     isFeatureEnabled,
     role,
     setRole,
+    roleSource,
     demoMember,
     demoMembers,
     demoPersonId,
@@ -112,6 +113,29 @@ export function ProfileScreen() {
       configured: session?.configured ?? false,
       authenticated: false,
       user: null,
+    });
+    router.refresh();
+  };
+
+  const onLocalJoin = async () => {
+    const email = `vecino.${Date.now().toString(36)}@life.local`;
+    const res = await fetch("/api/auth/local-join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        displayName: demoMember.displayName,
+        role: "member",
+      }),
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as SessionState & {
+      user: { id: string; email: string | null };
+    };
+    setSession({
+      configured: false,
+      authenticated: true,
+      user: data.user,
     });
     router.refresh();
   };
@@ -356,29 +380,41 @@ export function ProfileScreen() {
             <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
               {session?.configured
                 ? "Inicia sesión para sincronizar tu comunidad."
-                : "Auth listo cuando configures Supabase (LCOS_AUTH_REQUIRED)."}
+                : "Únete localmente (membership durable) o configura Supabase Auth."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
-                onClick={() => router.push("/login")}
-              >
-                Entrar
-              </button>
-              <button
-                type="button"
-                className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-                onClick={() => router.push("/register")}
-              >
-                Crear cuenta
-              </button>
+              {session?.configured ? (
+                <>
+                  <button
+                    type="button"
+                    className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
+                    onClick={() => router.push("/login")}
+                  >
+                    Entrar
+                  </button>
+                  <button
+                    type="button"
+                    className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                    onClick={() => router.push("/register")}
+                  >
+                    Crear cuenta
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
+                  onClick={() => void onLocalJoin()}
+                >
+                  Unirme a la comunidad
+                </button>
+              )}
             </div>
           </>
         )}
       </section>
 
-      {process.env.NODE_ENV === "development" ? (
+      {process.env.NODE_ENV === "development" && roleSource === "demo" ? (
         <>
           <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
             <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">

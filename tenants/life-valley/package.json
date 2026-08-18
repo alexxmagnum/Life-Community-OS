@@ -1,0 +1,23 @@
+{
+  "name": "@life-community-os/tenant-life-valley",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Life Valley validation tenant pack (multi-tenant isolation)",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@life-community-os/design-tokens": "workspace:*",
+    "@life-community-os/types": "workspace:*",
+    "@life-community-os/tenant-life-panoramica": "workspace:*"
+  },
+  "devDependencies": {
+    "@life-community-os/config": "workspace:*",
+    "typescript": "^5.8.2"
+  }
+}

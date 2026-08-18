@@ -22,6 +22,13 @@ export type {
   AuthorizationDecision,
 } from "./security-boundaries";
 
+export type { MembershipRole } from "./membership-role";
+export {
+  MEMBERSHIP_ROLES,
+  isMembershipRole,
+  coerceMembershipRole,
+} from "./membership-role";
+
 export type {
   PlatformModule,
   PlatformModuleCategory,

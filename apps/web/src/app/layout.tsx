@@ -6,6 +6,7 @@ import "@life-community-os/ui/interaction.css";
 import "@life-community-os/ui/asset-pad.css";
 
 import { TenantProvider } from "@/providers/TenantProvider";
+import { CatalogProvider } from "@/providers/CatalogProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
 import { HousingSavesProvider } from "@/providers/HousingSavesProvider";
 import { CommunityInteractionProvider } from "@/providers/CommunityInteractionProvider";
@@ -58,17 +59,19 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es" className={`${sans.variable} ${display.variable} ${brand.variable}`}>
       <body className="min-h-screen bg-[var(--life-bg,var(--color-surface-app))] font-sans antialiased">
         <TenantProvider>
-          <ExperienceParticipationProvider>
-            <HousingSavesProvider>
-              <CommunityInteractionProvider>
-                <ReservationProvider>
-                  <NotificationProvider>
-                    <MediaLightboxProvider>{children}</MediaLightboxProvider>
-                  </NotificationProvider>
-                </ReservationProvider>
-              </CommunityInteractionProvider>
-            </HousingSavesProvider>
-          </ExperienceParticipationProvider>
+          <CatalogProvider>
+            <ExperienceParticipationProvider>
+              <HousingSavesProvider>
+                <CommunityInteractionProvider>
+                  <ReservationProvider>
+                    <NotificationProvider>
+                      <MediaLightboxProvider>{children}</MediaLightboxProvider>
+                    </NotificationProvider>
+                  </ReservationProvider>
+                </CommunityInteractionProvider>
+              </HousingSavesProvider>
+            </ExperienceParticipationProvider>
+          </CatalogProvider>
         </TenantProvider>
       </body>
     </html>

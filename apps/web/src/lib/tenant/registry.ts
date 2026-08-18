@@ -1,5 +1,5 @@
 /**
- * Tenant pack registry — Platform hosts tenants; Panorámica is one pack.
+ * Tenant pack registry — Platform hosts N tenants.
  */
 
 import type { TenantConfiguration } from "@life-community-os/types";
@@ -15,7 +15,13 @@ import {
   type TenantFeatureFlags,
 } from "@life-community-os/tenant-life-panoramica";
 import {
+  lifeValleyFeatures,
+  lifeValleyTheme,
+  resolveLifeValleyTenantConfiguration,
+} from "@life-community-os/tenant-life-valley";
+import {
   LIFE_PANORAMICA_TENANT_SLUG,
+  LIFE_VALLEY_TENANT_SLUG,
   resolveTenantPublicId,
 } from "./ids";
 
@@ -43,6 +49,15 @@ registerPack({
   capabilitiesForRole,
 });
 
+registerPack({
+  slug: LIFE_VALLEY_TENANT_SLUG,
+  displayName: "Life Valley",
+  theme: lifeValleyTheme,
+  features: lifeValleyFeatures,
+  resolveConfiguration: resolveLifeValleyTenantConfiguration,
+  capabilitiesForRole,
+});
+
 export function listRegisteredTenantSlugs(): string[] {
   return [...packs.keys()];
 }
@@ -60,9 +75,7 @@ export function requireTenantPack(slugOrId: string): TenantPackRuntime {
   return pack;
 }
 
-export function resolveActiveTenantSlug(
-  hint?: string | null,
-): string {
+export function resolveActiveTenantSlug(hint?: string | null): string {
   const fromEnv = process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG?.trim();
   const candidate = hint?.trim() || fromEnv || LIFE_PANORAMICA_TENANT_SLUG;
   const slug = resolveTenantPublicId(candidate);

@@ -1,0 +1,31 @@
+import type { TenantFeatureFlags } from "@life-community-os/tenant-life-panoramica";
+
+/** Slim feature set for isolation validation. */
+export const lifeValleyFeatures: TenantFeatureFlags = {
+  experiences: true,
+  activities: true,
+  services: true,
+  work: false,
+  resources: true,
+  recommendations: true,
+  localLife: true,
+  localEntities: true,
+  communityPulse: true,
+  groups: true,
+  decide: false,
+  interactions: true,
+  incidents: false,
+  feed: true,
+  calendar: true,
+  marketplace: true,
+  communityChannels: true,
+  officialChannels: false,
+  municipalServices: false,
+  securityModule: false,
+  mobility: false,
+  residencyVerification: false,
+  participationTrust: false,
+  intelligentDiffusion: false,
+  housing: true,
+  lifeMap: true,
+};

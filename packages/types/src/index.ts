@@ -25,6 +25,13 @@ export {
 /** Address geocoder contract helpers. */
 export { validateAddressGeocodeQuery } from "./platform/address-geocoder";
 
+/** Membership capability roles (persisted on memberships.membership_type). */
+export {
+  MEMBERSHIP_ROLES,
+  isMembershipRole,
+  coerceMembershipRole,
+} from "./platform/membership-role";
+
 /** Runtime helpers for Local Discovery (platform capability). */
 export {
   filterLocalEntities,

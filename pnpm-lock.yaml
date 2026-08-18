@@ -40,6 +40,9 @@ importers:
       '@life-community-os/tenant-life-panoramica':
         specifier: workspace:*
         version: link:../../tenants/life-panoramica
+      '@life-community-os/tenant-life-valley':
+        specifier: workspace:*
+        version: link:../../tenants/life-valley
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -322,6 +325,25 @@ importers:
       '@life-community-os/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
+      '@life-community-os/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+    devDependencies:
+      '@life-community-os/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
+  tenants/life-valley:
+    dependencies:
+      '@life-community-os/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
+      '@life-community-os/tenant-life-panoramica':
+        specifier: workspace:*
+        version: link:../life-panoramica
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../../packages/types

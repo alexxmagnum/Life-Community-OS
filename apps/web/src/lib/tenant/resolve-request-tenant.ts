@@ -14,7 +14,24 @@ export function resolveRequestTenantSlug(
     request.headers.get("x-life-tenant")?.trim().toLowerCase();
   if (header) return header;
 
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const cookieTenant = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("lcos-tenant-slug="))
+    ?.slice("lcos-tenant-slug=".length);
+  if (cookieTenant) {
+    try {
+      return decodeURIComponent(cookieTenant).toLowerCase();
+    } catch {
+      return cookieTenant.toLowerCase();
+    }
+  }
+
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
+  if (host.startsWith("life-valley.") || host.includes("life-valley")) {
+    return "life-valley";
+  }
   if (host.startsWith("life-panoramica.") || host.includes("panoramica")) {
     return LIFE_PANORAMICA_TENANT_SLUG;
   }

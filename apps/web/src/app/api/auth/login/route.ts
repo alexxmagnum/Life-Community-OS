@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAuthConfigured } from "@life-community-os/auth";
+import { ensureDomainMembership } from "@/lib/auth/ensure-domain-membership";
+import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export const runtime = "nodejs";
 
@@ -56,11 +58,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const tenantSlug = resolveRequestTenantSlug(request);
+  const membership = await ensureDomainMembership({
+    tenantSlug,
+    providerReference: data.user.id,
+    email: data.user.email ?? email,
+    displayName:
+      (data.user.user_metadata?.display_name as string | undefined) ?? null,
+  });
+
   const response = NextResponse.json({
     user: {
       id: data.user.id,
       email: data.user.email ?? null,
     },
+    personId: membership.personId,
+    role: membership.role,
+    membershipId: membership.membershipId,
+    tenantSlug,
   });
   response.cookies.set("lcos-access-token", data.session.access_token, {
     httpOnly: true,
@@ -73,6 +88,12 @@ export async function POST(request: Request) {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30,
+  });
+  response.cookies.set("lcos-tenant-slug", tenantSlug, {
+    httpOnly: false,
+    sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });

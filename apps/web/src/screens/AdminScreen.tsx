@@ -61,6 +61,25 @@ export function AdminScreen() {
           <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
             Packs registrados: {packs.join(", ")}
           </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {packs.map((slug) => (
+              <button
+                key={slug}
+                type="button"
+                className={
+                  slug === tenantSlug
+                    ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                    : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                }
+                onClick={() => {
+                  document.cookie = `lcos-tenant-slug=${encodeURIComponent(slug)}; path=/; max-age=2592000; samesite=lax`;
+                  window.location.href = "/admin";
+                }}
+              >
+                {slug}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
