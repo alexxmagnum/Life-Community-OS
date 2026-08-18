@@ -29,6 +29,35 @@ import { getExperienceById, type Experience } from "./experiences";
 
 const STORAGE_KEY = "lcos.life-panoramica.experience-conversations.v1";
 
+export const EXPERIENCE_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type ExperienceConversationStoreSync = (storeJson: string) => void;
+let durableSync: ExperienceConversationStoreSync | null = null;
+
+export function setExperienceConversationDurableSync(
+  handler: ExperienceConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyExperienceConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as {
+      conversations?: unknown;
+      messages?: unknown;
+    };
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Primary demo experience for D.0.6 walkthrough. */
 export const DEMO_EXPERIENCE_CONVERSATION_ID = "exp-sunrise-pines";
 
@@ -185,7 +214,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function toMessageView(

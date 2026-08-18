@@ -16,6 +16,8 @@ const ALLOWED = new Set([
   "community-interactions",
   "housing-saves",
   "place-conversations",
+  "marketplace-conversations",
+  "experience-conversations",
 ]);
 
 export async function GET(request: Request, { params }: Params) {

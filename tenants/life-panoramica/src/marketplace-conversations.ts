@@ -30,6 +30,32 @@ import {
 
 const STORAGE_KEY = "lcos.life-panoramica.marketplace-conversations.v1";
 
+export const MARKETPLACE_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type MarketplaceConversationStoreSync = (storeJson: string) => void;
+let durableSync: MarketplaceConversationStoreSync | null = null;
+
+export function setMarketplaceConversationDurableSync(
+  handler: MarketplaceConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyMarketplaceConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const MARKETPLACE_QUICK_ACTION_LABELS: Record<QuickActionKind, string> = {
   going: "Puedo pasar",
   joining: "Me interesa",
@@ -116,7 +142,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function buildContext(listingId: string): ConversationContext {

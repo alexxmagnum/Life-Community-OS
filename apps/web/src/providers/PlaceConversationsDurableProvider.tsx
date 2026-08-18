@@ -1,15 +1,20 @@
 "use client";
 
 /**
- * Thin durable bridge for place conversations.
- * Domain helpers stay in the tenant pack (localStorage); this hydrates/pushes
- * the same JSON blob via /api/durable/place-conversations (tenant-scoped).
+ * Durable bridge for place / marketplace / experience conversations.
+ * Pack helpers keep localStorage; this hydrates/pushes tenant-scoped JSON.
  */
 
 import { useEffect, type ReactNode } from "react";
 import {
+  EXPERIENCE_CONVERSATIONS_STORAGE_KEY,
+  MARKETPLACE_CONVERSATIONS_STORAGE_KEY,
   PLACE_CONVERSATIONS_STORAGE_KEY,
+  applyExperienceConversationStoreJson,
+  applyMarketplaceConversationStoreJson,
   applyPlaceConversationStoreJson,
+  setExperienceConversationDurableSync,
+  setMarketplaceConversationDurableSync,
   setPlaceConversationDurableSync,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -18,27 +23,43 @@ import {
 } from "@/lib/durable/client";
 import { useTenant } from "@/providers/TenantProvider";
 
-const DURABLE_KEY = "place-conversations";
-
-type PlaceConversationStoreBlob = {
-  conversations: unknown[];
-  messages: unknown[];
-  authors: Record<string, unknown>;
-  participantsByPlace: Record<string, unknown>;
+type Bridge = {
+  durableKey: string;
+  storageKey: string;
+  setSync: (handler: ((json: string) => void) | null) => void;
+  apply: (raw: string) => boolean;
+  isBlob: (value: unknown) => boolean;
 };
 
-function isStoreBlob(value: unknown): value is PlaceConversationStoreBlob {
+function hasConversationsAndMessages(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
-  const v = value as PlaceConversationStoreBlob;
-  return (
-    Array.isArray(v.conversations) &&
-    Array.isArray(v.messages) &&
-    typeof v.authors === "object" &&
-    v.authors !== null &&
-    typeof v.participantsByPlace === "object" &&
-    v.participantsByPlace !== null
-  );
+  const v = value as { conversations?: unknown; messages?: unknown };
+  return Array.isArray(v.conversations) && Array.isArray(v.messages);
 }
+
+const BRIDGES: Bridge[] = [
+  {
+    durableKey: "place-conversations",
+    storageKey: PLACE_CONVERSATIONS_STORAGE_KEY,
+    setSync: setPlaceConversationDurableSync,
+    apply: applyPlaceConversationStoreJson,
+    isBlob: hasConversationsAndMessages,
+  },
+  {
+    durableKey: "marketplace-conversations",
+    storageKey: MARKETPLACE_CONVERSATIONS_STORAGE_KEY,
+    setSync: setMarketplaceConversationDurableSync,
+    apply: applyMarketplaceConversationStoreJson,
+    isBlob: hasConversationsAndMessages,
+  },
+  {
+    durableKey: "experience-conversations",
+    storageKey: EXPERIENCE_CONVERSATIONS_STORAGE_KEY,
+    setSync: setExperienceConversationDurableSync,
+    apply: applyExperienceConversationStoreJson,
+    isBlob: hasConversationsAndMessages,
+  },
+];
 
 export function PlaceConversationsDurableProvider({
   children,
@@ -50,45 +71,47 @@ export function PlaceConversationsDurableProvider({
   useEffect(() => {
     let cancelled = false;
 
-    setPlaceConversationDurableSync((storeJson) => {
-      try {
-        const parsed: unknown = JSON.parse(storeJson);
-        if (!isStoreBlob(parsed)) return;
-        pushDurableState(DURABLE_KEY, parsed, tenantSlug);
-      } catch {
-        /* ignore malformed sync payloads */
-      }
-    });
+    for (const bridge of BRIDGES) {
+      bridge.setSync((storeJson) => {
+        try {
+          const parsed: unknown = JSON.parse(storeJson);
+          if (!bridge.isBlob(parsed)) return;
+          pushDurableState(bridge.durableKey, parsed, tenantSlug);
+        } catch {
+          /* ignore */
+        }
+      });
+    }
 
     void (async () => {
-      const remote = await hydrateDurableState<unknown>(
-        DURABLE_KEY,
-        tenantSlug,
-      );
-      if (cancelled) return;
-
-      if (isStoreBlob(remote)) {
-        applyPlaceConversationStoreJson(JSON.stringify(remote));
-        return;
-      }
-
-      try {
-        const local = window.localStorage.getItem(
-          PLACE_CONVERSATIONS_STORAGE_KEY,
+      for (const bridge of BRIDGES) {
+        const remote = await hydrateDurableState<unknown>(
+          bridge.durableKey,
+          tenantSlug,
         );
-        if (!local) return;
-        const parsed: unknown = JSON.parse(local);
-        if (isStoreBlob(parsed)) {
-          pushDurableState(DURABLE_KEY, parsed, tenantSlug);
+        if (cancelled) return;
+        if (bridge.isBlob(remote)) {
+          bridge.apply(JSON.stringify(remote));
+          continue;
         }
-      } catch {
-        /* ignore */
+        try {
+          const local = window.localStorage.getItem(bridge.storageKey);
+          if (!local) continue;
+          const parsed: unknown = JSON.parse(local);
+          if (bridge.isBlob(parsed)) {
+            pushDurableState(bridge.durableKey, parsed, tenantSlug);
+          }
+        } catch {
+          /* ignore */
+        }
       }
     })();
 
     return () => {
       cancelled = true;
-      setPlaceConversationDurableSync(null);
+      for (const bridge of BRIDGES) {
+        bridge.setSync(null);
+      }
     };
   }, [tenantSlug]);
 
