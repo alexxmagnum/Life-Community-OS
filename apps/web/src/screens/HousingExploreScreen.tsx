@@ -13,6 +13,7 @@ import {
 import { canCreateHousingListing } from "@life-community-os/types";
 import {
   getHousingModuleConfig,
+  hydrateHousingFromServer,
   listPublishedHousingListings,
 } from "@/lib/housing/catalog";
 import { buildHousingActionActor } from "@/lib/housing/actor";
@@ -49,9 +50,19 @@ export function HousingExploreScreen() {
   } = useTenant();
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const [sessionReady, setSessionReady] = useState(false);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
-    setSessionReady(true);
+    let cancelled = false;
+    void (async () => {
+      await hydrateHousingFromServer();
+      if (cancelled) return;
+      setSessionReady(true);
+      setTick((n) => n + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const moduleOn =
@@ -77,7 +88,7 @@ export function HousingExploreScreen() {
       includeSessionCreated: sessionReady,
       type: filter,
     });
-  }, [filter, sessionReady]);
+  }, [filter, sessionReady, tick]);
 
   if (!moduleOn) {
     return (

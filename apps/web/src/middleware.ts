@@ -13,6 +13,7 @@ const PUBLIC_PREFIXES = [
   "/api/geocode",
   "/api/auth",
   "/api/locations",
+  "/api/housing",
   "/_next",
   "/favicon",
   "/assets",

@@ -24,6 +24,60 @@ const CREATED_STORAGE_KEY = "lcos.housing.created.v1";
 const OVERRIDES_STORAGE_KEY = "lcos.housing.overrides.v1";
 const CONTACT_STORAGE_KEY = "lcos.housing.contact-intents.v1";
 
+type HousingSyncPayload = {
+  created: HousingListing[];
+  overrides: Record<string, Partial<HousingListing>>;
+  contacts: HousingContactIntent[];
+};
+
+function pushHousingToServer(payload: HousingSyncPayload): void {
+  if (typeof window === "undefined") return;
+  void fetch("/api/housing", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tenantId: "life-panoramica",
+      ...payload,
+    }),
+  }).catch(() => undefined);
+}
+
+function currentHousingPayload(): HousingSyncPayload {
+  return {
+    created: readCreated(),
+    overrides: readOverrides(),
+    contacts: readJson<HousingContactIntent>(CONTACT_STORAGE_KEY),
+  };
+}
+
+/** Hydrate browser cache from durable server store (cross-device). */
+export async function hydrateHousingFromServer(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const res = await fetch(
+      "/api/housing?tenantId=life-panoramica",
+      { cache: "no-store" },
+    );
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      created?: HousingListing[];
+      overrides?: Record<string, Partial<HousingListing>>;
+      contacts?: HousingContactIntent[];
+    };
+    if (Array.isArray(data.created) && data.created.length > 0) {
+      writeCreated(data.created, { skipSync: true });
+    }
+    if (data.overrides && Object.keys(data.overrides).length > 0) {
+      writeOverrides(data.overrides, { skipSync: true });
+    }
+    if (Array.isArray(data.contacts) && data.contacts.length > 0) {
+      writeJson(CONTACT_STORAGE_KEY, data.contacts, { skipSync: true });
+    }
+  } catch {
+    // keep local cache
+  }
+}
+
 const DEFAULT_IMAGE =
   "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=900&q=80";
 
@@ -302,17 +356,28 @@ function readJson<T>(key: string): T[] {
   }
 }
 
-function writeJson<T>(key: string, value: T[]) {
+function writeJson<T>(
+  key: string,
+  value: T[],
+  options?: { skipSync?: boolean },
+) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(key, JSON.stringify(value));
+  if (!options?.skipSync && key === CONTACT_STORAGE_KEY) {
+    pushHousingToServer(currentHousingPayload());
+  }
 }
 
 function readCreated(): HousingListing[] {
   return readJson<HousingListing>(CREATED_STORAGE_KEY);
 }
 
-function writeCreated(items: HousingListing[]) {
-  writeJson(CREATED_STORAGE_KEY, items);
+function writeCreated(
+  items: HousingListing[],
+  options?: { skipSync?: boolean },
+) {
+  writeJson(CREATED_STORAGE_KEY, items, { skipSync: true });
+  if (!options?.skipSync) pushHousingToServer(currentHousingPayload());
 }
 
 function readOverrides(): Record<string, Partial<HousingListing>> {
@@ -327,9 +392,13 @@ function readOverrides(): Record<string, Partial<HousingListing>> {
   }
 }
 
-function writeOverrides(map: Record<string, Partial<HousingListing>>) {
+function writeOverrides(
+  map: Record<string, Partial<HousingListing>>,
+  options?: { skipSync?: boolean },
+) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(map));
+  if (!options?.skipSync) pushHousingToServer(currentHousingPayload());
 }
 
 function applyOverride(listing: HousingListing): HousingListing {
