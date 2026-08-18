@@ -204,7 +204,7 @@ export function DiscoverScreen() {
                     categoryLabel={place.categoryLabel}
                     areaLabel={place.areaLabel}
                     blurb={place.story}
-                    imageUrl={place.imageUrl}
+                    imageUrl={place.imageUrl ?? ""}
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
