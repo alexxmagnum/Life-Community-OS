@@ -1,7 +1,8 @@
 /**
  * Place conversation demo foundation (Phase 2.1) — Tenant Content (D).
  *
- * Uses Platform Core Conversation contracts (A). Persistence is demo_session only.
+ * Uses Platform Core Conversation contracts (A). Browser localStorage is the
+ * working copy; apps/web may hydrate/push the same JSON via /api/durable.
  * Not a Platform Conversation service. Not Panoramica-specific contracts.
  */
 
@@ -23,6 +24,19 @@ import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { getLocalEntityById } from "./local-places";
 
 const STORAGE_KEY = "lcos.life-panoramica.place-conversations.v1";
+
+/** Stable browser key — durable sync in apps/web hydrates/pushes this blob. */
+export const PLACE_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type PlaceConversationStoreSync = (storeJson: string) => void;
+let durableSync: PlaceConversationStoreSync | null = null;
+
+/** Optional hook for apps/web durable bridge (no domain move). */
+export function setPlaceConversationDurableSync(
+  handler: PlaceConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
 
 export const PLACE_QUICK_ACTION_LABELS: Record<QuickActionKind, string> = {
   going: "Yo también",
@@ -102,7 +116,37 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
+}
+
+/** Replace local store from durable hydrate (apps/web). */
+export function applyPlaceConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    const normalized: ConversationStore = {
+      conversations: Array.isArray(parsed.conversations)
+        ? parsed.conversations
+        : [],
+      messages: Array.isArray(parsed.messages) ? parsed.messages : [],
+      authors:
+        parsed.authors && typeof parsed.authors === "object"
+          ? parsed.authors
+          : {},
+      participantsByPlace:
+        parsed.participantsByPlace &&
+        typeof parsed.participantsByPlace === "object"
+          ? parsed.participantsByPlace
+          : {},
+    };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function buildContext(placeId: string): ConversationContext {

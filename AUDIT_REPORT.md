@@ -10,17 +10,27 @@
 
 ## 1. Veredicto ejecutivo
 
-**Demo Panorámica fuerte. Spine de plataforma real. No es SaaS production-ready.**
+**Spine SaaS multi-tenant en marcha. Pilot comercial creíble. Aún no production-ready.**
 
 | Dimensión | Nota |
 |-----------|------|
-| Estado general | **6.5 / 10** como pilot comercial demo · **3 / 10** como SaaS multi-tenant |
-| SoT operativo | Catálogos tenant + `localStorage` / `sessionStorage` |
-| Auth / RBAC | Teatro client-side (`setRole`, sin middleware de sesión) |
-| Life Map | Dirección correcta: MapLibre self-hosted + GeoJSON propio + Three overlay de lugares |
-| Bloqueadores de “producto” | Persistencia, auth real, dualidad Location↔LocalEntity, leaks de marca, docs stale, tests casi nulos |
+| Estado general | **7.5 / 10** como pilot comercial multi-tenant · **5 / 10** como SaaS production |
+| SoT operativo | Memberships + catálogos tenant-scoped (API/file durable) · locations/manage cableados · conversaciones place con bridge durable (otros chats aún browser-local) |
+| Auth / RBAC | Memberships reales (file + Supabase mirror), mutation gates en writes, first-member → admin · `setRole` demo residual · RLS GUC no bound en paths service-role |
+| Life Map | MapLibre self-hosted; Location SoT merge; Valley map isolation |
+| Bloqueadores de “producto” | Conversaciones no-place aún localStorage; RLS no runtime-bound en service role; pack helpers Panorámica en screens; dualidad Location↔LocalEntity; tests escasos |
 
-El monorepo tiene arquitectura de plataforma (packages / apps / tenants, Module Registry, TenantConfiguration, dominios en `@life-community-os/types`). La realidad operativa sigue siendo una **reference app single-tenant** cableada a Life Panorámica.
+El monorepo tiene arquitectura de plataforma (packages / apps / tenants, Module Registry, TenantConfiguration, dominios en `@life-community-os/types`). Tras la ola SaaS 2026-08-18 opera **dos tenants** (Life Panorámica + Life Valley) con aislamiento de catálogo/mapa y memberships tenant-scoped — ya no es solo una reference app single-tenant.
+
+### Progress since 2026-08-18 SaaS wave
+
+- Real memberships (file-backed + optional Supabase mirror); local-join; first member of an empty tenant becomes administrator
+- Two tenants registered: `life-panoramica` + `life-valley` (catalog / map / Discover isolation)
+- Tenant-scoped catalog API + durable provider sync (reservations, experiences, community, housing-saves, place-conversations)
+- Admin memberships API/UI; Location manage surfaces; Valley map pack isolation
+- Mutation gates on durable/admin writes; Location SoT merge on map
+
+**Remaining gaps (honest):** marketplace / experience / neighbour conversations still pack `localStorage`; RLS `app_set_tenant_context` GUC exists but is not runtime-bound on service-role repository paths; several screens still import Panorámica pack helpers directly.
 
 ---
 
