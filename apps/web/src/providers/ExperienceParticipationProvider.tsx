@@ -12,7 +12,6 @@ import {
 import {
   deriveViewerState,
   getExperienceById,
-  listDiscoverableExperiences,
   type Experience,
   type ExperienceViewerState,
 } from "@life-community-os/tenant-life-panoramica";
@@ -20,6 +19,8 @@ import {
   hydrateDurableState,
   pushDurableState,
 } from "@/lib/durable/client";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
+import { useTenant } from "@/providers/TenantProvider";
 
 const STORAGE_KEY = "lcos:experience-participations";
 const SAVED_STORAGE_KEY = "lcos:experience-saves";
@@ -91,8 +92,9 @@ function writeSavedIds(ids: string[]) {
 function pushExperienceDurable(
   records: ParticipationMap,
   savedIds: string[],
+  tenantSlug: string,
 ) {
-  pushDurableState(DURABLE_KEY, { records, savedIds });
+  pushDurableState(DURABLE_KEY, { records, savedIds }, tenantSlug);
 }
 
 export function ExperienceParticipationProvider({
@@ -100,22 +102,34 @@ export function ExperienceParticipationProvider({
 }: {
   children: ReactNode;
 }) {
+  const { tenantSlug } = useTenant();
+  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const [records, setRecords] = useState<ParticipationMap>({});
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
+  const resolveExperience = useCallback(
+    (id: string): Experience | undefined => {
+      return (
+        catalogExperiences.find((e) => e.id === id) ?? getExperienceById(id)
+      );
+    },
+    [catalogExperiences],
+  );
+
   useEffect(() => {
     let cancelled = false;
+    setHydrated(false);
     void (async () => {
       const remote = await hydrateDurableState<{
         records?: ParticipationMap;
         savedIds?: string[];
-      }>(DURABLE_KEY);
+      }>(DURABLE_KEY, tenantSlug);
       if (cancelled) return;
       if (remote?.records) {
         setRecords(remote.records);
         window.localStorage.setItem(
-          STORAGE_KEY,
+          `${STORAGE_KEY}:${tenantSlug}`,
           JSON.stringify(remote.records),
         );
       } else {
@@ -123,10 +137,6 @@ export function ExperienceParticipationProvider({
       }
       if (remote?.savedIds) {
         setSavedIds(remote.savedIds);
-        window.localStorage.setItem(
-          SAVED_STORAGE_KEY,
-          JSON.stringify(remote.savedIds),
-        );
       } else {
         setSavedIds(readSavedIds());
       }
@@ -135,13 +145,13 @@ export function ExperienceParticipationProvider({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tenantSlug]);
 
   useEffect(() => {
     if (!hydrated) return;
     writeStorage(records);
-    pushExperienceDurable(records, savedIds);
-  }, [records, savedIds, hydrated]);
+    pushExperienceDurable(records, savedIds, tenantSlug);
+  }, [records, savedIds, hydrated, tenantSlug]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -173,7 +183,7 @@ export function ExperienceParticipationProvider({
       experienceId: string,
       options?: { reminders?: boolean; waitlist?: boolean },
     ) => {
-      const experience = getExperienceById(experienceId);
+      const experience = resolveExperience(experienceId);
       if (!experience) return null;
       const record: ParticipationRecord = {
         experienceId,
@@ -184,7 +194,7 @@ export function ExperienceParticipationProvider({
       setRecords((prev) => ({ ...prev, [experienceId]: record }));
       return record;
     },
-    [],
+    [resolveExperience],
   );
 
   const leave = useCallback((experienceId: string) => {
@@ -210,11 +220,10 @@ export function ExperienceParticipationProvider({
   );
 
   const joinedExperiences = useMemo(() => {
-    return listDiscoverableExperiences()
+    return catalogExperiences
       .concat(
-        // include cancelled/expired if user had joined — look up by id
         Object.keys(records)
-          .map((id) => getExperienceById(id))
+          .map((id) => resolveExperience(id))
           .filter((e): e is Experience => Boolean(e)),
       )
       .filter(
@@ -226,7 +235,7 @@ export function ExperienceParticipationProvider({
         (a, b) =>
           new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
       );
-  }, [records]);
+  }, [records, catalogExperiences, resolveExperience]);
 
   const isSaved = useCallback(
     (experienceId: string) => savedIds.includes(experienceId),
@@ -243,9 +252,9 @@ export function ExperienceParticipationProvider({
 
   const savedExperiences = useMemo(() => {
     return savedIds
-      .map((id) => getExperienceById(id))
+      .map((id) => resolveExperience(id))
       .filter((e): e is Experience => Boolean(e));
-  }, [savedIds]);
+  }, [savedIds, resolveExperience]);
 
   const value = useMemo(
     () => ({

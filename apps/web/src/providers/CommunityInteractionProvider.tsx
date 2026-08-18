@@ -109,34 +109,60 @@ export function CommunityInteractionProvider({
 }: {
   children: ReactNode;
 }) {
-  const { demoPersonId, demoMember } = useTenant();
+  const { demoPersonId, demoMember, tenantSlug } = useTenant();
   const { catalogs, ready: catalogReady } = useTenantCatalogs();
   const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setHydrated(false);
     void (async () => {
-      const remote = await hydrateDurableState<LocalOverrides>(DURABLE_KEY);
+      const remote = await hydrateDurableState<LocalOverrides>(
+        DURABLE_KEY,
+        tenantSlug,
+      );
       if (cancelled) return;
       if (remote) {
         const merged = { ...emptyOverrides(), ...remote };
         setOverrides(merged);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        window.localStorage.setItem(
+          `${STORAGE_KEY}:${tenantSlug}`,
+          JSON.stringify(merged),
+        );
       } else {
-        setOverrides(readStorage());
+        try {
+          const raw = window.localStorage.getItem(
+            `${STORAGE_KEY}:${tenantSlug}`,
+          );
+          if (raw) {
+            setOverrides({
+              ...emptyOverrides(),
+              ...(JSON.parse(raw) as LocalOverrides),
+            });
+          } else {
+            setOverrides(emptyOverrides());
+          }
+        } catch {
+          setOverrides(emptyOverrides());
+        }
       }
       setHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tenantSlug]);
 
   useEffect(() => {
     if (!hydrated) return;
-    writeStorage(overrides);
-  }, [overrides, hydrated]);
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      `${STORAGE_KEY}:${tenantSlug}`,
+      JSON.stringify(overrides),
+    );
+    pushDurableState(DURABLE_KEY, overrides, tenantSlug);
+  }, [overrides, hydrated, tenantSlug]);
 
   const getContent = useCallback(
     (id: string) => {

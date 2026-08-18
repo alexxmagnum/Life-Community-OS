@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   evaluateDemoResourceAccessForPerson,
-  listResources,
+  type CommunityResource,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
@@ -14,32 +14,31 @@ import {
   ResourceDiscoveryCard,
   ScreenSearch,
 } from "@life-community-os/ui";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { resourceAccessHint } from "@/lib/demo-access-copy";
 
 export function ResourceDiscoveryScreen() {
   const router = useRouter();
-  const {
-    isFeatureEnabled,
-    hasCapability,
-    demoPersonId,
-  } = useTenant();
+  const { isFeatureEnabled, hasCapability, demoPersonId, roleSource } =
+    useTenant();
   const [query, setQuery] = useState("");
-  const [loading] = useState(false);
+  const { items: catalogResources, ready: catalogReady } =
+    useCatalogDomain<CommunityResource>("resources");
 
   const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
 
   const items = useMemo(() => {
-    return listResources().filter((r) => {
+    return catalogResources.filter((r) => {
       if (!query) return true;
       const q = query.toLowerCase();
       return (
         r.name.toLowerCase().includes(q) ||
-        r.location.toLowerCase().includes(q) ||
-        r.areaLabel.toLowerCase().includes(q)
+        (r.location ?? "").toLowerCase().includes(q) ||
+        (r.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query]);
+  }, [query, catalogResources]);
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -59,7 +58,9 @@ export function ResourceDiscoveryScreen() {
     );
   }
 
-  if (loading) return <LoadingState label="Cargando lugares..." />;
+  if (!catalogReady) {
+    return <LoadingState label="Cargando lugares..." />;
+  }
 
   return (
     <MobileScreen>
@@ -88,13 +89,22 @@ export function ResourceDiscoveryScreen() {
         <div className="space-y-4">
           {items.map((resource) => {
             const href = `/resources/${resource.id}`;
-            const access = evaluateDemoResourceAccessForPerson(
-              resource.id,
-              demoPersonId,
-              roleCanReserve,
-            );
+            const access =
+              roleSource === "demo"
+                ? evaluateDemoResourceAccessForPerson(
+                    resource.id,
+                    demoPersonId,
+                    roleCanReserve,
+                  )
+                : {
+                    canViewPublicInfo: true,
+                    canReserve: roleCanReserve,
+                    reasons: roleCanReserve
+                      ? []
+                      : ["missing_reserve_permission"],
+                  };
             const { hint, tone } = resourceAccessHint(access);
-            const showReserve = access.canReserve && roleCanReserve;
+            const showReserve = Boolean(access.canReserve && roleCanReserve);
             return (
               <ResourceDiscoveryCard
                 key={resource.id}
@@ -102,7 +112,7 @@ export function ResourceDiscoveryScreen() {
                 description={resource.description}
                 availability={
                   showReserve
-                    ? resource.availabilityPreview
+                    ? resource.availabilityPreview ?? "Consultar disponibilidad"
                     : "No disponible para ti"
                 }
                 area={resource.areaLabel}

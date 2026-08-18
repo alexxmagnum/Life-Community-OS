@@ -21,6 +21,7 @@ import {
   hydrateDurableState,
   pushDurableState,
 } from "@/lib/durable/client";
+import { useTenant } from "@/providers/TenantProvider";
 
 const STORAGE_KEY = "lcos:resource-reservations";
 const DURABLE_KEY = "reservations";
@@ -49,10 +50,10 @@ type ReservationContextValue = {
 
 const ReservationContext = createContext<ReservationContextValue | null>(null);
 
-function readStore(): ReservationStore {
+function readStore(tenantSlug: string): ReservationStore {
   if (typeof window === "undefined") return { reservations: [] };
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(`${STORAGE_KEY}:${tenantSlug}`);
     if (!raw) return { reservations: [] };
     return JSON.parse(raw) as ReservationStore;
   } catch {
@@ -60,10 +61,13 @@ function readStore(): ReservationStore {
   }
 }
 
-function writeStore(store: ReservationStore) {
+function writeStore(store: ReservationStore, tenantSlug: string) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  pushDurableState(DURABLE_KEY, store);
+  window.localStorage.setItem(
+    `${STORAGE_KEY}:${tenantSlug}`,
+    JSON.stringify(store),
+  );
+  pushDurableState(DURABLE_KEY, store, tenantSlug);
 }
 
 function withDerivedStatus(r: Reservation): Reservation {
@@ -71,31 +75,39 @@ function withDerivedStatus(r: Reservation): Reservation {
 }
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
+  const { tenantSlug } = useTenant();
   const [store, setStore] = useState<ReservationStore>({ reservations: [] });
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    setHydrated(false);
     void (async () => {
-      const remote = await hydrateDurableState<ReservationStore>(DURABLE_KEY);
+      const remote = await hydrateDurableState<ReservationStore>(
+        DURABLE_KEY,
+        tenantSlug,
+      );
       if (cancelled) return;
       if (remote?.reservations) {
         setStore(remote);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+        window.localStorage.setItem(
+          `${STORAGE_KEY}:${tenantSlug}`,
+          JSON.stringify(remote),
+        );
       } else {
-        setStore(readStore());
+        setStore(readStore(tenantSlug));
       }
       setHydrated(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [tenantSlug]);
 
   useEffect(() => {
     if (!hydrated) return;
-    writeStore(store);
-  }, [store, hydrated]);
+    writeStore(store, tenantSlug);
+  }, [store, hydrated, tenantSlug]);
 
   const reservations = useMemo(
     () => store.reservations.map(withDerivedStatus),

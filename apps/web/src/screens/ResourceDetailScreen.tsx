@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import {
   evaluateDemoResourceAccessForPerson,
   getResourceById,
+  type CommunityResource,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -14,6 +15,7 @@ import {
   ResourceHero,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { resourceAccessHint } from "@/lib/demo-access-copy";
 
 export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
@@ -23,7 +25,10 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     hasCapability,
     demoPersonId,
     demoMember,
+    roleSource,
   } = useTenant();
+  const { items: catalogResources } =
+    useCatalogDomain<CommunityResource>("resources");
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -35,7 +40,9 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     );
   }
 
-  const resource = getResourceById(resourceId);
+  const resource =
+    catalogResources.find((r) => r.id === resourceId) ??
+    getResourceById(resourceId);
 
   if (!resource) {
     return (
@@ -57,11 +64,18 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   }
 
   const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
-  const access = evaluateDemoResourceAccessForPerson(
-    resource.id,
-    demoPersonId,
-    roleCanReserve,
-  );
+  const access =
+    roleSource === "demo"
+      ? evaluateDemoResourceAccessForPerson(
+          resource.id,
+          demoPersonId,
+          roleCanReserve,
+        )
+      : {
+          canViewPublicInfo: true,
+          canReserve: roleCanReserve,
+          reasons: roleCanReserve ? [] : ["missing_reserve_permission"],
+        };
   const { hint, tone } = resourceAccessHint(access);
   const canReserve = access.canReserve && roleCanReserve;
   const hintClass =

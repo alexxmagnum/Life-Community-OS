@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { MembershipRole } from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -11,17 +12,81 @@ import { useTenantLocations } from "@/lib/location";
 import { listRegisteredTenantSlugs } from "@/lib/tenant/registry";
 import { useTenant } from "@/providers/TenantProvider";
 
+type MemberRow = {
+  membershipId: string;
+  personId: string;
+  role: MembershipRole;
+  status: string;
+  email: string | null;
+  displayName: string | null;
+  updatedAt: string;
+};
+
+const ROLES: MembershipRole[] = [
+  "member",
+  "group_manager",
+  "moderator",
+  "administrator",
+];
+
 /**
- * Tenant admin surface — manage community places (Location SoT).
- * Full RBAC lands with enforced Supabase Auth + memberships.
+ * Tenant admin surface — places, members, permissions.
  */
 export function AdminScreen() {
   const router = useRouter();
-  const { configuration, role, tenantSlug } = useTenant();
+  const { configuration, role, tenantSlug, authenticated } = useTenant();
   const { allLocations, seedReady } = useTenantLocations(configuration.tenantId);
   const packs = useMemo(() => listRegisteredTenantSlugs(), []);
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [membersError, setMembersError] = useState<string | null>(null);
+  const [busyPersonId, setBusyPersonId] = useState<string | null>(null);
 
   const canAdmin = role === "administrator";
+
+  const refreshMembers = useCallback(async () => {
+    if (!canAdmin) return;
+    setMembersError(null);
+    try {
+      const res = await fetch("/api/admin/memberships", {
+        cache: "no-store",
+        headers: { "x-tenant-slug": tenantSlug },
+      });
+      if (!res.ok) {
+        setMembersError(
+          res.status === 403
+            ? "Inicia sesión como administrador para gestionar miembros."
+            : "No se pudieron cargar los miembros.",
+        );
+        setMembers([]);
+        return;
+      }
+      const data = (await res.json()) as { members?: MemberRow[] };
+      setMembers(data.members ?? []);
+    } catch {
+      setMembersError("Error de red al cargar miembros.");
+    }
+  }, [canAdmin, tenantSlug]);
+
+  useEffect(() => {
+    void refreshMembers();
+  }, [refreshMembers]);
+
+  const changeRole = async (personId: string, nextRole: MembershipRole) => {
+    setBusyPersonId(personId);
+    try {
+      const res = await fetch("/api/admin/memberships", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-slug": tenantSlug,
+        },
+        body: JSON.stringify({ personId, role: nextRole }),
+      });
+      if (res.ok) await refreshMembers();
+    } finally {
+      setBusyPersonId(null);
+    }
+  };
 
   if (!canAdmin) {
     return (
@@ -33,9 +98,13 @@ export function AdminScreen() {
         />
         <EmptyState
           title="Sin permisos de administración"
-          description="Necesitas un rol de administrador en esta comunidad."
-          actionLabel="Volver"
-          onAction={() => router.push("/")}
+          description={
+            authenticated
+              ? "Necesitas un rol de administrador en esta comunidad."
+              : "Únete a la comunidad desde Perfil y pide rol administrador."
+          }
+          actionLabel="Ir a perfil"
+          onAction={() => router.push("/me")}
         />
       </MobileScreen>
     );
@@ -80,6 +149,52 @@ export function AdminScreen() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
+          <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+            Miembros y permisos ({members.length})
+          </p>
+          {membersError ? (
+            <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
+              {membersError}
+            </p>
+          ) : null}
+          <ul className="mt-3 space-y-3">
+            {members.map((member) => (
+              <li
+                key={member.membershipId}
+                className="rounded-[12px] border border-[var(--color-border-subtle)] px-3 py-2"
+              >
+                <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+                  {member.displayName || member.email || member.personId}
+                </p>
+                <p className="text-[12px] text-[var(--color-text-tertiary)]">
+                  {member.email || member.personId}
+                </p>
+                <label className="mt-2 flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+                  Rol
+                  <select
+                    className="min-h-[36px] flex-1 rounded-[10px] border border-[var(--color-border-subtle)] bg-transparent px-2"
+                    value={member.role}
+                    disabled={busyPersonId === member.personId}
+                    onChange={(e) =>
+                      void changeRole(
+                        member.personId,
+                        e.target.value as MembershipRole,
+                      )
+                    }
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">

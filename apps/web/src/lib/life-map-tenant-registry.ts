@@ -10,6 +10,7 @@ import {
   listLifePanoramicaSpatialObjects,
 } from "@life-community-os/tenant-life-panoramica";
 
+import { createLifeValleyLifeMapPack } from "./life-map-life-valley-pack";
 import { registerLifeMapTenantPack } from "./life-map-tenant-pack";
 
 let registered = false;
@@ -32,4 +33,6 @@ export function ensureLifeMapTenantPacksRegistered(): void {
       enrichContext: (object) => enrichLifePanoramicaLifeMapContext(object),
     };
   });
+
+  registerLifeMapTenantPack("life-valley", () => createLifeValleyLifeMapPack());
 }

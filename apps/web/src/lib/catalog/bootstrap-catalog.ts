@@ -13,6 +13,9 @@ import {
   type CatalogDomain,
 } from "./server-catalog-repository";
 
+const VALLEY_IMAGE =
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=80";
+
 const VALLEY_COMMUNITY = [
   {
     id: "lv-cc-welcome",
@@ -22,10 +25,16 @@ const VALLEY_COMMUNITY = [
     body: "Tenant de validación multi-tenant. Este contenido solo existe aquí.",
     areaLabel: "Centro Valle",
     authorName: "Life Valley",
+    author: {
+      id: "lv-author-official",
+      name: "Life Valley",
+      kind: "official",
+    },
     publishedAt: new Date().toISOString(),
     reactionCounts: {},
     comments: [],
     commentCount: 0,
+    imageUrl: VALLEY_IMAGE,
   },
 ];
 
@@ -33,10 +42,21 @@ const VALLEY_EXPERIENCES = [
   {
     id: "lv-exp-walk",
     title: "Paseo del valle",
-    summary: "Experiencia exclusiva del tenant Life Valley.",
-    status: "published",
+    description: "Experiencia exclusiva del tenant Life Valley.",
+    imageUrl: VALLEY_IMAGE,
     startsAt: new Date(Date.now() + 86400000).toISOString(),
+    location: "Sendero del valle",
     areaLabel: "Centro Valle",
+    organizer: {
+      id: "lv-org-valley",
+      name: "Life Valley",
+      kind: "official",
+    },
+    capacity: 24,
+    participantCount: 3,
+    participants: [],
+    status: "published",
+    type: "experience",
   },
 ];
 
@@ -47,7 +67,9 @@ const VALLEY_MARKETPLACE = [
     title: "Bicicleta Valley",
     description: "Anuncio solo visible en Life Valley.",
     areaLabel: "Centro Valle",
-    status: "published",
+    authorName: "Vecino Valley",
+    imageUrl: VALLEY_IMAGE,
+    publishedAt: new Date().toISOString(),
   },
 ];
 
@@ -56,15 +78,16 @@ const VALLEY_RESOURCES = [
     id: "lv-res-room",
     name: "Sala Valley",
     description: "Recurso territorial del segundo tenant.",
+    imageUrl: VALLEY_IMAGE,
+    location: "Centro comunitario",
     areaLabel: "Centro Valle",
-    kind: "room",
+    type: "space",
+    status: "available",
+    capacity: 12,
   },
 ];
 
-function seedFor(
-  tenantSlug: string,
-  domain: CatalogDomain,
-): unknown[] {
+function seedFor(tenantSlug: string, domain: CatalogDomain): unknown[] {
   if (tenantSlug === "life-valley") {
     switch (domain) {
       case "community":

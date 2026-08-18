@@ -30,13 +30,37 @@ type HousingSyncPayload = {
   contacts: HousingContactIntent[];
 };
 
-function pushHousingToServer(payload: HousingSyncPayload): void {
+function resolveHousingTenantSlug(explicit?: string): string {
+  const trimmed = explicit?.trim().toLowerCase();
+  if (trimmed) return trimmed;
+  if (typeof document !== "undefined") {
+    const match = document.cookie
+      .split(";")
+      .map((p) => p.trim())
+      .find((p) => p.startsWith("lcos-tenant-slug="));
+    if (match) {
+      return decodeURIComponent(
+        match.slice("lcos-tenant-slug=".length),
+      ).toLowerCase();
+    }
+  }
+  return "life-panoramica";
+}
+
+function pushHousingToServer(
+  payload: HousingSyncPayload,
+  tenantId?: string,
+): void {
   if (typeof window === "undefined") return;
+  const tenant = resolveHousingTenantSlug(tenantId);
   void fetch("/api/housing", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-tenant-slug": tenant,
+    },
     body: JSON.stringify({
-      tenantId: "life-panoramica",
+      tenantId: tenant,
       ...payload,
     }),
   }).catch(() => undefined);
@@ -51,12 +75,18 @@ function currentHousingPayload(): HousingSyncPayload {
 }
 
 /** Hydrate browser cache from durable server store (cross-device). */
-export async function hydrateHousingFromServer(): Promise<void> {
+export async function hydrateHousingFromServer(
+  tenantId?: string,
+): Promise<void> {
   if (typeof window === "undefined") return;
+  const tenant = resolveHousingTenantSlug(tenantId);
   try {
     const res = await fetch(
-      "/api/housing?tenantId=life-panoramica",
-      { cache: "no-store" },
+      `/api/housing?tenantId=${encodeURIComponent(tenant)}`,
+      {
+        cache: "no-store",
+        headers: { "x-tenant-slug": tenant },
+      },
     );
     if (!res.ok) return;
     const data = (await res.json()) as {

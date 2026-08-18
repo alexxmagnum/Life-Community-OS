@@ -4,7 +4,7 @@
  * Location ficha — Location SoT + Experience Resolver + lifestyle profile.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   EmptyState,
@@ -24,9 +24,18 @@ import { useTenant } from "@/providers/TenantProvider";
 export function LocationDetailScreen() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { configuration } = useTenant();
+  const { configuration, role, tenantSlug } = useTenant();
   const locationId = typeof params.id === "string" ? params.id : "";
-  const { allLocations, seedReady } = useTenantLocations(configuration.tenantId);
+  const { allLocations, seedReady, refresh } = useTenantLocations(
+    configuration.tenantId,
+  );
+  const [saving, setSaving] = useState(false);
+  const [editSummary, setEditSummary] = useState<string | null>(null);
+  const [editHours, setEditHours] = useState<string | null>(null);
+  const [editContact, setEditContact] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const canManage = role === "administrator" || role === "moderator";
 
   const location = useMemo(
     () => allLocations.find((item) => item.id === locationId) ?? null,
@@ -87,6 +96,62 @@ export function LocationDetailScreen() {
 
   const mapHref = `/map?focus=${encodeURIComponent(location.id)}`;
 
+  const saveManage = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch(
+        `/api/locations/${encodeURIComponent(location.id)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-tenant-slug": tenantSlug,
+          },
+          body: JSON.stringify({
+            summary: editSummary ?? location.summary,
+            hours: editHours ?? location.hours,
+            contact: editContact ?? location.contact,
+          }),
+        },
+      );
+      if (!res.ok) {
+        setMessage("No se pudo guardar. ¿Tienes permisos?");
+        return;
+      }
+      setMessage("Cambios guardados.");
+      setEditSummary(null);
+      setEditHours(null);
+      setEditContact(null);
+      await refresh?.();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeLocation = async () => {
+    if (!window.confirm(`¿Eliminar «${location.name}» de esta comunidad?`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(
+        `/api/locations/${encodeURIComponent(location.id)}`,
+        {
+          method: "DELETE",
+          headers: { "x-tenant-slug": tenantSlug },
+        },
+      );
+      if (!res.ok) {
+        setMessage("No se pudo eliminar.");
+        return;
+      }
+      router.push("/map");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <MobileScreen>
       <FlowScreenHeader
@@ -105,7 +170,6 @@ export function LocationDetailScreen() {
           }}
         >
           {profile?.imageUrl ? (
-            // Lifestyle photo for demo places — Next Image optional later.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.imageUrl}
@@ -156,6 +220,64 @@ export function LocationDetailScreen() {
             <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
               {location.contact}
             </p>
+          </div>
+        ) : null}
+
+        {canManage ? (
+          <div className="space-y-3 rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
+            <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+              Gestionar lugar
+            </p>
+            <label className="block text-[13px] text-[var(--color-text-secondary)]">
+              Resumen
+              <textarea
+                className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
+                rows={3}
+                value={editSummary ?? location.summary ?? ""}
+                onChange={(e) => setEditSummary(e.target.value)}
+              />
+            </label>
+            <label className="block text-[13px] text-[var(--color-text-secondary)]">
+              Horario
+              <input
+                className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
+                value={editHours ?? location.hours ?? ""}
+                onChange={(e) => setEditHours(e.target.value)}
+              />
+            </label>
+            <label className="block text-[13px] text-[var(--color-text-secondary)]">
+              Contacto
+              <input
+                className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
+                value={editContact ?? location.contact ?? ""}
+                onChange={(e) => setEditContact(e.target.value)}
+              />
+            </label>
+            {message ? (
+              <p className="text-[13px] text-[var(--color-text-secondary)]">
+                {message}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={saving}
+                className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
+                onClick={() => void saveManage()}
+              >
+                Guardar
+              </button>
+              {role === "administrator" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border-subtle)] px-4 text-[13px] font-semibold text-[var(--color-text-primary)]"
+                  onClick={() => void removeLocation()}
+                >
+                  Eliminar
+                </button>
+              ) : null}
+            </div>
           </div>
         ) : null}
 

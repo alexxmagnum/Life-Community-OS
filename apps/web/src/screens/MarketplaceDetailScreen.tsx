@@ -17,6 +17,7 @@ import {
   ZoomableImage,
 } from "@life-community-os/ui";
 import { canOpenMarketplaceConversation } from "@/lib/marketplace-conversation-access";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
@@ -31,15 +32,18 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     hasCapability,
     demoMember,
   } = useTenant();
+  const { items: catalogListings, ready: catalogReady } =
+    useCatalogDomain<MarketplaceListing>("marketplace");
   const [listing, setListing] = useState<MarketplaceListing | undefined>(
     undefined,
   );
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setListing(getMarketplaceListingById(listingId));
-    setReady(true);
-  }, [listingId]);
+    const fromCatalog = catalogListings.find((i) => i.id === listingId);
+    setListing(fromCatalog ?? getMarketplaceListingById(listingId));
+    setReady(catalogReady);
+  }, [listingId, catalogListings, catalogReady]);
 
   if (!isFeatureEnabled("marketplace")) {
     return (

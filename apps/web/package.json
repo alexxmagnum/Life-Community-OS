@@ -8,12 +8,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts"
   },
   "dependencies": {
-    "@life-community-os/auth": "workspace:*",
-    "@life-community-os/assets": "workspace:*",
     "@life-community-os/address-geocoder": "workspace:*",
+    "@life-community-os/assets": "workspace:*",
+    "@life-community-os/auth": "workspace:*",
     "@life-community-os/database": "workspace:*",
     "@life-community-os/design-tokens": "workspace:*",
     "@life-community-os/life-map-renderer": "workspace:*",
@@ -39,6 +40,7 @@
     "eslint-config-next": "^15.2.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.12",
     "typescript": "^5.8.2"
   }
 }

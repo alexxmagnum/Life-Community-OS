@@ -181,3 +181,27 @@ export async function updateFileMembershipRole(input: {
   await writeFile(slug, data);
   return next;
 }
+
+export async function listFileMembershipDirectory(
+  tenantSlug: string,
+): Promise<
+  Array<{
+    membership: StoredMembership;
+    identity: StoredIdentity | null;
+  }>
+> {
+  const slug = resolveTenantPublicId(tenantSlug);
+  const data = await readFile(slug);
+  return data.memberships
+    .filter((m) => m.status === "active")
+    .map((membership) => ({
+      membership,
+      identity:
+        data.identities.find((i) => i.personId === membership.personId) ?? null,
+    }))
+    .sort((a, b) =>
+      (a.identity?.displayName ?? a.identity?.email ?? a.membership.personId).localeCompare(
+        b.identity?.displayName ?? b.identity?.email ?? b.membership.personId,
+      ),
+    );
+}

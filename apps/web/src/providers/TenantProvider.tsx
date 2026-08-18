@@ -163,6 +163,11 @@ export function TenantProvider({
   const setRole = useCallback(
     (next: DemoRole) => {
       if (roleSource === "membership") return;
+      const demoRolesEnabled =
+        process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "1" ||
+        process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "true" ||
+        process.env.NODE_ENV === "development";
+      if (!demoRolesEnabled) return;
       setRoleState(next);
     },
     [roleSource],

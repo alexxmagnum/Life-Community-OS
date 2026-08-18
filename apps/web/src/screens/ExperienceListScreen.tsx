@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatExperienceWhen,
-  listDiscoverableExperiences,
   spotsLeft,
   type Experience,
 } from "@life-community-os/tenant-life-panoramica";
@@ -18,6 +17,7 @@ import {
   ScreenPrimaryAction,
   ScreenSearch,
 } from "@life-community-os/ui";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
@@ -65,31 +65,24 @@ function ExperienceListBody() {
   const { isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState, savedExperiences, isSaved } =
     useExperienceParticipation();
+  const { items: catalogExperiences, ready: catalogReady } =
+    useCatalogDomain<Experience>("experiences");
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
 
   const items = useMemo(() => {
-    const source = savedOnly
-      ? savedExperiences
-      : listDiscoverableExperiences({
-          includeSessionCreated: sessionReady,
-        });
+    const source = savedOnly ? savedExperiences : catalogExperiences;
     return source.filter((e) => {
       if (!matchesChip(e, chip)) return false;
       if (!query) return true;
       const q = query.toLowerCase();
       return (
         e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        e.areaLabel.toLowerCase().includes(q)
+        (e.location ?? "").toLowerCase().includes(q) ||
+        (e.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, sessionReady, chip, savedOnly, savedExperiences]);
+  }, [query, chip, savedOnly, savedExperiences, catalogExperiences]);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -107,6 +100,10 @@ function ExperienceListBody() {
         description="Las experiencias no están disponibles para tu cuenta ahora mismo."
       />
     );
+  }
+
+  if (!catalogReady && !savedOnly) {
+    return <LoadingState label="Cargando experiencias…" />;
   }
 
   const canCreate = hasCapability(CAPABILITIES.experienceCreate);

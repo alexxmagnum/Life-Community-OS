@@ -6,6 +6,7 @@ import {
   formatExperienceWhen,
   getExperienceById,
   spotsLeft,
+  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -20,6 +21,7 @@ import {
   ParticipationStatus,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 
@@ -35,9 +37,13 @@ export function ExperienceDetailScreen({
     isModuleEnabled,
     hasCapability,
   } = useTenant();
+  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
   const [shareNote, setShareNote] = useState<string | null>(null);
 
+  const experience =
+    catalogExperiences.find((e) => e.id === experienceId) ??
+    getExperienceById(experienceId);
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
       <EmptyState
@@ -48,8 +54,6 @@ export function ExperienceDetailScreen({
       />
     );
   }
-
-  const experience = getExperienceById(experienceId);
 
   if (!experience) {
     return (

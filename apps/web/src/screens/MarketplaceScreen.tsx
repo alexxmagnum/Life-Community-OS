@@ -1,21 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatContentWhen,
-  listMarketplaceListings,
   marketplaceKindLabel,
+  type MarketplaceListing,
   type MarketplaceListingKind,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   FilterChipRow,
   FlowScreenHeader,
+  LoadingState,
   MarketplaceItemCard,
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 type Filter = "all" | MarketplaceListingKind;
@@ -32,19 +34,13 @@ export function MarketplaceScreen() {
   const router = useRouter();
   const { isFeatureEnabled, hasCapability } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
+  const { items: catalogItems, ready: catalogReady } =
+    useCatalogDomain<MarketplaceListing>("marketplace");
 
   const items = useMemo(() => {
-    const all = listMarketplaceListings({
-      includeSessionCreated: sessionReady,
-    });
-    if (filter === "all") return all;
-    return all.filter((i) => i.kind === filter);
-  }, [filter, sessionReady]);
+    if (filter === "all") return catalogItems;
+    return catalogItems.filter((i) => i.kind === filter);
+  }, [filter, catalogItems]);
 
   if (!isFeatureEnabled("marketplace")) {
     return (
@@ -64,6 +60,10 @@ export function MarketplaceScreen() {
         description="No puedes ver el mercado con tu cuenta actual."
       />
     );
+  }
+
+  if (!catalogReady) {
+    return <LoadingState label="Cargando mercado…" />;
   }
 
   return (
