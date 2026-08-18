@@ -16,6 +16,10 @@ export async function GET(request: Request) {
       resolveRequestTenantSlug(request) ??
       "life-panoramica",
   );
+  const { ensureServerTenantLocations } = await import(
+    "@/lib/location/ensure-server-tenant-locations"
+  );
+  await ensureServerTenantLocations(tenantId);
   const locations = await listLocationsServer(tenantId);
   const visibility = url.searchParams.get("visibility");
   const filtered =
