@@ -10,6 +10,12 @@ export {
 } from "./location-store";
 export { ensureCatalogLocations } from "./seed-catalog-locations";
 export {
+  catalogLocationId,
+  locationMapFocusHref,
+  locationFichaHref,
+  resolvePlaceHref,
+} from "./location-href";
+export {
   projectLocationToLifeMapObject,
   projectLocationsToLifeMapObjects,
   resolveLifeMapObjectsWithLocations,

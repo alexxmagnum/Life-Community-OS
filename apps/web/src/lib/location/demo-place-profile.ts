@@ -74,10 +74,30 @@ export function demoPlaceProfileFor(input: {
   id?: string;
   name?: string;
 }): DemoPlaceProfile | null {
+  // Production cutover: no demo copy unless explicitly opted in.
+  const demoOptIn =
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "1" ||
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "true";
+  if (process.env.NODE_ENV === "production" && !demoOptIn) {
+    return null;
+  }
+  if (process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "0") {
+    return null;
+  }
   const id = input.id ?? "";
   const match = /loc-example-([a-z0-9]+)-/i.exec(id);
   if (match?.[1] && BY_SUFFIX[match[1]]) {
     return BY_SUFFIX[match[1]]!;
+  }
+  // Also match catalog seed suffixes (loc-catalog-lp-ikon-…).
+  const catalog = /loc-catalog-(?:lp-|lv-)?([a-z0-9-]+?)-(?:life-)/i.exec(id);
+  if (catalog?.[1]) {
+    const key = catalog[1].replace(/-club$/, "").replace(/golf-club/, "golf");
+    if (BY_SUFFIX[key]) return BY_SUFFIX[key]!;
+    if (key.includes("ikon") && BY_SUFFIX.ikon) return BY_SUFFIX.ikon;
+    if (key.includes("pool") && BY_SUFFIX.pool) return BY_SUFFIX.pool;
+    if (key.includes("golf") && BY_SUFFIX.golf) return BY_SUFFIX.golf;
+    if (key.includes("padel") && BY_SUFFIX.padel) return BY_SUFFIX.padel;
   }
   const name = input.name?.trim() ?? "";
   if (name && BY_NAME[name]) return BY_NAME[name]!;

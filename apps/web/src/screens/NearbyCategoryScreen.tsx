@@ -122,7 +122,11 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
               verified={place.verified}
               trustNote={place.trustNote}
               className="w-full max-w-none"
-              onClick={() => router.push(`/locations/${place.id}`)}
+              onClick={() =>
+                router.push(
+                  `/map?focus=${encodeURIComponent(place.id)}`,
+                )
+              }
             />
           ))}
         </div>

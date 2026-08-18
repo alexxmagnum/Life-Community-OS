@@ -6,7 +6,6 @@ import {
   formatExperienceWhen,
   listDiscoverableExperiences,
   listGroups,
-  listNearYou,
   listNeighbourRecommendations,
   listTrustedHelp,
   rankLocalEntitiesForTerritory,
@@ -25,7 +24,7 @@ import {
   NeighbourTipCard,
   ScreenSearch,
 } from "@life-community-os/ui";
-import { useTenantLocations } from "@/lib/location";
+import { resolvePlaceHref, useTenantLocations } from "@/lib/location";
 import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -59,43 +58,34 @@ export function DiscoverScreen() {
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
-    if (tenantSlug !== "life-panoramica") {
-      const q = query.trim().toLowerCase();
-      return allLocations
-        .filter((loc) => {
-          if (loc.visibility === "private") return false;
-          if (!q) return true;
-          return (
-            loc.name.toLowerCase().includes(q) ||
-            (loc.areaLabel ?? "").toLowerCase().includes(q) ||
-            loc.category.toLowerCase().includes(q)
-          );
-        })
-        .slice(0, 12)
-        .map((loc) => ({
-          id: loc.id,
-          name: loc.name,
-          categoryLabel: loc.category,
-          areaLabel: loc.areaLabel ?? configuration.branding.name,
-          story: loc.summary ?? "",
-          imageUrl: loc.imageUrl,
-          recommendedBy: undefined as string | undefined,
-          verified: true,
-          trustNote: undefined as string | undefined,
-          href: `/locations/${loc.id}`,
-        }));
-    }
-    return rankLocalEntitiesForTerritory(listNearYou(query), demoPersonId).map(
-      (place) => ({
-        ...place,
-        href: `/near/place/${place.id}`,
-      }),
-    );
+    const q = query.trim().toLowerCase();
+    // Location SoT for every tenant — LocalEntity is seed only.
+    return allLocations
+      .filter((loc) => {
+        if (loc.visibility === "private") return false;
+        if (!q) return true;
+        return (
+          loc.name.toLowerCase().includes(q) ||
+          (loc.areaLabel ?? "").toLowerCase().includes(q) ||
+          loc.category.toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 12)
+      .map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        categoryLabel: loc.category,
+        areaLabel: loc.areaLabel ?? configuration.branding.name,
+        story: loc.summary ?? "",
+        imageUrl: loc.imageUrl,
+        recommendedBy: undefined as string | undefined,
+        verified: true,
+        trustNote: undefined as string | undefined,
+        href: `/map?focus=${encodeURIComponent(loc.id)}`,
+      }));
   }, [
     canLocal,
     query,
-    demoPersonId,
-    tenantSlug,
     allLocations,
     configuration.branding.name,
   ]);
@@ -210,9 +200,11 @@ export function DiscoverScreen() {
                     trustNote={place.trustNote}
                     onClick={() =>
                       router.push(
-                        "href" in place && place.href
-                          ? place.href
-                          : `/near/place/${place.id}`,
+                        place.href ??
+                          resolvePlaceHref({
+                            entityOrLocationId: place.id,
+                            tenantId: configuration.tenantId,
+                          }),
                       )
                     }
                   />
@@ -236,7 +228,13 @@ export function DiscoverScreen() {
                     imageUrl={tip.imageUrl}
                     onClick={
                       tip.relatedEntityId
-                        ? () => router.push(`/near/place/${tip.relatedEntityId}`)
+                        ? () =>
+                            router.push(
+                              resolvePlaceHref({
+                                entityOrLocationId: tip.relatedEntityId!,
+                                tenantId: configuration.tenantId,
+                              }),
+                            )
                         : undefined
                     }
                   />
@@ -308,7 +306,14 @@ export function DiscoverScreen() {
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
-                    onClick={() => router.push(`/near/place/${place.id}`)}
+                    onClick={() =>
+                      router.push(
+                        resolvePlaceHref({
+                          entityOrLocationId: place.id,
+                          tenantId: configuration.tenantId,
+                        }),
+                      )
+                    }
                   />
                 ))}
               </LocalLifeRail>

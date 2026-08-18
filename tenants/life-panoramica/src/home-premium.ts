@@ -121,7 +121,7 @@ export function listHomeMoves(): HomeMoveItem[] {
       quote: "A esta hora está precioso.",
       meta: "Hace 18 min · Aldea Golf",
       liked: true,
-      href: "/near/place/lp-path",
+      href: "/map?focus=loc-catalog-lp-path-life-panoramica",
     },
     {
       id: "move-join",
@@ -184,7 +184,7 @@ export function listHomeIntents(): HomeIntentDoor[] {
       subtitle: "Restaurantes y terrazas",
       tone: "dining",
       glyph: "dining",
-      href: "/near/restaurants",
+      href: "/map",
       imageUrl: "/tenants/life-panoramica/intents/dining.png?v=premium-ref13",
       bgImageUrl: "/tenants/life-panoramica/intents/metal-dining.png",
     },
@@ -194,7 +194,7 @@ export function listHomeIntents(): HomeIntentDoor[] {
       subtitle: "Tu club, reservas y más",
       tone: "golf",
       glyph: "golf",
-      href: "/activities/golf",
+      href: "/map?focus=loc-catalog-lp-golf-club-life-panoramica",
       imageUrl: "/tenants/life-panoramica/intents/golf.png?v=premium-ref11",
       bgImageUrl: undefined,
     },
@@ -257,18 +257,17 @@ const NEARBY_PRESENTATION: Array<{ id: string } & NearbyPresentation> = [
 /** Places the community points at, with the demo signals Home displays. */
 export function listHomeNearbyPlaces(): HomeNearbyPlace[] {
   const byId = new Map(localEntityCatalog.map((entity) => [entity.id, entity]));
-  /** Prefer Life Map Locations for venues that exist in the demo cluster. */
-  const mapFirst = new Set(["lp-ikon", "lp-golf-club", "lp-pool"]);
+  /** Prefer Life Map Locations — stable catalog ids, not LocalEntity routes. */
+  const TENANT = "life-panoramica";
   return NEARBY_PRESENTATION.flatMap((entry) => {
     const entity = byId.get(entry.id);
     if (!entity) return [];
     const { id, ...presentation } = entry;
-    const href = mapFirst.has(id)
-      ? `/map?q=${encodeURIComponent(entity.name)}`
-      : `/near/place/${id}`;
+    const locationId = `loc-catalog-${id}-${TENANT}`;
+    const href = `/map?focus=${encodeURIComponent(locationId)}`;
     return [
       {
-        id,
+        id: locationId,
         name: entity.name,
         imageUrl: entity.imageUrl,
         href,

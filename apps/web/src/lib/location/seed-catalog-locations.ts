@@ -11,6 +11,9 @@ import { localEntityCatalog } from "@life-community-os/tenant-life-panoramica";
 import { listLocations, saveLocation } from "./location-store";
 import { getAddressGeocoder } from "./geocoder";
 import { EXAMPLE_IKON_ADDRESS } from "./example-ikon";
+import { catalogLocationId } from "./location-href";
+
+export { catalogLocationId };
 
 /** Stable offsets so catalog places sit near the community nucleus. */
 const OFFSETS: Record<string, { dLat: number; dLng: number }> = {
@@ -27,10 +30,6 @@ const OFFSETS: Record<string, { dLat: number; dLng: number }> = {
   "lp-lock": { dLat: -0.0009, dLng: 0.0011 },
   "lp-vet": { dLat: 0.0002, dLng: 0.0013 },
 };
-
-function catalogLocationId(entityId: string, tenantId: string): string {
-  return `loc-catalog-${entityId}-${tenantId}`;
-}
 
 function categoryFromEntity(entity: (typeof localEntityCatalog)[number]): string {
   switch (entity.kind) {

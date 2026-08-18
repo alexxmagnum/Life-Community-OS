@@ -29,6 +29,7 @@ import {
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { resolvePlaceHref } from "@/lib/location";
 
 /**
  * Servicios hub — "I need something solved."
@@ -41,6 +42,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isModuleEnabled,
     hasCapability,
     demoPersonId,
+    configuration,
   } = useTenant();
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
@@ -170,7 +172,14 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               verified={place.verified}
               trustNote={place.trustNote}
               className="w-full max-w-none"
-              onClick={() => router.push(`/near/place/${place.id}`)}
+              onClick={() =>
+                router.push(
+                  resolvePlaceHref({
+                    entityOrLocationId: place.id,
+                    tenantId: configuration.tenantId,
+                  }),
+                )
+              }
             />
           ))}
         </div>
@@ -321,7 +330,13 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               imageUrl={tip.imageUrl}
               onClick={
                 tip.relatedEntityId
-                  ? () => router.push(`/near/place/${tip.relatedEntityId}`)
+                  ? () =>
+                      router.push(
+                        resolvePlaceHref({
+                          entityOrLocationId: tip.relatedEntityId!,
+                          tenantId: configuration.tenantId,
+                        }),
+                      )
                   : undefined
               }
             />

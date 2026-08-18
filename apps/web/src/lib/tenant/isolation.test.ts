@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { lifeValleyExperienceSeedIds } from "@/lib/catalog/bootstrap-catalog";
+import { catalogLocationId } from "@/lib/location/location-href";
 import {
   LIFE_PANORAMICA_TENANT_SLUG,
   LIFE_PANORAMICA_TENANT_UUID,
@@ -56,10 +57,32 @@ describe("life-valley catalog seed isolation", () => {
     const ids = lifeValleyExperienceSeedIds();
     assert.ok(ids.length > 0);
     for (const id of ids) {
-      assert.ok(
-        id.startsWith("lv-"),
-        `expected lv- prefix, got ${id}`,
-      );
+      assert.ok(id.startsWith("lv-"), `expected lv- prefix, got ${id}`);
     }
+  });
+});
+
+describe("location catalog id isolation", () => {
+  it("does not collide catalog Location ids across tenants", () => {
+    const entity = "plaza";
+    const pano = catalogLocationId(`lp-${entity}`, "life-panoramica");
+    const valley = catalogLocationId(`lv-${entity}`, "life-valley");
+    assert.notEqual(pano, valley);
+    assert.ok(pano.includes("life-panoramica"));
+    assert.ok(valley.includes("life-valley"));
+  });
+
+  it("preserves already-qualified Location ids", () => {
+    const id = "loc-catalog-lv-plaza-life-valley";
+    assert.equal(catalogLocationId(id, "life-panoramica"), id);
+  });
+
+  it("Valley seeded places stay under life-valley suffix", () => {
+    const plaza = catalogLocationId("lv-plaza", "life-valley");
+    const cafe = catalogLocationId("lv-cafe", "life-valley");
+    assert.equal(plaza, "loc-catalog-lv-plaza-life-valley");
+    assert.equal(cafe, "loc-catalog-lv-cafe-life-valley");
+    assert.ok(!plaza.includes("life-panoramica"));
+    assert.ok(!cafe.includes("life-panoramica"));
   });
 });

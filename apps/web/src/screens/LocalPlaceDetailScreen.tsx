@@ -11,7 +11,7 @@ import { useTenantLocations } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Legacy /near/place/:id — redirects to Location ficha (single SoT).
+ * Legacy /near/place/:id — redirects to map focus (Location SoT).
  */
 export function LocalPlaceDetailScreen({ placeId }: { placeId: string }) {
   const router = useRouter();
@@ -33,7 +33,7 @@ export function LocalPlaceDetailScreen({ placeId }: { placeId: string }) {
         (item) => item.name.toLowerCase() === target.toLowerCase(),
       );
     if (match) {
-      router.replace(`/locations/${encodeURIComponent(match.id)}`);
+      router.replace(`/map?focus=${encodeURIComponent(match.id)}`);
     }
   }, [seedReady, canLocal, allLocations, placeId, router]);
 

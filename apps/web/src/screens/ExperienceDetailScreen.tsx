@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
@@ -21,6 +21,7 @@ import {
   ParticipationStatus,
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
+import { useTenantLocations } from "@/lib/location";
 import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -38,12 +39,27 @@ export function ExperienceDetailScreen({
     hasCapability,
   } = useTenant();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
+  const { allLocations } = useTenantLocations(configuration.tenantId);
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
   const [shareNote, setShareNote] = useState<string | null>(null);
 
   const experience =
     catalogExperiences.find((e) => e.id === experienceId) ??
     getExperienceById(experienceId);
+
+  const venueLocationId = useMemo(() => {
+    if (!experience?.location) return null;
+    const needle = experience.location.trim().toLowerCase();
+    if (!needle) return null;
+    const hit = allLocations.find(
+      (loc) =>
+        loc.name.toLowerCase() === needle ||
+        loc.name.toLowerCase().includes(needle) ||
+        needle.includes(loc.name.toLowerCase()),
+    );
+    return hit?.id ?? null;
+  }, [experience, allLocations]);
+
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
       <EmptyState
@@ -146,6 +162,28 @@ export function ExperienceDetailScreen({
         areaLabel={experience.areaLabel}
         capacityLabel={capacityLabel}
       />
+
+      {venueLocationId ? (
+        <button
+          type="button"
+          onClick={() =>
+            router.push(`/map?focus=${encodeURIComponent(venueLocationId)}`)
+          }
+          className="flex w-full items-center gap-3 rounded-[16px] bg-[var(--color-surface-elevated)] px-4 py-3.5 text-left shadow-[var(--shadow-elev-1)] transition-transform active:scale-[0.99]"
+        >
+          <span className="text-[22px]" aria-hidden>
+            📍
+          </span>
+          <span className="flex-1">
+            <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+              Ver en el mapa
+            </span>
+            <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+              {experience.location}
+            </span>
+          </span>
+        </button>
+      ) : null}
 
       {showConversation ? (
         <button

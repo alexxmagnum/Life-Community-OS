@@ -46,6 +46,7 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
+import { resolvePlaceHref } from "@/lib/location";
 
 const PLAZA_PEEK = 4;
 const OFFICIAL_CHANNEL_PEEK = 3;
@@ -82,10 +83,12 @@ export function CommunityHubScreen() {
     demoPersonId,
     theme,
     tenantSlug,
+    configuration,
   } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const isPanoramica = tenantSlug === "life-panoramica";
+  const tenantId = configuration.tenantId;
 
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandPlaza, setExpandPlaza] = useState(false);
@@ -829,7 +832,12 @@ export function CommunityHubScreen() {
                         title={item.place.name}
                         meta={item.place.story}
                         onClick={() =>
-                          router.push(`/near/place/${item.place.id}`)
+                          router.push(
+                            resolvePlaceHref({
+                              entityOrLocationId: item.place.id,
+                              tenantId,
+                            }),
+                          )
                         }
                       />
                     );

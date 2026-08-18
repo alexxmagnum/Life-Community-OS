@@ -29,6 +29,7 @@ import {
   canOpenPlaceConversation,
   canViewPlaceConversation,
 } from "@/lib/place-conversation-access";
+import { resolvePlaceHref } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 function previewBody(body?: string): string {
@@ -175,7 +176,7 @@ export function PlaceConversationScreen({ placeId }: { placeId: string }) {
       <MobileScreen>
         <FlowScreenHeader
           title="Conversación"
-          onBack={() => router.push(`/near/place/${placeId}`)}
+          onBack={() => router.push(resolvePlaceHref({ entityOrLocationId: placeId, tenantId: configuration.tenantId, prefer: "map" }))}
           onExit={() => router.push("/")}
         />
         <EmptyState
@@ -193,14 +194,14 @@ export function PlaceConversationScreen({ placeId }: { placeId: string }) {
       <MobileScreen>
         <FlowScreenHeader
           title="Conversación"
-          onBack={() => router.push(`/near/place/${placeId}`)}
+          onBack={() => router.push(resolvePlaceHref({ entityOrLocationId: placeId, tenantId: configuration.tenantId, prefer: "map" }))}
           onExit={() => router.push("/")}
         />
         <EmptyState
           title="Conversación no disponible"
           description="No puedes preguntar sobre este lugar con tu cuenta actual."
           actionLabel="Volver al lugar"
-          onAction={() => router.push(`/near/place/${placeId}`)}
+          onAction={() => router.push(resolvePlaceHref({ entityOrLocationId: placeId, tenantId: configuration.tenantId, prefer: "map" }))}
         />
       </MobileScreen>
     );
@@ -296,7 +297,7 @@ export function PlaceConversationScreen({ placeId }: { placeId: string }) {
   return (
     <MobileScreen dense className="gap-0 pb-0">
       <ConversationExperience
-        onBack={() => router.push(`/near/place/${placeId}`)}
+        onBack={() => router.push(resolvePlaceHref({ entityOrLocationId: placeId, tenantId: configuration.tenantId, prefer: "map" }))}
         infoOpen={infoOpen}
         onInfoOpenChange={setInfoOpen}
         infoDescription={reason}

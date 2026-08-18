@@ -223,6 +223,12 @@ export function LifeMapScreen() {
     if (hit) setSelectedObjectId(hit.id);
   }, [searchParams, locations]);
 
+  useEffect(() => {
+    if (!selectedObjectId) return;
+    const panel = document.querySelector('[aria-label="Información del lugar"]');
+    panel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [selectedObjectId]);
+
   const onObjectSelect = useCallback(
     (objectId: string | null) => {
       setSelectedObjectId(objectId);
@@ -398,9 +404,6 @@ export function LifeMapScreen() {
                   className="w-full py-3 text-left"
                   onClick={() => {
                     setSelectedObjectId(location.id);
-                    router.push(
-                      `/locations/${encodeURIComponent(location.id)}`,
-                    );
                   }}
                 >
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">

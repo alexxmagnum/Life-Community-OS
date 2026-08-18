@@ -85,14 +85,14 @@ const GROUP_DEFS: readonly GroupDef[] = [
     id: "daily_life",
     title: "Vida diaria",
     subtitle: "Restaurantes, cafés y comercios del territorio.",
-    href: "/near/restaurants",
+    href: "/map",
     kinds: ["restaurant", "cafe", "shop"],
   },
   {
     id: "community_life",
     title: "Vida en comunidad",
     subtitle: "Lugares y puntos de encuentro alrededor de ti.",
-    href: "/near/places",
+    href: "/map",
     kinds: ["place", "other"],
   },
 ];
@@ -117,16 +117,14 @@ function areaMatches(
 
 function hrefForEntity(entity: LocalEntity): string {
   switch (entity.kind) {
-    case "restaurant":
-    case "cafe":
-      return "/near/restaurants";
-    case "shop":
-      return "/near/businesses";
     case "service":
       return "/services/professionals";
+    case "restaurant":
+    case "cafe":
+    case "shop":
     case "place":
     default:
-      return "/near/places";
+      return `/map?focus=${encodeURIComponent(`loc-catalog-${entity.id}-life-panoramica`)}`;
   }
 }
 

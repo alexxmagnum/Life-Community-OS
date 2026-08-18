@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAddressGeocoder } from "@life-community-os/address-geocoder";
+import { requireMutationActor } from "@/lib/auth/mutation-gate";
 
 /**
  * Server-side geocode proxy — Nominatim (or configured provider).
  * Simple in-memory rate limit per IP (product hardening).
+ * When auth is enforced, anonymous geocode is rejected (cutover).
  */
 
 const hits = new Map<string, { count: number; resetAt: number }>();
@@ -32,6 +34,9 @@ function rateLimit(request: Request): boolean {
 }
 
 export async function GET(request: Request) {
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated.error;
+
   if (!rateLimit(request)) {
     return NextResponse.json(
       { error: "rate_limited", results: [], result: null },

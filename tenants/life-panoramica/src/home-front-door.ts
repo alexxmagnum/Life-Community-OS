@@ -234,7 +234,7 @@ export function buildForYouItems(
           ? `Recomendado por ${place.recommendedBy}`
           : `${place.categoryLabel} · ${place.areaLabel}`,
         imageUrl: place.imageUrl,
-        href: "/near/places",
+        href: "/map",
         score,
       });
     }

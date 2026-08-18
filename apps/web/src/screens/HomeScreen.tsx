@@ -133,7 +133,7 @@ export function HomeScreen() {
           ratingLabel: undefined as string | undefined,
           ratingCountLabel: undefined as string | undefined,
           badgeLabel: undefined as string | undefined,
-          href: `/locations/${loc.id}`,
+          href: `/map?focus=${encodeURIComponent(loc.id)}`,
         }));
     }
     return listHomeNearbyPlaces();

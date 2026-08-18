@@ -7,23 +7,37 @@ import { LIFE_PANORAMICA_TENANT_SLUG } from "@/lib/tenant/ids";
  * Keep this Edge-safe: no tenant pack imports.
  */
 
-const PUBLIC_PREFIXES = [
+/** Always reachable (auth UX + static). */
+const ALWAYS_PUBLIC_PREFIXES = [
   "/login",
   "/register",
-  "/api/geocode",
   "/api/auth",
-  "/api/locations",
-  "/api/housing",
-  "/api/durable",
-  "/api/catalog",
   "/_next",
   "/favicon",
   "/assets",
   "/tenants",
 ];
 
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some(
+/**
+ * Pilot-only anonymous API surface.
+ * When `LCOS_AUTH_REQUIRED=true`, these require a session (cutover).
+ */
+const PILOT_PUBLIC_API_PREFIXES = [
+  "/api/geocode",
+  "/api/locations",
+  "/api/housing",
+  "/api/durable",
+  "/api/catalog",
+];
+
+function isAlwaysPublicPath(pathname: string): boolean {
+  return ALWAYS_PUBLIC_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function isPilotPublicApi(pathname: string): boolean {
+  return PILOT_PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -47,7 +61,12 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-slug", tenantSlug);
 
-  if (isPublicPath(pathname)) {
+  const authEnforced = isAuthEnforced() && isAuthConfigured();
+  const publicPath =
+    isAlwaysPublicPath(pathname) ||
+    (!authEnforced && isPilotPublicApi(pathname));
+
+  if (publicPath) {
     const res = NextResponse.next({
       request: { headers: requestHeaders },
     });
@@ -55,9 +74,12 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  if (isAuthEnforced() && isAuthConfigured()) {
+  if (authEnforced) {
     const accessToken = request.cookies.get("lcos-access-token")?.value;
     if (!accessToken) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+      }
       const login = new URL("/login", request.url);
       login.searchParams.set("next", pathname);
       return NextResponse.redirect(login);
