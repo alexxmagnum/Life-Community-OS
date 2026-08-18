@@ -41,6 +41,32 @@ import {
 
 const STORAGE_KEY = "lcos.life-panoramica.official-conversations.v1";
 
+export const OFFICIAL_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type OfficialConversationStoreSync = (storeJson: string) => void;
+let durableSync: OfficialConversationStoreSync | null = null;
+
+export function setOfficialConversationDurableSync(
+  handler: OfficialConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyOfficialConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Primary security notice (announcement only). */
 export const DEMO_OFFICIAL_SECURITY_NOTICE_ID = "off-security-barriers";
 /** Primary administration notice (with responses). */
@@ -304,7 +330,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function toMessageView(

@@ -18,6 +18,10 @@ const ALLOWED = new Set([
   "place-conversations",
   "marketplace-conversations",
   "experience-conversations",
+  "group-conversations",
+  "neighbour-conversations",
+  "official-conversations",
+  "work-conversations",
 ]);
 
 export async function GET(request: Request, { params }: Params) {

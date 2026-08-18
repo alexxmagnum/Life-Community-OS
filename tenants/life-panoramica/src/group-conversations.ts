@@ -36,6 +36,32 @@ import {
 
 const STORAGE_KEY = "lcos.life-panoramica.group-conversations.v1";
 
+export const GROUP_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type GroupConversationStoreSync = (storeJson: string) => void;
+let durableSync: GroupConversationStoreSync | null = null;
+
+export function setGroupConversationDurableSync(
+  handler: GroupConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyGroupConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Primary demo group for D.0.6.2 walkthrough. */
 export const DEMO_GROUP_CONVERSATION_ID = "g-golf";
 
@@ -194,7 +220,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function toMessageView(

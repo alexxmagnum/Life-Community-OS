@@ -30,6 +30,32 @@ import { getWorkPostById, type WorkPostListing } from "./work-posts";
 
 const STORAGE_KEY = "lcos.life-panoramica.work-conversations.v1";
 
+export const WORK_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type WorkConversationStoreSync = (storeJson: string) => void;
+let durableSync: WorkConversationStoreSync | null = null;
+
+export function setWorkConversationDurableSync(
+  handler: WorkConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyWorkConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Primary demo work post for D.0.6.1 walkthrough. */
 export const DEMO_WORK_CONVERSATION_ID = "work-offering-garden";
 
@@ -180,7 +206,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function toMessageView(

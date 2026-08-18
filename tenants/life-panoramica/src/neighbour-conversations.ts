@@ -17,6 +17,32 @@ import { listPublishedCommunityContent } from "./community-content";
 
 const STORAGE_KEY = "lcos.life-panoramica.neighbour-conversations.v1";
 
+export const NEIGHBOUR_CONVERSATIONS_STORAGE_KEY = STORAGE_KEY;
+
+type NeighbourConversationStoreSync = (storeJson: string) => void;
+let durableSync: NeighbourConversationStoreSync | null = null;
+
+export function setNeighbourConversationDurableSync(
+  handler: NeighbourConversationStoreSync | null,
+): void {
+  durableSync = handler;
+}
+
+export function applyNeighbourConversationStoreJson(raw: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const parsed = JSON.parse(raw) as ConversationStore;
+    if (!parsed || typeof parsed !== "object") return false;
+    if (!Array.isArray(parsed.conversations) || !Array.isArray(parsed.messages)) {
+      return false;
+    }
+    window.localStorage.setItem(STORAGE_KEY, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type NeighbourMessageAuthorView = {
   personId: string;
   displayName: string;
@@ -78,7 +104,9 @@ function readStore(): ConversationStore {
 
 function writeStore(store: ConversationStore) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  const raw = JSON.stringify(store);
+  window.localStorage.setItem(STORAGE_KEY, raw);
+  durableSync?.(raw);
 }
 
 function threadKey(a: string, b: string): string {
