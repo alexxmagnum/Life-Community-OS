@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   getMyHomeContext,
   getTerritoryAccessContext,
@@ -26,6 +26,12 @@ const roles: { id: DemoRole; label: string }[] = [
   { id: "administrator", label: "Administrador" },
 ];
 
+type SessionState = {
+  configured: boolean;
+  authenticated: boolean;
+  user: { id: string; email: string | null } | null;
+};
+
 /**
  * Mi perfil — identity, preferences, personal context.
  * Property info only where useful for belonging — never real-estate catalog.
@@ -45,6 +51,29 @@ export function ProfileScreen() {
   } = useTenant();
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
+  const [session, setSession] = useState<SessionState | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/auth/session", { cache: "no-store" });
+        const data = (await res.json()) as SessionState;
+        if (!cancelled) setSession(data);
+      } catch {
+        if (!cancelled) {
+          setSession({
+            configured: false,
+            authenticated: false,
+            user: null,
+          });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const upcomingExperienceCount = joinedExperiences.filter(
     (e) => e.status !== "cancelled" && e.status !== "expired",
@@ -75,8 +104,17 @@ export function ProfileScreen() {
             : "text-[var(--color-action-primary)]";
 
   const placeName =
-    theme.identity?.territoryName ?? theme.logoText ?? "Life Panoramica";
+    theme.identity?.territoryName ?? theme.logoText ?? "Tu comunidad";
 
+  const onLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setSession({
+      configured: session?.configured ?? false,
+      authenticated: false,
+      user: null,
+    });
+    router.refresh();
+  };
   return (
     <MobileScreen dense>
       <ScreenHeader
@@ -283,12 +321,62 @@ export function ProfileScreen() {
         ) : null}
       </section>
 
-      {hasCapability(CAPABILITIES.manageEnter) ? (
+      {hasCapability(CAPABILITIES.manageEnter) || role === "administrator" ? (
         <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-          Tienes permisos de administración. La gestión avanzada se conectará
-          aquí cuando esté disponible.
+          Tienes permisos de administración.{" "}
+          <button
+            type="button"
+            className="font-semibold text-[var(--color-action-primary)]"
+            onClick={() => router.push("/admin")}
+          >
+            Abrir panel
+          </button>
         </p>
       ) : null}
+
+      <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-3.5">
+        <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
+          Cuenta
+        </p>
+        {session?.authenticated && session.user ? (
+          <>
+            <p className="mt-1 text-[14px] text-[var(--color-text-primary)]">
+              {session.user.email ?? session.user.id}
+            </p>
+            <button
+              type="button"
+              className="mt-3 min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+              onClick={() => void onLogout()}
+            >
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+              {session?.configured
+                ? "Inicia sesión para sincronizar tu comunidad."
+                : "Auth listo cuando configures Supabase (LCOS_AUTH_REQUIRED)."}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
+                onClick={() => router.push("/login")}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+                onClick={() => router.push("/register")}
+              >
+                Crear cuenta
+              </button>
+            </div>
+          </>
+        )}
+      </section>
 
       {process.env.NODE_ENV === "development" ? (
         <>
