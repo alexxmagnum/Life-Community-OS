@@ -116,6 +116,7 @@ export function CommunityContentDetailScreen({
   const zone =
     content.areaLabel &&
     content.areaLabel !== "Life Panoramica" &&
+    content.areaLabel !== "Life Panorámica" &&
     content.areaLabel !== configuration.branding.name
       ? content.areaLabel
       : undefined;

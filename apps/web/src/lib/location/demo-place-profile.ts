@@ -74,11 +74,16 @@ export function demoPlaceProfileFor(input: {
   id?: string;
   name?: string;
 }): DemoPlaceProfile | null {
-  // Off only when explicitly disabled — RC demos need complete fichas.
-  if (
+  // Production cutover: off unless explicitly opted in. Pilot/local keeps
+  // enrichment for empty fields; Location SoT should already be complete.
+  const forcedOff =
     process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "0" ||
-    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "false"
-  ) {
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "false";
+  if (forcedOff) return null;
+  const optIn =
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "1" ||
+    process.env.NEXT_PUBLIC_LCOS_DEMO_PLACE_PROFILES === "true";
+  if (process.env.NODE_ENV === "production" && !optIn) {
     return null;
   }
   const id = input.id ?? "";

@@ -56,6 +56,15 @@ function resolveTenantSlug(request: NextRequest): string {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Internal tooling — never expose in production builds.
+  if (
+    process.env.NODE_ENV === "production" &&
+    (pathname === "/dev" || pathname.startsWith("/dev/"))
+  ) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const tenantSlug = resolveTenantSlug(request);
 
   const requestHeaders = new Headers(request.headers);

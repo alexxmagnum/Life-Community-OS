@@ -10,27 +10,19 @@
 
 ## 1. Veredicto ejecutivo
 
-**Spine SaaS multi-tenant en marcha. Pilot comercial creíble. Aún no production-ready.**
+**Release Candidate congelado para primer cliente (`v0.1.0-pilot`). Pilot comercial demostrable. Cutover de producción documentado, no aplicado por defecto.**
 
 | Dimensión | Nota |
 |-----------|------|
-| Estado general | **8 / 10** como pilot comercial multi-tenant · **5.5 / 10** como SaaS production lock-down |
-| SoT operativo | Memberships + catálogos + locations + durable conversations (todos los dominios de chat) tenant-scoped |
-| Auth / RBAC | Memberships reales; first-member admin; mutation gates; demo roles solo en development · RLS client opcional (`SUPABASE_USE_RLS`) |
-| Life Map | MapLibre self-hosted; Location SoT merge; Valley map isolation |
-| Bloqueadores de “producto” | RLS no runtime-bound en service role; pack helpers Panorámica en formatters/screens; dualidad Location↔LocalEntity residual; auth no enforced por defecto; tests de aislamiento aún mínimos |
+| Estado general | **9 / 10** como pilot comercial multi-tenant · **6 / 10** como SaaS production lock-down |
+| SoT operativo | Memberships + catálogos + locations + durable conversations tenant-scoped |
+| Auth / RBAC | Memberships reales; first-member admin; mutation gates; demo roles solo con `NEXT_PUBLIC_LCOS_DEMO_ROLES` · RLS client opcional (`SUPABASE_USE_RLS`) |
+| Life Map | MapLibre self-hosted; Location SoT; Valley map isolation |
+| Handoff | `docs/product/PILOT_HANDOFF.md` · `ADR-PRODUCTION-CUTOVER.md` |
 
-El monorepo tiene arquitectura de plataforma (packages / apps / tenants, Module Registry, TenantConfiguration, dominios en `@life-community-os/types`). Tras la ola SaaS 2026-08-18 opera **dos tenants** (Life Panorámica + Life Valley) con aislamiento de catálogo/mapa y memberships tenant-scoped — ya no es solo una reference app single-tenant.
+El monorepo opera **dos tenants** (Life Panorámica + Life Valley) con aislamiento de catálogo/mapa/locations. Pack fallbacks Panorámica están gated; Valley usa seeds propios.
 
-### Progress since 2026-08-18 SaaS wave
-
-- Real memberships (file-backed + optional Supabase mirror); local-join; first member of an empty tenant becomes administrator
-- Two tenants registered: `life-panoramica` + `life-valley` (catalog / map / Discover isolation)
-- Tenant-scoped catalog API + durable provider sync (reservations, experiences, community, housing-saves, **all conversation domains**)
-- Admin memberships API/UI; Location manage surfaces; Valley map pack isolation
-- Mutation gates on durable/admin writes; Location SoT merge on map
-
-**Remaining gaps (honest):** RLS `app_set_tenant_context` GUC exists but is not runtime-bound on service-role repository paths; several screens still import Panorámica pack helpers (formatters / demo catalogs as fallback); `LCOS_AUTH_REQUIRED` defaults off until cutover (`ADR-PRODUCTION-CUTOVER.md`).
+**Remaining gaps (honest):** RLS GUC no bound en todos los paths service-role; auth no enforced por defecto hasta cutover; persistencia pilot en `.data/` hasta migración Postgres.
 
 ---
 
