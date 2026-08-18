@@ -14,9 +14,9 @@
 
 | Dimensión | Nota |
 |-----------|------|
-| Estado general | **7.5 / 10** como pilot comercial multi-tenant · **5 / 10** como SaaS production |
-| SoT operativo | Memberships + catálogos tenant-scoped (API/file durable) · locations/manage cableados · conversaciones place con bridge durable (otros chats aún browser-local) |
-| Auth / RBAC | Memberships reales (file + Supabase mirror), mutation gates en writes, first-member → admin · `setRole` demo residual · RLS GUC no bound en paths service-role |
+| Estado general | **8 / 10** como pilot comercial multi-tenant · **5.5 / 10** como SaaS production lock-down |
+| SoT operativo | Memberships + catálogos + locations + durable conversations (todos los dominios de chat) tenant-scoped |
+| Auth / RBAC | Memberships reales; first-member admin; mutation gates; demo roles solo en development · RLS client opcional (`SUPABASE_USE_RLS`) |
 | Life Map | MapLibre self-hosted; Location SoT merge; Valley map isolation |
 | Bloqueadores de “producto” | RLS no runtime-bound en service role; pack helpers Panorámica en formatters/screens; dualidad Location↔LocalEntity residual; auth no enforced por defecto; tests de aislamiento aún mínimos |
 
