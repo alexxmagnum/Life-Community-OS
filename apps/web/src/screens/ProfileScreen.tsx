@@ -125,7 +125,8 @@ export function ProfileScreen() {
       body: JSON.stringify({
         email,
         displayName: demoMember.displayName,
-        role: "member",
+        // Omit role: empty tenant directories auto-promote first membership
+        // to administrator inside ensureDomainMembership / upsertFileMembership.
       }),
     });
     if (!res.ok) return;
@@ -380,7 +381,7 @@ export function ProfileScreen() {
             <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
               {session?.configured
                 ? "Inicia sesión para sincronizar tu comunidad."
-                : "Únete localmente (membership durable) o configura Supabase Auth."}
+                : "Únete localmente (membership durable). El primer miembro de un tenant vacío se convierte en administrador."}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {session?.configured ? (

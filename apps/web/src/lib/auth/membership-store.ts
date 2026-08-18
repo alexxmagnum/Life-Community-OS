@@ -133,12 +133,18 @@ export async function upsertFileMembership(input: {
     (m) => m.personId === identity!.personId && m.status === "active",
   );
   if (!membership) {
+    // First active membership in an empty tenant directory becomes administrator
+    // so local-join / bootstrap can manage the community without a prior admin.
+    const directoryEmpty = !data.memberships.some((m) => m.status === "active");
+    const role = directoryEmpty
+      ? "administrator"
+      : coerceMembershipRole(input.role);
     membership = {
       id: newId("mem"),
       personId: identity.personId,
       tenantSlug: slug,
       territoryId: input.territoryId,
-      role: coerceMembershipRole(input.role),
+      role,
       status: "active",
       createdAt: now,
       updatedAt: now,

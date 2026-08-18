@@ -36,7 +36,7 @@ import {
   locationContextEnrichment,
   openDirectionsUrl,
   openLocationContact,
-  projectLocationsToLifeMapObjects,
+  resolveLifeMapObjectsWithLocations,
   useTenantLocations,
   buildLocationFilterChips,
   locationCategoryLabel,
@@ -153,18 +153,34 @@ export function LifeMapScreen() {
   }, [pack, focusLocation, filteredLocations, locations, selectedObjectId]);
 
   const objects: LifeMapObject[] = useMemo(() => {
-    if (!territory) return [];
-    return projectLocationsToLifeMapObjects(
+    if (!territory || !pack) return [];
+    return resolveLifeMapObjectsWithLocations(
+      pack.listObjects(),
       filteredLocations,
       territory.territoryId,
     );
-  }, [filteredLocations, territory]);
+  }, [filteredLocations, territory, pack]);
 
   const locationById = useMemo(() => {
     const map = new Map<string, Location>();
     for (const location of locations) map.set(location.id, location);
     return map;
   }, [locations]);
+
+  const resolveLocationForObject = useCallback(
+    (object: LifeMapObject): Location | null => {
+      const byObjectId = locationById.get(object.objectId);
+      if (byObjectId) return byObjectId;
+      const entityId = object.ref?.entityId;
+      if (entityId) {
+        const byRef = locationById.get(entityId);
+        if (byRef) return byRef;
+        return getLocation(configuration.tenantId, entityId);
+      }
+      return getLocation(configuration.tenantId, object.objectId);
+    },
+    [locationById, configuration.tenantId],
+  );
 
   const selectedObject: LifeMapObject | null = useMemo(() => {
     if (!selectedObjectId) return null;
@@ -173,12 +189,12 @@ export function LifeMapScreen() {
 
   const contextModel: LifeMapContextPanelModel | null = useMemo(() => {
     if (!selectedObject) return null;
-    const location = locationById.get(selectedObject.objectId);
+    const location = resolveLocationForObject(selectedObject);
     const enrichment = location
       ? locationContextEnrichment(location)
-      : null;
+      : pack?.enrichContext?.(selectedObject) ?? null;
     return buildLifeMapContextPanel(selectedObject, enrichment);
-  }, [selectedObject, locationById]);
+  }, [selectedObject, resolveLocationForObject, pack]);
 
   useEffect(() => {
     if (!pack) return;
@@ -228,16 +244,15 @@ export function LifeMapScreen() {
   const onContextAction = useCallback(
     (action: LifeMapActionKind) => {
       if (!selectedObject) return;
-      const location = getLocation(
-        configuration.tenantId,
-        selectedObject.objectId,
-      );
-      if (!location) return;
-
+      const location = resolveLocationForObject(selectedObject);
       if (action === "open") {
-        router.push(`/locations/${encodeURIComponent(location.id)}`);
+        const locationId = location?.id ?? selectedObject.ref?.entityId;
+        if (locationId) {
+          router.push(`/locations/${encodeURIComponent(locationId)}`);
+        }
         return;
       }
+      if (!location) return;
       if (action === "navigate") {
         window.open(
           openDirectionsUrl(location.latitude, location.longitude),
@@ -250,7 +265,7 @@ export function LifeMapScreen() {
         openLocationContact(location.contact);
       }
     },
-    [selectedObject, configuration.tenantId, router],
+    [selectedObject, resolveLocationForObject, router],
   );
 
   if (!experienceOn) {

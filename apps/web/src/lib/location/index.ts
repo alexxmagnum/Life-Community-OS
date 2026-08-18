@@ -12,6 +12,7 @@ export { ensureCatalogLocations } from "./seed-catalog-locations";
 export {
   projectLocationToLifeMapObject,
   projectLocationsToLifeMapObjects,
+  resolveLifeMapObjectsWithLocations,
   locationContextEnrichment,
 } from "./project-location";
 export { getAddressGeocoder } from "./geocoder";

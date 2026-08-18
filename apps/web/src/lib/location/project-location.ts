@@ -80,6 +80,36 @@ export function projectLocationsToLifeMapObjects(
   return objects;
 }
 
+/**
+ * Resolve map markers: Location SoT projections win; pack objects fill gaps
+ * (e.g. before seed hydrate) and never hide registered businesses.
+ */
+export function resolveLifeMapObjectsWithLocations(
+  packObjects: readonly LifeMapObject[],
+  locations: readonly Location[],
+  territoryId: string,
+): LifeMapObject[] {
+  const fromLocations = projectLocationsToLifeMapObjects(
+    locations,
+    territoryId,
+  );
+  const covered = new Set<string>();
+  for (const obj of fromLocations) {
+    covered.add(obj.objectId);
+    if (obj.ref?.entityId) covered.add(obj.ref.entityId);
+  }
+  const extras: LifeMapObject[] = [];
+  for (const packObj of packObjects) {
+    const entityId = packObj.ref?.entityId;
+    if (covered.has(packObj.objectId)) continue;
+    if (entityId && covered.has(entityId)) continue;
+    extras.push(packObj);
+    covered.add(packObj.objectId);
+    if (entityId) covered.add(entityId);
+  }
+  return [...fromLocations, ...extras];
+}
+
 /** Context-card enrichment driven by Location + Experience + demo lifestyle profile. */
 export function locationContextEnrichment(location: Location): {
   label: string;

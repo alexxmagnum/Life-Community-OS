@@ -24,7 +24,11 @@ import {
   type HomeHeroPill,
   type HomeHeroSlide,
 } from "@life-community-os/ui";
+import { useTenantLocations } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+
+const LOCATION_NEARBY_FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=80";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
@@ -66,7 +70,15 @@ const MOMENT_LIMIT = 3;
  */
 export function HomeScreen() {
   const router = useRouter();
-  const { theme, isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const {
+    theme,
+    isFeatureEnabled,
+    hasCapability,
+    demoMember,
+    tenantSlug,
+    configuration,
+  } = useTenant();
+  const { allLocations } = useTenantLocations(configuration.tenantId);
 
   const [live, setLive] = useState(false);
   const [hour, setHour] = useState(18);
@@ -105,10 +117,32 @@ export function HomeScreen() {
 
   const moves = useMemo(() => listHomeMoves(), []);
   const intents = useMemo(() => listHomeIntents(), []);
-  const nearby = useMemo(
-    () => (canLocal ? listHomeNearbyPlaces() : []),
-    [canLocal],
-  );
+  const nearby = useMemo(() => {
+    if (!canLocal) return [];
+    // Panorámica pack nearby lists are tenant-specific; other tenants use Location SoT.
+    if (tenantSlug !== "life-panoramica") {
+      return allLocations
+        .filter((loc) => loc.visibility !== "private")
+        .slice(0, 8)
+        .map((loc) => ({
+          id: loc.id,
+          name: loc.name,
+          imageUrl: loc.imageUrl?.trim() || LOCATION_NEARBY_FALLBACK_IMAGE,
+          distanceLabel: loc.areaLabel ?? configuration.branding.name,
+          statusLabel: loc.category,
+          ratingLabel: undefined as string | undefined,
+          ratingCountLabel: undefined as string | undefined,
+          badgeLabel: undefined as string | undefined,
+          href: `/locations/${loc.id}`,
+        }));
+    }
+    return listHomeNearbyPlaces();
+  }, [
+    canLocal,
+    tenantSlug,
+    allLocations,
+    configuration.branding.name,
+  ]);
 
   const heroSlides = useMemo((): HomeHeroSlide[] => {
     const sources = listHomeHeroSlideUrls(theme.imagery);

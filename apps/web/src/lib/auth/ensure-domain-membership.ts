@@ -105,7 +105,15 @@ async function ensureSupabaseMembership(input: {
       .maybeSingle();
 
     if (!existingMembership) {
-      const role = coerceMembershipRole(input.role);
+      const { count: activeCount } = await client
+        .from("memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("territory_id", territoryId)
+        .eq("status", "active");
+      const role =
+        !activeCount || activeCount === 0
+          ? "administrator"
+          : coerceMembershipRole(input.role);
       const { data: membership, error: memError } = await client
         .from("memberships")
         .insert({
@@ -168,6 +176,8 @@ export async function ensureDomainMembership(input: {
     providerReference: input.providerReference,
     email: input.email ?? null,
     displayName: input.displayName ?? null,
+    // Prefer DB role when present; otherwise let file store auto-promote
+    // first membership when the tenant directory is empty.
     role: fromDb?.role ?? input.role,
   });
 

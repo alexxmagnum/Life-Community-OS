@@ -60,6 +60,11 @@ const VALLEY_EXPERIENCES = [
   },
 ];
 
+/** Isolation: Life Valley experience seed ids must stay `lv-` prefixed. */
+export function lifeValleyExperienceSeedIds(): readonly string[] {
+  return VALLEY_EXPERIENCES.map((item) => item.id);
+}
+
 const VALLEY_MARKETPLACE = [
   {
     id: "lv-mp-bike",
