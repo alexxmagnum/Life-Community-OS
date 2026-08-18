@@ -13,7 +13,6 @@ import {
   listAccessibleChannels,
   listActiveCommunityAlerts,
   listActualidadContent,
-  listDiscoverableExperiences,
   listEspaciosComunitarios,
   listGroups,
   listMascotasHubItems,
@@ -24,6 +23,7 @@ import {
   resolveCommunityHubArea,
   COMMUNITY_BELONG_LAYER_IDS,
   type CommunityBelongLayerId,
+  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -43,6 +43,7 @@ import {
   type HubProposalStatus,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
@@ -82,6 +83,7 @@ export function CommunityHubScreen() {
     theme,
   } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
+  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
 
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandPlaza, setExpandPlaza] = useState(false);
@@ -142,10 +144,7 @@ export function CommunityHubScreen() {
   );
   const espacios = useMemo(() => listEspaciosComunitarios(), []);
   const officialEntities = useMemo(() => listOfficialEntities(), []);
-  const experienceCount = useMemo(
-    () => listDiscoverableExperiences({ includeSessionCreated: false }).length,
-    [],
-  );
+  const experienceCount = catalogExperiences.length;
   const mascotasItems = useMemo(() => {
     try {
       return listMascotasHubItems();
