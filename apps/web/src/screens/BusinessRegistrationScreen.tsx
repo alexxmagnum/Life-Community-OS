@@ -55,6 +55,8 @@ export function BusinessRegistrationScreen() {
   const [category, setCategory] = useState<string>("restaurant");
   const [address, setAddress] = useState("");
   const [contact, setContact] = useState("");
+  const [summary, setSummary] = useState("");
+  const [hours, setHours] = useState("");
   const [preview, setPreview] = useState<AddressGeocodeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
@@ -105,7 +107,7 @@ export function BusinessRegistrationScreen() {
     setSaving(true);
     setError(null);
     try {
-      const location = saveLocation({
+      const location = await saveLocation({
         tenantId,
         type,
         name: name.trim(),
@@ -118,6 +120,8 @@ export function BusinessRegistrationScreen() {
         geocodeSourceRef: preview.sourceRef,
         geocodeDisplayName: preview.displayName,
         ...(contact.trim() ? { contact: contact.trim() } : {}),
+        ...(summary.trim() ? { summary: summary.trim() } : {}),
+        ...(hours.trim() ? { hours: hours.trim() } : {}),
       });
       router.push(`/map?focus=${encodeURIComponent(location.id)}`);
     } catch (err) {
@@ -212,6 +216,30 @@ export function BusinessRegistrationScreen() {
             onChange={(e) => setContact(e.target.value)}
             placeholder="Teléfono, email o web"
             autoComplete="tel"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
+            Descripción (opcional)
+          </span>
+          <textarea
+            className={`${fieldClass} min-h-[72px] py-3`}
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            placeholder="Qué ofrece este lugar a la comunidad"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 block text-[13px] font-medium text-[var(--color-text-secondary)]">
+            Horario (opcional)
+          </span>
+          <input
+            className={fieldClass}
+            value={hours}
+            onChange={(e) => setHours(e.target.value)}
+            placeholder="Lun–Dom 10:00–22:00"
           />
         </label>
 

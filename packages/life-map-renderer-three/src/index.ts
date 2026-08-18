@@ -29,4 +29,5 @@ export {
 export {
   ThreeLifeMapCanvas,
   type ThreeLifeMapCanvasProps,
+  type LifeMapObjectPointerEvent,
 } from "./ThreeLifeMapCanvas";

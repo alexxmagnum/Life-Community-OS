@@ -19,10 +19,13 @@ export type LifeMapContextPanelProps = {
 const ACTION_LABEL: Record<LifeMapActionKind, string> = {
   open: "Abrir ficha",
   navigate: "Cómo llegar",
-  message: "Contacto",
+  message: "Contactar",
   join: "Unirme",
-  reserve: "Reservar (próximamente)",
+  reserve: "Reservar",
 };
+
+const PRIMARY_ACTIONS = new Set<LifeMapActionKind>(["open", "navigate"]);
+const HIDDEN_DEMO_ACTIONS = new Set<LifeMapActionKind>(["reserve", "join"]);
 
 export function LifeMapContextPanel({
   model,
@@ -34,13 +37,13 @@ export function LifeMapContextPanel({
 
   return (
     <aside
-      className="mt-4 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-sm"
+      className="mt-4 overflow-hidden rounded-[20px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-[0_16px_48px_rgba(28,24,18,0.12)]"
       aria-label="Información del lugar"
     >
       <div
-        className="relative h-[120px] w-full overflow-hidden"
+        className="relative h-[148px] w-full overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${tone} 0%, #f5f1e8 72%)`,
+          background: `linear-gradient(145deg, ${tone} 0%, #1c1a16 118%)`,
         }}
         aria-hidden
       >
@@ -52,10 +55,18 @@ export function LifeMapContextPanel({
             alt=""
             className="absolute inset-0 h-full w-full object-cover opacity-88"
           />
-        ) : null}
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_20%,rgba(20,18,14,0.45)_100%)]" />
+        ) : (
+          <div
+            className="absolute inset-0 opacity-40"
+            style={{
+              background:
+                "radial-gradient(ellipse at 30% 40%, rgba(255,255,255,0.35), transparent 55%), radial-gradient(ellipse at 80% 70%, rgba(0,0,0,0.25), transparent 50%)",
+            }}
+          />
+        )}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_15%,rgba(16,14,12,0.72)_100%)]" />
         {model.experienceTag ? (
-          <span className="absolute bottom-3 left-4 rounded-full bg-[rgba(255,255,255,0.88)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
+          <span className="absolute bottom-3 left-4 rounded-full bg-[rgba(255,255,255,0.92)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-secondary)]">
             {model.experienceTag}
           </span>
         ) : null}
@@ -67,18 +78,24 @@ export function LifeMapContextPanel({
             <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
               {model.categoryHint}
             </p>
-            <h2 className="mt-1 text-[18px] font-semibold text-[var(--color-text-primary)]">
+            <h2 className="mt-1 text-[20px] font-semibold leading-tight text-[var(--color-text-primary)]">
               {model.label}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="text-[13px] text-[var(--color-text-tertiary)] underline-offset-2 hover:underline"
+            className="shrink-0 text-[13px] text-[var(--color-text-tertiary)] underline-offset-2 hover:underline"
           >
             Cerrar
           </button>
         </div>
+
+        {model.address ? (
+          <p className="mt-2 text-[13px] leading-snug text-[var(--color-text-tertiary)]">
+            {model.address}
+          </p>
+        ) : null}
 
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
           {model.summary}
@@ -91,15 +108,20 @@ export function LifeMapContextPanel({
         ) : null}
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {model.availableActions.map((action) => {
-            const isFuture = action === "reserve";
+          {model.availableActions
+            .filter((action) => !(customerDemo && HIDDEN_DEMO_ACTIONS.has(action)))
+            .map((action) => {
+            const isPrimary = PRIMARY_ACTIONS.has(action);
             return (
               <button
                 key={action}
                 type="button"
-                disabled={isFuture}
                 onClick={() => onAction(action)}
-                className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)] disabled:cursor-not-allowed disabled:opacity-45"
+                className={
+                  isPrimary
+                    ? "rounded-full bg-[var(--color-action-primary,#1a5c56)] px-3.5 py-1.5 text-[13px] font-medium text-white"
+                    : "rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
+                }
               >
                 {ACTION_LABEL[action] ?? action}
               </button>

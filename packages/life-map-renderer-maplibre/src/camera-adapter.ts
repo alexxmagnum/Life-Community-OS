@@ -1,9 +1,8 @@
 /**
  * Camera adapter: LifeMapRendererCamera → MapLibre view.
  *
- * Geo targets and frame bounds drive the map.
- * Local anchors are ignored until a local→geo projection exists.
- * Premium framing: community context, cinematic open, no GIS plunge.
+ * Community experience: pose focus wins over full-territory fitBounds.
+ * Uses explicit community zoom — distance heuristics alone look like satellite GIS.
  */
 
 import type { LifeMapRendererCamera } from "@life-community-os/life-map-renderer";
@@ -21,28 +20,40 @@ function isGeoPosition(
   );
 }
 
-/** Heuristic distance → zoom until a formal mapping lands. */
+/**
+ * Map community / exploration distance to a human-scale zoom.
+ * Short distances → community focus; large distances → soft overview.
+ */
 export function distanceToMapLibreZoom(distance: number | undefined): number {
-  if (distance === undefined || !Number.isFinite(distance)) return 14;
-  // Larger distance → lower zoom. Clamp to MapLibre-useful range.
+  if (distance === undefined || !Number.isFinite(distance)) {
+    return LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom;
+  }
+  // Product framing: community twin distances are hundreds of metres, not DEM km.
+  if (distance <= 700) {
+    return LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom;
+  }
+  if (distance <= 1200) {
+    return Math.max(
+      LIFE_MAP_PREMIUM_CAMERA.explorationMinZoom,
+      LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom - 0.55,
+    );
+  }
   const zoom = 18 - Math.log2(Math.max(distance, 1));
-  return Math.min(18, Math.max(3, zoom));
+  return Math.min(
+    LIFE_MAP_PREMIUM_CAMERA.explorationMaxZoom,
+    Math.max(LIFE_MAP_PREMIUM_CAMERA.explorationMinZoom - 0.8, zoom),
+  );
 }
 
 export type ApplyLifeMapCameraOptions = {
-  /** Animation duration in ms. Default: premium open duration. */
   durationMs?: number;
-  /** Bounds padding in px. Default: premium fit padding. */
   paddingPx?: number;
-  /** Cap fit zoom so open view stays community-scale. */
   maxZoom?: number;
-  /** When true, skip animation (first paint / SSR-safe). */
   immediate?: boolean;
+  /** Rare tooling: fit full territory frame. */
+  forceBounds?: boolean;
 };
 
-/**
- * Apply Life Map camera pose / frame to a MapLibre map instance.
- */
 export function applyLifeMapCameraToMapLibre(
   map: MapLibreMap,
   camera: LifeMapRendererCamera,
@@ -56,6 +67,34 @@ export function applyLifeMapCameraToMapLibre(
   const padding =
     options?.paddingPx ?? LIFE_MAP_PREMIUM_CAMERA.fitPaddingPx;
   const maxZoom = options?.maxZoom ?? LIFE_MAP_PREMIUM_CAMERA.maxFitZoom;
+  const forceBounds = options?.forceBounds === true;
+
+  if (isGeoPosition(pose.target) && !forceBounds) {
+    const center: [number, number] = [pose.target.lng, pose.target.lat];
+    const zoom = Math.min(maxZoom, distanceToMapLibreZoom(pose.distance));
+    const bearing =
+      pose.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing;
+    const pitch =
+      pose.pitchDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusPitch;
+    if (duration > 0) {
+      map.easeTo({
+        center,
+        zoom,
+        bearing,
+        pitch,
+        duration,
+        essential: true,
+      });
+    } else {
+      map.jumpTo({
+        center,
+        zoom,
+        bearing,
+        pitch,
+      });
+    }
+    return;
+  }
 
   if (frame) {
     map.fitBounds(
@@ -68,36 +107,9 @@ export function applyLifeMapCameraToMapLibre(
         duration,
         maxZoom,
         bearing: pose.headingDegrees ?? 0,
-        pitch: pose.pitchDegrees ?? 0,
+        pitch: pose.pitchDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusPitch,
         essential: true,
       },
     );
-    return;
   }
-
-  if (isGeoPosition(pose.target)) {
-    const center: [number, number] = [pose.target.lng, pose.target.lat];
-    const zoom = Math.min(
-      maxZoom,
-      distanceToMapLibreZoom(pose.distance),
-    );
-    if (duration > 0) {
-      map.easeTo({
-        center,
-        zoom,
-        bearing: pose.headingDegrees ?? 0,
-        pitch: pose.pitchDegrees ?? 0,
-        duration,
-        essential: true,
-      });
-    } else {
-      map.jumpTo({
-        center,
-        zoom,
-        bearing: pose.headingDegrees ?? 0,
-        pitch: pose.pitchDegrees ?? 0,
-      });
-    }
-  }
-  // Local anchors: leave current view — no invented geo projection.
 }

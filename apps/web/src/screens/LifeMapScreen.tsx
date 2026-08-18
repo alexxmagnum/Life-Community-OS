@@ -40,6 +40,7 @@ import {
   useTenantLocations,
   buildLocationFilterChips,
   locationCategoryLabel,
+  cameraPoseFromLocations,
 } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
@@ -113,21 +114,43 @@ export function LifeMapScreen() {
   const territory: LifeMapTerritory | null = useMemo(() => {
     if (!pack) return null;
     const base = pack.territory;
-    if (!focusLocation) return base;
-    return {
-      ...base,
-      defaultCamera: {
-        ...base.defaultCamera,
-        target: {
-          lat: focusLocation.latitude,
-          lng: focusLocation.longitude,
-        },
-        distance: 320,
-        headingDegrees: base.defaultCamera?.headingDegrees ?? -22,
-        pitchDegrees: base.defaultCamera?.pitchDegrees ?? 58,
+    const fallbackHeading =
+      typeof base.defaultCamera?.headingDegrees === "number"
+        ? base.defaultCamera.headingDegrees
+        : -18;
+    const fallbackPitch =
+      typeof base.defaultCamera?.pitchDegrees === "number"
+        ? base.defaultCamera.pitchDegrees
+        : 52;
+    const cluster = cameraPoseFromLocations(
+      filteredLocations.length > 0 ? filteredLocations : locations,
+      {
+        headingDegrees: fallbackHeading,
+        pitchDegrees: Math.max(fallbackPitch, 48),
       },
-    };
-  }, [pack, focusLocation]);
+    );
+    // Locations always win over territory framing when any exist.
+    if (cluster) {
+      return {
+        ...base,
+        defaultCamera: {
+          ...base.defaultCamera,
+          ...cluster,
+          // Selection pin overrides cluster center for focus.
+          ...(focusLocation && selectedObjectId
+            ? {
+                target: {
+                  lat: focusLocation.latitude,
+                  lng: focusLocation.longitude,
+                },
+                distance: Math.min(cluster.distance, 280),
+              }
+            : {}),
+        },
+      };
+    }
+    return base;
+  }, [pack, focusLocation, filteredLocations, locations, selectedObjectId]);
 
   const objects: LifeMapObject[] = useMemo(() => {
     if (!territory) return [];
@@ -172,6 +195,16 @@ export function LifeMapScreen() {
     if (focus && locations.some((l) => l.id === focus)) {
       setSelectedObjectId(focus);
     }
+  }, [searchParams, locations]);
+
+  useEffect(() => {
+    const qParam = searchParams.get("q");
+    if (!qParam) return;
+    setQuery(qParam);
+    const hit = locations.find((location) =>
+      location.name.toLowerCase().includes(qParam.trim().toLowerCase()),
+    );
+    if (hit) setSelectedObjectId(hit.id);
   }, [searchParams, locations]);
 
   const onObjectSelect = useCallback(
@@ -294,6 +327,7 @@ export function LifeMapScreen() {
         focusLocationId={selectedObjectId}
         dataVersion={`loc-${filteredLocations.length}-${seedReady ? "ready" : "boot"}`}
         territoryName={pack.territoryName}
+        locationsReady={seedReady}
       />
 
       {contextModel ? (
@@ -347,7 +381,12 @@ export function LifeMapScreen() {
                 <button
                   type="button"
                   className="w-full py-3 text-left"
-                  onClick={() => setSelectedObjectId(location.id)}
+                  onClick={() => {
+                    setSelectedObjectId(location.id);
+                    router.push(
+                      `/locations/${encodeURIComponent(location.id)}`,
+                    );
+                  }}
                 >
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
                     {location.name}

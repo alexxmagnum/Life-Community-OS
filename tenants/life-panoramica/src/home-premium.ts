@@ -257,16 +257,21 @@ const NEARBY_PRESENTATION: Array<{ id: string } & NearbyPresentation> = [
 /** Places the community points at, with the demo signals Home displays. */
 export function listHomeNearbyPlaces(): HomeNearbyPlace[] {
   const byId = new Map(localEntityCatalog.map((entity) => [entity.id, entity]));
+  /** Prefer Life Map Locations for venues that exist in the demo cluster. */
+  const mapFirst = new Set(["lp-ikon", "lp-golf-club", "lp-pool"]);
   return NEARBY_PRESENTATION.flatMap((entry) => {
     const entity = byId.get(entry.id);
     if (!entity) return [];
     const { id, ...presentation } = entry;
+    const href = mapFirst.has(id)
+      ? `/map?q=${encodeURIComponent(entity.name)}`
+      : `/near/place/${id}`;
     return [
       {
         id,
         name: entity.name,
         imageUrl: entity.imageUrl,
-        href: `/near/place/${id}`,
+        href,
         ...presentation,
       },
     ];

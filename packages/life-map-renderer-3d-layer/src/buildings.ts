@@ -27,12 +27,12 @@ export type LifeMap3DBuildingMaterialHint = {
   opacity?: number;
 };
 
-export const LIFE_MAP_3D_DEFAULT_BUILDING_HEIGHT_METERS = 8;
+export const LIFE_MAP_3D_DEFAULT_BUILDING_HEIGHT_METERS = 6.5;
 
 export const LIFE_MAP_3D_DEFAULT_BUILDING_MATERIAL: Required<LifeMap3DBuildingMaterialHint> =
   {
-    color: "#d9d2c5",
-    selectedColor: "#a8c4c8",
-    hoverColor: "#cfc4b0",
-    opacity: 0.94,
+    color: "#b8a888",
+    selectedColor: "#5eb0b8",
+    hoverColor: "#c8b898",
+    opacity: 0.96,
   };

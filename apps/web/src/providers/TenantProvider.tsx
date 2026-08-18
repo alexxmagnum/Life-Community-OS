@@ -10,71 +10,71 @@ import {
   type ReactNode,
 } from "react";
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
-import type {
-  TenantBrandTokens,
-  TenantThemeMode,
-} from "@life-community-os/design-tokens";
+import type { TenantThemeMode } from "@life-community-os/design-tokens";
 import type { TenantConfiguration } from "@life-community-os/types";
 import { isTenantModuleEnabled } from "@life-community-os/types";
 import {
-  CAPABILITIES,
-  canAccessMunicipalityModule,
-  canAccessSecurityModule,
-  canAccessLifeMapModule,
-  capabilitiesForRole,
   DEMO_PERSON_MARTA,
   getDemoMemberByPersonId,
-  lifePanoramicaFeatures,
-  lifePanoramicaTheme,
   listDemoMembers,
-  resolveLifePanoramicaTenantConfiguration,
   type CapabilityKey,
   type DemoMemberProfile,
   type DemoRole,
   type TenantFeatureFlags,
 } from "@life-community-os/tenant-life-panoramica";
+import {
+  CAPABILITIES,
+  canAccessMunicipalityModule,
+  canAccessSecurityModule,
+  canAccessLifeMapModule,
+} from "@life-community-os/tenant-life-panoramica";
+import {
+  requireTenantPack,
+  resolveActiveTenantSlug,
+} from "@/lib/tenant/registry";
 
 type TenantContextValue = {
-  theme: TenantBrandTokens;
-  /**
-   * Active visual identity. Resolved from tenant configuration today;
-   * user preference and system sync are future concerns.
-   */
+  tenantSlug: string;
+  theme: ReturnType<typeof requireTenantPack>["theme"];
   themeMode: TenantThemeMode;
   features: TenantFeatureFlags;
-  /**
-   * Declarative tenant configuration (D.0.2).
-   * Source today: tenant pack adapter. Future: runtime configuration.
-   */
   configuration: TenantConfiguration;
+  /**
+   * @deprecated Demo capability matrix — replaced by membership AuthZ when
+   * LCOS_AUTH_REQUIRED=true and Supabase Auth is wired.
+   */
   role: DemoRole;
   setRole: (role: DemoRole) => void;
-  /** Active demo Person for residency / access validation (ADR-037/038). */
   demoPersonId: string;
   setDemoPersonId: (personId: string) => void;
   demoMember: DemoMemberProfile;
   demoMembers: DemoMemberProfile[];
   hasCapability: (key: CapabilityKey | string) => boolean;
   isFeatureEnabled: (key: keyof TenantFeatureFlags) => boolean;
-  /** Module availability — not a permission check. */
   isModuleEnabled: (moduleId: string) => boolean;
 };
 
 const TenantReactContext = createContext<TenantContextValue | null>(null);
 
-/**
- * Resolve TenantConfiguration for the active tenant.
- * D.0.2: always from Life Panoramica pack adapter.
- * Future: switch source to runtime configuration without changing callers.
- */
-export function resolveTenantConfiguration(): TenantConfiguration {
-  return resolveLifePanoramicaTenantConfiguration();
+export function resolveTenantConfiguration(
+  slugHint?: string | null,
+): TenantConfiguration {
+  const slug = resolveActiveTenantSlug(slugHint);
+  return requireTenantPack(slug).resolveConfiguration();
 }
 
-export function TenantProvider({ children }: { children: ReactNode }) {
-  const theme = lifePanoramicaTheme;
-  const features = lifePanoramicaFeatures;
-  const configuration = useMemo(() => resolveTenantConfiguration(), []);
+export function TenantProvider({
+  children,
+  tenantSlug: tenantSlugProp,
+}: {
+  children: ReactNode;
+  tenantSlug?: string;
+}) {
+  const tenantSlug = resolveActiveTenantSlug(tenantSlugProp);
+  const pack = requireTenantPack(tenantSlug);
+  const theme = pack.theme;
+  const features = pack.features;
+  const configuration = useMemo(() => pack.resolveConfiguration(), [pack]);
   const [role, setRole] = useState<DemoRole>("member");
   const [demoPersonId, setDemoPersonId] = useState<string>(DEMO_PERSON_MARTA);
 
@@ -87,10 +87,14 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       root.style.setProperty(key, value);
     }
     root.dataset.themeMode = themeMode;
+    root.dataset.tenantSlug = tenantSlug;
     root.style.colorScheme = themeMode === "night" ? "dark" : "light";
-  }, [theme, themeMode]);
+  }, [theme, themeMode, tenantSlug]);
 
-  const caps = useMemo(() => capabilitiesForRole(role), [role]);
+  const caps = useMemo(
+    () => pack.capabilitiesForRole(role),
+    [pack, role],
+  );
 
   const hasCapability = useCallback(
     (key: CapabilityKey | string) => caps.has(key as CapabilityKey),
@@ -117,6 +121,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      tenantSlug,
       theme,
       themeMode,
       features,
@@ -132,6 +137,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       isModuleEnabled,
     }),
     [
+      tenantSlug,
       theme,
       themeMode,
       features,

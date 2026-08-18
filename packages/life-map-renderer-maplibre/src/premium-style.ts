@@ -1,8 +1,8 @@
 /**
- * Life Map premium visual system — MapLibre paint + background.
+ * Life Map premium visual system — self-hosted community basemap.
  *
- * Territory geometry stays in LifeMapBaseLayer / resolver.
- * This module only owns look & feel (no demotiles, no GIS defaults).
+ * Hierarchy: owned GeoJSON territory → Locations → optional Three places.
+ * No Mapbox / MapTiler / ESRI tiles. No API keys required to boot.
  */
 
 import type {
@@ -19,29 +19,28 @@ export type LifeMapPremiumBaseLayerType =
   | "green"
   | "boundary";
 
-/** Soft resort terrain — warm sand/olive, not cartographic grey. */
+/** Soft lifestyle ground — the canvas under owned territory GeoJSON. */
 export const LIFE_MAP_PREMIUM_TERRAIN = {
-  background: "#e8e4d8",
-  backgroundDeep: "#ddd6c8",
+  background: "#e7efe4",
+  backgroundDeep: "#d5e2d0",
 } as const;
 
 /**
- * Layer palette — natural community, low contrast, premium SaaS.
- * Tuned for MapLibre 2D under optional Three volume.
+ * Layer palette — Apple Maps / lifestyle community, not CAD/GIS.
  */
 export const LIFE_MAP_PREMIUM_PALETTE = {
-  water: "#6ba8c4",
-  waterDeep: "#4f8fad",
-  green: "#8faf7a",
-  greenDeep: "#6f9260",
-  roadsPrimary: "#f5f1e8",
-  roadsSecondary: "#ebe4d6",
-  roadsEdge: "#c4b8a4",
-  buildings: "#d9d2c5",
-  buildingsOutline: "#b9b0a0",
-  buildingsHover: "#cfc4b0",
-  buildingsSelected: "#a8c4c8",
-  boundary: "#8a7f6e",
+  water: "#7eb8d4",
+  waterDeep: "#5a9ab8",
+  green: "#8fbc7a",
+  greenDeep: "#6f9a5c",
+  roadsPrimary: "#f7f4ee",
+  roadsSecondary: "#efeae2",
+  roadsEdge: "#c8c0b4",
+  buildings: "#d8d2c8",
+  buildingsOutline: "#b0a898",
+  buildingsHover: "#e4ded4",
+  buildingsSelected: "#3aa8a0",
+  boundary: "#9a9288",
 } as const;
 
 export type LifeMapRenderQuality = "mobile" | "desktop";
@@ -71,17 +70,20 @@ export function lifeMapPixelRatioForQuality(
 }
 
 /**
- * Self-contained MapLibre style — no remote demotiles / OSM basemap.
- * Territory layers are added by the binder on top.
+ * Self-hosted MapLibre style — zero tile providers, zero API keys.
+ *
+ * Territory geometry (roads / buildings / water / green) is injected by the
+ * binder from tenant GeoJSON. Optional glyphs CDN is fonts-only (no map tiles).
  */
 export const LIFE_MAP_PREMIUM_STYLE: StyleSpecification = {
   version: 8,
-  name: "life-map-premium",
+  name: "life-map-community",
+  // Fonts for optional object labels — not a commercial map tile vendor.
   glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
   sources: {},
   layers: [
     {
-      id: "lm-background",
+      id: "lm-community-ground",
       type: "background",
       paint: {
         "background-color": LIFE_MAP_PREMIUM_TERRAIN.background,
@@ -90,9 +92,19 @@ export const LIFE_MAP_PREMIUM_STYLE: StyleSpecification = {
   ],
 };
 
-/** @deprecated Prefer {@link LIFE_MAP_PREMIUM_STYLE}; kept for debug toggles. */
-export const MAPLIBRE_TECHNICAL_PREVIEW_STYLE =
-  "https://demotiles.maplibre.org/style.json";
+/**
+ * Resolve the product basemap. Always self-hosted — ignores commercial keys.
+ */
+export function resolveLifeMapBasemapStyle(): StyleSpecification {
+  return LIFE_MAP_PREMIUM_STYLE;
+}
+
+/** @deprecated Alias of {@link LIFE_MAP_PREMIUM_STYLE} — no external imagery. */
+export const LIFE_MAP_EARTH_STYLE: StyleSpecification = LIFE_MAP_PREMIUM_STYLE;
+
+/** @deprecated Debug alias — same self-hosted style (no demotiles map). */
+export const MAPLIBRE_TECHNICAL_PREVIEW_STYLE: StyleSpecification =
+  LIFE_MAP_PREMIUM_STYLE;
 
 type LinePaint = NonNullable<LineLayerSpecification["paint"]>;
 type FillPaint = NonNullable<FillLayerSpecification["paint"]>;
@@ -107,7 +119,7 @@ export function premiumRoadsPaint(): LinePaint {
       "interpolate",
       ["linear"],
       ["zoom"],
-      12,
+      14,
       [
         "match",
         ["get", "highway"],
@@ -121,31 +133,31 @@ export function premiumRoadsPaint(): LinePaint {
         1.0,
         1.8,
       ],
-      16,
+      16.5,
       [
         "match",
         ["get", "highway"],
         "residential",
-        5.5,
+        4.2,
         "unclassified",
-        6,
+        4.8,
         "service",
-        3.2,
+        2.4,
         "path",
-        2,
-        4.5,
+        1.6,
+        3.4,
       ],
     ],
-    "line-opacity": 0.92,
-    "line-blur": 0.2,
+    "line-opacity": 0.95,
+    "line-blur": 0.35,
   };
 }
 
 export function premiumBoundaryPaint(): LinePaint {
   return {
     "line-color": LIFE_MAP_PREMIUM_PALETTE.boundary,
-    "line-width": 1.5,
-    "line-opacity": 0.55,
+    "line-width": 1.4,
+    "line-opacity": 0.45,
     "line-dasharray": [1.5, 1.25],
   };
 }
@@ -153,7 +165,7 @@ export function premiumBoundaryPaint(): LinePaint {
 export function premiumWaterPaint(): FillPaint {
   return {
     "fill-color": LIFE_MAP_PREMIUM_PALETTE.water,
-    "fill-opacity": 0.72,
+    "fill-opacity": 0.9,
     "fill-outline-color": LIFE_MAP_PREMIUM_PALETTE.waterDeep,
   };
 }
@@ -161,7 +173,7 @@ export function premiumWaterPaint(): FillPaint {
 export function premiumGreenPaint(): FillPaint {
   return {
     "fill-color": LIFE_MAP_PREMIUM_PALETTE.green,
-    "fill-opacity": 0.55,
+    "fill-opacity": 0.78,
     "fill-outline-color": LIFE_MAP_PREMIUM_PALETTE.greenDeep,
   };
 }
@@ -216,30 +228,32 @@ export function premiumPaintForBaseType(
  * Camera framing for “entering my community” — not GIS inspect zoom.
  */
 export const LIFE_MAP_PREMIUM_CAMERA = {
-  /** Extra breathing room around territory bounds. */
-  fitPaddingPx: 56,
-  /** Avoid plunging into parcel-scale GIS zoom on open. */
-  maxFitZoom: 15.4,
-  /** Opening move duration (ms). 0 = snap (SSR / first paint). */
+  /** Extra breathing room around territory bounds (tooling only). */
+  fitPaddingPx: 72,
+  /** Neighborhood → street discovery range. */
+  maxFitZoom: 19.2,
   openDurationMs: 1100,
-  /** Hybrid: gentle pitch so volume reads without a hard cut. */
   hybridPitchDegrees: 52,
-  hybridPitchDurationMs: 2000,
-  /** Cinematic entrance — arrive into the community. */
-  entranceStartZoomDelta: 1.35,
-  entranceStartPitch: 12,
-  entranceStartBearingOffset: -22,
-  entranceDurationMs: 2800,
-  /** Volume presence: buildings gain extrusion as user approaches. */
-  volumeZoomStart: 13.2,
-  volumeZoomFull: 15.2,
-  volumePitchStart: 14,
-  volumePitchFull: 48,
-  /** Dynamic pitch curve for 2D → 3D spatial transition (hint only). */
-  spatialPitchAtZoomStart: 22,
-  spatialPitchAtZoomFull: 52,
-  spatialPitchZoomStart: 13.2,
-  spatialPitchZoomFull: 15.6,
+  hybridPitchDurationMs: 1600,
+  /** Recognizable Panorámica — owned territory GeoJSON as the living map. */
+  communityFocusZoom: 15.85,
+  communityFocusPitch: 48,
+  communityFocusBearing: -18,
+  explorationMinZoom: 14.2,
+  explorationMaxZoom: 18.8,
+  entranceStartZoomDelta: 0.9,
+  entranceStartPitch: 32,
+  entranceStartBearingOffset: -6,
+  entranceDurationMs: 1700,
+  /** Volume presence — places rise as we enter the living zone. */
+  volumeZoomStart: 14.5,
+  volumeZoomFull: 16.8,
+  volumePitchStart: 20,
+  volumePitchFull: 50,
+  spatialPitchAtZoomStart: 28,
+  spatialPitchAtZoomFull: 55,
+  spatialPitchZoomStart: 14.8,
+  spatialPitchZoomFull: 17.2,
 } as const;
 
 export function computeVolumePresence(zoom: number, pitchDegrees: number): number {

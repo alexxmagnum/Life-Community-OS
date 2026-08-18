@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Location ficha — driven by Location SoT + Experience Resolver.
+ * Location ficha — Location SoT + Experience Resolver + lifestyle profile.
  */
 
 import { useMemo } from "react";
@@ -13,10 +13,11 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import {
-  getLocation,
+  demoPlaceProfileFor,
   openDirectionsUrl,
   openLocationContact,
   resolveLocationExperience,
+  useTenantLocations,
 } from "@/lib/location";
 import { useTenant } from "@/providers/TenantProvider";
 
@@ -25,16 +26,46 @@ export function LocationDetailScreen() {
   const params = useParams<{ id: string }>();
   const { configuration } = useTenant();
   const locationId = typeof params.id === "string" ? params.id : "";
+  const { allLocations, seedReady } = useTenantLocations(configuration.tenantId);
 
   const location = useMemo(
-    () => getLocation(configuration.tenantId, locationId),
-    [configuration.tenantId, locationId],
+    () => allLocations.find((item) => item.id === locationId) ?? null,
+    [allLocations, locationId],
   );
 
   const experience = useMemo(
     () => (location ? resolveLocationExperience(location) : null),
     [location],
   );
+
+  const profile = useMemo(() => {
+    if (!location) return null;
+    const demo = demoPlaceProfileFor({
+      id: location.id,
+      name: location.name,
+    });
+    return {
+      imageUrl: location.imageUrl ?? demo?.imageUrl,
+      summary: location.summary ?? demo?.summary,
+      hours: location.hours ?? demo?.hours,
+      contact: location.contact ?? demo?.contact,
+    };
+  }, [location]);
+
+  if (!seedReady) {
+    return (
+      <MobileScreen>
+        <FlowScreenHeader
+          title="Lugar"
+          onBack={() => router.push("/map")}
+          onExit={() => router.push("/map")}
+        />
+        <p className="mt-8 text-[15px] text-[var(--color-text-secondary)]">
+          Cargando lugar…
+        </p>
+      </MobileScreen>
+    );
+  }
 
   if (!location || !experience) {
     return (
@@ -54,42 +85,63 @@ export function LocationDetailScreen() {
     );
   }
 
+  const mapHref = `/map?focus=${encodeURIComponent(location.id)}`;
+
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={location.name}
         subtitle={experience.typeHint}
-        onBack={() =>
-          router.push(`/map?focus=${encodeURIComponent(location.id)}`)
-        }
+        onBack={() => router.push(mapHref)}
         onExit={() => router.push("/map")}
       />
 
       <section className="mt-4 space-y-4 pb-28">
         <div
-          className="overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
+          className="relative overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)]"
           style={{
             background: `linear-gradient(135deg, ${experience.heroTone} 0%, #f5f1e8 72%)`,
-            minHeight: 140,
+            minHeight: 200,
           }}
-          aria-hidden
-        />
-
-        <div>
-          <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-            {experience.categoryLabel}
-          </p>
-          <h1 className="mt-1 text-[22px] font-semibold text-[var(--color-text-primary)]">
-            {location.name}
-          </h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
-            {experience.summary}
-          </p>
+        >
+          {profile?.imageUrl ? (
+            // Lifestyle photo for demo places — Next Image optional later.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.imageUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(16,14,12,0.55)_100%)]" />
+          <div className="absolute bottom-3 left-4 right-4">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-white/85">
+              {experience.categoryLabel}
+            </p>
+            <h1 className="mt-1 text-[22px] font-semibold text-white">
+              {location.name}
+            </h1>
+          </div>
         </div>
+
+        <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
+          {profile?.summary ?? experience.summary}
+        </p>
+
+        {profile?.hours ? (
+          <div className="rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
+            <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+              Horario
+            </p>
+            <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
+              {profile.hours}
+            </p>
+          </div>
+        ) : null}
 
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
           <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
-            Dirección
+            Ubicación
           </p>
           <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
             {location.geocodeDisplayName ?? location.address}
@@ -111,9 +163,7 @@ export function LocationDetailScreen() {
           <button
             type="button"
             className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
-            onClick={() =>
-              router.push(`/map?focus=${encodeURIComponent(location.id)}`)
-            }
+            onClick={() => router.push(mapHref)}
           >
             Ver en el mapa
           </button>
@@ -136,7 +186,7 @@ export function LocationDetailScreen() {
               className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
               onClick={() => openLocationContact(location.contact)}
             >
-              Contacto
+              Contactar
             </button>
           ) : null}
         </div>
@@ -144,9 +194,7 @@ export function LocationDetailScreen() {
 
       <ScreenPrimaryAction
         label="Volver al mapa"
-        onClick={() =>
-          router.push(`/map?focus=${encodeURIComponent(location.id)}`)
-        }
+        onClick={() => router.push(mapHref)}
       />
     </MobileScreen>
   );

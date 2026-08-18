@@ -21,6 +21,7 @@ export type {
   PersonRow,
   IdentityRow,
   MembershipRow,
+  LocationRow,
 } from "./schema";
 
 export {

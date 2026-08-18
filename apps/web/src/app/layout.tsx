@@ -36,11 +36,11 @@ const brand = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "Life Panoramica",
-    template: "%s · Life Panoramica",
+    default: "Life Community OS",
+    template: "%s · Life Community OS",
   },
   description: "Tu comunidad, viva.",
-  applicationName: "Life Panoramica",
+  applicationName: "Life Community OS",
   appleWebApp: {
     statusBarStyle: "black-translucent",
   },

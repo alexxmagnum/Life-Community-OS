@@ -13,6 +13,7 @@ import {
 } from "@life-community-os/types";
 
 import { resolveLocationExperience } from "./experience-resolver";
+import { demoPlaceProfileFor } from "./demo-place-profile";
 
 function lifeMapTypeForLocation(type: LocationType): LifeMapObjectType {
   switch (type) {
@@ -79,22 +80,30 @@ export function projectLocationsToLifeMapObjects(
   return objects;
 }
 
-/** Context-card enrichment driven entirely by Location + Experience Resolver. */
+/** Context-card enrichment driven by Location + Experience + demo lifestyle profile. */
 export function locationContextEnrichment(location: Location): {
   label: string;
   summary: string;
   experienceTag: string;
   categoryHint: string;
   heroTone: string;
+  address: string;
   availableActions: LifeMapActionKind[];
+  imageUrl?: string;
 } {
   const experience = resolveLocationExperience(location);
+  const demo = demoPlaceProfileFor({
+    id: location.id,
+    name: location.name,
+  });
   return {
     label: location.name,
-    summary: `${experience.summary} · ${location.geocodeDisplayName ?? location.address}`,
+    summary: demo?.summary ?? experience.summary,
     experienceTag: experience.categoryLabel,
     categoryHint: experience.typeHint,
     heroTone: experience.heroTone,
+    address: location.geocodeDisplayName ?? location.address,
     availableActions: [...experience.availableActions],
+    ...(demo?.imageUrl ? { imageUrl: demo.imageUrl } : {}),
   };
 }

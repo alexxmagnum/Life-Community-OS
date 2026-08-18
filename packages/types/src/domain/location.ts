@@ -61,6 +61,14 @@ export type Location = {
    * When present, context cards may offer a contact action.
    */
   contact?: string;
+  /** Short place story for fichas / discovery (optional product profile). */
+  summary?: string;
+  /** Hero / card image URL (optional product profile). */
+  imageUrl?: string;
+  /** Human hours line, e.g. "Lun–Dom 10:00–22:00". */
+  hours?: string;
+  /** Neighbourhood / area label for discovery ranking (not a security boundary). */
+  areaLabel?: string;
   createdAt?: IsoDateTimeString;
   updatedAt?: IsoDateTimeString;
 };
@@ -154,12 +162,20 @@ export type CreateLocationInput = {
   geocodeSourceRef?: string;
   geocodeDisplayName?: string;
   contact?: string;
+  summary?: string;
+  imageUrl?: string;
+  hours?: string;
+  areaLabel?: string;
   id?: DomainId;
 };
 
 export function createLocation(input: CreateLocationInput): Location {
   const now = new Date().toISOString();
   const contact = input.contact?.trim();
+  const summary = input.summary?.trim();
+  const imageUrl = input.imageUrl?.trim();
+  const hours = input.hours?.trim();
+  const areaLabel = input.areaLabel?.trim();
   const location: Location = {
     id: input.id?.trim() || `loc-${cryptoRandomId()}`,
     tenantId: input.tenantId.trim(),
@@ -174,6 +190,10 @@ export function createLocation(input: CreateLocationInput): Location {
     geocodeSourceRef: input.geocodeSourceRef,
     geocodeDisplayName: input.geocodeDisplayName,
     ...(contact ? { contact } : {}),
+    ...(summary ? { summary } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(hours ? { hours } : {}),
+    ...(areaLabel ? { areaLabel } : {}),
     createdAt: now,
     updatedAt: now,
   };

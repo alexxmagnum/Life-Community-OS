@@ -52,6 +52,28 @@ export type MembershipRow = {
   updated_at: string;
 };
 
+export type LocationRow = {
+  id: string;
+  tenant_id: string;
+  type: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  visibility: string;
+  geocode_provider: string | null;
+  geocode_source_ref: string | null;
+  geocode_display_name: string | null;
+  contact: string | null;
+  summary: string | null;
+  image_url: string | null;
+  hours: string | null;
+  area_label: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -145,6 +167,40 @@ export type Database = {
             columns: ["territory_id"];
             isOneToOne: false;
             referencedRelation: "territories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      locations: {
+        Row: LocationRow;
+        Insert: {
+          id: string;
+          tenant_id: string;
+          type: string;
+          name: string;
+          address: string;
+          latitude: number;
+          longitude: number;
+          category: string;
+          visibility?: string;
+          geocode_provider?: string | null;
+          geocode_source_ref?: string | null;
+          geocode_display_name?: string | null;
+          contact?: string | null;
+          summary?: string | null;
+          image_url?: string | null;
+          hours?: string | null;
+          area_label?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<LocationRow>;
+        Relationships: [
+          {
+            foreignKeyName: "locations_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
             referencedColumns: ["id"];
           },
         ];

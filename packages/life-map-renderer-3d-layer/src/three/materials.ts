@@ -1,6 +1,5 @@
 /**
- * Soft premium building materials — residential luxury, not photoreal.
- * Includes facade variation for community depth.
+ * Soft premium building materials — residential luxury, warm contrast.
  */
 
 import { Color, MeshStandardMaterial } from "three";
@@ -14,11 +13,10 @@ export type BuildingMaterials = {
   default: MeshStandardMaterial;
   hover: MeshStandardMaterial;
   selected: MeshStandardMaterial;
-  /** Soft facade variants for residential rhythm. */
   variants: MeshStandardMaterial[];
 };
 
-const FACADE_VARIANTS = ["#d9d2c5", "#d4cbb8", "#cfc6b6", "#e0d8cc", "#c8bfb0"];
+const FACADE_VARIANTS = ["#b5a288", "#a89878", "#c0ae90", "#9e8e72", "#b8a480"];
 
 export function createBuildingMaterials(
   hint: LifeMap3DBuildingMaterialHint = {},
@@ -36,32 +34,32 @@ export function createBuildingMaterials(
   ) =>
     new MeshStandardMaterial({
       color: new Color(hex),
-      roughness: extra?.roughness ?? 0.68,
-      metalness: 0.04,
+      roughness: extra?.roughness ?? 0.62,
+      metalness: 0.06,
       transparent: opacity < 1,
       opacity,
-      envMapIntensity: 0.45,
+      envMapIntensity: 0.55,
       ...(extra?.emissive
         ? {
             emissive: new Color(extra.emissive),
-            emissiveIntensity: extra.emissiveIntensity ?? 0.06,
+            emissiveIntensity: extra.emissiveIntensity ?? 0.07,
           }
         : {}),
     });
 
   return {
-    default: mk(color, { roughness: 0.7 }),
+    default: mk(color, { roughness: 0.64 }),
     hover: mk(hoverColor, {
       emissive: hoverColor,
-      emissiveIntensity: 0.08,
-      roughness: 0.58,
+      emissiveIntensity: 0.1,
+      roughness: 0.52,
     }),
     selected: mk(selectedColor, {
       emissive: selectedColor,
-      emissiveIntensity: 0.14,
-      roughness: 0.48,
+      emissiveIntensity: 0.16,
+      roughness: 0.44,
     }),
-    variants: FACADE_VARIANTS.map((hex) => mk(hex, { roughness: 0.72 })),
+    variants: FACADE_VARIANTS.map((hex) => mk(hex, { roughness: 0.66 })),
   };
 }
 

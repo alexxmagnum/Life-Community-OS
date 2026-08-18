@@ -1,5 +1,5 @@
 /**
- * Environment materials — resort water, soft green, terrain.
+ * Environment materials — resort water, living green, soft terrain.
  */
 
 import { Color, MeshStandardMaterial } from "three";
@@ -17,42 +17,42 @@ export function createEnvironmentMaterials(options?: {
   greenColor?: string;
   terrainColor?: string;
 }): EnvironmentMaterials {
-  const waterColor = options?.waterColor ?? "#5f9bb8";
-  const greenColor = options?.greenColor ?? "#7fa56e";
-  const terrainColor = options?.terrainColor ?? "#e4dfd0";
+  const waterColor = options?.waterColor ?? "#2a7fad";
+  const greenColor = options?.greenColor ?? "#569648";
+  const terrainColor = options?.terrainColor ?? "#c5d4b0";
 
   return {
     water: new MeshStandardMaterial({
       color: new Color(waterColor),
-      roughness: 0.12,
-      metalness: 0.42,
+      roughness: 0.06,
+      metalness: 0.52,
       transparent: true,
-      opacity: 0.68,
-      envMapIntensity: 1.1,
+      opacity: 0.82,
+      envMapIntensity: 1.35,
     }),
     green: new MeshStandardMaterial({
       color: new Color(greenColor),
-      roughness: 0.86,
+      roughness: 0.78,
       metalness: 0.02,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.66,
     }),
     vegetationCanopy: new MeshStandardMaterial({
-      color: new Color("#6a8f5c"),
-      roughness: 0.78,
+      color: new Color("#458840"),
+      roughness: 0.72,
       metalness: 0.02,
     }),
     vegetationTrunk: new MeshStandardMaterial({
-      color: new Color("#8a7358"),
-      roughness: 0.9,
+      color: new Color("#7a634c"),
+      roughness: 0.88,
       metalness: 0.02,
     }),
     terrain: new MeshStandardMaterial({
       color: new Color(terrainColor),
-      roughness: 0.95,
+      roughness: 0.92,
       metalness: 0.02,
       transparent: true,
-      opacity: 0.32,
+      opacity: 0.28,
     }),
   };
 }

@@ -3,11 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  getNearCategoryBySlug,
-  listLocalEntitiesForKinds,
-  rankLocalEntitiesForTerritory,
-  territoryDiscoveryAreaLabels,
-} from "@life-community-os/tenant-life-panoramica";
+  filterLocationsByLocalKinds,
+  locationToLocalEntity,
+} from "@life-community-os/types";
+import { getNearCategoryBySlug } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -15,15 +14,16 @@ import {
   MobileScreen,
   ScreenSearch,
 } from "@life-community-os/ui";
+import { useTenantLocations } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
- * Cerca de ti hub — "What exists around me?"
- * Territory Access ranks relevance (D.0.7.2.3). LocalEntity only.
+ * Cerca de ti — discovery over Location SoT (LocalEntity is a view).
  */
 export function NearbyCategoryScreen({ category }: { category: string }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const { isFeatureEnabled, hasCapability, configuration } = useTenant();
+  const { allLocations, seedReady } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
 
   const hub = useMemo(() => getNearCategoryBySlug(category), [category]);
@@ -32,18 +32,14 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
     (isFeatureEnabled("localLife") || isFeatureEnabled("localEntities")) &&
     hasCapability(CAPABILITIES.localView);
 
-  const areaLabels = useMemo(
-    () => territoryDiscoveryAreaLabels(demoPersonId),
-    [demoPersonId],
-  );
-
   const entities = useMemo(() => {
     if (!hub || !canLocal) return [];
-    return rankLocalEntitiesForTerritory(
-      listLocalEntitiesForKinds(hub.entityKinds, query),
-      demoPersonId,
-    );
-  }, [hub, canLocal, query, demoPersonId]);
+    return filterLocationsByLocalKinds(
+      allLocations,
+      hub.entityKinds,
+      query,
+    ).map(locationToLocalEntity);
+  }, [hub, canLocal, allLocations, query]);
 
   if (!hub) {
     return (
@@ -91,9 +87,9 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
       />
 
       <p className="text-[15px] leading-5 text-[var(--color-text-tertiary)]">
-        {areaLabels.length > 0
-          ? `Lo más relevante cerca de ${areaLabels.join(", ")}.`
-          : hub.description}
+        {seedReady
+          ? hub.description
+          : "Cargando lugares de tu comunidad…"}
       </p>
 
       <ScreenSearch
@@ -107,8 +103,10 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
         <EmptyState
           title={hub.emptyTitle}
           description={hub.emptyDescription}
-          actionLabel={query ? "Limpiar búsqueda" : undefined}
-          onAction={query ? () => setQuery("") : undefined}
+          actionLabel={query ? "Limpiar búsqueda" : "Ver mapa"}
+          onAction={
+            query ? () => setQuery("") : () => router.push("/map")
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -124,7 +122,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
               verified={place.verified}
               trustNote={place.trustNote}
               className="w-full max-w-none"
-              onClick={() => router.push(`/near/place/${place.id}`)}
+              onClick={() => router.push(`/locations/${place.id}`)}
             />
           ))}
         </div>

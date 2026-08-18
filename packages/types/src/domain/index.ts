@@ -19,6 +19,15 @@ export {
   validateLocation,
   createLocation,
 } from "./location";
+export {
+  localEntityKindFromLocation,
+  locationTypeFromLocalKind,
+  locationToLocalEntity,
+  locationsToLocalEntities,
+  listNearYouFromLocations,
+  listTrustedHelpFromLocations,
+  filterLocationsByLocalKinds,
+} from "./location-discovery";
 export type { Property } from "./property";
 export type {
   PropertyPersonRelationship,

@@ -1,17 +1,19 @@
 "use client";
 
 /**
- * React hook — subscribe to multi-tenant Location store.
+ * React hook — hydrate Location SoT from server API and subscribe to cache.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import type { Location } from "@life-community-os/types";
 import {
+  hydrateLocations,
   listLocations,
   listVisibleMapLocations,
   subscribeLocations,
 } from "./location-store";
 import { ensureExampleIkonLocation } from "./example-ikon";
+import { ensureCatalogLocations } from "./seed-catalog-locations";
 
 export function useTenantLocations(tenantId: string): {
   locations: Location[];
@@ -41,9 +43,17 @@ export function useTenantLocations(tenantId: string): {
     setSeedReady(false);
     setSeedError(null);
     void (async () => {
+      await hydrateLocations(tenantId);
+      if (cancelled) return;
+      sync();
+      const catalog = await ensureCatalogLocations(tenantId);
+      if (cancelled) return;
+      if (catalog.error) setSeedError(catalog.error);
       const result = await ensureExampleIkonLocation(tenantId);
       if (cancelled) return;
       if (result.error) setSeedError(result.error);
+      await hydrateLocations(tenantId);
+      if (cancelled) return;
       setSeedReady(true);
       sync();
     })();

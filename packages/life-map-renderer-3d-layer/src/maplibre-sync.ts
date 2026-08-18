@@ -35,9 +35,10 @@ export function applyMapLibreViewToPerspective(
   const metersPerPixel =
     (Math.cos((view.center.lat * Math.PI) / 180) * 2 * Math.PI * 6_378_137) /
     (256 * 2 ** view.zoom);
+  // Match MapLibre neighborhood framing — places sit on real Earth.
   const distance = Math.max(
-    (metersPerPixel * viewportH) / (2 * Math.tan((50 * Math.PI) / 360)),
-    40,
+    ((metersPerPixel * viewportH) / (2 * Math.tan((45 * Math.PI) / 360))) * 0.55,
+    55,
   );
 
   const cosPitch = Math.cos(pitch);
@@ -45,9 +46,10 @@ export function applyMapLibreViewToPerspective(
 
   perspective.position.set(
     look.x + Math.sin(bearing) * distance * cosPitch,
-    Math.max(distance * sinPitch, 30),
+    Math.max(distance * sinPitch, 28),
     look.z + Math.cos(bearing) * distance * cosPitch,
   );
-  perspective.lookAt(look.x, 0, look.z);
+  perspective.lookAt(look.x, 2.5, look.z);
+  perspective.fov = 45;
   perspective.updateProjectionMatrix();
 }

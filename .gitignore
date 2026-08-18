@@ -39,6 +39,9 @@ yarn-error.log*
 .playwright-browsers/
 qa-screenshots/
 
+# Local durable data (Location file store when Supabase unavailable)
+apps/web/.data/
+
 # Misc
 *.pem
 .turbo

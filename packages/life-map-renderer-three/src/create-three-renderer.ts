@@ -78,6 +78,10 @@ export function createThreeLifeMapRenderer(
       supportsAssetKeys: true,
       supportsLayerVisibility: true,
       supportsRealtimeRender: true,
+      /** Prototype draws Life OS placeholders only — no physical base layers yet. */
+      supportsBaseLayers: false,
+      supportsTerrain: false,
+      supportsGeoProjection: false,
     },
   } as const;
 

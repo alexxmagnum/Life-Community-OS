@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Spatial viewport — territory → MapLibre premium + hybrid Three world.
+ * Spatial viewport — real Earth MapLibre + premium Three place overlay.
  * Customer demo surface: immersive community, not technical preview chrome.
  */
 
@@ -33,7 +33,7 @@ const MapLibreLifeMapCanvas = dynamic(
         className="flex h-full min-h-[inherit] items-center justify-center text-[14px] text-[var(--color-text-secondary)]"
         style={{
           background:
-            "linear-gradient(160deg, #ebe4d4 0%, #d9e0d2 48%, #c9d6d8 100%)",
+            "linear-gradient(160deg, #1a2420 0%, #243830 48%, #1e2a38 100%)",
         }}
       >
         Entrando en tu comunidad…
@@ -76,6 +76,8 @@ export type LifeMapViewportProps = {
   focusLocationId?: string | null;
   dataVersion?: string;
   territoryName?: string;
+  /** Wait for Location seed before cinematic open (avoids empty GIS frame). */
+  locationsReady?: boolean;
 };
 
 function territoryGeoOrigin(territory: LifeMapTerritory) {
@@ -95,11 +97,11 @@ export function LifeMapViewport({
   territoryDataResolver,
   selectedObjectId = null,
   onObjectSelect,
-  focusLocationId: _focusLocationId = null,
+  focusLocationId = null,
   dataVersion = "v1",
   territoryName,
+  locationsReady = true,
 }: LifeMapViewportProps) {
-  void _focusLocationId;
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
     engine === "maplibre" && isLifeMapHybrid3DPreviewEnabled();
@@ -117,7 +119,7 @@ export function LifeMapViewport({
 
   const spatialObjects = useMemo(() => {
     const origin = territoryGeoOrigin(territory);
-    // Location SoT — all mapped places are heroes (cap for performance).
+    // Featured living places only — scene, not inventory dump.
     const source = objects.slice(0, 12);
     return bridgeLifeMapObjectsToSpatial(source, origin).map((o) => ({
       id: o.id,
@@ -131,12 +133,30 @@ export function LifeMapViewport({
     }));
   }, [objects, territory]);
 
+  const focusCameraTarget = useMemo(() => {
+    if (!focusLocationId) return null;
+    const hit = objects.find((o) => o.objectId === focusLocationId);
+    const pos = hit?.position;
+    if (
+      pos &&
+      typeof (pos as { lat?: unknown }).lat === "number" &&
+      typeof (pos as { lng?: unknown }).lng === "number"
+    ) {
+      return {
+        lat: (pos as { lat: number }).lat,
+        lng: (pos as { lng: number }).lng,
+      };
+    }
+    return null;
+  }, [focusLocationId, objects]);
+
   const assetResolver = useMemo(
     () => createWebLifeMapAssetResolver(territory.tenantId),
     [territory.tenantId],
   );
 
   const communityLabel = territoryName ?? "Tu comunidad";
+  const waitForPlaces = !locationsReady && objects.length === 0;
 
   return (
     <section
@@ -144,7 +164,17 @@ export function LifeMapViewport({
       className="relative mt-3 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-border-subtle)] shadow-[0_12px_40px_rgba(40,36,28,0.08)]"
       style={{ minHeight: "min(72vh, 640px)", height: "min(72vh, 640px)" }}
     >
-      {engine === "maplibre" ? (
+      {waitForPlaces ? (
+        <div
+          className="absolute inset-0 flex items-center justify-center text-[14px] text-[var(--color-text-secondary)]"
+          style={{
+            background:
+              "linear-gradient(160deg, #1a2420 0%, #243830 48%, #1e2a38 100%)",
+          }}
+        >
+          Cargando lugares de tu comunidad…
+        </div>
+      ) : engine === "maplibre" ? (
         <MapLibreLifeMapCanvas
           scene={scene}
           territoryDataResolver={territoryDataResolver}
@@ -155,6 +185,7 @@ export function LifeMapViewport({
           assetResolver={assetResolver}
           cinematicEntrance={hybrid3D}
           dataVersion={dataVersion}
+          focusCameraTarget={focusCameraTarget}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />
@@ -171,12 +202,11 @@ export function LifeMapViewport({
         />
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(180deg,transparent,rgba(28,26,22,0.55))] px-4 pb-4 pt-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-white/80">
-          {communityLabel}
-        </p>
-        <p className="mt-1 max-w-[22rem] text-[14px] leading-snug text-white">
-          Explora lugares, actividades y servicios de tu comunidad.
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-[linear-gradient(180deg,transparent,rgba(22,20,16,0.5))] px-4 pb-4 pt-12">
+        <p className="text-[13px] font-medium text-white/90">
+          {objects.length > 0
+            ? "Toca un lugar para descubrirlo"
+            : "Tu comunidad, en vivo"}
         </p>
       </div>
     </section>

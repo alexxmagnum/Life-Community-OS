@@ -163,7 +163,9 @@ function applyPremiumPaint(
   }
   if (binding.type === "buildings" && softenBuildingFills) {
     try {
-      map.setPaintProperty(binding.layerId, "fill-opacity", 0.18);
+      // Slightly soft so 3D heroes read on top — territory remains visible.
+      map.setPaintProperty(binding.layerId, "fill-opacity", 0.82);
+      map.setPaintProperty(binding.layerId, "fill-outline-color", "#a89f90");
     } catch {
       // ignore
     }
@@ -176,8 +178,22 @@ function applyPremiumPaint(
       map.setPaintProperty(
         binding.layerId,
         "fill-opacity",
-        binding.type === "water" ? 0.28 : 0.22,
+        binding.type === "water" ? 0.88 : 0.72,
       );
+    } catch {
+      // ignore
+    }
+  }
+  if (softenEnvironmentFills && binding.type === "roads") {
+    try {
+      map.setPaintProperty(binding.layerId, "line-opacity", 0.92);
+    } catch {
+      // ignore
+    }
+  }
+  if (softenEnvironmentFills && binding.type === "boundary") {
+    try {
+      map.setPaintProperty(binding.layerId, "line-opacity", 0.5);
     } catch {
       // ignore
     }

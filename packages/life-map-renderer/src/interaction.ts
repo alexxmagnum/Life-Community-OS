@@ -27,6 +27,8 @@ export type LifeMapContextPanelModel = {
   heroTone?: string;
   /** Optional image URL from domain when available later. */
   imageUrl?: string;
+  /** Human address line from Location SoT. */
+  address?: string;
 };
 
 const CATEGORY_HINT: Record<LifeMapObject["type"], string> = {

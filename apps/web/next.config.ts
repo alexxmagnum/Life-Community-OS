@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
     "@life-community-os/design-tokens",
     "@life-community-os/tenant-life-panoramica",
     "@life-community-os/assets",
+    "@life-community-os/life-map-renderer",
+    "@life-community-os/life-map-renderer-maplibre",
+    "@life-community-os/life-map-renderer-3d-layer",
+    "@life-community-os/life-map-renderer-three",
+    "@life-community-os/life-map-provider-osm",
+    "@life-community-os/address-geocoder",
   ],
   images: {
     remotePatterns: [

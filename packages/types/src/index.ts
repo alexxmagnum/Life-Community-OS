@@ -11,6 +11,17 @@ export {
   createLocation,
 } from "./domain/location";
 
+/** Location discovery — LocalEntity is a view of Location. */
+export {
+  localEntityKindFromLocation,
+  locationTypeFromLocalKind,
+  locationToLocalEntity,
+  locationsToLocalEntities,
+  listNearYouFromLocations,
+  listTrustedHelpFromLocations,
+  filterLocationsByLocalKinds,
+} from "./domain/location-discovery";
+
 /** Address geocoder contract helpers. */
 export { validateAddressGeocodeQuery } from "./platform/address-geocoder";
 

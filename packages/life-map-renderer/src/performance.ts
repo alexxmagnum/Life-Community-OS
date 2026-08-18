@@ -15,17 +15,17 @@ export type LifeMapPerformanceBudget = {
 
 export const LIFE_MAP_PERFORMANCE_BUDGETS = {
   mobile: {
-    maxBuildingMeshes: 120,
-    maxVegetationInstances: 24,
-    maxSpatialMarkers: 24,
+    maxBuildingMeshes: 70,
+    maxVegetationInstances: 18,
+    maxSpatialMarkers: 32,
     maxPixelRatio: 1.5,
     enableShadows: false,
     enableAntialias: false,
     lodRebuildZoomDelta: 0.55,
   },
   desktop: {
-    maxBuildingMeshes: 400,
-    maxVegetationInstances: 48,
+    maxBuildingMeshes: 120,
+    maxVegetationInstances: 36,
     maxSpatialMarkers: 80,
     maxPixelRatio: 2,
     enableShadows: true,

@@ -166,19 +166,28 @@ export const lifePanoramicaLifeMapBaseLayers: readonly LifeMapBaseLayer[] =
   projectedBaseLayers.layers;
 
 /**
- * Prepared camera — WGS84 center/bounds from real roads + buildings extracts.
+ * Prepared camera — community social core (IKON / club / pool), not empty GIS frame.
  */
+const communityFocusLocal = { x: -6, y: 14 };
+const communityFocusGeo = projectLifePanoramicaLocalMetersToGeo(
+  communityFocusLocal,
+);
+
 const lifePanoramicaPreparedCamera = {
-  target: territoryCenter,
-  distance: 1600,
-  headingDegrees: -16,
-  pitchDegrees: 28,
+  target: {
+    lat: communityFocusGeo.lat,
+    lng: communityFocusGeo.lng,
+  },
+  /** Community twin distance → human-scale walkable framing. */
+  distance: 300,
+  headingDegrees: -18,
+  pitchDegrees: 60,
 };
 
 export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {
   atmosphere: "dusk",
   groundDetail: "soft",
-  showLabelsByDefault: true,
+  showLabelsByDefault: false,
   accentToken: "cyan",
 };
 

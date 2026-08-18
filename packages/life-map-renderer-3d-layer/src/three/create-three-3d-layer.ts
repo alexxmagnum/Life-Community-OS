@@ -15,7 +15,6 @@ import {
   AmbientLight,
   Color,
   DirectionalLight,
-  FogExp2,
   Group,
   HemisphereLight,
   PerspectiveCamera,
@@ -70,7 +69,7 @@ import {
   createEnvironmentPadMesh,
   createVegetationInstances,
 } from "./environment-meshes";
-import { createLifeOsSpatialMesh } from "./life-os-meshes";
+import { createLifeOsSpatialMesh, setLifeOsSpatialSelected } from "./life-os-meshes";
 import {
   buildingVariantIndex,
   createBuildingMaterials,
@@ -244,6 +243,13 @@ export function createThreeLifeMap3DLayer(
         renderables.set(id, { ...r, selected: selectedId === id });
       }
     }
+    // Place heroes — soft scale/emissive, never GIS recolor.
+    for (const [id, entry] of renderables) {
+      if (entry.kind !== "spatial-marker" || !entry.handle) continue;
+      const group = entry.handle as Group;
+      setLifeOsSpatialSelected(group, selectedId === id);
+      renderables.set(id, { ...entry, selected: selectedId === id });
+    }
   }
 
   function applyVolumePresence(): void {
@@ -258,10 +264,11 @@ export function createThreeLifeMap3DLayer(
       environmentGroup.scale.set(1, Math.max(amount * 0.85, 0.04), 1);
     }
     if (spatialGroup) {
-      spatialGroup.visible = amount > 0.2;
+      // Life OS places must always read — never fade with volume heuristics.
+      spatialGroup.visible = true;
     }
     if (terrainGroup) {
-      terrainGroup.visible = amount > 0.02;
+      terrainGroup.visible = false;
     }
 
     const baseOpacity =
@@ -279,9 +286,9 @@ export function createThreeLifeMap3DLayer(
       mat.needsUpdate = true;
     }
     if (envMaterials) {
-      envMaterials.water.opacity = 0.68 * Math.max(amount, 0.2);
-      envMaterials.green.opacity = 0.5 * Math.max(amount, 0.2);
-      envMaterials.terrain.opacity = 0.32 * Math.max(amount, 0.15);
+      envMaterials.water.opacity = 0.18 * Math.max(amount, 0.35);
+      envMaterials.green.opacity = 0.12 * Math.max(amount, 0.3);
+      envMaterials.terrain.opacity = 0.04;
       envMaterials.water.needsUpdate = true;
       envMaterials.green.needsUpdate = true;
       envMaterials.terrain.needsUpdate = true;
@@ -317,20 +324,48 @@ export function createThreeLifeMap3DLayer(
     const camX = perspective?.position.x ?? 0;
     const camZ = perspective?.position.z ?? 0;
 
-    const maxBuildings = budget.maxBuildingMeshes;
-    const buildingList =
-      input.buildings.length > maxBuildings
-        ? input.buildings.slice(0, maxBuildings)
-        : input.buildings;
+    const maxBuildings = Math.min(
+      budget.maxBuildingMeshes,
+      // Scene fabric only — places own the read.
+      (input.spatialObjects?.length ?? 0) > 0 ? 28 : 40,
+    );
 
-    for (const feature of buildingList) {
-      const resolved = resolveBuildingHeight(feature, defaultHeight);
+    const placeLocals = (input.spatialObjects ?? []).map((obj) =>
+      lngLatToLocalMeters(obj.position.lng, obj.position.lat, origin),
+    );
+
+    const rankedBuildings = input.buildings.map((feature) => {
       const local = lngLatToLocalMeters(
         feature.footprint[0]?.[0] ?? origin.lng,
         feature.footprint[0]?.[1] ?? origin.lat,
         origin,
       );
-      const distance = horizontalDistanceMeters(local.x, local.z, camX, camZ);
+      let nearest = Number.POSITIVE_INFINITY;
+      for (const place of placeLocals) {
+        const d = horizontalDistanceMeters(local.x, local.z, place.x, place.z);
+        if (d < nearest) nearest = d;
+      }
+      if (!Number.isFinite(nearest)) {
+        nearest = horizontalDistanceMeters(local.x, local.z, camX, camZ);
+      }
+      return { feature, local, nearest };
+    });
+    rankedBuildings.sort((a, b) => a.nearest - b.nearest);
+
+    const nearPlaces = rankedBuildings.filter((item) => item.nearest <= 90);
+    const buildingList = (
+      nearPlaces.length >= 6 ? nearPlaces : rankedBuildings
+    ).slice(0, maxBuildings);
+
+    for (const item of buildingList) {
+      const feature = item.feature;
+      const resolved = resolveBuildingHeight(feature, defaultHeight);
+      const distance = horizontalDistanceMeters(
+        item.local.x,
+        item.local.z,
+        camX,
+        camZ,
+      );
       const lod = resolveLifeMap3DLod(distance, lodPolicy);
       if (lod === "culled") continue;
 
@@ -480,13 +515,11 @@ export function createThreeLifeMap3DLayer(
       envMaterials = createEnvironmentMaterials();
 
       threeScene = new Scene();
+      // Transparent overlay — real MapLibre Earth shows through.
       threeScene.background = null;
-      threeScene.fog = new FogExp2(
-        0xe6e0d2,
-        quality === "mobile" ? 0.0015 : 0.00105,
-      );
+      threeScene.fog = null;
 
-      perspective = new PerspectiveCamera(50, 1, 1, 50_000);
+      perspective = new PerspectiveCamera(45, 1, 0.5, 25_000);
       rootGroup = new Group();
       rootGroup.name = "life-map-3d-world";
       threeScene.add(rootGroup);
@@ -502,13 +535,14 @@ export function createThreeLifeMap3DLayer(
       rootGroup.add(buildingsGroup);
       rootGroup.add(spatialGroup);
 
-      threeScene.add(new HemisphereLight(0xfff6ea, 0xb5a68c, 0.72));
-      threeScene.add(new AmbientLight(0xffffff, 0.26));
+      // Soft daylight for premium places on real Earth.
+      threeScene.add(new HemisphereLight(0xf0f4ff, 0x3a4a40, 0.95));
+      threeScene.add(new AmbientLight(0xfff8ef, 0.45));
       const sun = new DirectionalLight(
-        0xfff1dc,
-        quality === "mobile" ? 0.78 : 1.05,
+        0xfff0d8,
+        quality === "mobile" ? 1.15 : 1.45,
       );
-      sun.position.set(180, 300, 110);
+      sun.position.set(140, 280, 90);
       if (softShadows) {
         sun.castShadow = true;
         sun.shadow.mapSize.set(1024, 1024);

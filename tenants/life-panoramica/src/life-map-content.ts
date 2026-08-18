@@ -44,7 +44,7 @@ export const LIFE_PANORAMICA_SPATIAL_ASSET_KEYS = {
   terraza: "place.restaurant.spatial_object",
   golfClub: "recreation.golf.spatial_object",
   pool: "recreation.pool.spatial_object",
-  clubhouse: "place.cafe.spatial_object",
+  clubhouse: "place.clubhouse.spatial_object",
   gardenService: "place.service.spatial_object",
   lockService: "place.service.spatial_object",
   vetService: "place.service.spatial_object",

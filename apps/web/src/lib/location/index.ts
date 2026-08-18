@@ -6,7 +6,9 @@ export {
   removeLocation,
   clearLocations,
   subscribeLocations,
+  hydrateLocations,
 } from "./location-store";
+export { ensureCatalogLocations } from "./seed-catalog-locations";
 export {
   projectLocationToLifeMapObject,
   projectLocationsToLifeMapObjects,
@@ -34,3 +36,11 @@ export type {
   LocationExperienceType,
   LocationExperienceRepresentation,
 } from "./experience-resolver";
+export { demoPlaceProfileFor } from "./demo-place-profile";
+export type { DemoPlaceProfile } from "./demo-place-profile";
+export {
+  cameraPoseFromLocations,
+  heroLocationsForFirstFrame,
+  placeToneForCategory,
+  placeShortLabelForCategory,
+} from "./camera-from-locations";

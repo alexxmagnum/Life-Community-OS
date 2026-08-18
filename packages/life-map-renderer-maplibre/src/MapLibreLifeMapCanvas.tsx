@@ -32,10 +32,9 @@ import {
   computeVolumePresence,
   detectLifeMapRenderQuality,
   LIFE_MAP_PREMIUM_CAMERA,
-  LIFE_MAP_PREMIUM_PALETTE,
-  LIFE_MAP_PREMIUM_STYLE,
   lifeMapPixelRatioForQuality,
   MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
+  resolveLifeMapBasemapStyle,
 } from "./premium-style";
 import { MAPLIBRE_OBJECTS_LAYER_ID } from "./object-frontier";
 
@@ -59,7 +58,34 @@ export type MapLibreLifeMapCanvasProps = {
   cinematicEntrance?: boolean;
   /** Opaque pack version for cache / telemetry. */
   dataVersion?: string;
+  /** Ease camera to this WGS84 point when selection/focus changes. */
+  focusCameraTarget?: { lat: number; lng: number } | null;
 };
+
+/** Composition: first frame locks onto IKON (primary place). */
+function heroSpatialForFirstFrame(
+  objects: readonly LifeMap3DSpatialObject[],
+): readonly LifeMap3DSpatialObject[] {
+  const ikon =
+    objects.find((item) => (item.label ?? "").toLowerCase().includes("ikon")) ??
+    objects.find((item) =>
+      (item.asset3DKey ?? "").toLowerCase().includes("restaurant"),
+    );
+  if (ikon) return [ikon];
+  const pool = objects.find((item) =>
+    (item.asset3DKey ?? "").toLowerCase().includes("pool"),
+  );
+  if (pool) return [pool];
+  return objects.slice(0, 1);
+}
+
+function averageSpatialCenter(
+  objects: readonly LifeMap3DSpatialObject[],
+): { lat: number; lng: number } | null {
+  if (objects.length === 0) return null;
+  const anchor = objects[0]!;
+  return { lat: anchor.position.lat, lng: anchor.position.lng };
+}
 
 function readMapLibreView(map: MapLibreMap) {
   const center = map.getCenter();
@@ -99,6 +125,7 @@ export function MapLibreLifeMapCanvas({
   assetResolver,
   cinematicEntrance = true,
   dataVersion = "v1",
+  focusCameraTarget = null,
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -112,6 +139,12 @@ export function MapLibreLifeMapCanvas({
   spatialRef.current = spatialObjects;
   const onSelectRef = useRef(onObjectSelect);
   onSelectRef.current = onObjectSelect;
+  const focusSkipFirst = useRef(true);
+  const envSnapshotRef = useRef<{
+    buildings: ReturnType<typeof buildingFeaturesFromGeoJson>;
+    water: LifeMap3DEnvironmentFeature[];
+    green: LifeMap3DEnvironmentFeature[];
+  } | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -123,10 +156,11 @@ export function MapLibreLifeMapCanvas({
       id: "life-map.maplibre.preview",
       style: technicalBasemap
         ? MAPLIBRE_TECHNICAL_PREVIEW_STYLE
-        : LIFE_MAP_PREMIUM_STYLE,
+        : resolveLifeMapBasemapStyle(),
       softenBuildingFills: hybrid3DOverlay,
       softenEnvironmentFills: hybrid3DOverlay,
       enablePremiumInteraction: !hybrid3DOverlay,
+      hideObjectCircles: hybrid3DOverlay,
       ...(territoryDataResolver ? { territoryDataResolver } : {}),
     });
     rendererRef.current = renderer;
@@ -151,32 +185,52 @@ export function MapLibreLifeMapCanvas({
       await waitForMap();
       if (cancelled) return;
 
-      // Cinematic entrance — arrive into the community (not "open map").
-      const openPitch = LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
+      // Prefer Location cluster from scene camera (set by product), not territory bounds.
+      const focus = sceneRef.current.camera.pose;
+      const spatial = spatialRef.current;
+      const openPitch =
+        focus.pitchDegrees ?? LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees;
+      let focusCenter =
+        typeof (focus.target as { lng?: number }).lng === "number" &&
+        typeof (focus.target as { lat?: number }).lat === "number"
+          ? {
+              lng: (focus.target as { lng: number }).lng,
+              lat: (focus.target as { lat: number }).lat,
+            }
+          : map.getCenter();
+      if (spatial.length > 0) {
+        const heroCenter = averageSpatialCenter(heroSpatialForFirstFrame(spatial));
+        if (heroCenter) focusCenter = heroCenter;
+      }
+      const focusZoom = LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom;
+      const focusBearing =
+        focus.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing;
+
       if (cinematicEntrance) {
-        const center = map.getCenter();
-        const zoom = map.getZoom();
-        const bearing = map.getBearing();
         map.jumpTo({
-          center,
-          zoom: Math.max(3, zoom - LIFE_MAP_PREMIUM_CAMERA.entranceStartZoomDelta),
+          center: focusCenter,
+          zoom: Math.max(
+            LIFE_MAP_PREMIUM_CAMERA.explorationMinZoom - 0.35,
+            focusZoom - LIFE_MAP_PREMIUM_CAMERA.entranceStartZoomDelta,
+          ),
           pitch: LIFE_MAP_PREMIUM_CAMERA.entranceStartPitch,
           bearing:
-            bearing + LIFE_MAP_PREMIUM_CAMERA.entranceStartBearingOffset,
+            focusBearing + LIFE_MAP_PREMIUM_CAMERA.entranceStartBearingOffset,
         });
         map.easeTo({
-          center,
-          zoom,
+          center: focusCenter,
+          zoom: focusZoom,
           pitch: openPitch,
-          bearing,
+          bearing: focusBearing,
           duration: LIFE_MAP_PREMIUM_CAMERA.entranceDurationMs,
           essential: true,
         });
-      } else if (map.getPitch() < openPitch - 2) {
-        map.easeTo({
+      } else {
+        map.jumpTo({
+          center: focusCenter,
+          zoom: focusZoom,
           pitch: openPitch,
-          duration: LIFE_MAP_PREMIUM_CAMERA.hybridPitchDurationMs,
-          essential: true,
+          bearing: focusBearing,
         });
       }
 
@@ -221,6 +275,8 @@ export function MapLibreLifeMapCanvas({
         }
       }
 
+      envSnapshotRef.current = { buildings: [], water: [], green: [] };
+
       const cacheHint = {
         territoryId: currentScene.territoryId,
         version: dataVersion,
@@ -231,23 +287,26 @@ export function MapLibreLifeMapCanvas({
         selectable: true,
         quality,
         pixelRatio: lifeMapPixelRatioForQuality(quality),
-        showTerrain: true,
-        showEnvironment: true,
+        showTerrain: false,
+        showEnvironment: false,
         showSpatialObjects: true,
         ...(assetResolver ? { assetResolver } : {}),
         buildingMaterial: {
-          color: LIFE_MAP_PREMIUM_PALETTE.buildings,
-          selectedColor: LIFE_MAP_PREMIUM_PALETTE.buildingsSelected,
-          hoverColor: LIFE_MAP_PREMIUM_PALETTE.buildingsHover,
-          opacity: 0.94,
+          color: "#5a564c",
+          selectedColor: "#2f9aa0",
+          hoverColor: "#6a665c",
+          opacity: 0.12,
         },
       });
       layer3dRef.current = layer3d;
       layer3d.mount({ element: overlayHost });
+      // Real Earth is the product surface — never mute the basemap.
+      map.getCanvas().style.opacity = "1";
+      map.getCanvas().style.filter = "";
 
-      // Progressive load: volumes first, then environment pads.
+      // Premium 3D places sit on real coordinates; MapLibre owns the world.
       layer3d.setInput({
-        buildings,
+        buildings: [],
         water: [],
         green: [],
         spatialObjects: [...spatialRef.current],
@@ -261,52 +320,28 @@ export function MapLibreLifeMapCanvas({
         featureCount: buildings.length,
         cacheKey: lifeMapCacheKey(cacheHint, "buildings"),
       });
-
-      if (!cancelled && (water.length > 0 || green.length > 0)) {
-        layer3d.setInput({
-          buildings,
-          water,
-          green,
-          spatialObjects: [...spatialRef.current],
-          scene: currentScene,
-          camera: currentScene.camera,
-        });
-        emitLifeMapTelemetry({
-          type: "life_map.layer_loaded",
-          tenantId: currentScene.tenantId,
-          layer: "environment",
-          featureCount: water.length + green.length,
-          cacheKey: lifeMapCacheKey(cacheHint, "environment"),
-        });
-      }
       layer3d.syncMapLibreView?.(readMapLibreView(map));
       layer3d.setVolumePresence?.(
-        computeVolumePresence(map.getZoom(), map.getPitch()),
+        Math.max(0.92, computeVolumePresence(map.getZoom(), map.getPitch())),
       );
       if (selectedObjectId) {
         layer3d.setSelected(selectedObjectId);
       }
 
-      const syncSpatialCamera = () => {
-        const view = readMapLibreView(map);
-        layer3d.syncMapLibreView?.(view);
-        layer3d.setVolumePresence?.(
-          computeVolumePresence(view.zoom, view.pitchDegrees),
-        );
-        // Customer demo: do not auto-fight the user's pitch after entrance.
-        // Volume presence alone keeps the 3D read stable.
-      };
-
       const onMove = () => {
         const view = readMapLibreView(map);
         layer3d.syncMapLibreView?.(view);
         layer3d.setVolumePresence?.(
-          computeVolumePresence(view.zoom, view.pitchDegrees),
+          Math.max(0.85, computeVolumePresence(view.zoom, view.pitchDegrees)),
         );
       };
 
       const onZoomEnd = () => {
-        syncSpatialCamera();
+        const view = readMapLibreView(map);
+        layer3d.syncMapLibreView?.(view);
+        layer3d.setVolumePresence?.(
+          Math.max(0.85, computeVolumePresence(view.zoom, view.pitchDegrees)),
+        );
       };
 
       const onMouseMove = (event: MapMouseEvent) => {
@@ -413,9 +448,59 @@ export function MapLibreLifeMapCanvas({
     rendererRef.current?.setScene(scene);
   }, [scene]);
 
+  // Keep 3D place heroes in sync when Locations arrive/change.
+  useEffect(() => {
+    const layer = layer3dRef.current;
+    const map = rendererRef.current?.getMap();
+    const env = envSnapshotRef.current;
+    if (!layer || !env) return;
+    layer.setInput({
+      buildings: [],
+      water: [],
+      green: [],
+      spatialObjects: [...spatialObjects],
+      scene,
+      camera: scene.camera,
+    });
+    if (map && spatialObjects.length > 0) {
+      const heroCenter = averageSpatialCenter(
+        heroSpatialForFirstFrame(spatialObjects),
+      );
+      if (!heroCenter) return;
+      map.easeTo({
+        center: [heroCenter.lng, heroCenter.lat],
+        zoom: LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom,
+        pitch:
+          scene.camera.pose.pitchDegrees ??
+          LIFE_MAP_PREMIUM_CAMERA.hybridPitchDegrees,
+        bearing:
+          scene.camera.pose.headingDegrees ??
+          LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing,
+        duration: 900,
+        essential: true,
+      });
+    }
+  }, [spatialObjects, scene]);
+
   useEffect(() => {
     layer3dRef.current?.setSelected(selectedObjectId ?? null);
   }, [selectedObjectId]);
+
+  useEffect(() => {
+    if (!focusCameraTarget) return;
+    if (focusSkipFirst.current) {
+      focusSkipFirst.current = false;
+      return;
+    }
+    const map = rendererRef.current?.getMap();
+    if (!map) return;
+    map.easeTo({
+      center: [focusCameraTarget.lng, focusCameraTarget.lat],
+      zoom: Math.max(map.getZoom(), LIFE_MAP_PREMIUM_CAMERA.communityFocusZoom),
+      duration: 900,
+      essential: true,
+    });
+  }, [focusCameraTarget]);
 
   return (
     <div

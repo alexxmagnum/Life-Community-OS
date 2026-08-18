@@ -21,7 +21,7 @@ export type LifeMap3DBuildingHeightResult = {
 };
 
 /** Soft premium fallback when no real height exists (community-scale, not skyscraper). */
-export const LIFE_MAP_3D_VISUAL_FALLBACK_HEIGHT_METERS = 7.5;
+export const LIFE_MAP_3D_VISUAL_FALLBACK_HEIGHT_METERS = 12;
 
 /**
  * Read height from opaque GeoJSON-like properties when present.

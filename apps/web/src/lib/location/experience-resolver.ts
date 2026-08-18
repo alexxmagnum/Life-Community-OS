@@ -12,6 +12,7 @@ import type {
 } from "@life-community-os/types";
 
 import { locationCategoryLabel } from "./category-labels";
+import { demoPlaceProfileFor } from "./demo-place-profile";
 
 /**
  * Stable experience vocabulary for any tenant Location.
@@ -74,7 +75,8 @@ function experienceTypeFor(
     key.includes("electrician") ||
     key.includes("veterinary") ||
     key.includes("vet") ||
-    key.includes("service")
+    key.includes("service") ||
+    key.includes("garden")
   ) {
     return "professional_service";
   }
@@ -102,6 +104,27 @@ function experienceTypeFor(
     default:
       return "restaurant";
   }
+}
+
+function representationKeyFor(
+  category: string,
+  experienceType: LocationExperienceType,
+): string {
+  const key = category.trim().toLowerCase();
+  if (key.includes("pool") || key.includes("piscina")) {
+    return "recreation.pool.spatial_object";
+  }
+  if (key.includes("golf")) return "recreation.golf.spatial_object";
+  if (key.includes("padel") || key.includes("sports")) {
+    return "recreation.padel.spatial_object";
+  }
+  if (key.includes("electrician") || key.includes("service")) {
+    return "place.service.spatial_object";
+  }
+  if (key.includes("restaurant") || key.includes("lounge")) {
+    return "place.restaurant.spatial_object";
+  }
+  return profileFor(experienceType).representationKey;
 }
 
 function profileFor(
@@ -151,10 +174,9 @@ function profileFor(
       };
     case "community_facility":
       return {
-        summary:
-          "Instalación comunitaria. Explora la ficha y cómo llegar.",
+        summary: "Instalación comunitaria. Explora la ficha y cómo llegar.",
         heroTone: "#5a9a70",
-        representationKey: "recreation.padel.spatial_object",
+        representationKey: "recreation.pool.spatial_object",
         futureVisualKey: "experience.community_facility.visual",
       };
     case "community_event":
@@ -191,14 +213,18 @@ export function resolveLocationExperience(
 ): LocationExperienceRepresentation {
   const experienceType = experienceTypeFor(location.category, location.type);
   const profile = profileFor(experienceType);
+  const demo = demoPlaceProfileFor({
+    id: location.id,
+    name: location.name,
+  });
   return {
     experienceType,
     categoryLabel: locationCategoryLabel(location.category),
     typeHint: TYPE_HINT[location.type] ?? "Lugar",
-    summary: profile.summary,
+    summary: demo?.summary ?? profile.summary,
     heroTone: profile.heroTone,
     availableActions: actionsFor(location),
-    representationKey: profile.representationKey,
+    representationKey: representationKeyFor(location.category, experienceType),
     futureVisualKey: profile.futureVisualKey,
   };
 }
@@ -218,6 +244,8 @@ export function openLocationContact(contact: string | undefined): boolean {
     href = `mailto:${value}`;
   } else if (/^[\d\s+().-]{6,}$/.test(value)) {
     href = `tel:${value.replace(/[^\d+]/g, "")}`;
+  } else if (/^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i.test(value)) {
+    href = `https://${value}`;
   } else {
     return false;
   }

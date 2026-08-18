@@ -45,20 +45,29 @@ export function inferLifeMap3DAssetVisualKind(
 ): LifeMap3DAssetVisualKind {
   const key = asset3DKey.toLowerCase();
   if (key.includes("restaurant") || key.includes("ikon")) return "restaurant";
-  if (key.includes("cafe") || key.includes("clubhouse")) return "cafe";
+  if (key.includes("clubhouse")) return "clubhouse";
+  if (key.includes("cafe") || key.includes("terraza")) return "cafe";
   if (key.includes("shop") || key.includes("market") || key.includes("bakery"))
     return "shop";
-  if (key.includes("pool")) return "pool";
+  if (key.includes("pool") || key.includes("piscina")) return "pool";
   if (key.includes("golf")) return "golf";
-  if (key.includes("padel") || key.includes("tennis")) return "padel";
+  if (
+    key.includes("padel") ||
+    key.includes("tennis") ||
+    key.includes("sports") ||
+    key.includes("recreation.")
+  ) {
+    return "padel";
+  }
   if (key.includes("security")) return "security";
   if (key.includes("alert")) return "alert";
   if (key.includes("gathering") || key.includes("event")) return "event";
-  if (key.includes("path") || key.includes("nature")) return "path";
-  if (key.includes("service") || key.includes("garden")) return "service";
+  if (key.includes("path") || key.includes("nature") || key.includes("mirador"))
+    return "path";
+  if (key.includes("service") || key.includes("garden") || key.includes("facility"))
+    return "service";
   if (key.includes("house") || key.includes("building")) return "house";
   if (key.includes("place.")) return "restaurant";
-  if (key.includes("recreation.")) return "golf";
   return "generic";
 }
 

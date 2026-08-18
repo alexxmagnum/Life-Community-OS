@@ -1,9 +1,9 @@
 /**
  * MapLibre implementation of LifeMapRenderer.
  *
- * Territorial foundation: empty style + base-layer binder + camera.
+ * Real-world basemap + base-layer binder + camera.
  * Optional TerritoryDataResolver injects resolved GeoJSON into sources.
- * No OSM fetch, no API keys, no tenant pack imports.
+ * No tenant pack imports.
  */
 
 import {
@@ -43,7 +43,7 @@ import {
   type MapLibreObjectBinding,
   syncMapLibreObjectFrontier,
 } from "./object-frontier";
-import { LIFE_MAP_PREMIUM_STYLE } from "./premium-style";
+import { LIFE_MAP_PREMIUM_CAMERA, resolveLifeMapBasemapStyle } from "./premium-style";
 
 function resolveHostElement(host: LifeMapRendererHost): HTMLElement {
   if (host.element instanceof HTMLElement) {
@@ -87,6 +87,11 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
    * Default true. Hybrid hosts may disable and own picking in Three.
    */
   enablePremiumInteraction?: boolean;
+  /**
+   * Hide MapLibre object circles (hybrid 3D owns place visuals).
+   * Hit data remains in the source when needed.
+   */
+  hideObjectCircles?: boolean;
 };
 
 /**
@@ -119,6 +124,7 @@ export function createMapLibreLifeMapRenderer(
   let hasOpenedCamera = false;
   const softenBuildingFills = options.softenBuildingFills === true;
   const softenEnvironmentFills = options.softenEnvironmentFills === true;
+  const hideObjectCircles = options.hideObjectCircles === true;
 
   const resolver =
     options.territoryDataResolver ?? createNullTerritoryDataResolver();
@@ -162,7 +168,11 @@ export function createMapLibreLifeMapRenderer(
         softenBuildingFills,
         softenEnvironmentFills,
       });
-      objectBindings = syncMapLibreObjectFrontier([...objects.values()], map);
+      objectBindings = syncMapLibreObjectFrontier([...objects.values()], map, {
+        hidden: hideObjectCircles,
+        // HTML place chips own names in hybrid — avoid duplicate GIS labels.
+        showPlaceLabels: !hideObjectCircles,
+      });
 
       interaction?.detach();
       interaction = null;
@@ -174,6 +184,8 @@ export function createMapLibreLifeMapRenderer(
         applyLifeMapCameraToMapLibre(map, camera, {
           immediate: !hasOpenedCamera ? false : true,
           durationMs: hasOpenedCamera ? 0 : undefined,
+          // Community pose must not be GIS-capped below focus zoom.
+          maxZoom: LIFE_MAP_PREMIUM_CAMERA.maxFitZoom,
         });
         hasOpenedCamera = true;
       }
@@ -218,9 +230,10 @@ export function createMapLibreLifeMapRenderer(
 
       map = new MapLibreMap({
         container: hostEl,
-        style: options.style ?? LIFE_MAP_PREMIUM_STYLE,
+        style: options.style ?? resolveLifeMapBasemapStyle(),
         center: [0, 0],
         zoom: 2,
+        maxPitch: 85,
         attributionControl: false,
         interactive: true,
         fadeDuration: 280,
@@ -295,7 +308,10 @@ export function createMapLibreLifeMapRenderer(
       }
       if (scene) {
         scene = { ...scene, objects: [...objects.values()] };
-        objectBindings = syncMapLibreObjectFrontier([...objects.values()], map);
+        objectBindings = syncMapLibreObjectFrontier([...objects.values()], map, {
+          hidden: hideObjectCircles,
+          showPlaceLabels: !hideObjectCircles,
+        });
       }
     },
 

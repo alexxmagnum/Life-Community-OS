@@ -1,8 +1,8 @@
 /**
- * Multi-tenant Location repository (demo persistence).
+ * Client Location repository — cache + server API.
  *
- * Location is the map SoT. Storage is keyed by tenantId — never hardcodes
- * a community. Swap for Supabase later without changing map projection.
+ * Source of truth is the server (file store and/or Supabase).
+ * localStorage is only a short-lived offline cache, never the product SoT.
  */
 
 import {
@@ -11,23 +11,28 @@ import {
   type Location,
 } from "@life-community-os/types";
 
-const STORAGE_PREFIX = "lcos.locations.v1:";
+const CACHE_PREFIX = "lcos.locations.cache.v2:";
 
 type Listener = () => void;
 
 const memoryByTenant = new Map<string, Location[]>();
 const listeners = new Set<Listener>();
+const inflightHydrate = new Map<string, Promise<void>>();
 
-function storageKey(tenantId: string): string {
-  return `${STORAGE_PREFIX}${tenantId}`;
+function cacheKey(tenantId: string): string {
+  return `${CACHE_PREFIX}${tenantId}`;
 }
 
-function readStorage(tenantId: string): Location[] {
+function notify(): void {
+  for (const listener of listeners) listener();
+}
+
+function readCache(tenantId: string): Location[] {
   if (typeof window === "undefined") {
     return memoryByTenant.get(tenantId) ?? [];
   }
   try {
-    const raw = window.localStorage.getItem(storageKey(tenantId));
+    const raw = window.localStorage.getItem(cacheKey(tenantId));
     if (!raw) return memoryByTenant.get(tenantId) ?? [];
     const parsed = JSON.parse(raw) as Location[];
     if (!Array.isArray(parsed)) return [];
@@ -38,15 +43,19 @@ function readStorage(tenantId: string): Location[] {
   }
 }
 
-function writeStorage(tenantId: string, locations: Location[]): void {
+function writeCache(tenantId: string, locations: Location[]): void {
   memoryByTenant.set(tenantId, locations);
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(storageKey(tenantId), JSON.stringify(locations));
-  } catch {
-    // Quota / private mode — keep memory only.
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(
+        cacheKey(tenantId),
+        JSON.stringify(locations),
+      );
+    } catch {
+      // ignore quota
+    }
   }
-  for (const listener of listeners) listener();
+  notify();
 }
 
 export function subscribeLocations(listener: Listener): () => void {
@@ -56,7 +65,7 @@ export function subscribeLocations(listener: Listener): () => void {
 
 export function listLocations(tenantId: string): Location[] {
   if (!tenantId.trim()) return [];
-  return [...readStorage(tenantId.trim())];
+  return [...(memoryByTenant.get(tenantId.trim()) ?? readCache(tenantId.trim()))];
 }
 
 export function getLocation(
@@ -68,30 +77,98 @@ export function getLocation(
   );
 }
 
-export function saveLocation(input: CreateLocationInput): Location {
-  const location = createLocation(input);
-  const tenantId = location.tenantId;
-  const existing = listLocations(tenantId);
-  const next = [
-    ...existing.filter((item) => item.id !== location.id),
-    location,
-  ];
-  writeStorage(tenantId, next);
-  return location;
-}
-
-export function removeLocation(tenantId: string, locationId: string): void {
-  const next = listLocations(tenantId).filter((item) => item.id !== locationId);
-  writeStorage(tenantId.trim(), next);
-}
-
-export function clearLocations(tenantId: string): void {
-  writeStorage(tenantId.trim(), []);
-}
-
-/** Visible map locations for a tenant (public + members for demo). */
 export function listVisibleMapLocations(tenantId: string): Location[] {
   return listLocations(tenantId).filter(
     (item) => item.visibility === "public" || item.visibility === "members",
+  );
+}
+
+export async function hydrateLocations(tenantId: string): Promise<Location[]> {
+  const id = tenantId.trim();
+  if (!id) return [];
+  const existing = inflightHydrate.get(id);
+  if (existing) {
+    await existing;
+    return listLocations(id);
+  }
+  const task = (async () => {
+    try {
+      const res = await fetch(
+        `/api/locations?tenantId=${encodeURIComponent(id)}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return;
+      const data = (await res.json()) as { locations?: Location[] };
+      if (Array.isArray(data.locations)) {
+        writeCache(id, data.locations);
+      }
+    } catch {
+      // keep cache
+    } finally {
+      inflightHydrate.delete(id);
+    }
+  })();
+  inflightHydrate.set(id, task);
+  await task;
+  return listLocations(id);
+}
+
+export async function saveLocation(
+  input: CreateLocationInput,
+): Promise<Location> {
+  const optimistic = createLocation(input);
+  const tenantId = optimistic.tenantId;
+  const existing = listLocations(tenantId);
+  writeCache(tenantId, [
+    ...existing.filter((item) => item.id !== optimistic.id),
+    optimistic,
+  ]);
+
+  try {
+    const res = await fetch("/api/locations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(optimistic),
+    });
+    if (res.ok) {
+      const data = (await res.json()) as { location: Location };
+      const next = [
+        ...listLocations(tenantId).filter((item) => item.id !== data.location.id),
+        data.location,
+      ];
+      writeCache(tenantId, next);
+      return data.location;
+    }
+  } catch {
+    // optimistic retained
+  }
+  return optimistic;
+}
+
+export async function removeLocation(
+  tenantId: string,
+  locationId: string,
+): Promise<void> {
+  const id = tenantId.trim();
+  writeCache(
+    id,
+    listLocations(id).filter((item) => item.id !== locationId),
+  );
+  try {
+    await fetch(
+      `/api/locations/${encodeURIComponent(locationId)}?tenantId=${encodeURIComponent(id)}`,
+      { method: "DELETE" },
+    );
+  } catch {
+    // cache already updated
+  }
+}
+
+export async function clearLocations(tenantId: string): Promise<void> {
+  const id = tenantId.trim();
+  const current = listLocations(id);
+  writeCache(id, []);
+  await Promise.all(
+    current.map((item) => removeLocation(id, item.id).catch(() => undefined)),
   );
 }
