@@ -21,8 +21,13 @@ import {
   type ReactionKind,
 } from "@life-community-os/tenant-life-panoramica";
 import { useTenant } from "./TenantProvider";
+import {
+  hydrateDurableState,
+  pushDurableState,
+} from "@/lib/durable/client";
 
 const STORAGE_KEY = "lcos:community-interactions";
+const DURABLE_KEY = "community-interactions";
 
 type LocalOverrides = {
   /** User-created published posts */
@@ -77,6 +82,7 @@ function readStorage(): LocalOverrides {
 function writeStorage(data: LocalOverrides) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  pushDurableState(DURABLE_KEY, data);
 }
 
 function mergeContent(
@@ -107,8 +113,22 @@ export function CommunityInteractionProvider({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setOverrides(readStorage());
-    setHydrated(true);
+    let cancelled = false;
+    void (async () => {
+      const remote = await hydrateDurableState<LocalOverrides>(DURABLE_KEY);
+      if (cancelled) return;
+      if (remote) {
+        const merged = { ...emptyOverrides(), ...remote };
+        setOverrides(merged);
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      } else {
+        setOverrides(readStorage());
+      }
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

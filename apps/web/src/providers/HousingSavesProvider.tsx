@@ -9,8 +9,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  hydrateDurableState,
+  pushDurableState,
+} from "@/lib/durable/client";
 
 const SAVED_STORAGE_KEY = "lcos:housing-saves";
+const DURABLE_KEY = "housing-saves";
 
 type HousingSavesContextValue = {
   savedIds: readonly string[];
@@ -39,6 +44,7 @@ function readSavedIds(): string[] {
 function writeSavedIds(ids: string[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(ids));
+  pushDurableState(DURABLE_KEY, ids);
 }
 
 export function HousingSavesProvider({ children }: { children: ReactNode }) {
@@ -46,8 +52,21 @@ export function HousingSavesProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setSavedIds(readSavedIds());
-    setReady(true);
+    let cancelled = false;
+    void (async () => {
+      const remote = await hydrateDurableState<string[]>(DURABLE_KEY);
+      if (cancelled) return;
+      if (Array.isArray(remote)) {
+        setSavedIds(remote);
+        window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(remote));
+      } else {
+        setSavedIds(readSavedIds());
+      }
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const isSaved = useCallback(

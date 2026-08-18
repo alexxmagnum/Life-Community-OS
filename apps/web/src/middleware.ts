@@ -14,6 +14,7 @@ const PUBLIC_PREFIXES = [
   "/api/auth",
   "/api/locations",
   "/api/housing",
+  "/api/durable",
   "/_next",
   "/favicon",
   "/assets",

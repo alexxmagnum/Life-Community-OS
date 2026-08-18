@@ -16,9 +16,14 @@ import {
   type Experience,
   type ExperienceViewerState,
 } from "@life-community-os/tenant-life-panoramica";
+import {
+  hydrateDurableState,
+  pushDurableState,
+} from "@/lib/durable/client";
 
 const STORAGE_KEY = "lcos:experience-participations";
 const SAVED_STORAGE_KEY = "lcos:experience-saves";
+const DURABLE_KEY = "experience-participation";
 
 export type ParticipationRecord = {
   experienceId: string;
@@ -83,6 +88,13 @@ function writeSavedIds(ids: string[]) {
   window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(ids));
 }
 
+function pushExperienceDurable(
+  records: ParticipationMap,
+  savedIds: string[],
+) {
+  pushDurableState(DURABLE_KEY, { records, savedIds });
+}
+
 export function ExperienceParticipationProvider({
   children,
 }: {
@@ -93,15 +105,43 @@ export function ExperienceParticipationProvider({
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setRecords(readStorage());
-    setSavedIds(readSavedIds());
-    setHydrated(true);
+    let cancelled = false;
+    void (async () => {
+      const remote = await hydrateDurableState<{
+        records?: ParticipationMap;
+        savedIds?: string[];
+      }>(DURABLE_KEY);
+      if (cancelled) return;
+      if (remote?.records) {
+        setRecords(remote.records);
+        window.localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(remote.records),
+        );
+      } else {
+        setRecords(readStorage());
+      }
+      if (remote?.savedIds) {
+        setSavedIds(remote.savedIds);
+        window.localStorage.setItem(
+          SAVED_STORAGE_KEY,
+          JSON.stringify(remote.savedIds),
+        );
+      } else {
+        setSavedIds(readSavedIds());
+      }
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
     writeStorage(records);
-  }, [records, hydrated]);
+    pushExperienceDurable(records, savedIds);
+  }, [records, savedIds, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;

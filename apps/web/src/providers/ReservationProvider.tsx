@@ -17,8 +17,13 @@ import {
   type ReservationStatus,
   type TimeSlot,
 } from "@life-community-os/tenant-life-panoramica";
+import {
+  hydrateDurableState,
+  pushDurableState,
+} from "@/lib/durable/client";
 
 const STORAGE_KEY = "lcos:resource-reservations";
+const DURABLE_KEY = "reservations";
 
 type ReservationStore = {
   reservations: Reservation[];
@@ -58,6 +63,7 @@ function readStore(): ReservationStore {
 function writeStore(store: ReservationStore) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  pushDurableState(DURABLE_KEY, store);
 }
 
 function withDerivedStatus(r: Reservation): Reservation {
@@ -69,8 +75,21 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setStore(readStore());
-    setHydrated(true);
+    let cancelled = false;
+    void (async () => {
+      const remote = await hydrateDurableState<ReservationStore>(DURABLE_KEY);
+      if (cancelled) return;
+      if (remote?.reservations) {
+        setStore(remote);
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(remote));
+      } else {
+        setStore(readStore());
+      }
+      setHydrated(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
