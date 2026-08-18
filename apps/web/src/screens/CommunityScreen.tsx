@@ -81,9 +81,11 @@ export function CommunityHubScreen() {
     hasCapability,
     demoPersonId,
     theme,
+    tenantSlug,
   } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
+  const isPanoramica = tenantSlug === "life-panoramica";
 
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandPlaza, setExpandPlaza] = useState(false);
@@ -103,14 +105,18 @@ export function CommunityHubScreen() {
     [feedItems],
   );
 
-  const alerts = useMemo(() => listActiveCommunityAlerts(), []);
+  const alerts = useMemo(
+    () => (isPanoramica ? listActiveCommunityAlerts() : []),
+    [isPanoramica],
+  );
 
   /** Participation items — proposals open or about to close. */
   const participation = useMemo(() => {
+    if (!isPanoramica) return [] as typeof feedItems;
     return listParticipacionContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById]);
+  }, [feedById, isPanoramica]);
 
   /** Layer 1 — decisions with a deadline are the only promoted proposals. */
   const closingSoon = useMemo(
@@ -125,33 +131,47 @@ export function CommunityHubScreen() {
 
   /** Ahora — actualidad catalog (existing), live titles via feed. */
   const actualidadItems = useMemo(() => {
+    if (!isPanoramica) {
+      return feedItems.filter((c) => Boolean(c.isOfficial));
+    }
     return listActualidadContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById]);
+  }, [feedById, feedItems, isPanoramica]);
 
   /** Official notices — full Belong Oficial list (existing catalog). */
   const officialNotices = useMemo(() => {
+    if (!isPanoramica) return [] as typeof feedItems;
     return listOfficialContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById]);
+  }, [feedById, isPanoramica]);
 
-  const groupItems = useMemo(() => listGroups(), []);
-  const accessibleChannels = useMemo(
-    () => listAccessibleChannels(demoPersonId),
-    [demoPersonId],
+  const groupItems = useMemo(
+    () => (isPanoramica ? listGroups() : []),
+    [isPanoramica],
   );
-  const espacios = useMemo(() => listEspaciosComunitarios(), []);
-  const officialEntities = useMemo(() => listOfficialEntities(), []);
+  const accessibleChannels = useMemo(
+    () => (isPanoramica ? listAccessibleChannels(demoPersonId) : []),
+    [demoPersonId, isPanoramica],
+  );
+  const espacios = useMemo(
+    () => (isPanoramica ? listEspaciosComunitarios() : []),
+    [isPanoramica],
+  );
+  const officialEntities = useMemo(
+    () => (isPanoramica ? listOfficialEntities() : []),
+    [isPanoramica],
+  );
   const experienceCount = catalogExperiences.length;
   const mascotasItems = useMemo(() => {
+    if (!isPanoramica) return [];
     try {
       return listMascotasHubItems();
     } catch {
       return [];
     }
-  }, []);
+  }, [isPanoramica]);
 
   const tabParam = searchParams.get("tab");
   const resolvedTab = resolveCommunityHubArea(tabParam);
