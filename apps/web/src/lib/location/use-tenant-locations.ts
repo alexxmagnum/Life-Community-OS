@@ -49,9 +49,11 @@ export function useTenantLocations(tenantId: string): {
       const catalog = await ensureCatalogLocations(tenantId);
       if (cancelled) return;
       if (catalog.error) setSeedError(catalog.error);
-      const result = await ensureExampleIkonLocation(tenantId);
-      if (cancelled) return;
-      if (result.error) setSeedError(result.error);
+      if (tenantId.trim() === "life-panoramica") {
+        const result = await ensureExampleIkonLocation(tenantId);
+        if (cancelled) return;
+        if (result.error) setSeedError(result.error);
+      }
       await hydrateLocations(tenantId);
       if (cancelled) return;
       setSeedReady(true);
