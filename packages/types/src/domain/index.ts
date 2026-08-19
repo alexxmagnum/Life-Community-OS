@@ -19,6 +19,19 @@ export {
   validateLocation,
   createLocation,
 } from "./location";
+export type {
+  BusinessProfile,
+  BusinessProfileStatus,
+  BusinessProfileIssue,
+  BusinessProfileIssueCode,
+  CreateBusinessProfileInput,
+} from "./business-profile";
+export {
+  BUSINESS_PROFILE_STATUSES,
+  isBusinessProfileStatus,
+  validateBusinessProfile,
+  createBusinessProfile,
+} from "./business-profile";
 export {
   localEntityKindFromLocation,
   locationTypeFromLocalKind,

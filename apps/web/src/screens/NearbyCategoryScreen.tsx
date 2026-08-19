@@ -35,7 +35,7 @@ export function NearbyCategoryScreen({ category }: { category: string }) {
   const entities = useMemo(() => {
     if (!hub || !canLocal) return [];
     return filterLocationsByLocalKinds(
-      allLocations,
+      allLocations.filter((item) => item.visibility !== "private"),
       hub.entityKinds,
       query,
     ).map(locationToLocalEntity);

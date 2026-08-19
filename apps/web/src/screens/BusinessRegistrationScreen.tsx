@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Business registration — name + category + address → geocode → Location → map.
+ * Business registration — identity + geocoded Location (draft until review).
  * Tenant-neutral; works for any community.
  */
 
@@ -17,11 +17,8 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import {
-  getAddressGeocoder,
-  LOCATION_CATEGORY_OPTIONS,
-  saveLocation,
-} from "@/lib/location";
+import { getAddressGeocoder, LOCATION_CATEGORY_OPTIONS } from "@/lib/location";
+import { createBusinessRequest, publishBusinessRequest } from "@/lib/business/business-client";
 import { useTenant } from "@/providers/TenantProvider";
 
 const TYPE_LABEL: Record<LocationType, string> = {
@@ -36,7 +33,10 @@ function defaultTypeForCategory(category: string): LocationType {
   if (category === "facility" || category === "sports") return "facility";
   if (
     category === "electrician" ||
+    category === "plumber" ||
     category === "veterinary" ||
+    category === "gardening" ||
+    category === "maintenance" ||
     category === "service"
   ) {
     return "service";
@@ -107,7 +107,7 @@ export function BusinessRegistrationScreen() {
     setSaving(true);
     setError(null);
     try {
-      const location = await saveLocation({
+      const created = await createBusinessRequest({
         tenantId,
         type,
         name: name.trim(),
@@ -115,15 +115,27 @@ export function BusinessRegistrationScreen() {
         latitude: preview.latitude,
         longitude: preview.longitude,
         category,
-        visibility: "public",
         geocodeProvider: preview.provider,
         geocodeSourceRef: preview.sourceRef,
         geocodeDisplayName: preview.displayName,
         ...(contact.trim() ? { contact: contact.trim() } : {}),
-        ...(summary.trim() ? { summary: summary.trim() } : {}),
+        ...(summary.trim() ? { description: summary.trim() } : {}),
         ...(hours.trim() ? { hours: hours.trim() } : {}),
       });
-      router.push(`/map?focus=${encodeURIComponent(location.id)}`);
+      if ("error" in created) {
+        setError(
+          created.error === "unauthorized"
+            ? "Inicia sesión para registrar un negocio."
+            : "No se pudo guardar el negocio.",
+        );
+        setSaving(false);
+        return;
+      }
+      await publishBusinessRequest({
+        tenantId,
+        businessId: created.business.id,
+      });
+      router.push(`/locations/${encodeURIComponent(created.locationId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar.");
       setSaving(false);
@@ -134,7 +146,7 @@ export function BusinessRegistrationScreen() {
     <MobileScreen>
       <FlowScreenHeader
         title="Registrar negocio"
-        subtitle="Aparecerá en el mapa de tu comunidad"
+        subtitle="Quedará en borrador hasta que un administrador lo publique"
         onBack={() => router.push("/map")}
         onExit={() => router.push("/map")}
       />
@@ -148,7 +160,7 @@ export function BusinessRegistrationScreen() {
             className={fieldClass}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Ej. IKON Sports & Lounge"
+            placeholder="Nombre comercial"
             autoComplete="organization"
           />
         </label>
@@ -261,7 +273,7 @@ export function BusinessRegistrationScreen() {
               Confirmación
             </p>
             <p className="mt-2 text-[16px] font-semibold text-[var(--color-text-primary)]">
-              Esta ubicación aparecerá aquí
+              Esta ubicación se vinculará al negocio
             </p>
             <p className="mt-1 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
               {confirmationLine}
@@ -280,7 +292,7 @@ export function BusinessRegistrationScreen() {
       </section>
 
       <ScreenPrimaryAction
-        label={saving ? "Publicando…" : "Publicar en el mapa"}
+        label={saving ? "Guardando…" : "Enviar a revisión"}
         onClick={() => void onSave()}
         disabled={!canConfirm || saving}
       />

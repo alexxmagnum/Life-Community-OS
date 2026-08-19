@@ -12,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "tsx --test ./src/domain/location-discovery.test.ts ./src/platform/membership-role.test.ts ./src/platform/tenant-contract.test.ts"
+    "test": "tsx --test ./src/domain/location-discovery.test.ts ./src/domain/business-profile.test.ts ./src/platform/membership-role.test.ts ./src/platform/tenant-contract.test.ts"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",

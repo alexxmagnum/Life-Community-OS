@@ -2,12 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { MembershipRole } from "@life-community-os/types";
+import type { BusinessProfile, MembershipRole } from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
 } from "@life-community-os/ui";
+import {
+  fetchBusinesses,
+  reviewBusinessRequest,
+} from "@/lib/business/business-client";
 import { useTenantLocations } from "@/lib/location";
 import {
   listRegisteredTenantSlugs,
@@ -56,6 +60,10 @@ export function AdminScreen() {
   const [busyPersonId, setBusyPersonId] = useState<string | null>(null);
 
   const canAdmin = role === "administrator";
+  const canStaff = role === "administrator" || role === "moderator";
+  const [pendingBusinesses, setPendingBusinesses] = useState<BusinessProfile[]>(
+    [],
+  );
 
   const refreshMembers = useCallback(async () => {
     if (!canAdmin) return;
@@ -81,9 +89,35 @@ export function AdminScreen() {
     }
   }, [canAdmin, tenantSlug]);
 
+  const refreshBusinesses = useCallback(async () => {
+    if (!canStaff) return;
+    const [pending, drafts] = await Promise.all([
+      fetchBusinesses({
+        tenantId: tenantSlug,
+        status: "pending_review",
+      }),
+      fetchBusinesses({
+        tenantId: tenantSlug,
+        status: "draft",
+      }),
+    ]);
+    const seen = new Set<string>();
+    setPendingBusinesses(
+      [...pending, ...drafts].filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return item.status === "pending_review" || item.status === "draft";
+      }),
+    );
+  }, [canStaff, tenantSlug]);
+
   useEffect(() => {
     void refreshMembers();
   }, [refreshMembers]);
+
+  useEffect(() => {
+    void refreshBusinesses();
+  }, [refreshBusinesses]);
 
   const changeRole = async (personId: string, nextRole: MembershipRole) => {
     setBusyPersonId(personId);
@@ -102,7 +136,7 @@ export function AdminScreen() {
     }
   };
 
-  if (!canAdmin) {
+  if (!canStaff) {
     return (
       <MobileScreen>
         <FlowScreenHeader
@@ -115,7 +149,7 @@ export function AdminScreen() {
           description={
             authenticated
               ? "Necesitas un rol de administrador en esta comunidad."
-              : "Únete a la comunidad desde Perfil y pide rol administrador."
+              : "Únete a la comunidad desde Perfil y pide rol de moderación."
           }
           actionLabel="Ir a perfil"
           onAction={() => router.push("/me")}
@@ -167,6 +201,7 @@ export function AdminScreen() {
           </div>
         </div>
 
+        {canAdmin ? (
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
             Miembros y permisos ({members.length})
@@ -212,6 +247,79 @@ export function AdminScreen() {
             ))}
           </ul>
         </div>
+        ) : null}
+
+        <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
+          <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
+            Negocios pendientes ({pendingBusinesses.length})
+          </p>
+          <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+            Revisión tenant-scoped. Publicar pone el pin en el mapa.
+          </p>
+          {pendingBusinesses.length === 0 ? (
+            <p className="mt-3 text-[13px] text-[var(--color-text-secondary)]">
+              No hay negocios en borrador o revisión.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {pendingBusinesses.map((item) => (
+                <li
+                  key={item.id}
+                  className="rounded-[12px] border border-[var(--color-border-subtle)] px-3 py-2"
+                >
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() =>
+                      router.push(`/locations/${item.locationId}`)
+                    }
+                  >
+                    <span className="block text-[15px] font-medium text-[var(--color-text-primary)]">
+                      {item.name}
+                    </span>
+                    <span className="block text-[13px] text-[var(--color-text-tertiary)]">
+                      {item.category} · {item.status} · {item.ownerPersonId}
+                    </span>
+                  </button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                      onClick={() =>
+                        void (async () => {
+                          await reviewBusinessRequest({
+                            tenantId: tenantSlug,
+                            businessId: item.id,
+                            action: "approve",
+                          });
+                          await refreshBusinesses();
+                        })()
+                      }
+                    >
+                      Publicar
+                    </button>
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-full border border-[var(--color-border-subtle)] px-3 text-[13px] font-semibold"
+                      onClick={() =>
+                        void (async () => {
+                          await reviewBusinessRequest({
+                            tenantId: tenantSlug,
+                            businessId: item.id,
+                            action: "suspend",
+                          });
+                          await refreshBusinesses();
+                        })()
+                      }
+                    >
+                      Suspender
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="rounded-[16px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
@@ -245,7 +353,7 @@ export function AdminScreen() {
           className="flex min-h-[48px] w-full items-center justify-center rounded-[14px] bg-[var(--color-action-primary)] px-4 text-[15px] font-semibold text-[var(--color-text-on-action,#fff)]"
           onClick={() => router.push("/business/register")}
         >
-          Publicar lugar
+          Registrar negocio
         </button>
       </section>
     </MobileScreen>

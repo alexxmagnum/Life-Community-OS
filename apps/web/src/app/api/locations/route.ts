@@ -38,7 +38,9 @@ export async function GET(request: Request) {
       ? scoped
       : scoped.filter(
           (item) =>
-            item.visibility === "public" || item.visibility === "members",
+            item.visibility === "public" ||
+            item.visibility === "members" ||
+            item.ownerId === actor.personId,
         )
     : scoped.filter((item) => item.visibility === "public");
   const filtered =
@@ -77,6 +79,8 @@ export async function POST(request: Request) {
       {
         ...body,
         tenantId: bound.tenantId,
+        ownerId: gated.actor.personId ?? undefined,
+        createdBy: gated.actor.personId ?? undefined,
       },
       persistenceScopeFromRequest(request, gated.actor.personId),
     );

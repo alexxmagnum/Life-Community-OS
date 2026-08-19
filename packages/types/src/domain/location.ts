@@ -73,6 +73,11 @@ export type Location = {
   ownerId?: DomainId;
   /** Person who first persisted this Location. */
   createdBy?: DomainId;
+  /**
+   * Optional Business Profile id when this Location is commercial presence.
+   * Coordinates stay here — never on the Business Profile.
+   */
+  businessId?: DomainId;
   createdAt?: IsoDateTimeString;
   updatedAt?: IsoDateTimeString;
 };
@@ -172,6 +177,7 @@ export type CreateLocationInput = {
   areaLabel?: string;
   ownerId?: DomainId;
   createdBy?: DomainId;
+  businessId?: DomainId;
   id?: DomainId;
 };
 
@@ -202,6 +208,7 @@ export function createLocation(input: CreateLocationInput): Location {
     ...(areaLabel ? { areaLabel } : {}),
     ...(input.ownerId?.trim() ? { ownerId: input.ownerId.trim() } : {}),
     ...(input.createdBy?.trim() ? { createdBy: input.createdBy.trim() } : {}),
+    ...(input.businessId?.trim() ? { businessId: input.businessId.trim() } : {}),
     createdAt: now,
     updatedAt: now,
   };

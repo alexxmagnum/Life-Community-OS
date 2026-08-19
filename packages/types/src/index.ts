@@ -14,6 +14,14 @@ export {
   createLocation,
 } from "./domain/location";
 
+/** Runtime helpers for Business Profile (commercial identity). */
+export {
+  BUSINESS_PROFILE_STATUSES,
+  isBusinessProfileStatus,
+  validateBusinessProfile,
+  createBusinessProfile,
+} from "./domain/business-profile";
+
 /** Location discovery — LocalEntity is a view of Location. */
 export {
   localEntityKindFromLocation,

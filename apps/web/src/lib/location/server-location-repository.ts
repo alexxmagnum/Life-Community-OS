@@ -32,6 +32,13 @@ export type LocationWriteScope = {
 
 const DATA_DIR = path.join(process.cwd(), ".data", "locations");
 
+function locationFixtureEnabled(): boolean {
+  return (
+    process.env.LCOS_LOCATION_FIXTURE === "1" ||
+    process.env.LCOS_BUSINESS_FIXTURE === "1"
+  );
+}
+
 function filePath(tenantSlug: string): string {
   return path.join(DATA_DIR, `${tenantSlug}.json`);
 }
@@ -83,6 +90,7 @@ type LocationRow = {
   area_label: string | null;
   owner_id: string | null;
   created_by: string | null;
+  business_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -114,6 +122,7 @@ function rowToLocation(row: LocationRow, tenantSlug: string): Location {
     ...(row.area_label ? { areaLabel: row.area_label } : {}),
     ...(row.owner_id ? { ownerId: row.owner_id } : {}),
     ...(row.created_by ? { createdBy: row.created_by } : {}),
+    ...(row.business_id ? { businessId: row.business_id } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -140,6 +149,7 @@ function locationToRow(location: Location, tenantUuid: string): LocationRow {
     area_label: location.areaLabel ?? null,
     owner_id: location.ownerId ?? null,
     created_by: location.createdBy ?? null,
+    business_id: location.businessId ?? null,
     created_at: location.createdAt ?? new Date().toISOString(),
     updated_at: location.updatedAt ?? new Date().toISOString(),
   };
@@ -213,6 +223,9 @@ export async function listLocationsServer(
   scope?: LocationWriteScope,
 ): Promise<Location[]> {
   const slug = resolveTenantPublicId(tenantId);
+  if (locationFixtureEnabled()) {
+    return readFileStore(slug);
+  }
   const fromDb = await listFromDatabase(slug, scope);
   if (fromDb) return fromDb;
   if (!isFilePersistenceAllowed()) {
@@ -245,8 +258,10 @@ export async function saveLocationServer(
     createdBy,
   });
   const slug = location.tenantId;
-  const wroteDb = await upsertDatabase(location, scope);
-  if (wroteDb) return location;
+  if (!locationFixtureEnabled()) {
+    const wroteDb = await upsertDatabase(location, scope);
+    if (wroteDb) return location;
+  }
   if (!isFilePersistenceAllowed()) {
     throw new PersistenceUnavailableError("Location write requires Postgres");
   }
@@ -265,8 +280,10 @@ export async function removeLocationServer(
   scope?: LocationWriteScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(tenantId);
-  const deleted = await deleteDatabase(slug, locationId, scope);
-  if (deleted) return;
+  if (!locationFixtureEnabled()) {
+    const deleted = await deleteDatabase(slug, locationId, scope);
+    if (deleted) return;
+  }
   if (!isFilePersistenceAllowed()) {
     throw new PersistenceUnavailableError("Location delete requires Postgres");
   }
@@ -292,4 +309,12 @@ export async function replaceLocationsServer(
   if (!isDatabaseConfigured() && isFilePersistenceAllowed()) {
     await writeFileStore(slug, locations);
   }
+}
+
+export async function replaceLocationsForTests(
+  tenantId: string,
+  locations: Location[] = [],
+): Promise<void> {
+  if (!isFilePersistenceAllowed()) return;
+  await writeFileStore(resolveTenantPublicId(tenantId), locations);
 }

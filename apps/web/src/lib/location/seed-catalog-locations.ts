@@ -130,6 +130,14 @@ export async function ensureCatalogLocations(
   let created = 0;
 
   for (const entity of localEntityCatalog) {
+    if (
+      entity.kind === "restaurant" ||
+      entity.kind === "cafe" ||
+      entity.kind === "shop" ||
+      entity.kind === "service"
+    ) {
+      continue;
+    }
     const locationId = catalogLocationId(entity.id, id);
     if (existing.some((item) => item.id === locationId)) continue;
     if (byName.has(entity.name.toLowerCase())) continue;

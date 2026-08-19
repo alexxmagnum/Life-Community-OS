@@ -22,6 +22,9 @@ const CATEGORY_TO_KIND: Record<string, LocalEntityKind> = {
   service: "service",
   electrician: "service",
   electrician_service: "service",
+  plumber: "service",
+  veterinary: "service",
+  maintenance: "service",
   jardinería: "service",
   gardening: "service",
   pool: "place",
@@ -73,9 +76,7 @@ export function locationToLocalEntity(location: Location): LocalEntity {
     categoryLabel: location.category,
     areaLabel: location.areaLabel?.trim() || "Comunidad",
     story: location.summary?.trim() || location.address,
-    imageUrl:
-      location.imageUrl?.trim() ||
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=80",
+    imageUrl: location.imageUrl?.trim() || "",
   };
 }
 

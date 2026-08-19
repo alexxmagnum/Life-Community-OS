@@ -12,8 +12,6 @@ import {
   listVisibleMapLocations,
   subscribeLocations,
 } from "./location-store";
-import { getTenantPack } from "@/lib/tenant/registry";
-import { ensureExampleIkonLocation } from "./example-ikon";
 import { ensureCatalogLocations } from "./seed-catalog-locations";
 
 export function useTenantLocations(tenantId: string): {
@@ -50,11 +48,6 @@ export function useTenantLocations(tenantId: string): {
       const catalog = await ensureCatalogLocations(tenantId);
       if (cancelled) return;
       if (catalog.error) setSeedError(catalog.error);
-      if (getTenantPack(tenantId)?.locationSeedMode === "local-entity-catalog") {
-        const result = await ensureExampleIkonLocation(tenantId);
-        if (cancelled) return;
-        if (result.error) setSeedError(result.error);
-      }
       await hydrateLocations(tenantId);
       if (cancelled) return;
       setSeedReady(true);

@@ -6,7 +6,6 @@ import { asset } from "@life-community-os/assets";
 import {
   formatContentWhen,
   getServicesCategoryBySlug,
-  listLocalEntitiesForKinds,
   listMobilityListings,
   listNeighbourHelpListings,
   listRecommendationsForHub,
@@ -17,7 +16,11 @@ import {
   workPostTypeLabel,
   type WorkPostListing,
 } from "@life-community-os/tenant-life-panoramica";
-import type { WorkPostType } from "@life-community-os/types";
+import {
+  filterLocationsByLocalKinds,
+  locationToLocalEntity,
+  type WorkPostType,
+} from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -29,7 +32,7 @@ import {
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { resolvePlaceHref } from "@/lib/location";
+import { resolvePlaceHref, useTenantLocations } from "@/lib/location";
 
 /**
  * Servicios hub — "I need something solved."
@@ -45,6 +48,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     demoPersonId,
     configuration,
   } = useTenant();
+  const { allLocations } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
   const [workPosts, setWorkPosts] = useState<WorkPostListing[]>([]);
@@ -69,10 +73,14 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!hub || hub.content.kind !== "local-entities") return [];
     if (!canLocal) return [];
     return rankLocalEntitiesForTerritory(
-      listLocalEntitiesForKinds(hub.content.entityKinds, query),
+      filterLocationsByLocalKinds(
+        allLocations.filter((item) => item.visibility !== "private"),
+        hub.content.entityKinds,
+        query,
+      ).map(locationToLocalEntity),
       demoPersonId,
     );
-  }, [hub, canLocal, query, demoPersonId]);
+  }, [hub, canLocal, query, demoPersonId, allLocations]);
 
   const neighbourHelp = useMemo(() => {
     if (!hub || hub.content.kind !== "neighbour-help") return [];

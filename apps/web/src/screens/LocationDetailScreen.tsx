@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Location ficha — Location SoT + Experience Resolver + lifestyle profile.
+ * Location ficha — Location SoT + optional Business Profile.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import type { BusinessProfile } from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -13,18 +14,32 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import {
-  demoPlaceProfileFor,
   openDirectionsUrl,
   openLocationContact,
   resolveLocationExperience,
   useTenantLocations,
 } from "@/lib/location";
+import { locationCategoryLabel } from "@/lib/location/category-labels";
+import {
+  fetchBusinesses,
+  patchBusinessRequest,
+  publishBusinessRequest,
+  reviewBusinessRequest,
+} from "@/lib/business/business-client";
 import { useTenant } from "@/providers/TenantProvider";
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Borrador",
+  pending_review: "Pendiente de revisión",
+  published: "Publicado",
+  suspended: "Suspendido",
+  archived: "Archivado",
+};
 
 export function LocationDetailScreen() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { configuration, role, tenantSlug } = useTenant();
+  const { configuration, role, tenantSlug, personId } = useTenant();
   const locationId = typeof params.id === "string" ? params.id : "";
   const { allLocations, seedReady, refresh } = useTenantLocations(
     configuration.tenantId,
@@ -34,8 +49,9 @@ export function LocationDetailScreen() {
   const [editHours, setEditHours] = useState<string | null>(null);
   const [editContact, setEditContact] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [business, setBusiness] = useState<BusinessProfile | null>(null);
 
-  const canManage = role === "administrator" || role === "moderator";
+  const isStaff = role === "administrator" || role === "moderator";
 
   const location = useMemo(
     () => allLocations.find((item) => item.id === locationId) ?? null,
@@ -47,19 +63,37 @@ export function LocationDetailScreen() {
     [location],
   );
 
+  const isOwner = Boolean(
+    personId &&
+      (location?.ownerId === personId ||
+        business?.ownerPersonId === personId),
+  );
+  const canManage = isStaff || isOwner;
+
   const profile = useMemo(() => {
     if (!location) return null;
-    const demo = demoPlaceProfileFor({
-      id: location.id,
-      name: location.name,
-    });
     return {
-      imageUrl: location.imageUrl ?? demo?.imageUrl,
-      summary: location.summary ?? demo?.summary,
-      hours: location.hours ?? demo?.hours,
-      contact: location.contact ?? demo?.contact,
+      imageUrl: business?.imageUrl ?? location.imageUrl,
+      summary: business?.description ?? location.summary,
+      hours: business?.hours ?? location.hours,
+      contact: business?.contact ?? location.contact,
     };
-  }, [location]);
+  }, [location, business]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const rows = await fetchBusinesses({
+        tenantId: configuration.tenantId,
+        locationId,
+      });
+      if (cancelled) return;
+      setBusiness(rows[0] ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, locationId]);
 
   if (!seedReady) {
     return (
@@ -100,29 +134,48 @@ export function LocationDetailScreen() {
     setSaving(true);
     setMessage(null);
     try {
-      const res = await fetch(
-        `/api/locations/${encodeURIComponent(location.id)}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "x-tenant-slug": tenantSlug,
+      if (business) {
+        const result = await patchBusinessRequest({
+          tenantId: tenantSlug,
+          businessId: business.id,
+          description: editSummary ?? business.description,
+          hours: editHours ?? business.hours,
+          contact: editContact ?? business.contact,
+        });
+        if ("error" in result) {
+          setMessage("No se pudo guardar. ¿Tienes permisos?");
+          return;
+        }
+      } else {
+        const res = await fetch(
+          `/api/locations/${encodeURIComponent(location.id)}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              "x-tenant-slug": tenantSlug,
+            },
+            body: JSON.stringify({
+              summary: editSummary ?? location.summary,
+              hours: editHours ?? location.hours,
+              contact: editContact ?? location.contact,
+            }),
           },
-          body: JSON.stringify({
-            summary: editSummary ?? location.summary,
-            hours: editHours ?? location.hours,
-            contact: editContact ?? location.contact,
-          }),
-        },
-      );
-      if (!res.ok) {
-        setMessage("No se pudo guardar. ¿Tienes permisos?");
-        return;
+        );
+        if (!res.ok) {
+          setMessage("No se pudo guardar. ¿Tienes permisos?");
+          return;
+        }
       }
       setMessage("Cambios guardados.");
       setEditSummary(null);
       setEditHours(null);
       setEditContact(null);
+      const rows = await fetchBusinesses({
+        tenantId: configuration.tenantId,
+        locationId,
+      });
+      setBusiness(rows[0] ?? null);
       await refresh?.();
     } finally {
       setSaving(false);
@@ -180,7 +233,7 @@ export function LocationDetailScreen() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(16,14,12,0.55)_100%)]" />
           <div className="absolute bottom-3 left-4 right-4">
             <p className="text-[12px] font-semibold uppercase tracking-[0.1em] text-white/85">
-              {experience.categoryLabel}
+              {locationCategoryLabel(location.category)}
             </p>
             <h1 className="mt-1 text-[22px] font-semibold text-white">
               {location.name}
@@ -191,6 +244,13 @@ export function LocationDetailScreen() {
         <p className="text-[15px] leading-relaxed text-[var(--color-text-secondary)]">
           {profile?.summary ?? experience.summary}
         </p>
+
+        {business ? (
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+            {STATUS_LABEL[business.status] ?? business.status}
+            {isStaff ? ` · propietario ${business.ownerPersonId}` : ""}
+          </p>
+        ) : null}
 
         {profile?.hours ? (
           <div className="rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
@@ -212,13 +272,13 @@ export function LocationDetailScreen() {
           </p>
         </div>
 
-        {location.contact ? (
+        {profile?.contact ? (
           <div className="rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
             <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
               Contacto
             </p>
             <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
-              {location.contact}
+              {profile.contact}
             </p>
           </div>
         ) : null}
@@ -226,14 +286,14 @@ export function LocationDetailScreen() {
         {canManage ? (
           <div className="space-y-3 rounded-[16px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] p-4">
             <p className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
-              Gestionar lugar
+              Gestionar {business ? "negocio" : "lugar"}
             </p>
             <label className="block text-[13px] text-[var(--color-text-secondary)]">
-              Resumen
+              Descripción
               <textarea
                 className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
                 rows={3}
-                value={editSummary ?? location.summary ?? ""}
+                value={editSummary ?? profile?.summary ?? ""}
                 onChange={(e) => setEditSummary(e.target.value)}
               />
             </label>
@@ -241,7 +301,7 @@ export function LocationDetailScreen() {
               Horario
               <input
                 className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
-                value={editHours ?? location.hours ?? ""}
+                value={editHours ?? profile?.hours ?? ""}
                 onChange={(e) => setEditHours(e.target.value)}
               />
             </label>
@@ -249,7 +309,7 @@ export function LocationDetailScreen() {
               Contacto
               <input
                 className="mt-1 w-full rounded-[12px] border border-[var(--color-border-subtle)] bg-transparent p-2 text-[15px]"
-                value={editContact ?? location.contact ?? ""}
+                value={editContact ?? profile?.contact ?? ""}
                 onChange={(e) => setEditContact(e.target.value)}
               />
             </label>
@@ -267,6 +327,82 @@ export function LocationDetailScreen() {
               >
                 Guardar
               </button>
+              {business && isOwner && business.status === "draft" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border-subtle)] px-4 text-[13px] font-semibold"
+                  onClick={() =>
+                    void (async () => {
+                      setSaving(true);
+                      await publishBusinessRequest({
+                        tenantId: tenantSlug,
+                        businessId: business.id,
+                      });
+                      const rows = await fetchBusinesses({
+                        tenantId: configuration.tenantId,
+                        locationId,
+                      });
+                      setBusiness(rows[0] ?? null);
+                      setSaving(false);
+                    })()
+                  }
+                >
+                  Solicitar publicación
+                </button>
+              ) : null}
+              {business && isStaff && business.status !== "published" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border-subtle)] px-4 text-[13px] font-semibold"
+                  onClick={() =>
+                    void (async () => {
+                      setSaving(true);
+                      await reviewBusinessRequest({
+                        tenantId: tenantSlug,
+                        businessId: business.id,
+                        action: "approve",
+                      });
+                      const rows = await fetchBusinesses({
+                        tenantId: configuration.tenantId,
+                        locationId,
+                      });
+                      setBusiness(rows[0] ?? null);
+                      await refresh?.();
+                      setSaving(false);
+                    })()
+                  }
+                >
+                  Publicar
+                </button>
+              ) : null}
+              {business && isStaff && business.status === "published" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border-subtle)] px-4 text-[13px] font-semibold"
+                  onClick={() =>
+                    void (async () => {
+                      setSaving(true);
+                      await reviewBusinessRequest({
+                        tenantId: tenantSlug,
+                        businessId: business.id,
+                        action: "suspend",
+                      });
+                      const rows = await fetchBusinesses({
+                        tenantId: configuration.tenantId,
+                        locationId,
+                      });
+                      setBusiness(rows[0] ?? null);
+                      await refresh?.();
+                      setSaving(false);
+                    })()
+                  }
+                >
+                  Suspender
+                </button>
+              ) : null}
               {role === "administrator" ? (
                 <button
                   type="button"
@@ -302,11 +438,11 @@ export function LocationDetailScreen() {
           >
             Cómo llegar
           </button>
-          {location.contact ? (
+          {profile?.contact ? (
             <button
               type="button"
               className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
-              onClick={() => openLocationContact(location.contact)}
+              onClick={() => openLocationContact(profile.contact)}
             >
               Contactar
             </button>
