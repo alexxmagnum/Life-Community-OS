@@ -16,6 +16,7 @@ import {
 import {
   findIdentityByProvider,
   findMembershipForPerson,
+  listMembershipsForProvider,
   upsertFileMembership,
   type StoredMembership,
 } from "./membership-store";
@@ -26,6 +27,9 @@ export type DomainMembershipResult = {
   territoryId: string;
   role: MembershipRole;
   source: "supabase" | "file";
+  tenantSlug?: string;
+  displayName?: string | null;
+  email?: string | null;
 };
 
 function territoryForTenant(tenantSlug: string): string {
@@ -194,6 +198,22 @@ export async function ensureDomainMembership(input: {
   };
 }
 
+export async function listMembershipsForAuthUser(input: {
+  providerReference: string;
+}): Promise<DomainMembershipResult[]> {
+  const rows = await listMembershipsForProvider(input.providerReference);
+  return rows.map(({ membership, identity }) => ({
+    personId: membership.personId,
+    membershipId: membership.id,
+    territoryId: membership.territoryId,
+    role: membership.role,
+    source: "file" as const,
+    tenantSlug: membership.tenantSlug,
+    displayName: identity.displayName,
+    email: identity.email,
+  }));
+}
+
 export async function resolveMembershipForAuthUser(input: {
   tenantSlug: string;
   providerReference: string;
@@ -215,6 +235,7 @@ export async function resolveMembershipForAuthUser(input: {
     territoryId: membership.territoryId,
     role: membership.role,
     source: "file",
+    tenantSlug,
   };
 }
 

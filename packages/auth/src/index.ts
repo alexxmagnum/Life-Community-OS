@@ -1,7 +1,25 @@
 /**
  * Authentication foundation — Supabase Auth when configured.
  * Server never trusts client-declared roles.
+ *
+ * Identity chain: User → Session → Person → Membership → Role → Permissions.
  */
+
+export {
+  EMPTY_CURRENT_USER,
+  authenticatedWithoutMembership,
+  currentUserFromMembership,
+  type AuthUser,
+  type CommunityPerson,
+  type CurrentUserContext,
+  type MembershipSummary,
+} from "./current-user";
+export {
+  bindActiveTenant,
+  membershipSummary,
+  type TenantBindResult,
+} from "./bind-active-tenant";
+export { isDemoIdentityEnabled, resolveJoinRole } from "./demo-identity";
 
 export type AuthSession = {
   userId: string;

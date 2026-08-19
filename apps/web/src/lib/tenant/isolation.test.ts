@@ -114,4 +114,63 @@ describe("write tenant binding", () => {
     assert.ok("tenantId" in result);
     assert.equal(result.tenantId, "life-valley");
   });
+
+  it("prefers actor tenant over a spoofed request slug", async () => {
+    const { resolveWriteTenantId } = await import("./resolve-write-tenant");
+    const request = new Request("http://localhost/api/locations", {
+      headers: { "x-tenant-slug": "life-valley" },
+    });
+    const result = resolveWriteTenantId({
+      request,
+      actorTenantSlug: "life-panoramica",
+      bodyTenantId: "life-valley",
+    });
+    assert.ok("error" in result);
+  });
+});
+
+describe("tenant slug allowlist", () => {
+  it("rejects path traversal and unknown tenants", async () => {
+    const { sanitizeTenantSlug, resolveTenantPublicId } = await import("./ids");
+    assert.equal(sanitizeTenantSlug("../etc/passwd"), null);
+    assert.equal(sanitizeTenantSlug("life-unknown"), null);
+    assert.equal(sanitizeTenantSlug("life-panoramica"), "life-panoramica");
+    assert.equal(sanitizeTenantSlug("life-valley"), "life-valley");
+    assert.equal(resolveTenantPublicId("../secret"), "life-panoramica");
+  });
+});
+
+describe("CASE 5 — read tenant bind", () => {
+  it("denies an authenticated Panoramica member reading Valley", async () => {
+    const { resolveReadTenantId } = await import("./resolve-read-tenant");
+    const { EMPTY_CURRENT_USER } = await import("@life-community-os/auth");
+    const request = new Request(
+      "http://localhost/api/locations?tenantId=life-valley",
+      { headers: { "x-tenant-slug": "life-valley" } },
+    );
+    const result = resolveReadTenantId({
+      request,
+      queryTenantId: "life-valley",
+      actor: {
+        authenticated: true,
+        hasMembership: true,
+        providerReference: "auth-alex",
+        personId: "person-alex",
+        role: "member",
+        tenantSlug: "life-panoramica",
+        membershipId: "mem-p",
+        permissions: [],
+        tenantDenied: false,
+        currentUser: {
+          ...EMPTY_CURRENT_USER,
+          authenticated: true,
+          hasMembership: true,
+          tenantId: "life-panoramica",
+          personId: "person-alex",
+          role: "member",
+        },
+      },
+    });
+    assert.ok("error" in result);
+  });
 });

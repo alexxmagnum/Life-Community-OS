@@ -11,7 +11,8 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "assets:generate": "pnpm --filter @life-community-os/assets generate",
     "assets:validate": "pnpm --filter @life-community-os/assets validate",
-    "assets:test": "pnpm --filter @life-community-os/assets test"
+    "assets:test": "pnpm --filter @life-community-os/assets test",
+    "test:identity": "pnpm --filter @life-community-os/auth test && pnpm --filter @life-community-os/web test:isolation"
   },
   "engines": {
     "node": ">=20"

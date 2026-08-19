@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { isAuthConfigured } from "@life-community-os/auth";
-import { coerceMembershipRole } from "@life-community-os/types";
 import { ensureDomainMembership } from "@/lib/auth/ensure-domain-membership";
+import { AUTH_COOKIE, setAuthCookie } from "@/lib/auth/session-cookies";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export const runtime = "nodejs";
 
 /**
  * Local membership join when Supabase Auth is not configured.
- * Creates Person+Identity+Membership in the durable file store.
+ * Role is never taken from the client.
  */
 export async function POST(request: Request) {
   if (isAuthConfigured()) {
@@ -24,13 +24,11 @@ export async function POST(request: Request) {
   let body: {
     email?: string;
     displayName?: string;
-    role?: string;
   };
   try {
     body = (await request.json()) as {
       email?: string;
       displayName?: string;
-      role?: string;
     };
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
@@ -48,7 +46,6 @@ export async function POST(request: Request) {
     providerReference,
     email,
     displayName: body.displayName?.trim() || email.split("@")[0] || null,
-    role: coerceMembershipRole(body.role),
   });
 
   const response = NextResponse.json({
@@ -59,22 +56,14 @@ export async function POST(request: Request) {
     personId: membership.personId,
     role: membership.role,
     membershipId: membership.membershipId,
+    hasMembership: true,
   });
-  response.cookies.set(
-    "lcos-local-identity",
+  setAuthCookie(
+    response,
+    AUTH_COOKIE.localIdentity,
     encodeURIComponent(providerReference),
-    {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 30,
-    },
+    60 * 60 * 24 * 30,
   );
-  response.cookies.set("lcos-tenant-slug", tenantSlug, {
-    httpOnly: false,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  setAuthCookie(response, AUTH_COOKIE.tenant, tenantSlug, 60 * 60 * 24 * 30, false);
   return response;
 }

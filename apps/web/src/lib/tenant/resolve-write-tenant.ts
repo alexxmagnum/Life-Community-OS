@@ -12,9 +12,8 @@ export function resolveWriteTenantId(input: {
   actorTenantSlug?: string | null;
 }): { tenantId: string } | { error: NextResponse } {
   const fromRequest = resolveTenantPublicId(
-    resolveRequestTenantSlug(input.request) ||
-      input.actorTenantSlug ||
-      "life-panoramica",
+    input.actorTenantSlug ||
+      resolveRequestTenantSlug(input.request),
   );
   if (input.bodyTenantId?.trim()) {
     const fromBody = resolveTenantPublicId(input.bodyTenantId);

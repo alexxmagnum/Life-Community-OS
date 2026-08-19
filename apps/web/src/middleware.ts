@@ -1,13 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAuthEnforced, isAuthConfigured } from "@life-community-os/auth";
-import { LIFE_PANORAMICA_TENANT_SLUG } from "@/lib/tenant/ids";
+import {
+  LIFE_PANORAMICA_TENANT_SLUG,
+  sanitizeTenantSlug,
+} from "@/lib/tenant/ids";
 
 /**
- * Request gate — bind tenant slug; optionally require Supabase session.
+ * Request gate — bind allowlisted tenant slug; optionally require session.
  * Keep this Edge-safe: no tenant pack imports.
  */
 
-/** Always reachable (auth UX + static). */
 const ALWAYS_PUBLIC_PREFIXES = [
   "/login",
   "/register",
@@ -18,10 +20,6 @@ const ALWAYS_PUBLIC_PREFIXES = [
   "/tenants",
 ];
 
-/**
- * Pilot-only anonymous API surface.
- * When `LCOS_AUTH_REQUIRED=true`, these require a session (cutover).
- */
 const PILOT_PUBLIC_API_PREFIXES = [
   "/api/geocode",
   "/api/locations",
@@ -43,21 +41,36 @@ function isPilotPublicApi(pathname: string): boolean {
 }
 
 function resolveTenantSlug(request: NextRequest): string {
-  const header = request.headers.get("x-tenant-slug")?.trim().toLowerCase();
+  const header = sanitizeTenantSlug(request.headers.get("x-tenant-slug"));
   if (header) return header;
-  const cookie = request.cookies.get("lcos-tenant-slug")?.value?.trim().toLowerCase();
+  const cookie = sanitizeTenantSlug(
+    request.cookies.get("lcos-tenant-slug")?.value,
+  );
   if (cookie) return cookie;
-  const query = request.nextUrl.searchParams.get("tenant")?.trim().toLowerCase();
+  const query = sanitizeTenantSlug(request.nextUrl.searchParams.get("tenant"));
   if (query) return query;
-  const fromEnv = process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG?.trim().toLowerCase();
+  const fromEnv = sanitizeTenantSlug(process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG);
   if (fromEnv) return fromEnv;
   return LIFE_PANORAMICA_TENANT_SLUG;
+}
+
+function isJwtUnexpired(token: string): boolean {
+  const parts = token.split(".");
+  if (parts.length < 2 || !parts[1]) return false;
+  try {
+    const padded = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(padded);
+    const payload = JSON.parse(json) as { exp?: number };
+    if (typeof payload.exp !== "number") return true;
+    return payload.exp * 1000 > Date.now() + 5000;
+  } catch {
+    return false;
+  }
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Internal tooling — never expose in production builds.
   if (
     process.env.NODE_ENV === "production" &&
     (pathname === "/dev" || pathname.startsWith("/dev/"))
@@ -85,7 +98,7 @@ export async function middleware(request: NextRequest) {
 
   if (authEnforced) {
     const accessToken = request.cookies.get("lcos-access-token")?.value;
-    if (!accessToken) {
+    if (!accessToken || !isJwtUnexpired(accessToken)) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }

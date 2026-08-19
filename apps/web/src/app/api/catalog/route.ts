@@ -9,8 +9,6 @@ import {
   writeCatalog,
   type CatalogDomain,
 } from "@/lib/catalog/server-catalog-repository";
-import { resolveTenantPublicId } from "@/lib/tenant/ids";
-import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export const runtime = "nodejs";
 
@@ -19,12 +17,19 @@ function isDomain(value: string): value is CatalogDomain {
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const tenantId = resolveTenantPublicId(
-    url.searchParams.get("tenantId") ??
-      resolveRequestTenantSlug(request) ??
-      "life-panoramica",
+  const { resolveRequestActor } = await import("@/lib/auth/request-actor");
+  const { resolveReadTenantId } = await import(
+    "@/lib/tenant/resolve-read-tenant"
   );
+  const actor = await resolveRequestActor(request);
+  const url = new URL(request.url);
+  const bound = resolveReadTenantId({
+    request,
+    queryTenantId: url.searchParams.get("tenantId"),
+    actor,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
   const domainParam = url.searchParams.get("domain");
 
   if (!domainParam || domainParam === "all") {

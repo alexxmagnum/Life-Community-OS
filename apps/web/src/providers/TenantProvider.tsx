@@ -9,10 +9,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { isDemoIdentityEnabled } from "@life-community-os/auth";
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
 import type { TenantThemeMode } from "@life-community-os/design-tokens";
 import {
-  coerceMembershipRole,
   isTenantModuleEnabled,
   type MembershipRole,
   type TenantConfiguration,
@@ -36,6 +36,9 @@ import {
   requireTenantPack,
   resolveActiveTenantSlug,
 } from "@/lib/tenant/registry";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
+
+type RoleSource = "membership" | "demo" | "guest";
 
 type TenantContextValue = {
   tenantSlug: string;
@@ -43,16 +46,15 @@ type TenantContextValue = {
   themeMode: TenantThemeMode;
   features: TenantFeatureFlags;
   configuration: TenantConfiguration;
-  /** Capability role — sourced from membership when authenticated. */
   role: DemoRole;
   /**
-   * Demo-only. No-op when a real membership session is active.
-   * @deprecated Prefer membership AuthZ from /api/auth/session
+   * Demo-only. No-op when a real membership session is active or in production.
    */
   setRole: (role: DemoRole) => void;
-  roleSource: "membership" | "demo";
+  roleSource: RoleSource;
   personId: string | null;
   authenticated: boolean;
+  hasMembership: boolean;
   demoPersonId: string;
   setDemoPersonId: (personId: string) => void;
   demoMember: DemoMemberProfile;
@@ -63,6 +65,27 @@ type TenantContextValue = {
 };
 
 const TenantReactContext = createContext<TenantContextValue | null>(null);
+
+const GUEST_VIEWER: DemoMemberProfile = {
+  personId: "",
+  displayName: "Invitado",
+  fullName: "Invitado",
+  membershipLabel: "Sin membresía",
+  areaLabel: "",
+  interests: [],
+  avatarUrl: "",
+  residencyStatusLabel: "Sin sesión",
+  residencyStatusKind: "pending",
+  narrativeKey: "marta",
+};
+
+function roleLabel(role: MembershipRole | null, brand: string): string {
+  if (role === "administrator") return `Administrador · ${brand}`;
+  if (role === "moderator") return `Moderador · ${brand}`;
+  if (role === "group_manager") return `Gestor de grupo · ${brand}`;
+  if (role === "member") return `Miembro · ${brand}`;
+  return `Invitado · ${brand}`;
+}
 
 export function resolveTenantConfiguration(
   slugHint?: string | null,
@@ -88,6 +111,8 @@ export function TenantProvider({
   children: ReactNode;
   tenantSlug?: string;
 }) {
+  const { currentUser } = useCurrentUser();
+  const demoEnabled = isDemoIdentityEnabled();
   const [tenantSlug, setTenantSlug] = useState(() =>
     resolveActiveTenantSlug(tenantSlugProp),
   );
@@ -95,19 +120,22 @@ export function TenantProvider({
   const theme = pack.theme;
   const features = pack.features;
   const configuration = useMemo(() => pack.resolveConfiguration(), [pack]);
-  const [role, setRoleState] = useState<DemoRole>("member");
-  const [roleSource, setRoleSource] = useState<"membership" | "demo">("demo");
-  const [personId, setPersonId] = useState<string | null>(null);
-  const [authenticated, setAuthenticated] = useState(false);
-  const [demoPersonId, setDemoPersonId] = useState<string>(DEMO_PERSON_MARTA);
+  const [demoRole, setDemoRole] = useState<DemoRole>("member");
+  const [demoPersonId, setDemoPersonIdState] = useState<string>(
+    DEMO_PERSON_MARTA,
+  );
 
   const themeMode: TenantThemeMode = theme.defaultMode ?? "day";
 
   useEffect(() => {
-    const hint = tenantSlugProp || readTenantHintFromBrowser();
+    const fromMembership = currentUser.hasMembership
+      ? currentUser.tenantId
+      : null;
+    const hint =
+      fromMembership || tenantSlugProp || readTenantHintFromBrowser();
     const next = resolveActiveTenantSlug(hint);
     setTenantSlug(next);
-  }, [tenantSlugProp]);
+  }, [currentUser.hasMembership, currentUser.tenantId, tenantSlugProp]);
 
   useEffect(() => {
     const vars = tenantThemeToCssVars(theme, themeMode);
@@ -120,56 +148,32 @@ export function TenantProvider({
     root.style.colorScheme = themeMode === "night" ? "dark" : "light";
   }, [theme, themeMode, tenantSlug]);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/auth/session", {
-          cache: "no-store",
-          headers: { "x-tenant-slug": tenantSlug },
-        });
-        const data = (await res.json()) as {
-          authenticated?: boolean;
-          role?: string | null;
-          personId?: string | null;
-          tenantSlug?: string;
-        };
-        if (cancelled) return;
-        if (data.tenantSlug && data.tenantSlug !== tenantSlug) {
-          setTenantSlug(resolveActiveTenantSlug(data.tenantSlug));
-        }
-        if (data.authenticated && data.role) {
-          setRoleState(coerceMembershipRole(data.role) as DemoRole);
-          setRoleSource("membership");
-          setPersonId(data.personId ?? null);
-          setAuthenticated(true);
-        } else {
-          setRoleSource("demo");
-          setPersonId(null);
-          setAuthenticated(false);
-        }
-      } catch {
-        if (!cancelled) {
-          setRoleSource("demo");
-          setAuthenticated(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [tenantSlug]);
+  const roleSource: RoleSource = currentUser.hasMembership
+    ? "membership"
+    : demoEnabled
+      ? "demo"
+      : "guest";
+
+  const role: DemoRole =
+    currentUser.hasMembership && currentUser.role
+      ? currentUser.role
+      : demoRole;
 
   const setRole = useCallback(
     (next: DemoRole) => {
-      if (roleSource === "membership") return;
-      const demoRolesEnabled =
-        process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "1" ||
-        process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "true";
-      if (!demoRolesEnabled) return;
-      setRoleState(next);
+      if (roleSource !== "demo") return;
+      if (!demoEnabled) return;
+      setDemoRole(next);
     },
-    [roleSource],
+    [demoEnabled, roleSource],
+  );
+
+  const setDemoPersonId = useCallback(
+    (personId: string) => {
+      if (!demoEnabled || currentUser.hasMembership) return;
+      setDemoPersonIdState(personId);
+    },
+    [currentUser.hasMembership, demoEnabled],
   );
 
   const caps = useMemo(
@@ -178,8 +182,13 @@ export function TenantProvider({
   );
 
   const hasCapability = useCallback(
-    (key: CapabilityKey | string) => caps.has(key as CapabilityKey),
-    [caps],
+    (key: CapabilityKey | string) => {
+      if (currentUser.hasMembership && currentUser.permissions.length > 0) {
+        return currentUser.permissions.includes(key);
+      }
+      return caps.has(key as CapabilityKey);
+    },
+    [caps, currentUser.hasMembership, currentUser.permissions],
   );
 
   const isFeatureEnabled = useCallback(
@@ -192,30 +201,54 @@ export function TenantProvider({
     [configuration],
   );
 
-  const demoMembers = useMemo(() => listDemoMembers(), []);
+  const demoMembers = useMemo(
+    () => (demoEnabled ? listDemoMembers() : []),
+    [demoEnabled],
+  );
+
   const demoMember = useMemo((): DemoMemberProfile => {
-    // Non-Panorámica tenants must not greet as Marta (Panorámica demo identity).
-    if (tenantSlug !== "life-panoramica") {
-      const brand = configuration.branding.name?.trim() || "Vecino";
+    if (currentUser.hasMembership && currentUser.personId) {
+      const brand = configuration.branding.name?.trim() || "Comunidad";
+      const name =
+        currentUser.displayName?.trim() ||
+        currentUser.email?.split("@")[0] ||
+        "Vecino";
       return {
-        personId: `person-guest-${tenantSlug}`,
-        displayName: brand,
-        fullName: brand,
-        membershipLabel: `Miembro · ${brand}`,
-        areaLabel: configuration.branding.name ?? brand,
+        personId: currentUser.personId,
+        displayName: name,
+        fullName: name,
+        membershipLabel: roleLabel(currentUser.role, brand),
+        areaLabel: theme.identity?.defaultAreaName || brand,
         interests: [],
-        avatarUrl:
-          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+        avatarUrl: "",
         residencyStatusLabel: "Miembro de la comunidad",
         residencyStatusKind: "verified",
         narrativeKey: "marta",
       };
     }
-    return (
-      getDemoMemberByPersonId(demoPersonId) ??
-      getDemoMemberByPersonId(DEMO_PERSON_MARTA)!
-    );
-  }, [demoPersonId, tenantSlug, configuration.branding.name]);
+    if (demoEnabled && tenantSlug === "life-panoramica") {
+      return (
+        getDemoMemberByPersonId(demoPersonId) ??
+        getDemoMemberByPersonId(DEMO_PERSON_MARTA)!
+      );
+    }
+    return {
+      ...GUEST_VIEWER,
+      areaLabel: configuration.branding.name ?? "",
+      membershipLabel: `Invitado · ${configuration.branding.name ?? "Comunidad"}`,
+    };
+  }, [
+    configuration.branding.name,
+    currentUser.displayName,
+    currentUser.email,
+    currentUser.hasMembership,
+    currentUser.personId,
+    currentUser.role,
+    demoEnabled,
+    demoPersonId,
+    tenantSlug,
+    theme.identity?.defaultAreaName,
+  ]);
 
   const value = useMemo(
     () => ({
@@ -227,9 +260,10 @@ export function TenantProvider({
       role,
       setRole,
       roleSource,
-      personId,
-      authenticated,
-      demoPersonId,
+      personId: currentUser.personId,
+      authenticated: currentUser.authenticated,
+      hasMembership: currentUser.hasMembership,
+      demoPersonId: demoMember.personId,
       setDemoPersonId,
       demoMember,
       demoMembers,
@@ -246,10 +280,11 @@ export function TenantProvider({
       role,
       setRole,
       roleSource,
-      personId,
-      authenticated,
-      demoPersonId,
+      currentUser.personId,
+      currentUser.authenticated,
+      currentUser.hasMembership,
       demoMember,
+      setDemoPersonId,
       demoMembers,
       hasCapability,
       isFeatureEnabled,

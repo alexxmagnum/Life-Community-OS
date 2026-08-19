@@ -2,7 +2,8 @@ import type { DomainId, IsoDateTimeString } from "./ids";
 
 /**
  * Belonging of a Person within a Territory (ADR-011).
- * Not authorization. Type is configurable.
+ * Not an auth account (User) and not the Person record.
+ * membershipType is the capability role (member | group_manager | moderator | administrator).
  * Source: public.memberships + ADR-001
  *
  * Community Area resource eligibility is NOT stored here —

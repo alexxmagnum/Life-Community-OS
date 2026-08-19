@@ -1,25 +1,31 @@
 /**
- * Mutation gate — when auth is enforced, writes require a resolved actor.
+ * Mutation gate — writes require a resolved membership actor.
+ * The frontend may hide actions; this is the enforcement layer.
  */
 
 import { NextResponse } from "next/server";
-import { isAuthEnforced } from "@life-community-os/auth";
+import { actorHasCapability } from "@/lib/auth/permissions";
 import {
   resolveRequestActor,
   type RequestActor,
 } from "@/lib/auth/request-actor";
 
+function deny(
+  error: string,
+  status: number,
+): { error: NextResponse } {
+  return { error: NextResponse.json({ error }, { status }) };
+}
+
 export async function requireMutationActor(
   request: Request,
 ): Promise<{ actor: RequestActor } | { error: NextResponse }> {
   const actor = await resolveRequestActor(request);
-  if (!isAuthEnforced()) {
-    return { actor };
+  if (actor.tenantDenied) {
+    return deny("tenant_forbidden", 403);
   }
-  if (!actor.authenticated) {
-    return {
-      error: NextResponse.json({ error: "unauthorized" }, { status: 401 }),
-    };
+  if (!actor.authenticated || !actor.personId || !actor.hasMembership) {
+    return deny("unauthorized", 401);
   }
   return { actor };
 }
@@ -29,55 +35,40 @@ export async function requireAdminMutation(
 ): Promise<{ actor: RequestActor } | { error: NextResponse }> {
   const gated = await requireMutationActor(request);
   if ("error" in gated) return gated;
-  if (gated.actor.role !== "administrator" && gated.actor.role !== "moderator") {
-    return {
-      error: NextResponse.json({ error: "forbidden" }, { status: 403 }),
-    };
-  }
-  return gated;
-}
-
-/**
- * Moderator/admin write gate.
- * Pilot (auth off): same openness as {@link requireMutationActor}.
- * Production (auth on): authenticated administrator or moderator.
- */
-export async function requireModeratorMutation(
-  request: Request,
-): Promise<{ actor: RequestActor } | { error: NextResponse }> {
-  const gated = await requireMutationActor(request);
-  if ("error" in gated) return gated;
-  if (!isAuthEnforced()) {
-    return gated;
-  }
   if (
     gated.actor.role !== "administrator" &&
     gated.actor.role !== "moderator"
   ) {
-    return {
-      error: NextResponse.json({ error: "forbidden" }, { status: 403 }),
-    };
+    return deny("forbidden", 403);
   }
   return gated;
 }
 
-/**
- * Administrator-only write gate (delete).
- * Pilot (auth off): open like mutation actor.
- * Production (auth on): authenticated administrator only.
- */
+export async function requireModeratorMutation(
+  request: Request,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  return requireAdminMutation(request);
+}
+
 export async function requireAdministratorMutation(
   request: Request,
 ): Promise<{ actor: RequestActor } | { error: NextResponse }> {
   const gated = await requireMutationActor(request);
   if ("error" in gated) return gated;
-  if (!isAuthEnforced()) {
-    return gated;
-  }
   if (gated.actor.role !== "administrator") {
-    return {
-      error: NextResponse.json({ error: "forbidden" }, { status: 403 }),
-    };
+    return deny("forbidden", 403);
+  }
+  return gated;
+}
+
+export async function requireCapabilityMutation(
+  request: Request,
+  capability: string,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated;
+  if (!actorHasCapability(gated.actor.permissions, capability)) {
+    return deny("forbidden", 403);
   }
   return gated;
 }

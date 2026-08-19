@@ -9,8 +9,6 @@ import {
   requireAdministratorMutation,
   requireModeratorMutation,
 } from "@/lib/auth/mutation-gate";
-import { resolveTenantPublicId } from "@/lib/tenant/ids";
-import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
@@ -19,18 +17,34 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function GET(request: Request, { params }: Params) {
   const { id } = await params;
-  const url = new URL(request.url);
-  const tenantId = resolveTenantPublicId(
-    url.searchParams.get("tenantId") ??
-      resolveRequestTenantSlug(request) ??
-      "life-panoramica",
+  const { resolveRequestActor } = await import("@/lib/auth/request-actor");
+  const { resolveReadTenantId } = await import(
+    "@/lib/tenant/resolve-read-tenant"
   );
+  const actor = await resolveRequestActor(request);
+  const url = new URL(request.url);
+  const bound = resolveReadTenantId({
+    request,
+    queryTenantId: url.searchParams.get("tenantId"),
+    actor,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
   const location = await getLocationServer(tenantId, id);
   if (!location) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  // Isolation: never return a location that belongs to another tenant.
   if (location.tenantId !== tenantId) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (location.visibility === "private") {
+    const privileged =
+      actor.role === "administrator" || actor.role === "moderator";
+    if (!privileged) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+  }
+  if (location.visibility === "members" && !actor.hasMembership) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   return NextResponse.json({ location });

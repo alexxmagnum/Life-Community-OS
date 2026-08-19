@@ -8,6 +8,7 @@ import {
   CommunityAppHeader,
   CreatePostSheet,
   CreateSheet,
+  EmptyState,
   type AppMenuCategory,
   type CreateAction,
   type CreateActionSection,
@@ -21,6 +22,7 @@ import {
   projectMemberNavigation,
 } from "@life-community-os/tenant-life-panoramica";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { BrandSplash } from "@/components/BrandSplash";
 import { useNotifications } from "@/providers/NotificationProvider";
@@ -173,6 +175,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
     configuration,
     demoMember,
   } = useTenant();
+  const { currentUser, sessionReady } = useCurrentUser();
   const { unreadCount } = useNotifications();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
@@ -465,7 +468,19 @@ export function MemberShell({ children }: { children: ReactNode }) {
           />
         }
       >
-        {children}
+        {sessionReady &&
+        currentUser.authenticated &&
+        !currentUser.hasMembership &&
+        pathname !== "/me" ? (
+          <EmptyState
+            title="No perteneces a esta comunidad"
+            description="Tu cuenta está autenticada, pero no tiene membresía aquí. Entra en Perfil para unirte o pide acceso a un administrador."
+            actionLabel="Ir a perfil"
+            onAction={() => router.push("/me")}
+          />
+        ) : (
+          children
+        )}
       </AppShell>
       <AppMenuSheet
         open={menuOpen}

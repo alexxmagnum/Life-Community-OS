@@ -5,6 +5,7 @@ import { MediaLightboxProvider } from "@life-community-os/ui";
 import "@life-community-os/ui/interaction.css";
 import "@life-community-os/ui/asset-pad.css";
 
+import { CurrentUserProvider } from "@/providers/CurrentUserProvider";
 import { TenantProvider } from "@/providers/TenantProvider";
 import { CatalogProvider } from "@/providers/CatalogProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
@@ -59,7 +60,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" className={`${sans.variable} ${display.variable} ${brand.variable}`}>
       <body className="min-h-screen bg-[var(--life-bg,var(--color-surface-app))] font-sans antialiased">
-        <TenantProvider>
+        <CurrentUserProvider>
+          <TenantProvider>
           <CatalogProvider>
             <ExperienceParticipationProvider>
               <HousingSavesProvider>
@@ -77,7 +79,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </HousingSavesProvider>
             </ExperienceParticipationProvider>
           </CatalogProvider>
-        </TenantProvider>
+          </TenantProvider>
+        </CurrentUserProvider>
       </body>
     </html>
   );

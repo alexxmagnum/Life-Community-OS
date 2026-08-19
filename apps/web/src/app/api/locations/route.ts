@@ -4,19 +4,24 @@ import {
   listLocationsServer,
   saveLocationServer,
 } from "@/lib/location/server-location-repository";
-import { resolveTenantPublicId } from "@/lib/tenant/ids";
-import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const tenantId = resolveTenantPublicId(
-    url.searchParams.get("tenantId") ??
-      resolveRequestTenantSlug(request) ??
-      "life-panoramica",
+  const { resolveRequestActor } = await import("@/lib/auth/request-actor");
+  const { resolveReadTenantId } = await import(
+    "@/lib/tenant/resolve-read-tenant"
   );
+  const actor = await resolveRequestActor(request);
+  const url = new URL(request.url);
+  const bound = resolveReadTenantId({
+    request,
+    queryTenantId: url.searchParams.get("tenantId"),
+    actor,
+  });
+  if ("error" in bound) return bound.error;
+  const tenantId = bound.tenantId;
   const { ensureServerTenantLocations } = await import(
     "@/lib/location/ensure-server-tenant-locations"
   );
@@ -24,13 +29,21 @@ export async function GET(request: Request) {
   const locations = await listLocationsServer(tenantId);
   const visibility = url.searchParams.get("visibility");
   const scoped = locations.filter((item) => item.tenantId === tenantId);
-  const filtered =
-    visibility === "map"
-      ? scoped.filter(
+  const byTrust = actor.authenticated && actor.hasMembership
+    ? actor.role === "administrator" || actor.role === "moderator"
+      ? scoped
+      : scoped.filter(
           (item) =>
             item.visibility === "public" || item.visibility === "members",
         )
-      : scoped;
+    : scoped.filter((item) => item.visibility === "public");
+  const filtered =
+    visibility === "map"
+      ? byTrust.filter(
+          (item) =>
+            item.visibility === "public" || item.visibility === "members",
+        )
+      : byTrust;
   return NextResponse.json({ tenantId, locations: filtered });
 }
 

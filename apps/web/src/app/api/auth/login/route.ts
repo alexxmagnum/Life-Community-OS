@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAuthConfigured } from "@life-community-os/auth";
-import { ensureDomainMembership } from "@/lib/auth/ensure-domain-membership";
+import { listMembershipsForAuthUser } from "@/lib/auth/ensure-domain-membership";
+import { bindActiveTenant, membershipSummary } from "@life-community-os/auth";
+import { AUTH_COOKIE, setAuthCookie } from "@/lib/auth/session-cookies";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export const runtime = "nodejs";
@@ -58,44 +60,57 @@ export async function POST(request: Request) {
     );
   }
 
-  const tenantSlug = resolveRequestTenantSlug(request);
-  const membership = await ensureDomainMembership({
-    tenantSlug,
+  const requestedTenantId = resolveRequestTenantSlug(request);
+  const rows = await listMembershipsForAuthUser({
     providerReference: data.user.id,
-    email: data.user.email ?? email,
-    displayName:
-      (data.user.user_metadata?.display_name as string | undefined) ?? null,
   });
+  const memberships = rows
+    .filter((row) => row.tenantSlug)
+    .map((row) =>
+      membershipSummary({
+        tenantId: row.tenantSlug!,
+        membershipId: row.membershipId,
+        personId: row.personId,
+        role: row.role,
+      }),
+    );
+  const bind = bindActiveTenant({
+    requestedTenantId,
+    memberships,
+  });
+
+  const boundTenant =
+    bind.status === "bound"
+      ? bind.membership.tenantId
+      : bind.status === "tenant_forbidden"
+        ? memberships[0]?.tenantId ?? requestedTenantId
+        : requestedTenantId;
+  const membership = bind.status === "bound" ? bind.membership : null;
 
   const response = NextResponse.json({
     user: {
       id: data.user.id,
       email: data.user.email ?? null,
     },
-    personId: membership.personId,
-    role: membership.role,
-    membershipId: membership.membershipId,
-    tenantSlug,
+    personId: membership?.personId ?? null,
+    role: membership?.role ?? null,
+    membershipId: membership?.membershipId ?? null,
+    tenantSlug: boundTenant,
+    hasMembership: Boolean(membership),
+    tenantDenied: bind.status === "tenant_forbidden",
   });
-  response.cookies.set("lcos-access-token", data.session.access_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: data.session.expires_in ?? 60 * 60,
-  });
-  response.cookies.set("lcos-refresh-token", data.session.refresh_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
-  response.cookies.set("lcos-tenant-slug", tenantSlug, {
-    httpOnly: false,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
+  setAuthCookie(
+    response,
+    AUTH_COOKIE.access,
+    data.session.access_token,
+    data.session.expires_in ?? 60 * 60,
+  );
+  setAuthCookie(
+    response,
+    AUTH_COOKIE.refresh,
+    data.session.refresh_token,
+    60 * 60 * 24 * 30,
+  );
+  setAuthCookie(response, AUTH_COOKIE.tenant, boundTenant, 60 * 60 * 24 * 30, false);
   return response;
 }

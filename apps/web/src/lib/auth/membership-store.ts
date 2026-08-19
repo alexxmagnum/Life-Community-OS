@@ -5,11 +5,16 @@
 
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { resolveJoinRole } from "@life-community-os/auth";
 import {
   coerceMembershipRole,
   type MembershipRole,
 } from "@life-community-os/types";
-import { resolveTenantPublicId } from "@/lib/tenant/ids";
+import {
+  REGISTERED_TENANT_SLUGS,
+  resolveTenantPublicId,
+  sanitizeTenantSlug,
+} from "@/lib/tenant/ids";
 
 export type StoredIdentity = {
   id: string;
@@ -39,7 +44,11 @@ type MembershipFile = {
 const DATA_DIR = path.join(process.cwd(), ".data", "memberships");
 
 function filePath(tenantSlug: string): string {
-  return path.join(DATA_DIR, `${tenantSlug}.json`);
+  const slug = sanitizeTenantSlug(tenantSlug);
+  if (!slug) {
+    throw new Error("unknown_tenant");
+  }
+  return path.join(DATA_DIR, `${slug}.json`);
 }
 
 async function readFile(tenantSlug: string): Promise<MembershipFile> {
@@ -94,6 +103,33 @@ export async function findMembershipForPerson(
   );
 }
 
+export async function listMembershipsForProvider(
+  providerReference: string,
+): Promise<
+  Array<{
+    identity: StoredIdentity;
+    membership: StoredMembership;
+  }>
+> {
+  const results: Array<{
+    identity: StoredIdentity;
+    membership: StoredMembership;
+  }> = [];
+  for (const slug of REGISTERED_TENANT_SLUGS) {
+    const data = await readFile(slug);
+    const identity = data.identities.find(
+      (i) => i.providerReference === providerReference,
+    );
+    if (!identity) continue;
+    const membership = data.memberships.find(
+      (m) => m.personId === identity.personId && m.status === "active",
+    );
+    if (!membership) continue;
+    results.push({ identity, membership });
+  }
+  return results;
+}
+
 export async function upsertFileMembership(input: {
   tenantSlug: string;
   territoryId: string;
@@ -133,12 +169,10 @@ export async function upsertFileMembership(input: {
     (m) => m.personId === identity!.personId && m.status === "active",
   );
   if (!membership) {
-    // First active membership in an empty tenant directory becomes administrator
-    // so local-join / bootstrap can manage the community without a prior admin.
     const directoryEmpty = !data.memberships.some((m) => m.status === "active");
-    const role = directoryEmpty
-      ? "administrator"
-      : coerceMembershipRole(input.role);
+    const role = coerceMembershipRole(
+      resolveJoinRole({ existingRole: null, directoryEmpty }),
+    );
     membership = {
       id: newId("mem"),
       personId: identity.personId,
@@ -150,15 +184,6 @@ export async function upsertFileMembership(input: {
       updatedAt: now,
     };
     data.memberships.push(membership);
-  } else if (input.role) {
-    membership = {
-      ...membership,
-      role: coerceMembershipRole(input.role),
-      updatedAt: now,
-    };
-    data.memberships = data.memberships.map((m) =>
-      m.id === membership!.id ? membership! : m,
-    );
   }
 
   await writeFile(slug, data);

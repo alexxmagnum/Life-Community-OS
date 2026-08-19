@@ -8,7 +8,6 @@ import {
   requireAdministrator,
   resolveRequestActor,
 } from "@/lib/auth/request-actor";
-import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export const runtime = "nodejs";
 
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
   if (!requireAdministrator(actor)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  const tenantSlug = resolveRequestTenantSlug(request);
+  const tenantSlug = actor.tenantSlug;
   const directory = await listFileMembershipDirectory(tenantSlug);
   return NextResponse.json({
     tenantSlug,
@@ -51,7 +50,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  const tenantSlug = resolveRequestTenantSlug(request);
+  const tenantSlug = actor.tenantSlug;
   const updated = await updateFileMembershipRole({
     tenantSlug,
     personId,

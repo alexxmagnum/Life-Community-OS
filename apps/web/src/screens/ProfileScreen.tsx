@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { isDemoIdentityEnabled } from "@life-community-os/auth";
 import {
   getMyHomeContext,
   getTerritoryAccessContext,
@@ -16,6 +17,7 @@ import {
 import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
@@ -26,18 +28,13 @@ const roles: { id: DemoRole; label: string }[] = [
   { id: "administrator", label: "Administrador" },
 ];
 
-type SessionState = {
-  configured: boolean;
-  authenticated: boolean;
-  user: { id: string; email: string | null } | null;
-};
-
 /**
  * Mi perfil — identity, preferences, personal context.
  * Property info only where useful for belonging — never real-estate catalog.
  */
 export function ProfileScreen() {
   const router = useRouter();
+  const { currentUser, refreshSession } = useCurrentUser();
   const {
     theme,
     hasCapability,
@@ -52,29 +49,7 @@ export function ProfileScreen() {
   } = useTenant();
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
-  const [session, setSession] = useState<SessionState | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/auth/session", { cache: "no-store" });
-        const data = (await res.json()) as SessionState;
-        if (!cancelled) setSession(data);
-      } catch {
-        if (!cancelled) {
-          setSession({
-            configured: false,
-            authenticated: false,
-            user: null,
-          });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const demoIdentity = isDemoIdentityEnabled();
 
   const upcomingExperienceCount = joinedExperiences.filter(
     (e) => e.status !== "cancelled" && e.status !== "expired",
@@ -107,13 +82,17 @@ export function ProfileScreen() {
   const placeName =
     theme.identity?.territoryName ?? theme.logoText ?? "Tu comunidad";
 
+  const session = {
+    configured: currentUser.configured,
+    authenticated: currentUser.authenticated,
+    user: currentUser.userId
+      ? { id: currentUser.userId, email: currentUser.email }
+      : null,
+  };
+
   const onLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    setSession({
-      configured: session?.configured ?? false,
-      authenticated: false,
-      user: null,
-    });
+    await refreshSession();
     router.refresh();
   };
 
@@ -124,20 +103,11 @@ export function ProfileScreen() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email,
-        displayName: demoMember.displayName,
-        // Omit role: empty tenant directories auto-promote first membership
-        // to administrator inside ensureDomainMembership / upsertFileMembership.
+        displayName: demoMember.displayName || email.split("@")[0],
       }),
     });
     if (!res.ok) return;
-    const data = (await res.json()) as SessionState & {
-      user: { id: string; email: string | null };
-    };
-    setSession({
-      configured: false,
-      authenticated: true,
-      user: data.user,
-    });
+    await refreshSession();
     router.refresh();
   };
   return (
@@ -363,11 +333,21 @@ export function ProfileScreen() {
         <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
           Cuenta
         </p>
-        {session?.authenticated && session.user ? (
+        {session.authenticated && session.user ? (
           <>
             <p className="mt-1 text-[14px] text-[var(--color-text-primary)]">
               {session.user.email ?? session.user.id}
             </p>
+            {!currentUser.hasMembership ? (
+              <p className="mt-2 text-[13px] text-[var(--color-warning)]">
+                Tu cuenta no pertenece a esta comunidad. El registro o la
+                invitación de un administrador te dan acceso.
+              </p>
+            ) : (
+              <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
+                Comunidad · {currentUser.tenantId} · {currentUser.role}
+              </p>
+            )}
             <button
               type="button"
               className="mt-3 min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
@@ -415,8 +395,7 @@ export function ProfileScreen() {
         )}
       </section>
 
-      {process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "1" ||
-      process.env.NEXT_PUBLIC_LCOS_DEMO_ROLES === "true"
+      {demoIdentity && roleSource !== "membership"
         ? (
         <>
           <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
