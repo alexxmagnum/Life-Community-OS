@@ -22,6 +22,26 @@ export {
   createBusinessProfile,
 } from "./domain/business-profile";
 
+export {
+  MARKETPLACE_LISTING_TYPES,
+  MARKETPLACE_LISTING_STATUSES,
+  isMarketplaceListingType,
+  isMarketplaceListingStatus,
+  marketplaceListingTypeLabel,
+  createMarketplaceListingRecord,
+} from "./domain/marketplace-listing";
+
+export {
+  HELP_REQUEST_TYPES,
+  HELP_REQUEST_STATUSES,
+  isHelpRequestType,
+  isHelpRequestStatus,
+  helpRequestTypeLabel,
+  createHelpRequestRecord,
+  WORK_HELP_CATEGORIES,
+  isWorkHelpCategory,
+} from "./domain/help-request";
+
 /** Location discovery — LocalEntity is a view of Location. */
 export {
   localEntityKindFromLocation,

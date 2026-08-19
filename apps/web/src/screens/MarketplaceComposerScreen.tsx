@@ -3,40 +3,63 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  createMarketplaceListing,
-  marketplaceKindLabel,
-  type MarketplaceListingKind,
-} from "@life-community-os/tenant-life-panoramica";
+  marketplaceListingTypeLabel,
+  type MarketplaceListingType,
+} from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
+import { createMarketplaceListingRequest } from "@/lib/marketplace/commerce-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-const KINDS: MarketplaceListingKind[] = ["sell", "buy", "give", "request"];
+const KINDS: MarketplaceListingType[] = [
+  "sale",
+  "rent",
+  "giveaway",
+  "exchange",
+];
 
-function isKind(value: string | null): value is MarketplaceListingKind {
-  return value === "sell" || value === "buy" || value === "give" || value === "request";
+function isKind(value: string | null): value is MarketplaceListingType {
+  return (
+    value === "sale" ||
+    value === "rent" ||
+    value === "giveaway" ||
+    value === "exchange"
+  );
 }
 
-/**
- * Marketplace listing composer — neighbour exchange (session persistence).
- */
+function parsePrice(label: string): number | null {
+  const n = Number(label.replace(/[^\d.,]/g, "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 export function MarketplaceComposerScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability, isProductCapabilityEnabled, demoMember, configuration } =
-    useTenant();
+  const {
+    isFeatureEnabled,
+    hasCapability,
+    isProductCapabilityEnabled,
+    configuration,
+  } = useTenant();
 
   const initialKind = searchParams.get("kind");
-  const [kind, setKind] = useState<MarketplaceListingKind>(
-    isKind(initialKind) ? initialKind : "sell",
+  const mappedKind =
+    initialKind === "sell"
+      ? "sale"
+      : initialKind === "give"
+        ? "giveaway"
+        : initialKind;
+  const [kind, setKind] = useState<MarketplaceListingType>(
+    isKind(mappedKind) ? mappedKind : "sale",
   );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priceLabel, setPriceLabel] = useState("");
+  const [category, setCategory] = useState("general");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,14 +73,14 @@ export function MarketplaceComposerScreen() {
 
   const kindHint = useMemo(() => {
     switch (kind) {
-      case "sell":
+      case "sale":
         return "Qué ofreces y en qué estado está.";
-      case "buy":
-        return "Qué estás buscando.";
-      case "give":
+      case "rent":
+        return "Qué alquilas y por cuánto tiempo.";
+      case "giveaway":
         return "Qué regalas y cómo recogerlo.";
-      case "request":
-        return "Qué necesitas prestar o que te ayuden.";
+      case "exchange":
+        return "Qué intercambias y qué buscas a cambio.";
     }
   }, [kind]);
 
@@ -95,7 +118,7 @@ export function MarketplaceComposerScreen() {
     );
   }
 
-  const onPublish = () => {
+  const onPublish = async () => {
     setError(null);
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
@@ -107,24 +130,22 @@ export function MarketplaceComposerScreen() {
       setError("Cuenta un poco más para que tus vecinos entiendan el anuncio.");
       return;
     }
-
     setSubmitting(true);
-    try {
-      const created = createMarketplaceListing({
-        kind,
-        title: trimmedTitle,
-        description: trimmedDescription,
-        priceLabel: priceLabel.trim() || undefined,
-        areaLabel: demoMember.areaLabel || configuration.branding.name || "Tu comunidad",
-        authorName: demoMember.displayName,
-        authorPersonId: demoMember.personId,
-        authorAvatarUrl: demoMember.avatarUrl,
-      });
-      router.replace(`/marketplace/${created.id}`);
-    } catch {
+    const created = await createMarketplaceListingRequest({
+      tenantId: configuration.tenantId,
+      type: kind,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      category,
+      price:
+        kind === "sale" || kind === "rent" ? parsePrice(priceLabel) : null,
+    });
+    if ("error" in created) {
       setError("No se pudo publicar. Inténtalo de nuevo.");
       setSubmitting(false);
+      return;
     }
+    router.replace(`/marketplace/${created.listing.id}`);
   };
 
   return (
@@ -149,7 +170,7 @@ export function MarketplaceComposerScreen() {
                 : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
             }
           >
-            {marketplaceKindLabel(k)}
+            {marketplaceListingTypeLabel(k)}
           </button>
         ))}
       </div>
@@ -168,6 +189,18 @@ export function MarketplaceComposerScreen() {
 
       <label className="block space-y-1.5">
         <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
+          Categoría
+        </span>
+        <input
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          placeholder="general, mobility…"
+          className={fieldClass}
+        />
+      </label>
+
+      <label className="block space-y-1.5">
+        <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
           Detalle
         </span>
         <textarea
@@ -179,7 +212,7 @@ export function MarketplaceComposerScreen() {
         />
       </label>
 
-      {kind === "sell" || kind === "buy" ? (
+      {kind === "sale" || kind === "rent" ? (
         <label className="block space-y-1.5">
           <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
             Precio (opcional)
@@ -204,7 +237,7 @@ export function MarketplaceComposerScreen() {
 
       <ScreenPrimaryAction
         label={submitting ? "Publicando…" : "Publicar"}
-        onClick={onPublish}
+        onClick={() => void onPublish()}
         disabled={submitting}
       />
     </MobileScreen>

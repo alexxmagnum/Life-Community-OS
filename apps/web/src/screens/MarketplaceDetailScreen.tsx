@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  expressMarketplaceInterest,
-  formatContentWhen,
-  getMarketplaceListingById,
-  marketplaceKindLabel,
+  marketplaceListingTypeLabel,
   type MarketplaceListing,
-} from "@life-community-os/tenant-life-panoramica";
+} from "@life-community-os/types";
+import { formatContentWhen } from "@life-community-os/tenant-life-panoramica";
 import {
   Avatar,
   EmptyState,
@@ -17,12 +15,14 @@ import {
   ZoomableImage,
 } from "@life-community-os/ui";
 import { canOpenMarketplaceConversation } from "@/lib/marketplace-conversation-access";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
+import {
+  archiveMarketplaceListingRequest,
+  fetchMarketplaceListing,
+  listingImageUrl,
+  listingPriceLabel,
+} from "@/lib/marketplace/commerce-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-/**
- * Marketplace listing detail — contextual contact about this specific item.
- */
 export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
   const router = useRouter();
   const {
@@ -31,26 +31,27 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoMember,
-    homeMode,
+    personId,
   } = useTenant();
-  const { items: catalogListings, ready: catalogReady } =
-    useCatalogDomain<MarketplaceListing>("marketplace");
-  const [listing, setListing] = useState<MarketplaceListing | undefined>(
-    undefined,
-  );
+  const [listing, setListing] = useState<MarketplaceListing | null>(null);
   const [ready, setReady] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fromCatalog = catalogListings.find((i) => i.id === listingId);
-    setListing(
-      fromCatalog ??
-        (homeMode === "premium"
-          ? getMarketplaceListingById(listingId)
-          : undefined),
-    );
-    setReady(catalogReady);
-  }, [listingId, catalogListings, catalogReady, homeMode]);
+    let cancelled = false;
+    void (async () => {
+      const row = await fetchMarketplaceListing(
+        configuration.tenantId,
+        listingId,
+      );
+      if (cancelled) return;
+      setListing(row);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, listingId]);
 
   if (!isFeatureEnabled("marketplace") || !isProductCapabilityEnabled("marketplace")) {
     return (
@@ -112,47 +113,47 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     );
   }
 
+  const authorPersonId = listing.ownerPersonId;
   const showContact = canOpenMarketplaceConversation({
-    listing,
+    listing: {
+      id: listing.id,
+      title: listing.title,
+      authorPersonId,
+    },
     configuration,
     isModuleEnabled,
     hasCapability,
   });
-
-  const openConversation = () => {
-    if (!listing.authorPersonId) return;
-    expressMarketplaceInterest({
-      listingId: listing.id,
-      personId: demoMember.personId,
-    });
-    router.push(`/marketplace/${listing.id}/conversation`);
-  };
+  const isOwner = Boolean(personId && personId === listing.ownerPersonId);
+  const imageUrl = listingImageUrl(listing.images);
 
   return (
     <MobileScreen dense>
       <FlowScreenHeader
-        title={marketplaceKindLabel(listing.kind)}
+        title={marketplaceListingTypeLabel(listing.type)}
         onBack={() => router.push("/marketplace")}
         onExit={() => router.push("/services")}
       />
 
-      <ZoomableImage
-        src={listing.imageUrl}
-        alt=""
-        zoomable
-        fill={false}
-        className="aspect-[16/10] w-full rounded-[12px]"
-        wrapperClassName="h-auto w-full overflow-hidden rounded-[12px]"
-      />
+      {imageUrl ? (
+        <ZoomableImage
+          src={imageUrl}
+          alt=""
+          zoomable
+          fill={false}
+          className="aspect-[16/10] w-full rounded-[12px]"
+          wrapperClassName="h-auto w-full overflow-hidden rounded-[12px]"
+        />
+      ) : null}
 
       <article className="space-y-3">
         <div>
           <h2 className="text-[20px] font-semibold leading-snug text-[var(--color-text-primary)]">
             {listing.title}
           </h2>
-          {listing.priceLabel ? (
+          {listingPriceLabel(listing.price) ? (
             <p className="mt-1 text-[16px] font-semibold text-[var(--color-action-primary)]">
-              {listing.priceLabel}
+              {listingPriceLabel(listing.price)}
             </p>
           ) : null}
           <p className="mt-2 text-[15px] leading-6 text-[var(--color-text-secondary)]">
@@ -161,28 +162,43 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
         </div>
 
         <div className="flex items-center gap-3 border-t border-[var(--color-border-subtle)] pt-3">
-          <Avatar
-            src={listing.authorAvatarUrl}
-            alt={listing.authorName}
-            size="sm"
-            zoomable={false}
-          />
+          <Avatar alt={listing.authorDisplayName} size="sm" zoomable={false} />
           <div className="min-w-0">
             <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-              {listing.authorName}
+              {listing.authorDisplayName}
             </p>
             <p className="text-[12px] text-[var(--color-text-tertiary)]">
-              {[listing.areaLabel, formatContentWhen(listing.publishedAt)]
-                .filter(Boolean)
-                .join(" · ")}
+              {formatContentWhen(listing.createdAt)}
             </p>
           </div>
         </div>
 
-        {showContact ? (
+        {isOwner ? (
           <button
             type="button"
-            onClick={openConversation}
+            disabled={saving || listing.status === "archived"}
+            onClick={() =>
+              void (async () => {
+                setSaving(true);
+                const result = await archiveMarketplaceListingRequest({
+                  tenantId: configuration.tenantId,
+                  listingId: listing.id,
+                });
+                setSaving(false);
+                if ("error" in result) return;
+                router.push("/marketplace");
+              })()
+            }
+            className="w-full rounded-[14px] border border-[var(--color-border-subtle)] px-4 py-3 text-[14px] font-semibold"
+          >
+            {listing.status === "archived" ? "Archivado" : "Archivar anuncio"}
+          </button>
+        ) : showContact ? (
+          <button
+            type="button"
+            onClick={() =>
+              router.push(`/marketplace/${listing.id}/conversation`)
+            }
             className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-action-primary-subtle)] px-4 py-3.5 text-left"
           >
             <span className="min-w-0 flex-1">
@@ -190,11 +206,8 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
                 Contactar por este anuncio
               </span>
               <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
-                Habla con {listing.authorName} sobre “{listing.title}”
+                Habla con {listing.authorDisplayName} sobre “{listing.title}”
               </span>
-            </span>
-            <span className="text-[var(--color-action-primary)]" aria-hidden>
-              ›
             </span>
           </button>
         ) : (

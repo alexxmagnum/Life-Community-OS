@@ -6,19 +6,18 @@ import { asset } from "@life-community-os/assets";
 import {
   formatContentWhen,
   getServicesCategoryBySlug,
-  listMobilityListings,
-  listNeighbourHelpListings,
-  listRecommendationsForHub,
-  listWorkPostsForHub,
-  marketplaceKindLabel,
   PROFESSIONALS_HEADER_ART_URL,
   rankLocalEntitiesForTerritory,
   workPostTypeLabel,
-  type WorkPostListing,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   filterLocationsByLocalKinds,
+  helpRequestTypeLabel,
+  isWorkHelpCategory,
   locationToLocalEntity,
+  marketplaceListingTypeLabel,
+  type HelpRequest,
+  type MarketplaceListing,
   type WorkPostType,
 } from "@life-community-os/types";
 import {
@@ -33,6 +32,12 @@ import {
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { resolvePlaceHref, useTenantLocations } from "@/lib/location";
+import {
+  fetchHelpRequests,
+  fetchMarketplaceListings,
+  listingImageUrl,
+  listingPriceLabel,
+} from "@/lib/marketplace/commerce-client";
 
 /**
  * Servicios hub — "I need something solved."
@@ -51,7 +56,10 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
-  const [workPosts, setWorkPosts] = useState<WorkPostListing[]>([]);
+  const [workPosts, setWorkPosts] = useState<HelpRequest[]>([]);
+  const [neighbourHelp, setNeighbourHelp] = useState<HelpRequest[]>([]);
+  const [mobility, setMobility] = useState<MarketplaceListing[]>([]);
+  const [tips, setTips] = useState<HelpRequest[]>([]);
 
   const hub = useMemo(() => getServicesCategoryBySlug(category), [category]);
 
@@ -82,37 +90,99 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     );
   }, [hub, canLocal, query, demoPersonId, allLocations]);
 
-  const neighbourHelp = useMemo(() => {
-    if (!hub || hub.content.kind !== "neighbour-help") return [];
-    if (!canMarket) return [];
-    return listNeighbourHelpListings(query);
-  }, [hub, canMarket, query]);
-
-  const mobility = useMemo(() => {
-    if (!hub || hub.content.kind !== "mobility") return [];
-    if (!canMarket) return [];
-    return listMobilityListings(query);
-  }, [hub, canMarket, query]);
-
-  const tips = useMemo(() => {
-    if (!hub || hub.content.kind !== "recommendations") return [];
-    if (!canLocal || !isFeatureEnabled("recommendations")) return [];
-    return listRecommendationsForHub(query);
-  }, [hub, canLocal, isFeatureEnabled, query]);
-
   useEffect(() => {
-    if (!hub || hub.content.kind !== "work" || !canWork) {
-      setWorkPosts([]);
-      return;
-    }
-    setWorkPosts(
-      listWorkPostsForHub({
-        type: workFilter === "all" ? undefined : workFilter,
-        query,
-        includeSessionCreated: true,
-      }),
-    );
-  }, [hub, canWork, workFilter, query]);
+    if (!hub) return;
+    let cancelled = false;
+    void (async () => {
+      if (hub.content.kind === "work" && canWork) {
+        const rows = await fetchHelpRequests({
+          tenantId: configuration.tenantId,
+          board: "work",
+        });
+        if (cancelled) return;
+        const q = query.trim().toLowerCase();
+        setWorkPosts(
+          rows.filter((item) => {
+            if (workFilter === "looking_for_work" && item.type !== "need_help") {
+              return false;
+            }
+            if (workFilter === "offering_work" && item.type !== "offer_help") {
+              return false;
+            }
+            if (!q) return true;
+            return (
+              item.title.toLowerCase().includes(q) ||
+              item.description.toLowerCase().includes(q)
+            );
+          }),
+        );
+      } else {
+        setWorkPosts([]);
+      }
+      if (hub.content.kind === "neighbour-help" && canMarket) {
+        const rows = await fetchHelpRequests({
+          tenantId: configuration.tenantId,
+          board: "help",
+        });
+        if (cancelled) return;
+        const q = query.trim().toLowerCase();
+        setNeighbourHelp(
+          rows.filter((item) => {
+            if (!q) return true;
+            return (
+              item.title.toLowerCase().includes(q) ||
+              item.description.toLowerCase().includes(q)
+            );
+          }),
+        );
+      } else {
+        setNeighbourHelp([]);
+      }
+      if (hub.content.kind === "mobility" && canMarket) {
+        const rows = await fetchMarketplaceListings({
+          tenantId: configuration.tenantId,
+          category: "mobility",
+        });
+        if (cancelled) return;
+        setMobility(rows);
+      } else {
+        setMobility([]);
+      }
+      if (
+        hub.content.kind === "recommendations" &&
+        canLocal &&
+        isFeatureEnabled("recommendations")
+      ) {
+        const rows = await fetchHelpRequests({
+          tenantId: configuration.tenantId,
+          type: "offer_help",
+        });
+        if (cancelled) return;
+        const q = query.trim().toLowerCase();
+        setTips(
+          rows.filter((item) => {
+            if (isWorkHelpCategory(item.category)) return false;
+            if (!q) return true;
+            return item.description.toLowerCase().includes(q);
+          }),
+        );
+      } else {
+        setTips([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    hub,
+    canWork,
+    canMarket,
+    canLocal,
+    workFilter,
+    query,
+    configuration.tenantId,
+    isFeatureEnabled,
+  ]);
 
   if (!hub) {
     return (
@@ -224,10 +294,12 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[14px] font-semibold text-[var(--color-text-primary)]">
-                    {workPostTypeLabel(item.type)}
+                    {item.type === "need_help"
+                      ? workPostTypeLabel("looking_for_work")
+                      : workPostTypeLabel("offering_work")}
                   </span>
                   <span className="text-[14px] font-medium text-[var(--color-text-tertiary)]">
-                    {item.categoryLabel}
+                    {item.category}
                   </span>
                 </div>
                 <p className="mt-2 text-[16px] font-semibold leading-snug text-[var(--color-text-primary)]">
@@ -237,9 +309,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
                   {item.description}
                 </p>
                 <p className="mt-2 text-[15px] leading-5 text-[var(--color-text-secondary)]">
-                  {item.authorName}
-                  {item.location ? ` · ${item.location}` : ""}
-                  {item.availability ? ` · ${item.availability}` : ""}
+                  {item.authorDisplayName}
                 </p>
                 <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                   {formatContentWhen(item.createdAt)}
@@ -264,7 +334,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
           title={hub.emptyTitle}
           description={hub.emptyDescription}
           actionLabel="Publicar petición"
-          onAction={() => router.push("/marketplace/create?kind=request")}
+          onAction={() => router.push("/help/create")}
         />
       );
     } else {
@@ -274,13 +344,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
             <MarketplaceItemCard
               key={item.id}
               title={item.title}
-              kindLabel={marketplaceKindLabel(item.kind)}
-              priceLabel={item.priceLabel}
-              authorName={item.authorName}
-              authorAvatarUrl={item.authorAvatarUrl}
-              imageUrl={item.imageUrl}
-              meta={`${item.areaLabel} · ${formatContentWhen(item.publishedAt)}`}
-              onClick={() => router.push(`/marketplace/${item.id}`)}
+              kindLabel={helpRequestTypeLabel(item.type)}
+              authorName={item.authorDisplayName}
+              imageUrl=""
+              meta={formatContentWhen(item.createdAt)}
+              onClick={() => router.push(`/services/work/${item.id}`)}
             />
           ))}
         </div>
@@ -301,12 +369,11 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
             <MarketplaceItemCard
               key={item.id}
               title={item.title}
-              kindLabel={marketplaceKindLabel(item.kind)}
-              priceLabel={item.priceLabel}
-              authorName={item.authorName}
-              authorAvatarUrl={item.authorAvatarUrl}
-              imageUrl={item.imageUrl}
-              meta={`${item.areaLabel} · ${formatContentWhen(item.publishedAt)}`}
+              kindLabel={marketplaceListingTypeLabel(item.type)}
+              priceLabel={listingPriceLabel(item.price)}
+              authorName={item.authorDisplayName}
+              imageUrl={listingImageUrl(item.images)}
+              meta={formatContentWhen(item.createdAt)}
               onClick={() => router.push(`/marketplace/${item.id}`)}
             />
           ))}
@@ -334,21 +401,9 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
           {tips.map((tip) => (
             <NeighbourTipCard
               key={tip.id}
-              quote={tip.body}
-              author={tip.authorName}
-              relatedLabel={tip.relatedLabel}
-              imageUrl={tip.imageUrl}
-              onClick={
-                tip.relatedEntityId
-                  ? () =>
-                      router.push(
-                        resolvePlaceHref({
-                          entityOrLocationId: tip.relatedEntityId!,
-                          tenantId: configuration.tenantId,
-                        }),
-                      )
-                  : undefined
-              }
+              quote={tip.description}
+              author={tip.authorDisplayName}
+              relatedLabel={tip.category}
             />
           ))}
         </div>
@@ -464,7 +519,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       {hub.content.kind === "neighbour-help" && canMarket ? (
         <ScreenPrimaryAction
           label="Pedir u ofrecer ayuda"
-          onClick={() => router.push("/marketplace/create?kind=request")}
+          onClick={() => router.push("/help/create")}
         />
       ) : null}
     </MobileScreen>

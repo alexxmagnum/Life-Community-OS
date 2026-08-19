@@ -32,6 +32,36 @@ export {
   validateBusinessProfile,
   createBusinessProfile,
 } from "./business-profile";
+export type {
+  MarketplaceListing,
+  MarketplaceListingType,
+  MarketplaceListingStatus,
+  CreateMarketplaceListingInput,
+} from "./marketplace-listing";
+export {
+  MARKETPLACE_LISTING_TYPES,
+  MARKETPLACE_LISTING_STATUSES,
+  isMarketplaceListingType,
+  isMarketplaceListingStatus,
+  marketplaceListingTypeLabel,
+  createMarketplaceListingRecord,
+} from "./marketplace-listing";
+export type {
+  HelpRequest,
+  HelpRequestType,
+  HelpRequestStatus,
+  CreateHelpRequestInput,
+} from "./help-request";
+export {
+  HELP_REQUEST_TYPES,
+  HELP_REQUEST_STATUSES,
+  isHelpRequestType,
+  isHelpRequestStatus,
+  helpRequestTypeLabel,
+  createHelpRequestRecord,
+  WORK_HELP_CATEGORIES,
+  isWorkHelpCategory,
+} from "./help-request";
 export {
   localEntityKindFromLocation,
   locationTypeFromLocalKind,

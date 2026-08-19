@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  formatContentWhen,
-  marketplaceKindLabel,
+  marketplaceListingTypeLabel,
   type MarketplaceListing,
-  type MarketplaceListingKind,
-} from "@life-community-os/tenant-life-panoramica";
+  type MarketplaceListingType,
+} from "@life-community-os/types";
 import {
   EmptyState,
   FilterChipRow,
@@ -17,30 +16,55 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
+import { formatContentWhen } from "@life-community-os/tenant-life-panoramica";
+import {
+  fetchMarketplaceListings,
+  listingImageUrl,
+  listingPriceLabel,
+} from "@/lib/marketplace/commerce-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-type Filter = "all" | MarketplaceListingKind;
+type Filter = "all" | MarketplaceListingType;
 
 const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "Todo" },
-  { id: "sell", label: "Vendo" },
-  { id: "buy", label: "Busco" },
-  { id: "give", label: "Regalo" },
-  { id: "request", label: "Presto" },
+  { id: "sale", label: "Vendo" },
+  { id: "rent", label: "Alquilo" },
+  { id: "giveaway", label: "Regalo" },
+  { id: "exchange", label: "Intercambio" },
 ];
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, isProductCapabilityEnabled } = useTenant();
+  const {
+    isFeatureEnabled,
+    hasCapability,
+    isProductCapabilityEnabled,
+    configuration,
+  } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
-  const { items: catalogItems, ready: catalogReady } =
-    useCatalogDomain<MarketplaceListing>("marketplace");
+  const [listings, setListings] = useState<MarketplaceListing[]>([]);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const rows = await fetchMarketplaceListings({
+        tenantId: configuration.tenantId,
+      });
+      if (cancelled) return;
+      setListings(rows);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId]);
 
   const items = useMemo(() => {
-    if (filter === "all") return catalogItems;
-    return catalogItems.filter((i) => i.kind === filter);
-  }, [filter, catalogItems]);
+    if (filter === "all") return listings;
+    return listings.filter((item) => item.type === filter);
+  }, [filter, listings]);
 
   if (!isFeatureEnabled("marketplace") || !isProductCapabilityEnabled("marketplace")) {
     return (
@@ -62,7 +86,7 @@ export function MarketplaceScreen() {
     );
   }
 
-  if (!catalogReady) {
+  if (!ready) {
     return <LoadingState label="Cargando mercado…" />;
   }
 
@@ -108,13 +132,12 @@ export function MarketplaceScreen() {
           {items.map((item) => (
             <MarketplaceItemCard
               key={item.id}
-              kindLabel={marketplaceKindLabel(item.kind)}
+              kindLabel={marketplaceListingTypeLabel(item.type)}
               title={item.title}
-              meta={formatContentWhen(item.publishedAt)}
-              priceLabel={item.priceLabel}
-              imageUrl={item.imageUrl}
-              authorName={item.authorName}
-              authorAvatarUrl={item.authorAvatarUrl}
+              meta={formatContentWhen(item.createdAt)}
+              priceLabel={listingPriceLabel(item.price)}
+              imageUrl={listingImageUrl(item.images)}
+              authorName={item.authorDisplayName}
               onClick={() => router.push(`/marketplace/${item.id}`)}
             />
           ))}

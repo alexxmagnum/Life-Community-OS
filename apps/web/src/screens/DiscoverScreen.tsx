@@ -6,9 +6,6 @@ import {
   formatExperienceWhen,
   listDiscoverableExperiences,
   listGroups,
-  listNeighbourRecommendations,
-  listTrustedHelp,
-  rankLocalEntitiesForTerritory,
   spotsLeft,
   type Experience,
 } from "@life-community-os/tenant-life-panoramica";
@@ -24,7 +21,14 @@ import {
   NeighbourTipCard,
   ScreenSearch,
 } from "@life-community-os/ui";
-import { resolvePlaceHref, useTenantLocations } from "@/lib/location";
+import {
+  locationFichaHref,
+  resolvePlaceHref,
+  useTenantLocations,
+} from "@/lib/location";
+import { fetchBusinesses } from "@/lib/business/business-client";
+import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
+import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -38,7 +42,6 @@ export function DiscoverScreen() {
   const {
     isFeatureEnabled,
     hasCapability,
-    demoPersonId,
     configuration,
     homeMode,
   } = useTenant();
@@ -49,12 +52,75 @@ export function DiscoverScreen() {
   const [query, setQuery] = useState("");
   const [sessionReady, setSessionReady] = useState(false);
 
+  const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
+  const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
+
+  const canLocal =
+    isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
+
   useEffect(() => {
     setSessionReady(true);
   }, []);
 
-  const canLocal =
-    isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
+  useEffect(() => {
+    if (!canLocal) {
+      setNeighbourTips([]);
+      setTrustedHelp([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      if (isFeatureEnabled("recommendations")) {
+        const rows = await fetchHelpRequests({
+          tenantId: configuration.tenantId,
+          type: "offer_help",
+          board: "help",
+        });
+        if (!cancelled) {
+          const q = query.trim().toLowerCase();
+          setNeighbourTips(
+            rows.filter((item) => {
+              if (!q) return true;
+              return (
+                item.title.toLowerCase().includes(q) ||
+                item.description.toLowerCase().includes(q)
+              );
+            }),
+          );
+        }
+      } else {
+        setNeighbourTips([]);
+      }
+      if (isFeatureEnabled("services")) {
+        const rows = await fetchBusinesses({
+          tenantId: configuration.tenantId,
+          status: "published",
+        });
+        if (!cancelled) {
+          const q = query.trim().toLowerCase();
+          setTrustedHelp(
+            rows.filter((item) => {
+              if (!q) return true;
+              return (
+                item.name.toLowerCase().includes(q) ||
+                item.category.toLowerCase().includes(q)
+              );
+            }),
+          );
+        }
+      } else {
+        setTrustedHelp([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    canLocal,
+    isFeatureEnabled,
+    configuration.tenantId,
+    query,
+  ]);
 
   const nearYou = useMemo(() => {
     if (!canLocal) return [];
@@ -89,12 +155,6 @@ export function DiscoverScreen() {
     allLocations,
     configuration.branding.name,
   ]);
-
-  const neighbourTips = useMemo(() => {
-    if (!canLocal || !isFeatureEnabled("recommendations")) return [];
-    if (homeMode !== "premium") return [];
-    return listNeighbourRecommendations(query);
-  }, [canLocal, isFeatureEnabled, query, homeMode]);
 
   const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
@@ -138,15 +198,6 @@ export function DiscoverScreen() {
       );
     });
   }, [query, isFeatureEnabled, homeMode]);
-
-  const trustedHelp = useMemo(() => {
-    if (!canLocal || !isFeatureEnabled("services")) return [];
-    if (homeMode !== "premium") return [];
-    return rankLocalEntitiesForTerritory(
-      listTrustedHelp(query),
-      demoPersonId,
-    );
-  }, [canLocal, isFeatureEnabled, query, demoPersonId, homeMode]);
 
   const hasPlans = experiences.length > 0 || groups.length > 0;
   const hasAnything =
@@ -229,21 +280,9 @@ export function DiscoverScreen() {
                 {neighbourTips.map((tip) => (
                   <NeighbourTipCard
                     key={tip.id}
-                    quote={tip.body}
-                    author={tip.authorName}
-                    relatedLabel={tip.relatedLabel}
-                    imageUrl={tip.imageUrl}
-                    onClick={
-                      tip.relatedEntityId
-                        ? () =>
-                            router.push(
-                              resolvePlaceHref({
-                                entityOrLocationId: tip.relatedEntityId!,
-                                tenantId: configuration.tenantId,
-                              }),
-                            )
-                        : undefined
-                    }
+                    quote={tip.description}
+                    author={tip.authorDisplayName}
+                    relatedLabel={tip.category}
                   />
                 ))}
               </div>
@@ -306,20 +345,12 @@ export function DiscoverScreen() {
                   <LocalPlaceCard
                     key={place.id}
                     name={place.name}
-                    categoryLabel={place.categoryLabel}
-                    areaLabel={place.areaLabel}
-                    blurb={place.story}
-                    imageUrl={place.imageUrl}
-                    recommendedBy={place.recommendedBy}
-                    verified={place.verified}
-                    trustNote={place.trustNote}
+                    categoryLabel={place.category}
+                    areaLabel={configuration.branding.name}
+                    blurb={place.description}
+                    imageUrl={place.imageUrl ?? ""}
                     onClick={() =>
-                      router.push(
-                        resolvePlaceHref({
-                          entityOrLocationId: place.id,
-                          tenantId: configuration.tenantId,
-                        }),
-                      )
+                      router.push(locationFichaHref(place.locationId))
                     }
                   />
                 ))}

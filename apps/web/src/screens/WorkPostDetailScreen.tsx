@@ -1,24 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatContentWhen } from "@life-community-os/tenant-life-panoramica";
 import {
-  expressWorkInterest,
-  formatContentWhen,
-  getWorkPostById,
-  workPostTypeLabel,
-} from "@life-community-os/tenant-life-panoramica";
+  helpRequestTypeLabel,
+  isWorkHelpCategory,
+  type HelpRequest,
+} from "@life-community-os/types";
 import {
   Avatar,
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
 } from "@life-community-os/ui";
-import { canOpenWorkConversation } from "@/lib/work-conversation-access";
+import { fetchHelpRequest } from "@/lib/marketplace/commerce-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-/**
- * Work post detail — Need → Request → Responses → Conversation.
- */
+function typeLabel(item: HelpRequest): string {
+  if (isWorkHelpCategory(item.category)) {
+    return item.type === "need_help" ? "Busco trabajo" : "Ofrezco trabajo";
+  }
+  return helpRequestTypeLabel(item.type);
+}
+
+function boardHref(item: HelpRequest | null): string {
+  if (item && !isWorkHelpCategory(item.category)) {
+    return "/services/neighbour-help";
+  }
+  return "/services/work";
+}
+
 export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
   const router = useRouter();
   const {
@@ -26,23 +38,37 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
-    demoMember,
   } = useTenant();
+  const [item, setItem] = useState<HelpRequest | null>(null);
+  const [ready, setReady] = useState(false);
 
   const workEnabled =
     isModuleEnabled("services") &&
     (isFeatureEnabled("work") || isFeatureEnabled("services"));
 
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const row = await fetchHelpRequest(configuration.tenantId, workPostId);
+      if (cancelled) return;
+      setItem(row);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, workPostId]);
+
   if (!workEnabled) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Trabajo"
-          onBack={() => router.push("/services/work")}
+          title="Ayuda"
+          onBack={() => router.push("/services")}
           onExit={() => router.push("/services")}
         />
         <EmptyState
-          title="Trabajo no disponible"
+          title="No disponible"
           description="Este tablón no está activo en tu comunidad ahora mismo."
           actionLabel="Ver servicios"
           onAction={() => router.push("/services")}
@@ -51,21 +77,31 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     );
   }
 
-  const workPost = getWorkPostById(workPostId);
-
-  if (!workPost) {
+  if (!ready) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Trabajo"
-          onBack={() => router.push("/services/work")}
+          title="Anuncio"
+          onBack={() => router.push("/services")}
+          onExit={() => router.push("/services")}
+        />
+      </MobileScreen>
+    );
+  }
+
+  if (!item) {
+    return (
+      <MobileScreen>
+        <FlowScreenHeader
+          title="Anuncio"
+          onBack={() => router.push("/services")}
           onExit={() => router.push("/services")}
         />
         <EmptyState
           title="Anuncio no encontrado"
           description="Puede haberse cerrado o el enlace no es válido."
-          actionLabel="Ver Trabajo"
-          onAction={() => router.push("/services/work")}
+          actionLabel="Ver servicios"
+          onAction={() => router.push("/services")}
         />
       </MobileScreen>
     );
@@ -75,8 +111,8 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Trabajo"
-          onBack={() => router.push("/services/work")}
+          title={typeLabel(item)}
+          onBack={() => router.push(boardHref(item))}
           onExit={() => router.push("/services")}
         />
         <EmptyState
@@ -87,108 +123,40 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     );
   }
 
-  const showContact = canOpenWorkConversation({
-    workPost,
-    configuration,
-    isModuleEnabled,
-    hasCapability,
-  });
-
-  const openConversation = () => {
-    expressWorkInterest({
-      workPostId: workPost.id,
-      personId: demoMember.personId,
-    });
-    router.push(`/services/work/${workPost.id}/conversation`);
-  };
-
   return (
     <MobileScreen dense>
       <FlowScreenHeader
-        title={workPost.title}
-        subtitle={workPostTypeLabel(workPost.type)}
-        onBack={() => router.push("/services/work")}
+        title={item.title}
+        subtitle={typeLabel(item)}
+        onBack={() => router.push(boardHref(item))}
         onExit={() => router.push("/services")}
       />
 
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[13px] font-semibold text-[var(--color-text-primary)]">
-            {workPostTypeLabel(workPost.type)}
+            {typeLabel(item)}
           </span>
           <span className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
-            {workPost.categoryLabel}
+            {item.category}
           </span>
-          {workPost.status !== "open" ? (
-            <span
-              className={
-                workPost.status === "matched"
-                  ? "rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-action-primary)]"
-                  : "rounded-full bg-[var(--color-surface-muted)] px-2.5 py-0.5 text-[12px] font-semibold text-[var(--color-text-tertiary)]"
-              }
-            >
-              {workPost.status === "matched"
-                ? "En conversación"
-                : workPost.status === "closed"
-                  ? "Cerrado"
-                  : "Retirado"}
-            </span>
-          ) : null}
         </div>
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          {workPost.description}
+          {item.description}
         </p>
       </header>
 
       <section className="flex items-center gap-3 rounded-[14px] bg-[var(--color-surface-elevated)] px-3.5 py-3 shadow-[var(--shadow-elev-1)]">
-        <Avatar
-          src={workPost.authorAvatarUrl}
-          alt={workPost.authorName}
-          size="md"
-          zoomable={false}
-        />
+        <Avatar alt={item.authorDisplayName} size="md" zoomable={false} />
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-            {workPost.authorName}
-          </p>
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            {[workPost.location, workPost.availability]
-              .filter(Boolean)
-              .join(" · ") || "Vecino de la comunidad"}
+            {item.authorDisplayName}
           </p>
           <p className="mt-0.5 text-[12px] text-[var(--color-text-tertiary)]">
-            {formatContentWhen(workPost.createdAt)}
+            {formatContentWhen(item.createdAt)}
           </p>
         </div>
       </section>
-
-      {showContact && workPost.status !== "closed" && workPost.status !== "withdrawn" ? (
-        <button
-          type="button"
-          onClick={openConversation}
-          className="flex w-full items-center gap-3 rounded-[14px] bg-[var(--color-action-primary)] px-4 py-3.5 text-left transition-transform active:scale-[0.99]"
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-semibold text-white">
-              {workPost.status === "matched" ? "Ver mensajes" : "Contactar"}
-            </span>
-            <span className="mt-0.5 block text-[13px] text-white/85">
-              Habla con quien publicó el anuncio
-            </span>
-          </span>
-          <span className="text-white" aria-hidden>
-            ›
-          </span>
-        </button>
-      ) : showContact ? (
-        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] text-[var(--color-text-secondary)]">
-          Este anuncio ya no admite nuevos contactos.
-        </p>
-      ) : (
-        <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] text-[var(--color-text-secondary)]">
-          La conversación no está disponible con tu cuenta actual.
-        </p>
-      )}
     </MobileScreen>
   );
 }
