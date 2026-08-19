@@ -1,23 +1,27 @@
 /**
  * Canonical tenant identity mapping — slug (product DomainId) ↔ UUID (DB).
- * Tenants are packs on the platform — never the application itself.
+ * Rows come from the tenant manifest (configuration). Core logic stays generic.
  */
+
+import {
+  defaultTenantSlug,
+  TENANT_MANIFEST,
+} from "./manifest";
 
 export const LIFE_PANORAMICA_TENANT_SLUG = "life-panoramica";
 export const LIFE_VALLEY_TENANT_SLUG = "life-valley";
+export const LIFE_OCEAN_HILLS_TENANT_SLUG = "life-ocean-hills";
 
-/** Product tenants that may appear in cookies, headers, or file paths. */
-export const REGISTERED_TENANT_SLUGS = [
-  LIFE_PANORAMICA_TENANT_SLUG,
-  LIFE_VALLEY_TENANT_SLUG,
-] as const;
+const FALLBACK_SLUG = defaultTenantSlug();
+
+export const REGISTERED_TENANT_SLUGS = TENANT_MANIFEST.map(
+  (row) => row.slug,
+) as readonly string[];
 
 export type RegisteredTenantSlug = (typeof REGISTERED_TENANT_SLUGS)[number];
 
-export function isRegisteredTenantSlug(
-  value: string,
-): value is RegisteredTenantSlug {
-  return (REGISTERED_TENANT_SLUGS as readonly string[]).includes(value);
+export function isRegisteredTenantSlug(value: string): boolean {
+  return REGISTERED_TENANT_SLUGS.includes(value);
 }
 
 /**
@@ -25,7 +29,7 @@ export function isRegisteredTenantSlug(
  */
 export function sanitizeTenantSlug(
   raw: string | null | undefined,
-): RegisteredTenantSlug | null {
+): string | null {
   if (!raw) return null;
   const normalized = raw.trim().toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) return null;
@@ -34,29 +38,37 @@ export function sanitizeTenantSlug(
 }
 
 export const LIFE_PANORAMICA_TENANT_UUID =
-  "10000000-0000-4000-8000-000000000001";
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_PANORAMICA_TENANT_SLUG)
+    ?.tenantUuid ?? "10000000-0000-4000-8000-000000000001";
 export const LIFE_PANORAMICA_TERRITORY_UUID =
-  "10000000-0000-4000-8000-000000000002";
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_PANORAMICA_TENANT_SLUG)
+    ?.territoryUuid ?? "10000000-0000-4000-8000-000000000002";
 
 export const LIFE_VALLEY_TENANT_UUID =
-  "20000000-0000-4000-8000-000000000001";
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_VALLEY_TENANT_SLUG)
+    ?.tenantUuid ?? "20000000-0000-4000-8000-000000000001";
 export const LIFE_VALLEY_TERRITORY_UUID =
-  "20000000-0000-4000-8000-000000000002";
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_VALLEY_TENANT_SLUG)
+    ?.territoryUuid ?? "20000000-0000-4000-8000-000000000002";
 
-const SLUG_TO_UUID: Record<string, string> = {
-  [LIFE_PANORAMICA_TENANT_SLUG]: LIFE_PANORAMICA_TENANT_UUID,
-  [LIFE_VALLEY_TENANT_SLUG]: LIFE_VALLEY_TENANT_UUID,
-};
+export const LIFE_OCEAN_HILLS_TENANT_UUID =
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_OCEAN_HILLS_TENANT_SLUG)
+    ?.tenantUuid ?? "30000000-0000-4000-8000-000000000001";
+export const LIFE_OCEAN_HILLS_TERRITORY_UUID =
+  TENANT_MANIFEST.find((row) => row.slug === LIFE_OCEAN_HILLS_TENANT_SLUG)
+    ?.territoryUuid ?? "30000000-0000-4000-8000-000000000002";
 
-const UUID_TO_SLUG: Record<string, string> = {
-  [LIFE_PANORAMICA_TENANT_UUID]: LIFE_PANORAMICA_TENANT_SLUG,
-  [LIFE_VALLEY_TENANT_UUID]: LIFE_VALLEY_TENANT_SLUG,
-};
+const SLUG_TO_UUID: Record<string, string> = Object.fromEntries(
+  TENANT_MANIFEST.map((row) => [row.slug, row.tenantUuid]),
+);
 
-const SLUG_TO_TERRITORY: Record<string, string> = {
-  [LIFE_PANORAMICA_TENANT_SLUG]: LIFE_PANORAMICA_TERRITORY_UUID,
-  [LIFE_VALLEY_TENANT_SLUG]: LIFE_VALLEY_TERRITORY_UUID,
-};
+const UUID_TO_SLUG: Record<string, string> = Object.fromEntries(
+  TENANT_MANIFEST.map((row) => [row.tenantUuid, row.slug]),
+);
+
+const SLUG_TO_TERRITORY: Record<string, string> = Object.fromEntries(
+  TENANT_MANIFEST.map((row) => [row.slug, row.territoryUuid]),
+);
 
 export function tenantSlugToUuid(slugOrId: string): string | null {
   const key = slugOrId.trim().toLowerCase();
@@ -84,10 +96,10 @@ export function tenantSlugToTerritoryUuid(slugOrId: string): string | null {
 
 export function resolveTenantPublicId(slugOrId: string): string {
   const trimmed = slugOrId.trim();
-  if (!trimmed) return LIFE_PANORAMICA_TENANT_SLUG;
+  if (!trimmed) return FALLBACK_SLUG;
   const fromUuid = tenantUuidToSlug(trimmed);
   if (fromUuid) return fromUuid;
   const sanitized = sanitizeTenantSlug(trimmed);
   if (sanitized) return sanitized;
-  return LIFE_PANORAMICA_TENANT_SLUG;
+  return FALLBACK_SLUG;
 }

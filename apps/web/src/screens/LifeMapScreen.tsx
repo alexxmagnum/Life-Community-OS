@@ -53,10 +53,14 @@ export function LifeMapScreen() {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     configuration,
   } = useTenant();
 
-  const featureOn = isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap");
+  const featureOn =
+    isModuleEnabled("lifeMap") &&
+    isFeatureEnabled("lifeMap") &&
+    isProductCapabilityEnabled("lifeMap");
   const experienceOn = isLifeMapExperienceUnlocked(featureOn);
   const canView = hasCapability(CAPABILITIES.lifeMapView);
 

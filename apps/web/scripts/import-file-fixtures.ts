@@ -26,7 +26,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   const client = createServiceDatabaseClient();
-  const tenants = ["life-panoramica", "life-valley"];
+    const tenants = ["life-panoramica", "life-valley", "life-ocean-hills"];
 
   for (const slug of tenants) {
     const tenantUuid = tenantSlugToUuid(slug);

@@ -12,6 +12,7 @@ import { listLocations, saveLocation } from "./location-store";
 import { getAddressGeocoder } from "./geocoder";
 import { EXAMPLE_IKON_ADDRESS } from "./example-ikon";
 import { catalogLocationId } from "./location-href";
+import { getTenantPack } from "@/lib/tenant/registry";
 
 export { catalogLocationId };
 
@@ -52,45 +53,43 @@ function categoryFromEntity(entity: (typeof localEntityCatalog)[number]): string
   }
 }
 
-const VALLEY_SEED_LOCATIONS: Array<{
-  id: string;
-  name: string;
-  category: string;
-  summary: string;
-  areaLabel: string;
-  dLat: number;
-  dLng: number;
-  imageUrl?: string;
-}> = [
-  {
-    id: "lv-plaza",
-    name: "Plaza Life Valley",
-    category: "place",
-    summary: "Café de barrio y punto de encuentro de Life Valley.",
-    areaLabel: "Centro Valle",
-    dLat: 0,
-    dLng: 0,
-  },
-  {
-    id: "lv-cafe",
-    name: "Café del Valle",
-    category: "cafe",
-    summary: "Cafetería de referencia solo en Life Valley.",
-    areaLabel: "Centro Valle",
-    dLat: 0.0007,
-    dLng: -0.0005,
-  },
-];
-
 export async function ensureCatalogLocations(
   tenantId: string,
 ): Promise<{ created: number; error?: string }> {
   const id = tenantId.trim();
   if (!id) return { created: 0, error: "missing_tenant" };
+  const pack = getTenantPack(id);
+  if (!pack) return { created: 0, error: "unknown_tenant" };
 
-  // Never seed Panorámica places into other tenants.
-  if (id !== "life-panoramica" && id !== "life-valley") {
-    return { created: 0 };
+  if (pack.locationSeedMode === "pack") {
+    const existing = listLocations(id);
+    const byName = new Map(
+      existing.map((item) => [item.name.toLowerCase(), item]),
+    );
+    let created = 0;
+    for (const place of pack.getLocationSeeds()) {
+      const locationId = catalogLocationId(place.id, id);
+      if (existing.some((item) => item.id === locationId)) continue;
+      if (byName.has(place.name.toLowerCase())) continue;
+      await saveLocation({
+        id: locationId,
+        tenantId: id,
+        type: place.type ?? "community-place",
+        name: place.name,
+        address: place.address ?? `${place.areaLabel}, ${pack.displayName}`,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        category: place.category,
+        visibility: "public",
+        summary: place.summary,
+        imageUrl: place.imageUrl,
+        areaLabel: place.areaLabel,
+        hours: place.hours,
+        contact: place.contact,
+      });
+      created += 1;
+    }
+    return { created };
   }
 
   const existing = listLocations(id);
@@ -129,42 +128,6 @@ export async function ensureCatalogLocations(
   }
 
   let created = 0;
-
-  if (id === "life-valley") {
-    // Offset from Panorámica nucleus so Valley is visually distinct on map.
-    const valleyBase = {
-      latitude: base.latitude + 0.012,
-      longitude: base.longitude - 0.018,
-      address: "Life Valley, España",
-    };
-    for (const place of VALLEY_SEED_LOCATIONS) {
-      const locationId = catalogLocationId(place.id, id);
-      if (existing.some((item) => item.id === locationId)) continue;
-      if (byName.has(place.name.toLowerCase())) continue;
-      await saveLocation({
-        id: locationId,
-        tenantId: id,
-        type: place.category === "cafe" ? "business" : "community-place",
-        name: place.name,
-        address: `${place.areaLabel}, Life Valley`,
-        latitude: valleyBase.latitude + place.dLat,
-        longitude: valleyBase.longitude + place.dLng,
-        category: place.category,
-        visibility: "public",
-        summary: place.summary,
-        imageUrl: place.imageUrl,
-        areaLabel: place.areaLabel,
-        ...(place.category === "cafe"
-          ? { hours: "Lun–Dom · 08:00–20:00", contact: "+34 960 000 200" }
-          : {
-              hours: "Acceso libre",
-              contact: "hola@lifevalley.community",
-            }),
-      });
-      created += 1;
-    }
-    return { created };
-  }
 
   for (const entity of localEntityCatalog) {
     const locationId = catalogLocationId(entity.id, id);

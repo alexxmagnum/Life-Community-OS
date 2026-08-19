@@ -12,6 +12,7 @@ import {
   listVisibleMapLocations,
   subscribeLocations,
 } from "./location-store";
+import { getTenantPack } from "@/lib/tenant/registry";
 import { ensureExampleIkonLocation } from "./example-ikon";
 import { ensureCatalogLocations } from "./seed-catalog-locations";
 
@@ -49,7 +50,7 @@ export function useTenantLocations(tenantId: string): {
       const catalog = await ensureCatalogLocations(tenantId);
       if (cancelled) return;
       if (catalog.error) setSeedError(catalog.error);
-      if (tenantId.trim() === "life-panoramica") {
+      if (getTenantPack(tenantId)?.locationSeedMode === "local-entity-catalog") {
         const result = await ensureExampleIkonLocation(tenantId);
         if (cancelled) return;
         if (result.error) setSeedError(result.error);

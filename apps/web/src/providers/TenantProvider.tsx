@@ -36,6 +36,7 @@ import {
   requireTenantPack,
   resolveActiveTenantSlug,
 } from "@/lib/tenant/registry";
+import { isProductCapabilityEnabled, type ProductCapabilityKey, type ProductCapabilityMap, type TenantHomeMode } from "@life-community-os/types";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
 type RoleSource = "membership" | "demo" | "guest";
@@ -62,6 +63,9 @@ type TenantContextValue = {
   hasCapability: (key: CapabilityKey | string) => boolean;
   isFeatureEnabled: (key: keyof TenantFeatureFlags) => boolean;
   isModuleEnabled: (moduleId: string) => boolean;
+  productCapabilities: ProductCapabilityMap;
+  isProductCapabilityEnabled: (key: ProductCapabilityKey) => boolean;
+  homeMode: TenantHomeMode;
 };
 
 const TenantReactContext = createContext<TenantContextValue | null>(null);
@@ -226,7 +230,7 @@ export function TenantProvider({
         narrativeKey: "marta",
       };
     }
-    if (demoEnabled && tenantSlug === "life-panoramica") {
+    if (demoEnabled && pack.homeMode === "premium") {
       return (
         getDemoMemberByPersonId(demoPersonId) ??
         getDemoMemberByPersonId(DEMO_PERSON_MARTA)!
@@ -246,9 +250,15 @@ export function TenantProvider({
     currentUser.role,
     demoEnabled,
     demoPersonId,
-    tenantSlug,
     theme.identity?.defaultAreaName,
+    pack.homeMode,
   ]);
+
+  const hasProductCapability = useCallback(
+    (key: ProductCapabilityKey) =>
+      isProductCapabilityEnabled(pack.productCapabilities, key),
+    [pack.productCapabilities],
+  );
 
   const value = useMemo(
     () => ({
@@ -270,6 +280,9 @@ export function TenantProvider({
       hasCapability,
       isFeatureEnabled,
       isModuleEnabled,
+      productCapabilities: pack.productCapabilities,
+      isProductCapabilityEnabled: hasProductCapability,
+      homeMode: pack.homeMode,
     }),
     [
       tenantSlug,
@@ -289,6 +302,9 @@ export function TenantProvider({
       hasCapability,
       isFeatureEnabled,
       isModuleEnabled,
+      hasProductCapability,
+      pack.productCapabilities,
+      pack.homeMode,
     ],
   );
 

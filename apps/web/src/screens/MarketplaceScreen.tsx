@@ -32,7 +32,7 @@ const filters: { id: Filter; label: string }[] = [
 
 export function MarketplaceScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, hasCapability, isProductCapabilityEnabled } = useTenant();
   const [filter, setFilter] = useState<Filter>("all");
   const { items: catalogItems, ready: catalogReady } =
     useCatalogDomain<MarketplaceListing>("marketplace");
@@ -42,7 +42,7 @@ export function MarketplaceScreen() {
     return catalogItems.filter((i) => i.kind === filter);
   }, [filter, catalogItems]);
 
-  if (!isFeatureEnabled("marketplace")) {
+  if (!isFeatureEnabled("marketplace") || !isProductCapabilityEnabled("marketplace")) {
     return (
       <EmptyState
         title="El mercado no está disponible"

@@ -27,7 +27,7 @@ function isKind(value: string | null): value is MarketplaceListingKind {
 export function MarketplaceComposerScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability, demoMember, configuration } =
+  const { isFeatureEnabled, hasCapability, isProductCapabilityEnabled, demoMember, configuration } =
     useTenant();
 
   const initialKind = searchParams.get("kind");
@@ -45,6 +45,7 @@ export function MarketplaceComposerScreen() {
 
   const canCreate =
     isFeatureEnabled("marketplace") &&
+    isProductCapabilityEnabled("marketplace") &&
     hasCapability(CAPABILITIES.marketplaceCreate);
 
   const kindHint = useMemo(() => {
@@ -60,7 +61,7 @@ export function MarketplaceComposerScreen() {
     }
   }, [kind]);
 
-  if (!isFeatureEnabled("marketplace")) {
+  if (!isFeatureEnabled("marketplace") || !isProductCapabilityEnabled("marketplace")) {
     return (
       <MobileScreen>
         <FlowScreenHeader

@@ -18,4 +18,10 @@ export {
   type DemoRole,
 } from "@life-community-os/tenant-life-panoramica";
 
+export {
+  lifeValleyCatalogSeed,
+  lifeValleyLocationSeeds,
+  lifeValleyExperienceCatalog,
+} from "./catalogs";
+
 export const tenantId = "life-valley" as const;

@@ -27,7 +27,7 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember, tenantSlug } =
+  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember, tenantSlug, homeMode } =
     useTenant();
   const { items: catalogResources } =
     useCatalogDomain<CommunityResource>("resources");
@@ -38,7 +38,7 @@ export function ResourceAvailabilityScreen({
 
   const resource =
     catalogResources.find((r) => r.id === resourceId) ??
-    (tenantSlug === "life-panoramica"
+    (homeMode === "premium"
       ? getResourceById(resourceId)
       : undefined);
   const slots = useMemo(

@@ -1,147 +1,38 @@
 /**
  * Materialize tenant pack catalogs into durable JSON (first-run seed).
+ * Seeds come from the tenant pack — never from a slug if-tree.
  */
 
-import {
-  communityContentCatalog,
-  experienceCatalog,
-  marketplaceCatalog,
-  resourceCatalog,
-} from "@life-community-os/tenant-life-panoramica";
+import { requireTenantPack } from "@/lib/tenant/registry";
 import {
   ensureCatalogSeeded,
-  writeCatalog,
   type CatalogDomain,
 } from "./server-catalog-repository";
 
-const VALLEY_IMAGE =
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=80";
-
-const VALLEY_COMMUNITY = [
-  {
-    id: "lv-cc-welcome",
-    type: "official_announcement",
-    status: "published",
-    title: "Bienvenida a Life Valley",
-    body: "Bienvenido a Life Valley. Aquí empiezas a descubrir tu comunidad.",
-    areaLabel: "Centro Valle",
-    authorName: "Life Valley",
-    author: {
-      id: "lv-author-official",
-      name: "Life Valley",
-      kind: "official",
-    },
-    publishedAt: new Date().toISOString(),
-    reactionCounts: {},
-    comments: [],
-    commentCount: 0,
-    imageUrl: VALLEY_IMAGE,
-  },
-];
-
-const VALLEY_EXPERIENCES = [
-  {
-    id: "lv-exp-walk",
-    title: "Paseo del valle",
-    description: "Camina con vecinos por el sendero al atardecer.",
-    imageUrl: VALLEY_IMAGE,
-    startsAt: new Date(Date.now() + 86400000).toISOString(),
-    location: "Plaza Life Valley",
-    areaLabel: "Centro Valle",
-    organizer: {
-      id: "lv-org-valley",
-      name: "Life Valley",
-      kind: "official",
-    },
-    capacity: 24,
-    participantCount: 3,
-    participants: [],
-    status: "published",
-    type: "experience",
-  },
-];
-
-/** Isolation: Life Valley experience seed ids must stay `lv-` prefixed. */
-export function lifeValleyExperienceSeedIds(): readonly string[] {
-  return VALLEY_EXPERIENCES.map((item) => item.id);
+export function catalogSeedFor(
+  tenantSlug: string,
+  domain: CatalogDomain,
+): unknown[] {
+  return requireTenantPack(tenantSlug).getCatalogSeed(domain);
 }
 
-const VALLEY_MARKETPLACE = [
-  {
-    id: "lv-mp-bike",
-    kind: "give",
-    title: "Bicicleta Valley",
-    description: "Bici en buen estado para alguien de la comunidad.",
-    areaLabel: "Centro Valle",
-    authorName: "Vecino Valley",
-    imageUrl: VALLEY_IMAGE,
-    publishedAt: new Date().toISOString(),
-  },
-];
-
-const VALLEY_RESOURCES = [
-  {
-    id: "lv-res-room",
-    name: "Sala Valley",
-    description: "Sala comunitaria para reuniones y talleres.",
-    imageUrl: VALLEY_IMAGE,
-    location: "Centro comunitario",
-    areaLabel: "Centro Valle",
-    type: "space",
-    status: "available",
-    capacity: 12,
-  },
-];
-
-function seedFor(tenantSlug: string, domain: CatalogDomain): unknown[] {
-  if (tenantSlug === "life-valley") {
-    switch (domain) {
-      case "community":
-        return VALLEY_COMMUNITY;
-      case "experiences":
-        return VALLEY_EXPERIENCES;
-      case "marketplace":
-        return VALLEY_MARKETPLACE;
-      case "resources":
-        return VALLEY_RESOURCES;
-    }
-  }
-
-  switch (domain) {
-    case "community":
-      return [...communityContentCatalog];
-    case "experiences":
-      return [...experienceCatalog];
-    case "marketplace":
-      return [...marketplaceCatalog];
-    case "resources":
-      return [...resourceCatalog];
-  }
+/** Isolation helper — Valley experience ids stay lv- prefixed. */
+export function lifeValleyExperienceSeedIds(): readonly string[] {
+  return catalogSeedFor("life-valley", "experiences")
+    .map((item) =>
+      item && typeof item === "object" && "id" in item
+        ? String((item as { id: unknown }).id)
+        : "",
+    )
+    .filter(Boolean);
 }
 
 export async function bootstrapTenantCatalog(
   tenantSlug: string,
   domain: CatalogDomain,
 ): Promise<unknown[]> {
-  const seed = seedFor(tenantSlug, domain);
-  const items = await ensureCatalogSeeded(tenantSlug, domain, seed);
-  // RC: replace leftover validation/demo copy on Life Valley without new architecture.
-  if (tenantSlug === "life-valley" && valleyNeedsCommercialCopy(items)) {
-    await writeCatalog(tenantSlug, domain, seed);
-    return seed;
-  }
-  return items;
-}
-
-function valleyNeedsCommercialCopy(items: unknown[]): boolean {
-  const blob = JSON.stringify(items).toLowerCase();
-  return (
-    blob.includes("validación") ||
-    blob.includes("validacion") ||
-    blob.includes("multi-tenant") ||
-    blob.includes("exclusiva del tenant") ||
-    blob.includes("solo existe")
-  );
+  const seed = catalogSeedFor(tenantSlug, domain);
+  return ensureCatalogSeeded(tenantSlug, domain, seed);
 }
 
 export async function bootstrapAllCatalogs(

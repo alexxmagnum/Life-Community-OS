@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts",
+    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts ./src/lib/tenant/tenant-factory.test.ts",
     "migrate:files": "tsx ./scripts/import-file-fixtures.ts"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "@life-community-os/life-map-renderer-three": "workspace:*",
     "@life-community-os/tenant-life-panoramica": "workspace:*",
     "@life-community-os/tenant-life-valley": "workspace:*",
+    "@life-community-os/tenant-life-ocean-hills": "workspace:*",
     "@life-community-os/types": "workspace:*",
     "@life-community-os/ui": "workspace:*",
     "@supabase/supabase-js": "^2.49.1",

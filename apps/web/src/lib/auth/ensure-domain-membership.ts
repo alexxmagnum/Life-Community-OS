@@ -14,9 +14,8 @@ import {
 } from "@/lib/data/data-plane";
 import { createServiceDatabaseClientSafe } from "@/lib/data/database-access";
 import {
-  LIFE_PANORAMICA_TERRITORY_UUID,
-  LIFE_VALLEY_TERRITORY_UUID,
   resolveTenantPublicId,
+  tenantSlugToTerritoryUuid,
   tenantSlugToUuid,
   tenantUuidToSlug,
 } from "@/lib/tenant/ids";
@@ -43,8 +42,11 @@ export type DomainMembershipResult = {
 
 function territoryForTenant(tenantSlug: string): string {
   const slug = resolveTenantPublicId(tenantSlug);
-  if (slug === "life-valley") return LIFE_VALLEY_TERRITORY_UUID;
-  return LIFE_PANORAMICA_TERRITORY_UUID;
+  const territory = tenantSlugToTerritoryUuid(slug);
+  if (!territory) {
+    throw new Error(`unknown_tenant_territory:${slug}`);
+  }
+  return territory;
 }
 
 type IdentityMembershipRpcRow = {

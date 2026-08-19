@@ -80,6 +80,7 @@ export function ServicesHubScreen() {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoPersonId,
   } = useTenant();
 
@@ -110,7 +111,11 @@ export function ServicesHubScreen() {
       });
     }
 
-    if (isModuleEnabled("marketplace") && isFeatureEnabled("marketplace")) {
+    if (
+      isModuleEnabled("marketplace") &&
+      isFeatureEnabled("marketplace") &&
+      isProductCapabilityEnabled("marketplace")
+    ) {
       cards.push({
         id: "marketplace",
         title: "Compra y venta",
@@ -140,6 +145,7 @@ export function ServicesHubScreen() {
   }, [
     isFeatureEnabled,
     isModuleEnabled,
+    isProductCapabilityEnabled,
     territoryAccess.eligibleResourceCount,
   ]);
 

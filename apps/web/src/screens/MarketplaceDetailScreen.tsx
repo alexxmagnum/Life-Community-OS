@@ -30,8 +30,9 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoMember,
-    tenantSlug,
+    homeMode,
   } = useTenant();
   const { items: catalogListings, ready: catalogReady } =
     useCatalogDomain<MarketplaceListing>("marketplace");
@@ -44,14 +45,14 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     const fromCatalog = catalogListings.find((i) => i.id === listingId);
     setListing(
       fromCatalog ??
-        (tenantSlug === "life-panoramica"
+        (homeMode === "premium"
           ? getMarketplaceListingById(listingId)
           : undefined),
     );
     setReady(catalogReady);
-  }, [listingId, catalogListings, catalogReady, tenantSlug]);
+  }, [listingId, catalogListings, catalogReady, homeMode]);
 
-  if (!isFeatureEnabled("marketplace")) {
+  if (!isFeatureEnabled("marketplace") || !isProductCapabilityEnabled("marketplace")) {
     return (
       <MobileScreen>
         <FlowScreenHeader

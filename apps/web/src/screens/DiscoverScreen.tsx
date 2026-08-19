@@ -39,8 +39,8 @@ export function DiscoverScreen() {
     isFeatureEnabled,
     hasCapability,
     demoPersonId,
-    tenantSlug,
     configuration,
+    homeMode,
   } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const { items: catalogExperiences, ready: catalogReady } =
@@ -92,9 +92,9 @@ export function DiscoverScreen() {
 
   const neighbourTips = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("recommendations")) return [];
-    if (tenantSlug !== "life-panoramica") return [];
+    if (homeMode !== "premium") return [];
     return listNeighbourRecommendations(query);
-  }, [canLocal, isFeatureEnabled, query, tenantSlug]);
+  }, [canLocal, isFeatureEnabled, query, homeMode]);
 
   const experiences = useMemo(() => {
     if (!isFeatureEnabled("experiences")) return [];
@@ -103,7 +103,7 @@ export function DiscoverScreen() {
     const source =
       catalogReady && catalogExperiences.length > 0
         ? catalogExperiences
-        : tenantSlug === "life-panoramica"
+        : homeMode === "premium"
           ? listDiscoverableExperiences({
               includeSessionCreated: sessionReady,
             })
@@ -123,12 +123,12 @@ export function DiscoverScreen() {
     sessionReady,
     catalogExperiences,
     catalogReady,
-    tenantSlug,
+    homeMode,
   ]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
-    if (tenantSlug !== "life-panoramica") return [];
+    if (homeMode !== "premium") return [];
     const q = query.trim().toLowerCase();
     return listGroups().filter((g) => {
       if (!q) return true;
@@ -137,16 +137,16 @@ export function DiscoverScreen() {
         g.description.toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled, tenantSlug]);
+  }, [query, isFeatureEnabled, homeMode]);
 
   const trustedHelp = useMemo(() => {
     if (!canLocal || !isFeatureEnabled("services")) return [];
-    if (tenantSlug !== "life-panoramica") return [];
+    if (homeMode !== "premium") return [];
     return rankLocalEntitiesForTerritory(
       listTrustedHelp(query),
       demoPersonId,
     );
-  }, [canLocal, isFeatureEnabled, query, demoPersonId, tenantSlug]);
+  }, [canLocal, isFeatureEnabled, query, demoPersonId, homeMode]);
 
   const hasPlans = experiences.length > 0 || groups.length > 0;
   const hasAnything =

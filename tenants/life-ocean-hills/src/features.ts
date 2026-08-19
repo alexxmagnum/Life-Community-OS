@@ -1,0 +1,31 @@
+import type { TenantFeatureFlags } from "@life-community-os/tenant-life-panoramica";
+
+/** No golf, no marketplace, no housing — proves capability-driven modules. */
+export const oceanHillsFeatures: TenantFeatureFlags = {
+  experiences: true,
+  activities: true,
+  services: true,
+  work: false,
+  resources: true,
+  recommendations: true,
+  localLife: true,
+  localEntities: true,
+  communityPulse: true,
+  groups: true,
+  decide: false,
+  interactions: true,
+  incidents: false,
+  feed: true,
+  calendar: true,
+  marketplace: false,
+  communityChannels: true,
+  officialChannels: false,
+  municipalServices: false,
+  securityModule: false,
+  mobility: false,
+  residencyVerification: false,
+  participationTrust: false,
+  intelligentDiffusion: false,
+  housing: false,
+  lifeMap: false,
+};

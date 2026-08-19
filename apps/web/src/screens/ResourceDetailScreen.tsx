@@ -27,6 +27,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     demoMember,
     roleSource,
     tenantSlug,
+    homeMode,
   } = useTenant();
   const { items: catalogResources } =
     useCatalogDomain<CommunityResource>("resources");
@@ -43,7 +44,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
 
   const resource =
     catalogResources.find((r) => r.id === resourceId) ??
-    (tenantSlug === "life-panoramica"
+    (homeMode === "premium"
       ? getResourceById(resourceId)
       : undefined);
 

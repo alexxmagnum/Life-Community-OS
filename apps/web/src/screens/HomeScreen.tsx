@@ -79,11 +79,12 @@ export function HomeScreen() {
     demoMember,
     tenantSlug,
     configuration,
+    homeMode,
   } = useTenant();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const { items: catalogExperiences, ready: catalogReady } =
     useCatalogDomain<Experience>("experiences");
-  const isPanoramica = tenantSlug === "life-panoramica";
+  const premiumHome = homeMode === "premium";
 
   const [live, setLive] = useState(false);
   const [hour, setHour] = useState(18);
@@ -117,7 +118,7 @@ export function HomeScreen() {
   /** Open moments — Panorámica pack or tenant catalog (never cross-tenant). */
   const moments = useMemo(() => {
     if (!canExperiences) return [];
-    if (isPanoramica) {
+    if (premiumHome) {
       return listHomeMomentCards({ limit: MOMENT_LIMIT, ...frontDoorOpts });
     }
     if (!catalogReady) return [];
@@ -134,23 +135,23 @@ export function HomeScreen() {
     }));
   }, [
     canExperiences,
-    isPanoramica,
+    premiumHome,
     frontDoorOpts,
     catalogReady,
     catalogExperiences,
   ]);
 
   const moves = useMemo(
-    () => (isPanoramica ? listHomeMoves() : []),
-    [isPanoramica],
+    () => (premiumHome ? listHomeMoves() : []),
+    [premiumHome],
   );
   const intents = useMemo(() => {
-    if (isPanoramica) return listHomeIntents();
+    if (premiumHome) return listHomeIntents();
     return [
       {
-        id: "valley-map",
-        title: "Mapa",
-        subtitle: "Lugares de tu comunidad",
+        id: `${tenantSlug}-map`,
+        title: "Map",
+        subtitle: theme.identity?.homeCallout ?? theme.tagline ?? placeName,
         tone: "discover" as const,
         glyph: "compass" as const,
         href: "/map",
@@ -158,9 +159,11 @@ export function HomeScreen() {
         bgImageUrl: undefined as string | undefined,
       },
       {
-        id: "valley-plans",
-        title: "Planes",
-        subtitle: "Lo que ocurre cerca",
+        id: `${tenantSlug}-plans`,
+        title: "Plans",
+        subtitle: theme.identity?.pulseTitleTemplate
+          ? theme.identity.pulseTitleTemplate.replaceAll("{territory}", placeName)
+          : placeName,
         tone: "plans" as const,
         glyph: "calendar" as const,
         href: "/experiences",
@@ -168,9 +171,9 @@ export function HomeScreen() {
         bgImageUrl: undefined as string | undefined,
       },
       {
-        id: "valley-discover",
-        title: "Descubrir",
-        subtitle: "Explora Life Valley",
+        id: `${tenantSlug}-discover`,
+        title: "Discover",
+        subtitle: placeName,
         tone: "discover" as const,
         glyph: "compass" as const,
         href: "/discover",
@@ -178,11 +181,10 @@ export function HomeScreen() {
         bgImageUrl: undefined as string | undefined,
       },
     ];
-  }, [isPanoramica]);
+  }, [premiumHome, tenantSlug, theme, placeName]);
   const nearby = useMemo(() => {
     if (!canLocal) return [];
-    // Panorámica pack nearby lists are tenant-specific; other tenants use Location SoT.
-    if (tenantSlug !== "life-panoramica") {
+    if (!premiumHome) {
       return allLocations
         .filter((loc) => loc.visibility !== "private")
         .slice(0, 8)
@@ -201,7 +203,7 @@ export function HomeScreen() {
     return listHomeNearbyPlaces();
   }, [
     canLocal,
-    tenantSlug,
+    premiumHome,
     allLocations,
     configuration.branding.name,
   ]);

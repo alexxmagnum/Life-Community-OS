@@ -55,6 +55,7 @@ export function HousingMineScreen() {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoMember,
     configuration,
   } = useTenant();
@@ -66,7 +67,9 @@ export function HousingMineScreen() {
   }, []);
 
   const moduleOn =
-    isModuleEnabled("housing") && isFeatureEnabled("housing");
+    isModuleEnabled("housing") &&
+    isFeatureEnabled("housing") &&
+    isProductCapabilityEnabled("housing");
   const config = useMemo(
     () => getHousingModuleConfig(configuration),
     [configuration],

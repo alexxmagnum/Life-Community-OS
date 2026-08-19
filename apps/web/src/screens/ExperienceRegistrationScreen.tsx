@@ -27,7 +27,7 @@ export function ExperienceRegistrationScreen({
   experienceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, tenantSlug } = useTenant();
+  const { isFeatureEnabled, hasCapability, tenantSlug, homeMode } = useTenant();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const { getViewerState, join, getParticipation, setReminders } =
     useExperienceParticipation();
@@ -46,7 +46,7 @@ export function ExperienceRegistrationScreen({
 
   const experience =
     catalogExperiences.find((e) => e.id === experienceId) ??
-    (tenantSlug === "life-panoramica"
+    (homeMode === "premium"
       ? getExperienceById(experienceId)
       : undefined);
 

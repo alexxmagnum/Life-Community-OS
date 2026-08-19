@@ -232,6 +232,23 @@ export {
   assertTenantConfigurationCoversRegistry,
 } from "./platform/tenant-configuration";
 
+export type {
+  ProductCapabilityKey,
+  ProductCapabilityMap,
+  TenantHomeMode,
+  TenantIdentityRecord,
+  TenantContract,
+  TenantLocationSeed,
+  TenantCatalogDomain,
+} from "./platform/tenant-contract";
+export {
+  PRODUCT_CAPABILITY_KEYS,
+  EMPTY_PRODUCT_CAPABILITIES,
+  productCapabilitiesFromFeatures,
+  isProductCapabilityEnabled,
+  resolveHostHintToSlug,
+} from "./platform/tenant-contract";
+
 /** Housing settings on TenantConfiguration. */
 export {
   mergeHousingTenantModuleConfig,

@@ -9,7 +9,10 @@ import {
   MobileScreen,
 } from "@life-community-os/ui";
 import { useTenantLocations } from "@/lib/location";
-import { listRegisteredTenantSlugs } from "@/lib/tenant/registry";
+import {
+  listRegisteredTenantSlugs,
+  requireTenantPack,
+} from "@/lib/tenant/registry";
 import { useTenant } from "@/providers/TenantProvider";
 
 type MemberRow = {
@@ -36,10 +39,9 @@ const ROLE_LABEL: Record<MembershipRole, string> = {
   administrator: "Administrador",
 };
 
-const TENANT_LABEL: Record<string, string> = {
-  "life-panoramica": "Life Panorámica",
-  "life-valley": "Life Valley",
-};
+function tenantLabel(slug: string): string {
+  return requireTenantPack(slug).displayName;
+}
 
 /**
  * Tenant admin surface — places, members, permissions.
@@ -138,7 +140,7 @@ export function AdminScreen() {
           </p>
           <p className="mt-1 text-[15px] text-[var(--color-text-primary)]">
             {configuration.branding.name ||
-              TENANT_LABEL[tenantSlug] ||
+              tenantLabel(tenantSlug) ||
               tenantSlug}
           </p>
           <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
@@ -159,7 +161,7 @@ export function AdminScreen() {
                   window.location.href = "/admin";
                 }}
               >
-                {TENANT_LABEL[slug] || slug}
+                {tenantLabel(slug)}
               </button>
             ))}
           </div>

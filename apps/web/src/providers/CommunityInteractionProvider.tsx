@@ -109,7 +109,7 @@ export function CommunityInteractionProvider({
 }: {
   children: ReactNode;
 }) {
-  const { demoPersonId, demoMember, tenantSlug } = useTenant();
+  const { demoPersonId, demoMember, tenantSlug, homeMode } = useTenant();
   const { catalogs, ready: catalogReady } = useTenantCatalogs();
   const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
   const [hydrated, setHydrated] = useState(false);
@@ -172,13 +172,13 @@ export function CommunityInteractionProvider({
         (c) => c.id === id,
       );
       if (fromCatalog) return mergeContent(fromCatalog, overrides);
-      // Pack fallback is Panorámica-only — never leak into other tenants.
-      if (tenantSlug !== "life-panoramica") return undefined;
+      // Premium pack fallback — never leak reference catalogs into catalog tenants.
+      if (homeMode !== "premium") return undefined;
       const base = getCommunityContentById(id);
       if (!base) return undefined;
       return mergeContent(base, overrides);
     },
-    [overrides, catalogs.community, tenantSlug],
+    [overrides, catalogs.community, homeMode],
   );
 
   const feedItems = useMemo(() => {
@@ -190,7 +190,7 @@ export function CommunityInteractionProvider({
         ? (catalogs.community as CommunityContent[]).filter(
             (c) => c.status === "published",
           )
-        : tenantSlug === "life-panoramica"
+        : homeMode === "premium"
           ? listPublishedCommunityContent()
           : [];
     const catalog = baseCatalog.map((c) => mergeContent(c, overrides));
@@ -209,7 +209,7 @@ export function CommunityInteractionProvider({
         new Date(b.publishedAt ?? b.createdAt).getTime() -
         new Date(a.publishedAt ?? a.createdAt).getTime(),
     );
-  }, [overrides, catalogs.community, catalogReady, tenantSlug]);
+  }, [overrides, catalogs.community, catalogReady, homeMode]);
 
   const getMyReaction = useCallback(
     (contentId: string) => overrides.reactions[contentId] ?? null,

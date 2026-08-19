@@ -172,6 +172,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
     hasCapability,
     isFeatureEnabled,
     isModuleEnabled,
+    isProductCapabilityEnabled,
     configuration,
     demoMember,
   } = useTenant();
@@ -294,6 +295,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
     if (
       isModuleEnabled("marketplace") &&
+      isProductCapabilityEnabled("marketplace") &&
+      isFeatureEnabled("marketplace") &&
       hasCapability(CAPABILITIES.marketplaceCreate)
     ) {
       share.push({
@@ -338,7 +341,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
 
-    if (isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap")) {
+    if (
+      isModuleEnabled("lifeMap") &&
+      isFeatureEnabled("lifeMap") &&
+      isProductCapabilityEnabled("lifeMap")
+    ) {
       practical.push({
         id: "register-business",
         title: "Registrar negocio",
@@ -367,7 +374,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
       });
     }
     return sections;
-  }, [hasCapability, isFeatureEnabled, isModuleEnabled, router]);
+  }, [hasCapability, isFeatureEnabled, isModuleEnabled, isProductCapabilityEnabled, router]);
 
   const createActionCount = createSections.reduce(
     (n, s) => n + s.actions.length,
@@ -379,9 +386,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
       buildNav({
         services: isModuleEnabled("services"),
         showCreate: createActionCount > 0,
-        showMap: isModuleEnabled("lifeMap") && isFeatureEnabled("lifeMap"),
+        showMap:
+          isModuleEnabled("lifeMap") &&
+          isFeatureEnabled("lifeMap") &&
+          isProductCapabilityEnabled("lifeMap"),
       }),
-    [createActionCount, isModuleEnabled, isFeatureEnabled],
+    [createActionCount, isModuleEnabled, isFeatureEnabled, isProductCapabilityEnabled],
   );
 
   useEffect(() => {

@@ -26,7 +26,7 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
  */
 export function HousingSavedScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, isModuleEnabled, hasCapability } = useTenant();
+  const { isFeatureEnabled, isModuleEnabled, hasCapability, isProductCapabilityEnabled } = useTenant();
   const { savedIds } = useHousingSaves();
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -35,7 +35,9 @@ export function HousingSavedScreen() {
   }, []);
 
   const moduleOn =
-    isModuleEnabled("housing") && isFeatureEnabled("housing");
+    isModuleEnabled("housing") &&
+    isFeatureEnabled("housing") &&
+    isProductCapabilityEnabled("housing");
 
   const items = useMemo(() => {
     if (!sessionReady) return [];

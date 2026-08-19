@@ -41,6 +41,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoPersonId,
     configuration,
   } = useTenant();
@@ -57,6 +58,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
   const canMarket =
     isFeatureEnabled("marketplace") &&
+    isProductCapabilityEnabled("marketplace") &&
     hasCapability(CAPABILITIES.marketplaceView);
   const canWork =
     isModuleEnabled("services") &&

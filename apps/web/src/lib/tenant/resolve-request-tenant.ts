@@ -1,16 +1,15 @@
 /**
- * Resolve active tenant slug from request headers / host.
- * Only registered product tenants — never an arbitrary filesystem path.
+ * Host / header / cookie → registered tenant slug.
+ * Host matching uses the tenant manifest (no per-tenant if trees).
  */
 
-import {
-  LIFE_PANORAMICA_TENANT_SLUG,
-  sanitizeTenantSlug,
-} from "./ids";
+import { resolveHostHintToSlug } from "@life-community-os/types";
+import { defaultTenantSlug, TENANT_MANIFEST } from "./manifest";
+import { sanitizeTenantSlug } from "./ids";
 
 export function resolveRequestTenantSlug(
   request: Request,
-  fallback: string = LIFE_PANORAMICA_TENANT_SLUG,
+  fallback: string = defaultTenantSlug(),
 ): string {
   const header = sanitizeTenantSlug(
     request.headers.get("x-tenant-slug") ||
@@ -26,9 +25,7 @@ export function resolveRequestTenantSlug(
     ?.slice("lcos-tenant-slug=".length);
   if (cookieTenant) {
     try {
-      const fromCookie = sanitizeTenantSlug(
-        decodeURIComponent(cookieTenant),
-      );
+      const fromCookie = sanitizeTenantSlug(decodeURIComponent(cookieTenant));
       if (fromCookie) return fromCookie;
     } catch {
       const fromCookie = sanitizeTenantSlug(cookieTenant);
@@ -37,17 +34,15 @@ export function resolveRequestTenantSlug(
   }
 
   const host = request.headers.get("host")?.split(":")[0]?.toLowerCase() ?? "";
-  if (host.startsWith("life-valley.") || host.includes("life-valley")) {
-    return "life-valley";
-  }
-  if (host.startsWith("life-panoramica.") || host.includes("panoramica")) {
-    return LIFE_PANORAMICA_TENANT_SLUG;
-  }
+  const fromHost = sanitizeTenantSlug(
+    resolveHostHintToSlug(host, TENANT_MANIFEST),
+  );
+  if (fromHost) return fromHost;
 
   const fromEnv = sanitizeTenantSlug(
     process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG,
   );
   if (fromEnv) return fromEnv;
 
-  return sanitizeTenantSlug(fallback) ?? LIFE_PANORAMICA_TENANT_SLUG;
+  return sanitizeTenantSlug(fallback) ?? defaultTenantSlug();
 }

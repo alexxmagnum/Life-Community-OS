@@ -77,7 +77,7 @@ function withDerivedStatus(r: Reservation): Reservation {
 }
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, homeMode } = useTenant();
   const { items: catalogResources } =
     useCatalogDomain<CommunityResource>("resources");
   const [store, setStore] = useState<ReservationStore>({ reservations: [] });
@@ -86,10 +86,8 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
   const resolveResource = useCallback(
     (resourceId: string) =>
       catalogResources.find((r) => r.id === resourceId) ??
-      (tenantSlug === "life-panoramica"
-        ? getResourceById(resourceId)
-        : undefined),
-    [catalogResources, tenantSlug],
+      (homeMode === "premium" ? getResourceById(resourceId) : undefined),
+    [catalogResources, homeMode],
   );
 
   useEffect(() => {

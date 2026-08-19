@@ -25,7 +25,7 @@ export function ReservationConfirmationScreen({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability, tenantSlug } = useTenant();
+  const { isFeatureEnabled, hasCapability, tenantSlug, homeMode } = useTenant();
   const { items: catalogResources } =
     useCatalogDomain<CommunityResource>("resources");
   const { reserve } = useReservations();
@@ -38,7 +38,7 @@ export function ReservationConfirmationScreen({
 
   const resource =
     catalogResources.find((r) => r.id === resourceId) ??
-    (tenantSlug === "life-panoramica"
+    (homeMode === "premium"
       ? getResourceById(resourceId)
       : undefined);
 

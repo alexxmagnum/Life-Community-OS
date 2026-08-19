@@ -33,7 +33,7 @@ export function CommunityContentDetailScreen({
   contentId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoMember, configuration, tenantSlug } =
+  const { isFeatureEnabled, hasCapability, demoMember, configuration, tenantSlug, homeMode } =
     useTenant();
   const demoPersonId = demoMember.personId;
   const {
@@ -104,7 +104,7 @@ export function CommunityContentDetailScreen({
   }
 
   const linked =
-    content.linkedExperienceId && tenantSlug === "life-panoramica"
+    content.linkedExperienceId && homeMode === "premium"
       ? getExperienceById(content.linkedExperienceId)
       : undefined;
 

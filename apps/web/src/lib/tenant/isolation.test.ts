@@ -26,7 +26,15 @@ describe("tenant identity mapping", () => {
     );
     assert.equal(resolveTenantPublicId(LIFE_VALLEY_TENANT_SLUG), "life-valley");
     assert.ok(tenantSlugToUuid("life-panoramica"));
-    assert.ok(tenantSlugToUuid("life-valley"));
+    assert.ok(tenantSlugToUuid("life-ocean-hills"));
+    assert.notEqual(
+      tenantSlugToUuid("life-panoramica"),
+      tenantSlugToUuid("life-ocean-hills"),
+    );
+    assert.notEqual(
+      tenantSlugToUuid("life-valley"),
+      tenantSlugToUuid("life-ocean-hills"),
+    );
     assert.notEqual(
       tenantSlugToUuid("life-panoramica"),
       tenantSlugToUuid("life-valley"),
@@ -43,6 +51,10 @@ describe("tenant identity mapping", () => {
       "life-panoramica",
     );
     assert.equal(resolveTenantPublicId(LIFE_VALLEY_TENANT_UUID), "life-valley");
+    assert.equal(
+      resolveTenantPublicId("30000000-0000-4000-8000-000000000001"),
+      "life-ocean-hills",
+    );
     assert.equal(tenantUuidToSlug(LIFE_PANORAMICA_TENANT_UUID), "life-panoramica");
     assert.equal(tenantUuidToSlug(LIFE_VALLEY_TENANT_UUID), "life-valley");
     assert.equal(
@@ -136,6 +148,7 @@ describe("tenant slug allowlist", () => {
     assert.equal(sanitizeTenantSlug("life-unknown"), null);
     assert.equal(sanitizeTenantSlug("life-panoramica"), "life-panoramica");
     assert.equal(sanitizeTenantSlug("life-valley"), "life-valley");
+    assert.equal(sanitizeTenantSlug("life-ocean-hills"), "life-ocean-hills");
     assert.equal(resolveTenantPublicId("../secret"), "life-panoramica");
   });
 });

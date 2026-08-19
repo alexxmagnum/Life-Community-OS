@@ -34,6 +34,7 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoMember,
     configuration,
   } = useTenant();
@@ -43,7 +44,9 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
   const [listingVersion, setListingVersion] = useState(0);
 
   const moduleOn =
-    isModuleEnabled("housing") && isFeatureEnabled("housing");
+    isModuleEnabled("housing") &&
+    isFeatureEnabled("housing") &&
+    isProductCapabilityEnabled("housing");
   const config = useMemo(
     () => getHousingModuleConfig(configuration),
     [configuration],

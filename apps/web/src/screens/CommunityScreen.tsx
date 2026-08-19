@@ -81,13 +81,15 @@ export function CommunityHubScreen() {
     isModuleEnabled,
     hasCapability,
     demoPersonId,
+    demoMember,
     theme,
-    tenantSlug,
     configuration,
+    homeMode,
+    isProductCapabilityEnabled,
   } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
-  const isPanoramica = tenantSlug === "life-panoramica";
+  const premiumHome = homeMode === "premium";
   const tenantId = configuration.tenantId;
 
   const [expandGroups, setExpandGroups] = useState(false);
@@ -109,17 +111,17 @@ export function CommunityHubScreen() {
   );
 
   const alerts = useMemo(
-    () => (isPanoramica ? listActiveCommunityAlerts() : []),
-    [isPanoramica],
+    () => (premiumHome ? listActiveCommunityAlerts() : []),
+    [premiumHome],
   );
 
   /** Participation items — proposals open or about to close. */
   const participation = useMemo(() => {
-    if (!isPanoramica) return [] as typeof feedItems;
+    if (!premiumHome) return [] as typeof feedItems;
     return listParticipacionContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById, isPanoramica]);
+  }, [feedById, premiumHome]);
 
   /** Layer 1 — decisions with a deadline are the only promoted proposals. */
   const closingSoon = useMemo(
@@ -134,47 +136,47 @@ export function CommunityHubScreen() {
 
   /** Ahora — actualidad catalog (existing), live titles via feed. */
   const actualidadItems = useMemo(() => {
-    if (!isPanoramica) {
+    if (!premiumHome) {
       return feedItems.filter((c) => Boolean(c.isOfficial));
     }
     return listActualidadContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById, feedItems, isPanoramica]);
+  }, [feedById, feedItems, premiumHome]);
 
   /** Official notices — full Belong Oficial list (existing catalog). */
   const officialNotices = useMemo(() => {
-    if (!isPanoramica) return [] as typeof feedItems;
+    if (!premiumHome) return [] as typeof feedItems;
     return listOfficialContent()
       .map((c) => feedById.get(c.id))
       .filter(Boolean) as typeof feedItems;
-  }, [feedById, isPanoramica]);
+  }, [feedById, premiumHome]);
 
   const groupItems = useMemo(
-    () => (isPanoramica ? listGroups() : []),
-    [isPanoramica],
+    () => (premiumHome ? listGroups() : []),
+    [premiumHome],
   );
   const accessibleChannels = useMemo(
-    () => (isPanoramica ? listAccessibleChannels(demoPersonId) : []),
-    [demoPersonId, isPanoramica],
+    () => (premiumHome ? listAccessibleChannels(demoPersonId) : []),
+    [demoPersonId, premiumHome],
   );
   const espacios = useMemo(
-    () => (isPanoramica ? listEspaciosComunitarios() : []),
-    [isPanoramica],
+    () => (premiumHome ? listEspaciosComunitarios() : []),
+    [premiumHome],
   );
   const officialEntities = useMemo(
-    () => (isPanoramica ? listOfficialEntities() : []),
-    [isPanoramica],
+    () => (premiumHome ? listOfficialEntities() : []),
+    [premiumHome],
   );
   const experienceCount = catalogExperiences.length;
   const mascotasItems = useMemo(() => {
-    if (!isPanoramica) return [];
+    if (!premiumHome) return [];
     try {
       return listMascotasHubItems();
     } catch {
       return [];
     }
-  }, [isPanoramica]);
+  }, [premiumHome]);
 
   const tabParam = searchParams.get("tab");
   const resolvedTab = resolveCommunityHubArea(tabParam);
@@ -271,6 +273,7 @@ export function CommunityHubScreen() {
   const showHousing =
     isModuleEnabled("housing") &&
     isFeatureEnabled("housing") &&
+    isProductCapabilityEnabled("housing") &&
     hasCapability(CAPABILITIES.housingView);
   const showOfficial =
     officialEntities.length > 0 || officialNotices.length > 0 || showChannels;

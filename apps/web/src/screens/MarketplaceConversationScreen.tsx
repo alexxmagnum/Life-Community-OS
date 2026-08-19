@@ -54,6 +54,7 @@ export function MarketplaceConversationScreen({
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoMember,
   } = useTenant();
   const [messages, setMessages] = useState<MarketplaceMessageView[]>([]);
@@ -75,7 +76,9 @@ export function MarketplaceConversationScreen({
   const [infoOpen, setInfoOpen] = useState(false);
 
   const moduleOn =
-    isModuleEnabled("marketplace") && isFeatureEnabled("marketplace");
+    isModuleEnabled("marketplace") &&
+    isFeatureEnabled("marketplace") &&
+    isProductCapabilityEnabled("marketplace");
 
   const refresh = useCallback(() => {
     if (!moduleOn || !hasCapability(CAPABILITIES.marketplaceView)) {

@@ -38,6 +38,7 @@ export function ExperienceDetailScreen({
     isModuleEnabled,
     hasCapability,
     tenantSlug,
+    homeMode,
   } = useTenant();
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const { allLocations } = useTenantLocations(configuration.tenantId);
@@ -46,7 +47,7 @@ export function ExperienceDetailScreen({
 
   const experience =
     catalogExperiences.find((e) => e.id === experienceId) ??
-    (tenantSlug === "life-panoramica"
+    (homeMode === "premium"
       ? getExperienceById(experienceId)
       : undefined);
 

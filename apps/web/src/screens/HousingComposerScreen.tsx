@@ -39,12 +39,15 @@ export function HousingComposerScreen() {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    isProductCapabilityEnabled,
     demoMember,
     configuration,
   } = useTenant();
 
   const moduleOn =
-    isModuleEnabled("housing") && isFeatureEnabled("housing");
+    isModuleEnabled("housing") &&
+    isFeatureEnabled("housing") &&
+    isProductCapabilityEnabled("housing");
   const config = useMemo(
     () => getHousingModuleConfig(configuration),
     [configuration],
