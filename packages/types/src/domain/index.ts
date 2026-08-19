@@ -132,6 +132,24 @@ export type {
   GroupMembershipStatus,
 } from "./community-group";
 export type {
+  CommunityPostStatus,
+  CommunityPostKind,
+  CommunityEventStatus,
+  CommunityCommentStatus,
+  CommunityReactionKind,
+  CommunityTargetType,
+  CommunityNotificationKind,
+  CommunityGroupRecord,
+  CommunityPost,
+  CommunityEvent,
+  CommunityCommentRecord,
+  CommunityReaction,
+  CommunitySave,
+  CommunityNotificationRecord,
+  CommunityDomainSnapshot,
+} from "./community-core";
+export { emptyCommunityDomain } from "./community-core";
+export type {
   LocalEntity,
   LocalEntityKind,
   LocalRecommendation,

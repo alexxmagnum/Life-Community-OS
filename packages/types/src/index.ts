@@ -1,6 +1,9 @@
 export type * from "./domain";
 export type * from "./platform";
 
+/** Community Core snapshot helper. */
+export { emptyCommunityDomain } from "./domain/community-core";
+
 /** Runtime helpers for Location (map SoT). */
 export {
   LOCATION_TYPES,

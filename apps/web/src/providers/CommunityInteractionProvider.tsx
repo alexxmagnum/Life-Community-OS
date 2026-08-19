@@ -9,44 +9,27 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type {
+  CommunityCommentRecord,
+  CommunityPost,
+  CommunityReaction,
+} from "@life-community-os/types";
 import {
-  contentTypeLabel,
-  getCommunityContentById,
-  listPublishedCommunityContent,
   type CommunityAuthor,
   type CommunityComment,
   type CommunityContent,
   type CommunityContentType,
-  type PublishingStatus,
   type ReactionKind,
 } from "@life-community-os/tenant-life-panoramica";
 import { useTenant } from "./TenantProvider";
-import { useTenantCatalogs } from "./CatalogProvider";
+import { useCurrentUser } from "./CurrentUserProvider";
+import { postToHubContent } from "@/lib/community/map-to-ui";
 import {
-  hydrateDurableState,
-  pushDurableState,
-} from "@/lib/durable/client";
-
-const STORAGE_KEY = "lcos:community-interactions";
-const DURABLE_KEY = "community-interactions";
-
-type LocalOverrides = {
-  /** User-created published posts */
-  created: CommunityContent[];
-  reactions: Record<string, ReactionKind | null>;
-  /** Extra comments keyed by content id */
-  comments: Record<string, CommunityComment[]>;
-  savedIds: string[];
-  reportedIds: string[];
-};
-
-const emptyOverrides = (): LocalOverrides => ({
-  created: [],
-  reactions: {},
-  comments: {},
-  savedIds: [],
-  reportedIds: [],
-});
+  addCommunityCommentRequest,
+  createCommunityPostRequest,
+  fetchCommunityFeed,
+  toggleCommunityReactionRequest,
+} from "@/lib/community/community-client";
 
 type CommunityInteractionContextValue = {
   feedItems: CommunityContent[];
@@ -69,224 +52,171 @@ type CommunityInteractionContextValue = {
 const CommunityInteractionContext =
   createContext<CommunityInteractionContextValue | null>(null);
 
-function readStorage(): LocalOverrides {
-  if (typeof window === "undefined") return emptyOverrides();
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyOverrides();
-    return { ...emptyOverrides(), ...(JSON.parse(raw) as LocalOverrides) };
-  } catch {
-    return emptyOverrides();
-  }
-}
-
-function writeStorage(data: LocalOverrides) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  pushDurableState(DURABLE_KEY, data);
-}
-
-function mergeContent(
-  base: CommunityContent,
-  overrides: LocalOverrides,
-): CommunityContent {
-  const extraComments = overrides.comments[base.id] ?? [];
-  const myReaction = overrides.reactions[base.id];
-  const reactionCounts = { ...base.reactionCounts };
-  if (myReaction) {
-    reactionCounts[myReaction] = (reactionCounts[myReaction] ?? 0) + 1;
-  }
-  return {
-    ...base,
-    comments: [...base.comments, ...extraComments],
-    commentCount: base.commentCount + extraComments.length,
-    reactionCounts,
-  };
-}
-
 export function CommunityInteractionProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const { demoPersonId, demoMember, tenantSlug, homeMode } = useTenant();
-  const { catalogs, ready: catalogReady } = useTenantCatalogs();
-  const [overrides, setOverrides] = useState<LocalOverrides>(emptyOverrides);
-  const [hydrated, setHydrated] = useState(false);
+  const { tenantSlug, hasMembership } = useTenant();
+  const { currentUser } = useCurrentUser();
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [comments, setComments] = useState<CommunityCommentRecord[]>([]);
+  const [reactions, setReactions] = useState<CommunityReaction[]>([]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [reportedIds, setReportedIds] = useState<string[]>([]);
+  const [localComments, setLocalComments] = useState<
+    Record<string, CommunityComment[]>
+  >({});
+
+  const personId = currentUser.personId;
+  const displayName =
+    currentUser.displayName?.trim() ||
+    currentUser.email?.split("@")[0] ||
+    "Vecino";
 
   useEffect(() => {
     let cancelled = false;
-    setHydrated(false);
+    if (!hasMembership) {
+      setPosts([]);
+      setComments([]);
+      setReactions([]);
+      return;
+    }
     void (async () => {
-      const remote = await hydrateDurableState<LocalOverrides>(
-        DURABLE_KEY,
-        tenantSlug,
-      );
+      const data = await fetchCommunityFeed(tenantSlug);
       if (cancelled) return;
-      if (remote) {
-        const merged = { ...emptyOverrides(), ...remote };
-        setOverrides(merged);
-        window.localStorage.setItem(
-          `${STORAGE_KEY}:${tenantSlug}`,
-          JSON.stringify(merged),
-        );
-      } else {
-        try {
-          const raw = window.localStorage.getItem(
-            `${STORAGE_KEY}:${tenantSlug}`,
-          );
-          if (raw) {
-            setOverrides({
-              ...emptyOverrides(),
-              ...(JSON.parse(raw) as LocalOverrides),
-            });
-          } else {
-            setOverrides(emptyOverrides());
-          }
-        } catch {
-          setOverrides(emptyOverrides());
-        }
-      }
-      setHydrated(true);
+      setPosts((data.posts as CommunityPost[]) ?? []);
+      setComments((data.comments as CommunityCommentRecord[]) ?? []);
+      setReactions((data.reactions as CommunityReaction[]) ?? []);
     })();
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(
-      `${STORAGE_KEY}:${tenantSlug}`,
-      JSON.stringify(overrides),
-    );
-    pushDurableState(DURABLE_KEY, overrides, tenantSlug);
-  }, [overrides, hydrated, tenantSlug]);
-
-  const getContent = useCallback(
-    (id: string) => {
-      const created = overrides.created.find((c) => c.id === id);
-      if (created) return mergeContent(created, overrides);
-      const fromCatalog = (catalogs.community as CommunityContent[]).find(
-        (c) => c.id === id,
-      );
-      if (fromCatalog) return mergeContent(fromCatalog, overrides);
-      // Premium pack fallback — never leak reference catalogs into catalog tenants.
-      if (homeMode !== "premium") return undefined;
-      const base = getCommunityContentById(id);
-      if (!base) return undefined;
-      return mergeContent(base, overrides);
-    },
-    [overrides, catalogs.community, homeMode],
-  );
+  }, [tenantSlug, hasMembership]);
 
   const feedItems = useMemo(() => {
-    const publishedCreated = overrides.created.filter(
-      (c) => c.status === "published",
-    );
-    const baseCatalog =
-      catalogReady && catalogs.community.length > 0
-        ? (catalogs.community as CommunityContent[]).filter(
-            (c) => c.status === "published",
-          )
-        : homeMode === "premium"
-          ? listPublishedCommunityContent()
-          : [];
-    const catalog = baseCatalog.map((c) => mergeContent(c, overrides));
-    const seen = new Set<string>();
-    const merged: CommunityContent[] = [];
-    for (const item of [
-      ...publishedCreated.map((c) => mergeContent(c, overrides)),
-      ...catalog,
-    ]) {
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
-      merged.push(item);
-    }
-    return merged.sort(
-      (a, b) =>
-        new Date(b.publishedAt ?? b.createdAt).getTime() -
-        new Date(a.publishedAt ?? a.createdAt).getTime(),
-    );
-  }, [overrides, catalogs.community, catalogReady, homeMode]);
+    return posts
+      .filter((post) => post.status === "published")
+      .map((post) => {
+        const mapped = postToHubContent(post, comments, reactions);
+        const extra = localComments[post.id] ?? [];
+        return {
+          ...mapped,
+          comments: [...mapped.comments, ...extra],
+          commentCount: mapped.commentCount + extra.length,
+        };
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.publishedAt ?? b.createdAt).getTime() -
+          new Date(a.publishedAt ?? a.createdAt).getTime(),
+      );
+  }, [posts, comments, reactions, localComments]);
+
+  const getContent = useCallback(
+    (id: string) => feedItems.find((item) => item.id === id),
+    [feedItems],
+  );
 
   const getMyReaction = useCallback(
-    (contentId: string) => overrides.reactions[contentId] ?? null,
-    [overrides.reactions],
+    (contentId: string) => {
+      if (!personId) return null;
+      const mine = reactions.find(
+        (item) =>
+          item.personId === personId &&
+          item.targetId === contentId &&
+          item.targetType === "post",
+      );
+      return (mine?.kind as ReactionKind | undefined) ?? null;
+    },
+    [personId, reactions],
   );
 
   const isSaved = useCallback(
-    (contentId: string) => overrides.savedIds.includes(contentId),
-    [overrides.savedIds],
+    (contentId: string) => savedIds.includes(contentId),
+    [savedIds],
   );
 
   const isReported = useCallback(
-    (contentId: string) => overrides.reportedIds.includes(contentId),
-    [overrides.reportedIds],
+    (contentId: string) => reportedIds.includes(contentId),
+    [reportedIds],
   );
 
-  const toggleReaction = useCallback((contentId: string, kind: ReactionKind) => {
-    setOverrides((prev) => {
-      const current = prev.reactions[contentId] ?? null;
-      const next = current === kind ? null : kind;
-      return {
-        ...prev,
-        reactions: { ...prev.reactions, [contentId]: next },
-      };
-    });
-  }, []);
+  const toggleReaction = useCallback(
+    (contentId: string, kind: ReactionKind) => {
+      if (!personId) return;
+      setReactions((prev) => {
+        const existing = prev.find(
+          (item) =>
+            item.personId === personId &&
+            item.targetId === contentId &&
+            item.kind === kind,
+        );
+        if (existing) {
+          return prev.filter((item) => item.id !== existing.id);
+        }
+        return [
+          {
+            id: `local-r-${Date.now()}`,
+            tenantId: tenantSlug,
+            personId,
+            targetType: "post",
+            targetId: contentId,
+            kind,
+            createdBy: personId,
+            createdAt: new Date().toISOString(),
+          },
+          ...prev,
+        ];
+      });
+      void toggleCommunityReactionRequest({
+        tenantId: tenantSlug,
+        targetId: contentId,
+        kind,
+      });
+    },
+    [personId, tenantSlug],
+  );
 
   const addComment = useCallback(
     (contentId: string, body: string) => {
       const trimmed = body.trim();
-      if (!trimmed) return;
+      if (!trimmed || !personId) return;
       const author: CommunityAuthor = {
-        id: demoPersonId,
-        name: demoMember.displayName,
-        avatarUrl: demoMember.avatarUrl,
+        id: personId,
+        name: displayName,
       };
-      const mentionNames = Array.from(
-        trimmed.matchAll(/@([A-Za-zÀ-ÿ]+)/g),
-        (m) => m[1]!,
-      );
       const comment: CommunityComment = {
         id: `local-c-${Date.now()}`,
         author,
         body: trimmed,
         createdAt: new Date().toISOString(),
-        mentionNames: mentionNames.length ? mentionNames : undefined,
       };
-      setOverrides((prev) => ({
+      setLocalComments((prev) => ({
         ...prev,
-        comments: {
-          ...prev.comments,
-          [contentId]: [...(prev.comments[contentId] ?? []), comment],
-        },
+        [contentId]: [...(prev[contentId] ?? []), comment],
       }));
+      void addCommunityCommentRequest({
+        tenantId: tenantSlug,
+        postId: contentId,
+        body: trimmed,
+      });
     },
-    [demoMember.avatarUrl, demoMember.displayName, demoPersonId],
+    [displayName, personId, tenantSlug],
   );
 
   const toggleSave = useCallback((contentId: string) => {
-    setOverrides((prev) => {
-      const has = prev.savedIds.includes(contentId);
-      return {
-        ...prev,
-        savedIds: has
-          ? prev.savedIds.filter((id) => id !== contentId)
-          : [...prev.savedIds, contentId],
-      };
-    });
+    setSavedIds((prev) =>
+      prev.includes(contentId)
+        ? prev.filter((id) => id !== contentId)
+        : [...prev, contentId],
+    );
   }, []);
 
   const reportContent = useCallback((contentId: string) => {
-    setOverrides((prev) => ({
-      ...prev,
-      reportedIds: prev.reportedIds.includes(contentId)
-        ? prev.reportedIds
-        : [...prev.reportedIds, contentId],
-    }));
+    setReportedIds((prev) =>
+      prev.includes(contentId) ? prev : [...prev, contentId],
+    );
   }, []);
 
   const createPublication = useCallback(
@@ -298,40 +228,38 @@ export function CommunityInteractionProvider({
     }) => {
       const title = input.title.trim();
       const body = input.body.trim();
-      if (!title || !body) return null;
+      if (!title || !body || !personId) return null;
       const now = new Date().toISOString();
-      const status: PublishingStatus = "published";
-      const item: CommunityContent = {
-        id: `cc-local-${Date.now()}`,
-        type: input.type ?? "member_update",
+      const optimistic: CommunityPost = {
+        id: `local-post-${Date.now()}`,
+        tenantId: tenantSlug,
+        authorPersonId: personId,
+        authorDisplayName: displayName,
+        kind: input.type ?? "member_update",
         title,
         body,
-        status,
-        isOfficial: false,
-        author: {
-          id: demoPersonId,
-          name: demoMember.fullName,
-          avatarUrl: demoMember.avatarUrl,
-        },
-        areaLabel: input.areaLabel ?? demoMember.areaLabel,
+        status: "published",
+        createdBy: personId,
         createdAt: now,
-        publishedAt: now,
-        commentCount: 0,
-        reactionCounts: { acknowledge: 0, support: 0 },
-        comments: [],
+        updatedAt: now,
       };
-      setOverrides((prev) => ({
-        ...prev,
-        created: [item, ...prev.created],
-      }));
-      return item;
+      setPosts((prev) => [optimistic, ...prev]);
+      void createCommunityPostRequest({
+        tenantId: tenantSlug,
+        title,
+        body,
+        kind: input.type,
+      }).then((result) => {
+        if ("post" in result && result.post) {
+          const created = result.post as CommunityPost;
+          setPosts((prev) =>
+            prev.map((item) => (item.id === optimistic.id ? created : item)),
+          );
+        }
+      });
+      return postToHubContent(optimistic, [], []);
     },
-    [
-      demoMember.areaLabel,
-      demoMember.avatarUrl,
-      demoMember.fullName,
-      demoPersonId,
-    ],
+    [displayName, personId, tenantSlug],
   );
 
   const value = useMemo(
@@ -377,5 +305,3 @@ export function useCommunityInteractions() {
   }
   return ctx;
 }
-
-export { contentTypeLabel };

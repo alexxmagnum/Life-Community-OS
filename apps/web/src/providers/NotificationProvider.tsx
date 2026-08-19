@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useState,
   type ReactNode,
 } from "react";
 import type { Notification } from "@life-community-os/types";
@@ -16,14 +18,10 @@ import {
   type NotificationInboxPort,
   type NotificationRecipientResolver,
 } from "@life-community-os/types";
+import type { CommunityNotificationRecord } from "@life-community-os/types";
 import { useTenant } from "@/providers/TenantProvider";
-
-/**
- * In-app Notification spine shell (ADR-019 / Phase 2.2).
- *
- * Uses Platform Core empty inbox port — never seeds fake notifications.
- * Ready to swap createEmptyNotificationInboxPort for a Platform API client.
- */
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
+import { fetchCommunityNotifications } from "@/lib/community/community-client";
 
 type NotificationContextValue = {
   notifications: Notification[];
@@ -39,8 +37,38 @@ const NotificationContext = createContext<NotificationContextValue | null>(
   null,
 );
 
+function toInboxItem(
+  item: CommunityNotificationRecord,
+): Notification {
+  return {
+    id: item.id,
+    tenantId: item.tenantId,
+    recipientPersonId: item.recipientPersonId,
+    category:
+      item.kind === "official_alert"
+        ? "official"
+        : item.kind === "event_created"
+          ? "experience"
+          : "communication",
+    eventType: item.kind,
+    title: item.title,
+    body: item.body,
+    status: item.readAt ? "read" : "unread",
+    createdAt: item.createdAt,
+    readAt: item.readAt,
+    context: item.entityId
+      ? {
+          contextType: item.entityType ?? "post",
+          contextId: item.entityId,
+        }
+      : undefined,
+  };
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { demoMember, configuration } = useTenant();
+  const { tenantSlug, hasMembership } = useTenant();
+  const { currentUser } = useCurrentUser();
+  const [records, setRecords] = useState<CommunityNotificationRecord[]>([]);
 
   const inbox = useMemo(() => createEmptyNotificationInboxPort(), []);
   const resolver = useMemo(
@@ -49,48 +77,53 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   );
   const delivery = useMemo(() => createNoopNotificationDeliveryPort(), []);
 
-  const tenantId = configuration.tenantId;
-  const recipientPersonId = demoMember.personId;
+  useEffect(() => {
+    let cancelled = false;
+    if (!hasMembership || !currentUser.personId) {
+      setRecords([]);
+      return;
+    }
+    void (async () => {
+      const data = await fetchCommunityNotifications(tenantSlug);
+      if (cancelled) return;
+      setRecords((data.notifications as CommunityNotificationRecord[]) ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasMembership, currentUser.personId, tenantSlug]);
 
   const notifications = useMemo(
-    () =>
-      inbox.listForRecipient({
-        tenantId,
-        recipientPersonId,
-      }),
-    [inbox, recipientPersonId, tenantId],
+    () => records.map(toInboxItem),
+    [records],
   );
 
   const unreadCount = useMemo(
-    () =>
-      inbox.unreadCount({
-        tenantId,
-        recipientPersonId,
-      }),
-    [inbox, recipientPersonId, tenantId],
+    () => notifications.filter((item) => item.status === "unread").length,
+    [notifications],
   );
 
-  const markRead = useCallback(
-    (notificationId: string) => {
-      inbox.markRead({
-        tenantId,
-        recipientPersonId,
-        notificationId,
-      });
-    },
-    [inbox, recipientPersonId, tenantId],
-  );
+  const markRead = useCallback((notificationId: string) => {
+    setRecords((prev) =>
+      prev.map((item) =>
+        item.id === notificationId
+          ? { ...item, readAt: new Date().toISOString() }
+          : item,
+      ),
+    );
+    void fetch("/api/community/notifications", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: JSON.stringify({ notificationId }),
+    });
+  }, [tenantSlug]);
 
-  const archive = useCallback(
-    (notificationId: string) => {
-      inbox.archive({
-        tenantId,
-        recipientPersonId,
-        notificationId,
-      });
-    },
-    [inbox, recipientPersonId, tenantId],
-  );
+  const archive = useCallback((notificationId: string) => {
+    setRecords((prev) => prev.filter((item) => item.id !== notificationId));
+  }, []);
 
   const value = useMemo(
     (): NotificationContextValue => ({

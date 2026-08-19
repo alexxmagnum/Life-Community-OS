@@ -14,7 +14,6 @@ import {
   listActiveCommunityAlerts,
   listActualidadContent,
   listEspaciosComunitarios,
-  listGroups,
   listMascotasHubItems,
   listOfficialContent,
   listOfficialEntities,
@@ -47,6 +46,8 @@ import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 import { resolvePlaceHref } from "@/lib/location";
+import type { CommunityEvent, CommunityGroupRecord } from "@life-community-os/types";
+import { groupToHubCard } from "@/lib/community/map-to-ui";
 
 const PLAZA_PEEK = 4;
 const OFFICIAL_CHANNEL_PEEK = 3;
@@ -84,6 +85,7 @@ export function CommunityHubScreen() {
     demoMember,
     theme,
     configuration,
+    tenantSlug,
     homeMode,
     isProductCapabilityEnabled,
   } = useTenant();
@@ -91,6 +93,8 @@ export function CommunityHubScreen() {
   const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
   const premiumHome = homeMode === "premium";
   const tenantId = configuration.tenantId;
+  const [domainGroups, setDomainGroups] = useState<CommunityGroupRecord[]>([]);
+  const [domainEvents, setDomainEvents] = useState<CommunityEvent[]>([]);
 
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandPlaza, setExpandPlaza] = useState(false);
@@ -153,9 +157,29 @@ export function CommunityHubScreen() {
   }, [feedById, premiumHome]);
 
   const groupItems = useMemo(
-    () => (premiumHome ? listGroups() : []),
-    [premiumHome],
+    () => domainGroups.map(groupToHubCard),
+    [domainGroups],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(
+        `/api/community/feed?tenantId=${encodeURIComponent(tenantSlug)}`,
+        { cache: "no-store", headers: { "x-tenant-slug": tenantSlug } },
+      );
+      if (!res.ok || cancelled) return;
+      const data = (await res.json()) as {
+        groups?: CommunityGroupRecord[];
+        events?: CommunityEvent[];
+      };
+      setDomainGroups(data.groups ?? []);
+      setDomainEvents(data.events ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantSlug]);
   const accessibleChannels = useMemo(
     () => (premiumHome ? listAccessibleChannels(demoPersonId) : []),
     [demoPersonId, premiumHome],
@@ -614,6 +638,33 @@ export function CommunityHubScreen() {
                   onClick={() =>
                     router.push(`/community/groups/${group.id}/conversation`)
                   }
+                />
+              ))}
+            </HubRail>
+          )}
+        </HomeSection>
+      </section>
+
+      <section id="plaza-events" className="scroll-mt-3">
+        <HomeSection title="Eventos" subtitle="Actividades de la comunidad.">
+          {domainEvents.length === 0 ? (
+            <EmptyState
+              title="Aún no hay eventos"
+              description="Cuando se publique un evento, lo verás aquí."
+            />
+          ) : (
+            <HubRail label="Eventos de la comunidad">
+              {domainEvents.map((event) => (
+                <HubRailCard
+                  key={event.id}
+                  title={event.title}
+                  meta={[
+                    event.locationLabel,
+                    formatContentWhen(event.startsAt),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  onClick={() => router.push("/experiences")}
                 />
               ))}
             </HubRail>

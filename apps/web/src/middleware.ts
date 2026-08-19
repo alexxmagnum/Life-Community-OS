@@ -26,6 +26,7 @@ const PILOT_PUBLIC_API_PREFIXES = [
   "/api/housing",
   "/api/durable",
   "/api/catalog",
+  "/api/community",
 ];
 
 function isAlwaysPublicPath(pathname: string): boolean {

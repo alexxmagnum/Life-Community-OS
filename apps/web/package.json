@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts ./src/lib/tenant/tenant-factory.test.ts",
+    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts ./src/lib/tenant/tenant-factory.test.ts ./src/lib/community/community-isolation.test.ts",
     "migrate:files": "tsx ./scripts/import-file-fixtures.ts"
   },
   "dependencies": {

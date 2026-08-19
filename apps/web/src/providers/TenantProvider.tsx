@@ -18,7 +18,6 @@ import {
   type TenantConfiguration,
 } from "@life-community-os/types";
 import {
-  DEMO_PERSON_MARTA,
   getDemoMemberByPersonId,
   listDemoMembers,
   type CapabilityKey,
@@ -80,7 +79,7 @@ const GUEST_VIEWER: DemoMemberProfile = {
   avatarUrl: "",
   residencyStatusLabel: "Sin sesión",
   residencyStatusKind: "pending",
-  narrativeKey: "marta",
+  narrativeKey: "guest",
 };
 
 function roleLabel(role: MembershipRole | null, brand: string): string {
@@ -125,9 +124,7 @@ export function TenantProvider({
   const features = pack.features;
   const configuration = useMemo(() => pack.resolveConfiguration(), [pack]);
   const [demoRole, setDemoRole] = useState<DemoRole>("member");
-  const [demoPersonId, setDemoPersonIdState] = useState<string>(
-    DEMO_PERSON_MARTA,
-  );
+  const [demoPersonId, setDemoPersonIdState] = useState<string>("");
 
   const themeMode: TenantThemeMode = theme.defaultMode ?? "day";
 
@@ -227,14 +224,12 @@ export function TenantProvider({
         avatarUrl: "",
         residencyStatusLabel: "Miembro de la comunidad",
         residencyStatusKind: "verified",
-        narrativeKey: "marta",
+        narrativeKey: currentUser.role ?? "member",
       };
     }
-    if (demoEnabled && pack.homeMode === "premium") {
-      return (
-        getDemoMemberByPersonId(demoPersonId) ??
-        getDemoMemberByPersonId(DEMO_PERSON_MARTA)!
-      );
+    if (demoEnabled && demoPersonId) {
+      const demo = getDemoMemberByPersonId(demoPersonId);
+      if (demo) return demo;
     }
     return {
       ...GUEST_VIEWER,
@@ -251,7 +246,6 @@ export function TenantProvider({
     demoEnabled,
     demoPersonId,
     theme.identity?.defaultAreaName,
-    pack.homeMode,
   ]);
 
   const hasProductCapability = useCallback(

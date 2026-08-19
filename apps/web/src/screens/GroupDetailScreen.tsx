@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getGroupById } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
 } from "@life-community-os/ui";
+import type { CommunityGroupRecord } from "@life-community-os/types";
 import { canOpenGroupConversation } from "@/lib/group-conversation-access";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 /**
  * Group entry — opens Conversation Experience directly when allowed.
- * Group info lives in the chat header info sheet (not a pre-chat page).
  */
 export function GroupDetailScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
@@ -22,17 +21,58 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
+    tenantSlug,
   } = useTenant();
+  const [group, setGroup] = useState<CommunityGroupRecord | null | undefined>(
+    undefined,
+  );
 
   const groupsOn =
     isModuleEnabled("community.groups") && isFeatureEnabled("groups");
-  const group = groupsOn ? getGroupById(groupId) : undefined;
+
+  useEffect(() => {
+    if (!groupsOn) {
+      setGroup(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(
+        `/api/community/groups?tenantId=${encodeURIComponent(tenantSlug)}`,
+        { cache: "no-store", headers: { "x-tenant-slug": tenantSlug } },
+      );
+      if (!res.ok || cancelled) {
+        setGroup(null);
+        return;
+      }
+      const data = (await res.json()) as { groups?: CommunityGroupRecord[] };
+      const found = (data.groups ?? []).find((item) => item.id === groupId);
+      setGroup(found ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [groupId, groupsOn, tenantSlug]);
+
+  const hubGroup = group
+    ? {
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        memberCount: 0,
+        imageUrl: group.imageUrl ?? "",
+        categoryLabel: group.categoryLabel ?? "Grupo",
+        tenantId: group.tenantId,
+        ownerPersonId: group.createdBy,
+        status: group.status,
+      }
+    : undefined;
 
   const canChat =
-    Boolean(group) &&
+    Boolean(hubGroup) &&
     hasCapability(CAPABILITIES.contentView) &&
     canOpenGroupConversation({
-      group: group!,
+      group: hubGroup!,
       configuration,
       isModuleEnabled,
       hasCapability,
@@ -62,6 +102,18 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     );
   }
 
+  if (group === undefined) {
+    return (
+      <MobileScreen>
+        <FlowScreenHeader
+          title="Grupos"
+          onBack={() => router.push("/community?tab=grupos")}
+          onExit={() => router.push("/community")}
+        />
+      </MobileScreen>
+    );
+  }
+
   if (!group) {
     return (
       <MobileScreen>
@@ -80,24 +132,6 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     );
   }
 
-  if (!hasCapability(CAPABILITIES.contentView) || !canChat) {
-    return (
-      <MobileScreen>
-        <FlowScreenHeader
-          title={group.name}
-          onBack={() => router.push("/community?tab=grupos")}
-          onExit={() => router.push("/community")}
-        />
-        <EmptyState
-          title="Sin acceso a la conversación"
-          description="Puedes seguir el grupo desde Comunidad. La conversación se abrirá cuando tengas acceso."
-          actionLabel="Volver a Comunidad"
-          onAction={() => router.push("/community?tab=grupos")}
-        />
-      </MobileScreen>
-    );
-  }
-
   return (
     <MobileScreen>
       <FlowScreenHeader
@@ -105,9 +139,12 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
         onBack={() => router.push("/community?tab=grupos")}
         onExit={() => router.push("/community")}
       />
-      <p className="px-1 py-8 text-center text-[13px] text-[var(--color-text-tertiary)]">
-        Abriendo conversación…
-      </p>
+      <EmptyState
+        title={group.name}
+        description={group.description || "Abre la conversación del grupo."}
+        actionLabel="Volver a grupos"
+        onAction={() => router.push("/community?tab=grupos")}
+      />
     </MobileScreen>
   );
 }

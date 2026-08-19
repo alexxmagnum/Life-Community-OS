@@ -9,7 +9,6 @@ import {
   DEMO_PERSON_MARTA,
   DEMO_PERSON_OWNER_ALDEA,
 } from "./demo-ids";
-import { residencyDemoNarratives } from "./residency-demo";
 
 export type DemoMemberProfile = {
   personId: string;
@@ -22,7 +21,7 @@ export type DemoMemberProfile = {
   /** Short Spanish UI line for residency verification state. */
   residencyStatusLabel: string;
   residencyStatusKind: "verified" | "pending" | "other_area";
-  narrativeKey: keyof typeof residencyDemoNarratives;
+  narrativeKey: string;
 };
 
 export const demoMemberCatalog: DemoMemberProfile[] = [

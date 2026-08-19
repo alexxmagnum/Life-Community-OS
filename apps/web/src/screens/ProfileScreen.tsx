@@ -65,8 +65,9 @@ export function ProfileScreen() {
   );
 
   const narrative =
-    residencyDemoNarratives[demoMember.narrativeKey]?.summary ??
-    home.emptyMessage;
+    (residencyDemoNarratives as Record<string, { summary?: string }>)[
+      demoMember.narrativeKey
+    ]?.summary ?? home.emptyMessage;
 
   const residencyTone =
     primary?.statusKind === "verified"
