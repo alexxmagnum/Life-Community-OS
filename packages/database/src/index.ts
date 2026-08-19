@@ -10,6 +10,7 @@
 export {
   getPublicDatabaseEnv,
   getServiceDatabaseEnv,
+  isServiceDatabaseConfigured,
   type PublicDatabaseEnv,
   type ServiceDatabaseEnv,
 } from "./env";
@@ -22,6 +23,8 @@ export type {
   IdentityRow,
   MembershipRow,
   LocationRow,
+  TenantDocumentRow,
+  IdentityMembershipRpcRow,
 } from "./schema";
 
 export {

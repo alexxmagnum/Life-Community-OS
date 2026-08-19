@@ -5,10 +5,12 @@ import {
   removeLocationServer,
   saveLocationServer,
 } from "@/lib/location/server-location-repository";
+import { requireMutationActor } from "@/lib/auth/mutation-gate";
+import { persistenceScopeFromRequest } from "@/lib/data/database-access";
 import {
-  requireAdministratorMutation,
-  requireModeratorMutation,
-} from "@/lib/auth/mutation-gate";
+  canDeleteLocation,
+  canMutateLocation,
+} from "@/lib/location/location-ownership";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
@@ -30,7 +32,8 @@ export async function GET(request: Request, { params }: Params) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
-  const location = await getLocationServer(tenantId, id);
+  const scope = persistenceScopeFromRequest(request, actor.personId);
+  const location = await getLocationServer(tenantId, id, scope);
   if (!location) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
@@ -40,7 +43,7 @@ export async function GET(request: Request, { params }: Params) {
   if (location.visibility === "private") {
     const privileged =
       actor.role === "administrator" || actor.role === "moderator";
-    if (!privileged) {
+    if (!privileged && location.ownerId !== actor.personId) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
   }
@@ -51,7 +54,7 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
-  const gated = await requireModeratorMutation(request);
+  const gated = await requireMutationActor(request);
   if ("error" in gated) return gated.error;
 
   const { id } = await params;
@@ -61,10 +64,14 @@ export async function PATCH(request: Request, { params }: Params) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
+  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
 
-  const existing = await getLocationServer(tenantId, id);
+  const existing = await getLocationServer(tenantId, id, scope);
   if (!existing || existing.tenantId !== tenantId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (!canMutateLocation(gated.actor, existing)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   let body: Partial<CreateLocationInput>;
@@ -79,6 +86,8 @@ export async function PATCH(request: Request, { params }: Params) {
     ...body,
     id: existing.id,
     tenantId,
+    ownerId: existing.ownerId,
+    createdBy: existing.createdBy,
     name: body.name?.trim() || existing.name,
     address: body.address?.trim() || existing.address,
     category: body.category?.trim() || existing.category,
@@ -89,7 +98,7 @@ export async function PATCH(request: Request, { params }: Params) {
   };
 
   try {
-    const location = await saveLocationServer(next);
+    const location = await saveLocationServer(next, scope);
     return NextResponse.json({ location });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save_failed";
@@ -98,7 +107,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const gated = await requireAdministratorMutation(request);
+  const gated = await requireMutationActor(request);
   if ("error" in gated) return gated.error;
 
   const { id } = await params;
@@ -108,11 +117,15 @@ export async function DELETE(request: Request, { params }: Params) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
+  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
 
-  const existing = await getLocationServer(tenantId, id);
+  const existing = await getLocationServer(tenantId, id, scope);
   if (!existing || existing.tenantId !== tenantId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  await removeLocationServer(tenantId, id);
+  if (!canDeleteLocation(gated.actor, existing)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  await removeLocationServer(tenantId, id, scope);
   return NextResponse.json({ ok: true, location: existing as Location });
 }

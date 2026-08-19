@@ -1,10 +1,13 @@
 /**
  * Tenant-scoped content catalogs — community / experiences / marketplace / resources.
- * Seeded once from tenant packs; thereafter durable per tenant.
+ * Seeded once from tenant packs; thereafter durable per tenant in Postgres.
  */
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import {
+  readTenantDocument,
+  writeTenantDocument,
+  type DocumentScope,
+} from "@/lib/data/tenant-document-store";
 import { resolveTenantPublicId } from "@/lib/tenant/ids";
 
 export type CatalogDomain =
@@ -20,44 +23,41 @@ export const CATALOG_DOMAINS: readonly CatalogDomain[] = [
   "resources",
 ] as const;
 
-const DATA_DIR = path.join(process.cwd(), ".data", "catalog");
+export type CatalogScope = DocumentScope;
 
-function filePath(tenantSlug: string, domain: CatalogDomain): string {
-  return path.join(DATA_DIR, tenantSlug, `${domain}.json`);
+function docKey(domain: CatalogDomain): string {
+  return `catalog:${domain}`;
 }
 
 export async function readCatalog<T = unknown>(
   tenantId: string,
   domain: CatalogDomain,
+  scope?: CatalogScope,
 ): Promise<T[] | null> {
   const slug = resolveTenantPublicId(tenantId);
-  try {
-    const raw = await fs.readFile(filePath(slug, domain), "utf8");
-    const parsed = JSON.parse(raw) as T[];
-    return Array.isArray(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+  const parsed = await readTenantDocument<T[]>(slug, docKey(domain), scope);
+  if (!parsed) return null;
+  return Array.isArray(parsed) ? parsed : null;
 }
 
 export async function writeCatalog(
   tenantId: string,
   domain: CatalogDomain,
   items: unknown[],
+  scope?: CatalogScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(tenantId);
-  const dir = path.join(DATA_DIR, slug);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(filePath(slug, domain), JSON.stringify(items, null, 2), "utf8");
+  await writeTenantDocument(slug, docKey(domain), items, scope);
 }
 
 export async function ensureCatalogSeeded(
   tenantId: string,
   domain: CatalogDomain,
   seed: unknown[],
+  scope?: CatalogScope,
 ): Promise<unknown[]> {
-  const existing = await readCatalog(tenantId, domain);
+  const existing = await readCatalog(tenantId, domain, scope);
   if (existing && existing.length > 0) return existing;
-  await writeCatalog(tenantId, domain, seed);
+  await writeCatalog(tenantId, domain, seed, scope);
   return seed;
 }

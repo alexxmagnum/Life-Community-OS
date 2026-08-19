@@ -1,11 +1,9 @@
 /**
  * Server-side Location repository.
  *
- * Priority:
- * 1. Supabase when service credentials are present and reachable
- * 2. Durable JSON file under apps/web/.data/locations (survives browser/device)
- *
- * Never use browser localStorage as SoT.
+ * Production: PostgreSQL `locations` (tenant_id + ownership).
+ * Development fixture: apps/web/.data/locations when DB is not the data plane.
+ * Never localStorage. LocalEntity is a view — not stored here.
  */
 
 import { promises as fs } from "node:fs";
@@ -17,9 +15,20 @@ import {
   type Location,
 } from "@life-community-os/types";
 import {
+  isDatabaseConfigured,
+  isFilePersistenceAllowed,
+  PersistenceUnavailableError,
+} from "@/lib/data/data-plane";
+import { createDomainDatabaseClient } from "@/lib/data/database-access";
+import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+
+export type LocationWriteScope = {
+  accessToken?: string | null;
+  personId?: string | null;
+};
 
 const DATA_DIR = path.join(process.cwd(), ".data", "locations");
 
@@ -27,11 +36,8 @@ function filePath(tenantSlug: string): string {
   return path.join(DATA_DIR, `${tenantSlug}.json`);
 }
 
-async function ensureDir(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-}
-
 async function readFileStore(tenantSlug: string): Promise<Location[]> {
+  if (!isFilePersistenceAllowed()) return [];
   try {
     const raw = await fs.readFile(filePath(tenantSlug), "utf8");
     const parsed = JSON.parse(raw) as Location[];
@@ -46,19 +52,14 @@ async function writeFileStore(
   tenantSlug: string,
   locations: Location[],
 ): Promise<void> {
-  await ensureDir();
+  if (!isFilePersistenceAllowed()) {
+    throw new PersistenceUnavailableError();
+  }
+  await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(
     filePath(tenantSlug),
     JSON.stringify(locations, null, 2),
     "utf8",
-  );
-}
-
-function hasSupabaseServiceEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim(),
   );
 }
 
@@ -80,6 +81,8 @@ type LocationRow = {
   image_url: string | null;
   hours: string | null;
   area_label: string | null;
+  owner_id: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -109,6 +112,8 @@ function rowToLocation(row: LocationRow, tenantSlug: string): Location {
     ...(row.image_url ? { imageUrl: row.image_url } : {}),
     ...(row.hours ? { hours: row.hours } : {}),
     ...(row.area_label ? { areaLabel: row.area_label } : {}),
+    ...(row.owner_id ? { ownerId: row.owner_id } : {}),
+    ...(row.created_by ? { createdBy: row.created_by } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -133,127 +138,138 @@ function locationToRow(location: Location, tenantUuid: string): LocationRow {
     image_url: location.imageUrl ?? null,
     hours: location.hours ?? null,
     area_label: location.areaLabel ?? null,
+    owner_id: location.ownerId ?? null,
+    created_by: location.createdBy ?? null,
     created_at: location.createdAt ?? new Date().toISOString(),
     updated_at: location.updatedAt ?? new Date().toISOString(),
   };
 }
 
-async function listFromSupabase(tenantSlug: string): Promise<Location[] | null> {
-  if (!hasSupabaseServiceEnv()) return null;
+async function listFromDatabase(
+  tenantSlug: string,
+  scope?: LocationWriteScope,
+): Promise<Location[] | null> {
+  if (!isDatabaseConfigured()) return null;
   const tenantUuid = tenantSlugToUuid(tenantSlug);
   if (!tenantUuid) return null;
-  try {
-    const { createServiceDatabaseClient } = await import(
-      "@life-community-os/database"
-    );
-    const client = createServiceDatabaseClient();
-    const { data, error } = await client
-      .from("locations")
-      .select("*")
-      .eq("tenant_id", tenantUuid);
-    if (error) {
-      console.warn("[locations] supabase list failed, using file store", error.message);
-      return null;
+  const client = await createDomainDatabaseClient(scope);
+  if (!client) return null;
+  const { data, error } = await client
+    .from("locations")
+    .select("*")
+    .eq("tenant_id", tenantUuid);
+  if (error) {
+    console.warn("[locations] list failed", error.message);
+    if (!isFilePersistenceAllowed()) {
+      throw new PersistenceUnavailableError(error.message);
     }
-    return (data as LocationRow[]).map((row) => rowToLocation(row, tenantSlug));
-  } catch (err) {
-    console.warn("[locations] supabase unavailable", err);
     return null;
   }
+  return (data as LocationRow[]).map((row) => rowToLocation(row, tenantSlug));
 }
 
-async function upsertSupabase(location: Location): Promise<boolean> {
-  if (!hasSupabaseServiceEnv()) return false;
+async function upsertDatabase(
+  location: Location,
+  scope?: LocationWriteScope,
+): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false;
   const tenantUuid = tenantSlugToUuid(location.tenantId);
   if (!tenantUuid) return false;
-  try {
-    const { createServiceDatabaseClient } = await import(
-      "@life-community-os/database"
-    );
-    const client = createServiceDatabaseClient();
-    const row = locationToRow(location, tenantUuid);
-    const { error } = await client.from("locations").upsert(row);
-    if (error) {
-      console.warn("[locations] supabase upsert failed", error.message);
-      return false;
-    }
-    return true;
-  } catch {
+  const client = await createDomainDatabaseClient(scope);
+  if (!client) return false;
+  const row = locationToRow(location, tenantUuid);
+  const { error } = await client.from("locations").upsert(row);
+  if (error) {
+    console.warn("[locations] upsert failed", error.message);
     return false;
   }
+  return true;
 }
 
-async function deleteSupabase(
+async function deleteDatabase(
   tenantSlug: string,
   locationId: string,
+  scope?: LocationWriteScope,
 ): Promise<boolean> {
-  if (!hasSupabaseServiceEnv()) return false;
+  if (!isDatabaseConfigured()) return false;
   const tenantUuid = tenantSlugToUuid(tenantSlug);
   if (!tenantUuid) return false;
-  try {
-    const { createServiceDatabaseClient } = await import(
-      "@life-community-os/database"
-    );
-    const client = createServiceDatabaseClient();
-    const { error } = await client
-      .from("locations")
-      .delete()
-      .eq("tenant_id", tenantUuid)
-      .eq("id", locationId);
-    if (error) {
-      console.warn("[locations] supabase delete failed", error.message);
-      return false;
-    }
-    return true;
-  } catch {
+  const client = await createDomainDatabaseClient(scope);
+  if (!client) return false;
+  const { error } = await client
+    .from("locations")
+    .delete()
+    .eq("tenant_id", tenantUuid)
+    .eq("id", locationId);
+  if (error) {
+    console.warn("[locations] delete failed", error.message);
     return false;
   }
+  return true;
 }
 
 export async function listLocationsServer(
   tenantId: string,
+  scope?: LocationWriteScope,
 ): Promise<Location[]> {
   const slug = resolveTenantPublicId(tenantId);
-  const fromDb = await listFromSupabase(slug);
+  const fromDb = await listFromDatabase(slug, scope);
   if (fromDb) return fromDb;
+  if (!isFilePersistenceAllowed()) {
+    if (isDatabaseConfigured()) return [];
+    throw new PersistenceUnavailableError();
+  }
   return readFileStore(slug);
 }
 
 export async function getLocationServer(
   tenantId: string,
   locationId: string,
+  scope?: LocationWriteScope,
 ): Promise<Location | null> {
-  const all = await listLocationsServer(tenantId);
+  const all = await listLocationsServer(tenantId, scope);
   return all.find((item) => item.id === locationId) ?? null;
 }
 
 export async function saveLocationServer(
   input: CreateLocationInput,
+  scope?: LocationWriteScope,
 ): Promise<Location> {
+  const ownerId = input.ownerId?.trim() || scope?.personId?.trim() || undefined;
+  const createdBy =
+    input.createdBy?.trim() || scope?.personId?.trim() || undefined;
   const location = createLocation({
     ...input,
     tenantId: resolveTenantPublicId(input.tenantId),
+    ownerId,
+    createdBy,
   });
   const slug = location.tenantId;
-  const wroteDb = await upsertSupabase(location);
+  const wroteDb = await upsertDatabase(location, scope);
+  if (wroteDb) return location;
+  if (!isFilePersistenceAllowed()) {
+    throw new PersistenceUnavailableError("Location write requires Postgres");
+  }
   const existing = await readFileStore(slug);
   const next = [
     ...existing.filter((item) => item.id !== location.id),
     location,
   ];
   await writeFileStore(slug, next);
-  if (!wroteDb) {
-    // File store is authoritative when DB is unavailable.
-  }
   return location;
 }
 
 export async function removeLocationServer(
   tenantId: string,
   locationId: string,
+  scope?: LocationWriteScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(tenantId);
-  await deleteSupabase(slug, locationId);
+  const deleted = await deleteDatabase(slug, locationId, scope);
+  if (deleted) return;
+  if (!isFilePersistenceAllowed()) {
+    throw new PersistenceUnavailableError("Location delete requires Postgres");
+  }
   const existing = await readFileStore(slug);
   await writeFileStore(
     slug,
@@ -264,10 +280,16 @@ export async function removeLocationServer(
 export async function replaceLocationsServer(
   tenantId: string,
   locations: Location[],
+  scope?: LocationWriteScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(tenantId);
-  await writeFileStore(slug, locations);
   for (const location of locations) {
-    await upsertSupabase({ ...location, tenantId: slug });
+    const wrote = await upsertDatabase({ ...location, tenantId: slug }, scope);
+    if (!wrote && !isFilePersistenceAllowed()) {
+      throw new PersistenceUnavailableError();
+    }
+  }
+  if (!isDatabaseConfigured() && isFilePersistenceAllowed()) {
+    await writeFileStore(slug, locations);
   }
 }

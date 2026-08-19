@@ -69,6 +69,10 @@ export type Location = {
   hours?: string;
   /** Neighbourhood / area label for discovery ranking (not a security boundary). */
   areaLabel?: string;
+  /** Person who owns this place when member-created. Absent for catalog fixtures. */
+  ownerId?: DomainId;
+  /** Person who first persisted this Location. */
+  createdBy?: DomainId;
   createdAt?: IsoDateTimeString;
   updatedAt?: IsoDateTimeString;
 };
@@ -166,6 +170,8 @@ export type CreateLocationInput = {
   imageUrl?: string;
   hours?: string;
   areaLabel?: string;
+  ownerId?: DomainId;
+  createdBy?: DomainId;
   id?: DomainId;
 };
 
@@ -194,6 +200,8 @@ export function createLocation(input: CreateLocationInput): Location {
     ...(imageUrl ? { imageUrl } : {}),
     ...(hours ? { hours } : {}),
     ...(areaLabel ? { areaLabel } : {}),
+    ...(input.ownerId?.trim() ? { ownerId: input.ownerId.trim() } : {}),
+    ...(input.createdBy?.trim() ? { createdBy: input.createdBy.trim() } : {}),
     createdAt: now,
     updatedAt: now,
   };

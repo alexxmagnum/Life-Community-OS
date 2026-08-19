@@ -42,7 +42,11 @@ export async function GET(request: Request, { params }: Params) {
     actor: gated.actor,
   });
   if ("error" in bound) return bound.error;
-  const value = await readDurableJson(bound.tenantId, key);
+  const { persistenceScopeFromRequest } = await import(
+    "@/lib/data/database-access"
+  );
+  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
+  const value = await readDurableJson(bound.tenantId, key, scope);
   return NextResponse.json({ tenantId: bound.tenantId, key, value });
 }
 
@@ -67,6 +71,10 @@ export async function PUT(request: Request, { params }: Params) {
     actorTenantSlug: gated.actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
-  await writeDurableJson(bound.tenantId, key, body.value ?? null);
+  const { persistenceScopeFromRequest } = await import(
+    "@/lib/data/database-access"
+  );
+  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
+  await writeDurableJson(bound.tenantId, key, body.value ?? null, scope);
   return NextResponse.json({ tenantId: bound.tenantId, key, ok: true });
 }

@@ -11,6 +11,8 @@ import type { DomainId, IsoDateTimeString } from "./ids";
  */
 export interface Person {
   id: DomainId;
+  displayName?: string | null;
+  email?: string | null;
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
 }

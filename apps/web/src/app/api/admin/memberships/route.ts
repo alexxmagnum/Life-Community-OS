@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { coerceMembershipRole } from "@life-community-os/types";
 import {
-  listFileMembershipDirectory,
-  updateFileMembershipRole,
-} from "@/lib/auth/membership-store";
+  listMembershipDirectory,
+  updateMembershipRole,
+} from "@/lib/auth/ensure-domain-membership";
 import {
   requireAdministrator,
   resolveRequestActor,
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const tenantSlug = actor.tenantSlug;
-  const directory = await listFileMembershipDirectory(tenantSlug);
+  const directory = await listMembershipDirectory(tenantSlug);
   return NextResponse.json({
     tenantSlug,
     members: directory.map(({ membership, identity }) => ({
@@ -51,7 +51,7 @@ export async function PATCH(request: Request) {
   }
 
   const tenantSlug = actor.tenantSlug;
-  const updated = await updateFileMembershipRole({
+  const updated = await updateMembershipRole({
     tenantSlug,
     personId,
     role: coerceMembershipRole(body.role),

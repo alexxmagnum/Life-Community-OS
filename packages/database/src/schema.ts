@@ -30,6 +30,13 @@ export type TerritoryRow = {
 
 export type PersonRow = {
   id: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  email: string | null;
+  phone: string | null;
+  metadata: Record<string, unknown>;
+  status: string;
   created_at: string;
   updated_at: string;
 };
@@ -45,6 +52,7 @@ export type IdentityRow = {
 export type MembershipRow = {
   id: string;
   person_id: string;
+  tenant_id: string;
   territory_id: string;
   membership_type: string;
   status: MembershipStatus;
@@ -70,8 +78,30 @@ export type LocationRow = {
   image_url: string | null;
   hours: string | null;
   area_label: string | null;
+  owner_id: string | null;
+  created_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type TenantDocumentRow = {
+  tenant_id: string;
+  doc_key: string;
+  payload: unknown;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type IdentityMembershipRpcRow = {
+  person_id: string;
+  membership_id: string;
+  tenant_id: string;
+  tenant_slug: string;
+  territory_id: string;
+  role: string;
+  display_name: string | null;
+  email: string | null;
 };
 
 export type Database = {
@@ -116,6 +146,13 @@ export type Database = {
         Row: PersonRow;
         Insert: {
           id?: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          display_name?: string | null;
+          email?: string | null;
+          phone?: string | null;
+          metadata?: Record<string, unknown>;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,6 +184,7 @@ export type Database = {
         Insert: {
           id?: string;
           person_id: string;
+          tenant_id?: string;
           territory_id: string;
           membership_type: string;
           status?: MembershipStatus;
@@ -167,6 +205,13 @@ export type Database = {
             columns: ["territory_id"];
             isOneToOne: false;
             referencedRelation: "territories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "memberships_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
             referencedColumns: ["id"];
           },
         ];
@@ -191,6 +236,8 @@ export type Database = {
           image_url?: string | null;
           hours?: string | null;
           area_label?: string | null;
+          owner_id?: string | null;
+          created_by?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -205,9 +252,47 @@ export type Database = {
           },
         ];
       };
+      tenant_documents: {
+        Row: TenantDocumentRow;
+        Insert: {
+          tenant_id: string;
+          doc_key: string;
+          payload?: unknown;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<TenantDocumentRow>;
+        Relationships: [
+          {
+            foreignKeyName: "tenant_documents_tenant_id_fkey";
+            columns: ["tenant_id"];
+            isOneToOne: false;
+            referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      app_bind_request_context: {
+        Args: { p_person_id: string; p_tenant_id: string };
+        Returns: undefined;
+      };
+      app_bind_public_tenant: {
+        Args: { p_tenant_id: string };
+        Returns: undefined;
+      };
+      app_resolve_identity_memberships: {
+        Args: { p_provider_reference: string };
+        Returns: IdentityMembershipRpcRow[];
+      };
+      app_set_tenant_context: {
+        Args: { p_tenant_id: string; p_territory_id?: string | null };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

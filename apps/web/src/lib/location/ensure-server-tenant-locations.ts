@@ -3,6 +3,7 @@
  */
 
 import type { LocationType } from "@life-community-os/types";
+import { isProductionDataPlane } from "@/lib/data/data-plane";
 import {
   listLocationsServer,
   saveLocationServer,
@@ -58,6 +59,10 @@ const VALLEY_PLACES: Array<{
 export async function ensureServerTenantLocations(
   tenantSlug: string,
 ): Promise<{ created: number; enriched: number }> {
+  if (isProductionDataPlane()) {
+    return { created: 0, enriched: 0 };
+  }
+
   const slug = tenantSlug.trim().toLowerCase();
   let created = 0;
   let enriched = 0;

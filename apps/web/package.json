@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts"
+    "test:isolation": "tsx --test ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts",
+    "migrate:files": "tsx ./scripts/import-file-fixtures.ts"
   },
   "dependencies": {
     "@life-community-os/address-geocoder": "workspace:*",

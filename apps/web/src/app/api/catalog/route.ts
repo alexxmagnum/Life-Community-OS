@@ -80,7 +80,11 @@ export async function PUT(request: Request) {
     actorTenantSlug: gated.actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
-  await writeCatalog(bound.tenantId, body.domain, body.items);
+  const { persistenceScopeFromRequest } = await import(
+    "@/lib/data/database-access"
+  );
+  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
+  await writeCatalog(bound.tenantId, body.domain, body.items, scope);
   return NextResponse.json({
     tenantId: bound.tenantId,
     domain: body.domain,

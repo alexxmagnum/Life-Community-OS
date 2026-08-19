@@ -1,8 +1,8 @@
-# Auth current state — Phase 1.1 (pre-fix snapshot)
+# Auth current state — Phase 2 (data plane)
 
 **Date:** 2026-08-19  
-**Scope:** login, register, session, cookies, middleware, Supabase, local fallback, membership  
-**Follow-up:** Identity Foundation in this same phase closes the gaps below.
+**Phase 1:** User → Session → Person → Membership → Role → Permissions.  
+**Phase 2:** Membership and domain data resolve from PostgreSQL when configured. `.data/` is a development fixture only. See `DATA_PERSISTENCE_AUDIT.md`.
 
 ---
 

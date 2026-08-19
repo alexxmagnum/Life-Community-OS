@@ -45,6 +45,8 @@ export function mapTerritoryRow(row: TerritoryRow): Territory {
 export function mapPersonRow(row: PersonRow): Person {
   return {
     id: row.id,
+    displayName: row.display_name,
+    email: row.email,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -64,6 +66,7 @@ export function mapMembershipRow(row: MembershipRow): Membership {
   return {
     id: row.id,
     personId: row.person_id,
+    tenantId: row.tenant_id,
     territoryId: row.territory_id,
     membershipType: row.membership_type,
     status: row.status,

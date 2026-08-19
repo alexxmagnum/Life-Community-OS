@@ -46,6 +46,19 @@ export function getPublicDatabaseEnv(
 /**
  * Privileged server credentials. Never expose to the browser.
  */
+/**
+ * True when service-role credentials are present (does not throw).
+ */
+export function isServiceDatabaseConfigured(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return Boolean(
+    env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
+      env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() &&
+      env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+  );
+}
+
 export function getServiceDatabaseEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): ServiceDatabaseEnv {

@@ -141,7 +141,41 @@ describe("tenant slug allowlist", () => {
 });
 
 describe("CASE 5 — read tenant bind", () => {
-  it("denies an authenticated Panoramica member reading Valley", async () => {
+  it("TEST 1 — Panoramica member reads Panoramica", async () => {
+    const { resolveReadTenantId } = await import("./resolve-read-tenant");
+    const { EMPTY_CURRENT_USER } = await import("@life-community-os/auth");
+    const request = new Request(
+      "http://localhost/api/locations?tenantId=life-panoramica",
+      { headers: { "x-tenant-slug": "life-panoramica" } },
+    );
+    const result = resolveReadTenantId({
+      request,
+      queryTenantId: "life-panoramica",
+      actor: {
+        authenticated: true,
+        hasMembership: true,
+        providerReference: "auth-alex",
+        personId: "person-alex",
+        role: "member",
+        tenantSlug: "life-panoramica",
+        membershipId: "mem-p",
+        permissions: [],
+        tenantDenied: false,
+        currentUser: {
+          ...EMPTY_CURRENT_USER,
+          authenticated: true,
+          hasMembership: true,
+          tenantId: "life-panoramica",
+          personId: "person-alex",
+          role: "member",
+        },
+      },
+    });
+    assert.ok("tenantId" in result);
+    assert.equal(result.tenantId, "life-panoramica");
+  });
+
+  it("TEST 2 — authenticated Panoramica member reading Valley is denied", async () => {
     const { resolveReadTenantId } = await import("./resolve-read-tenant");
     const { EMPTY_CURRENT_USER } = await import("@life-community-os/auth");
     const request = new Request(
@@ -172,5 +206,28 @@ describe("CASE 5 — read tenant bind", () => {
       },
     });
     assert.ok("error" in result);
+  });
+
+  it("TEST 3 — user without membership cannot mutate", async () => {
+    const { mutationDenial } = await import("@/lib/auth/mutation-gate");
+    const { EMPTY_CURRENT_USER } = await import("@life-community-os/auth");
+    const denied = mutationDenial({
+      authenticated: true,
+      hasMembership: false,
+      providerReference: "auth-alex",
+      personId: null,
+      role: null,
+      tenantSlug: "life-panoramica",
+      membershipId: null,
+      permissions: [],
+      tenantDenied: false,
+      currentUser: {
+        ...EMPTY_CURRENT_USER,
+        authenticated: true,
+        hasMembership: false,
+      },
+    });
+    assert.ok(denied);
+    assert.equal(denied?.status, 401);
   });
 });

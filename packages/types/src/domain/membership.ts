@@ -14,6 +14,8 @@ export type MembershipStatus = "active" | "inactive" | "ended";
 export interface Membership {
   id: DomainId;
   personId: DomainId;
+  /** Owning tenant (denormalized from territory). Required SaaS ownership. */
+  tenantId: DomainId;
   territoryId: DomainId;
   membershipType: string;
   status: MembershipStatus;

@@ -22,11 +22,15 @@ export async function GET(request: Request) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
+  const { persistenceScopeFromRequest } = await import(
+    "@/lib/data/database-access"
+  );
+  const scope = persistenceScopeFromRequest(request, actor.personId);
   const { ensureServerTenantLocations } = await import(
     "@/lib/location/ensure-server-tenant-locations"
   );
   await ensureServerTenantLocations(tenantId);
-  const locations = await listLocationsServer(tenantId);
+  const locations = await listLocationsServer(tenantId, scope);
   const visibility = url.searchParams.get("visibility");
   const scoped = locations.filter((item) => item.tenantId === tenantId);
   const byTrust = actor.authenticated && actor.hasMembership
@@ -66,10 +70,16 @@ export async function POST(request: Request) {
   if ("error" in bound) return bound.error;
 
   try {
-    const location = await saveLocationServer({
-      ...body,
-      tenantId: bound.tenantId,
-    });
+    const { persistenceScopeFromRequest } = await import(
+      "@/lib/data/database-access"
+    );
+    const location = await saveLocationServer(
+      {
+        ...body,
+        tenantId: bound.tenantId,
+      },
+      persistenceScopeFromRequest(request, gated.actor.personId),
+    );
     return NextResponse.json({ location }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "save_failed";

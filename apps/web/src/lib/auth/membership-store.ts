@@ -10,6 +10,7 @@ import {
   coerceMembershipRole,
   type MembershipRole,
 } from "@life-community-os/types";
+import { isFilePersistenceAllowed } from "@/lib/data/data-plane";
 import {
   REGISTERED_TENANT_SLUGS,
   resolveTenantPublicId,
@@ -68,6 +69,9 @@ async function writeFile(
   tenantSlug: string,
   data: MembershipFile,
 ): Promise<void> {
+  if (!isFilePersistenceAllowed()) {
+    throw new Error("file persistence disabled");
+  }
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.writeFile(filePath(tenantSlug), JSON.stringify(data, null, 2), "utf8");
 }

@@ -17,16 +17,24 @@ function deny(
   return { error: NextResponse.json({ error }, { status }) };
 }
 
+export function mutationDenial(
+  actor: RequestActor,
+): { error: string; status: number } | null {
+  if (actor.tenantDenied) {
+    return { error: "tenant_forbidden", status: 403 };
+  }
+  if (!actor.authenticated || !actor.personId || !actor.hasMembership) {
+    return { error: "unauthorized", status: 401 };
+  }
+  return null;
+}
+
 export async function requireMutationActor(
   request: Request,
 ): Promise<{ actor: RequestActor } | { error: NextResponse }> {
   const actor = await resolveRequestActor(request);
-  if (actor.tenantDenied) {
-    return deny("tenant_forbidden", 403);
-  }
-  if (!actor.authenticated || !actor.personId || !actor.hasMembership) {
-    return deny("unauthorized", 401);
-  }
+  const denied = mutationDenial(actor);
+  if (denied) return deny(denied.error, denied.status);
   return { actor };
 }
 

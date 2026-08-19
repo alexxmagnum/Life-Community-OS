@@ -1,41 +1,36 @@
 /**
  * Generic durable JSON blobs per tenant + key (provider state).
+ * Postgres tenant_documents in production; .data fixture only in development.
  */
 
-import { promises as fs } from "node:fs";
-import path from "node:path";
+import {
+  readTenantDocument,
+  writeTenantDocument,
+  type DocumentScope,
+} from "@/lib/data/tenant-document-store";
 import { resolveTenantPublicId } from "@/lib/tenant/ids";
 
-const DATA_DIR = path.join(process.cwd(), ".data", "durable");
+export type DurableScope = DocumentScope;
 
-function safeKey(key: string): string {
-  return key.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
-}
-
-function filePath(tenantSlug: string, key: string): string {
-  return path.join(DATA_DIR, tenantSlug, `${safeKey(key)}.json`);
+function docKey(key: string): string {
+  return `durable:${key}`;
 }
 
 export async function readDurableJson<T>(
   tenantId: string,
   key: string,
+  scope?: DurableScope,
 ): Promise<T | null> {
   const slug = resolveTenantPublicId(tenantId);
-  try {
-    const raw = await fs.readFile(filePath(slug, key), "utf8");
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
+  return readTenantDocument<T>(slug, docKey(key), scope);
 }
 
 export async function writeDurableJson(
   tenantId: string,
   key: string,
   value: unknown,
+  scope?: DurableScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(tenantId);
-  const dir = path.join(DATA_DIR, slug);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(filePath(slug, key), JSON.stringify(value), "utf8");
+  await writeTenantDocument(slug, docKey(key), value ?? {}, scope);
 }
