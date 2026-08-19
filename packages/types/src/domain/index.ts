@@ -71,16 +71,43 @@ export {
   listTrustedHelpFromLocations,
   filterLocationsByLocalKinds,
 } from "./location-discovery";
-export type { Property } from "./property";
+export type {
+  Property,
+  PropertyPublicView,
+  HousingPropertyType,
+  HousingPropertyStatus,
+  HousingAvailability,
+  CreatePropertyInput,
+} from "./property";
+export {
+  HOUSING_PROPERTY_TYPES,
+  HOUSING_PROPERTY_STATUSES,
+  HOUSING_AVAILABILITIES,
+  isHousingPropertyType,
+  isHousingPropertyStatus,
+  isHousingAvailability,
+  housingPropertyTypeLabel,
+  housingPropertyStatusLabel,
+  housingAvailabilityLabel,
+  createPropertyRecord,
+  toPropertyPublicView,
+  isPropertyPubliclyListed,
+} from "./property";
 export type {
   PropertyPersonRelationship,
   PropertyPersonRelationshipType,
   PropertyPersonRelationshipStatus,
+  PropertyMembership,
+  CreatePropertyMembershipInput,
   ResidencyDerivationContext,
 } from "./property-person-relationship";
 export {
   DEFAULT_RESIDENCY_ELIGIBILITY_ROLES,
   DEFAULT_ROLES_REQUIRING_VERIFICATION,
+  PROPERTY_MEMBERSHIP_ROLES,
+  isPropertyMembershipRole,
+  propertyMembershipRoleLabel,
+  createPropertyMembershipRecord,
   isRelationshipActiveAt,
   isVerifiedResidencyActiveAt,
   deriveCommunityAreaIdsFromResidencies,

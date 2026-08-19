@@ -1,13 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { isDemoIdentityEnabled } from "@life-community-os/auth";
 import {
-  getMyHomeContext,
   getTerritoryAccessContext,
-  residencyDemoNarratives,
 } from "@life-community-os/tenant-life-panoramica";
 import type { DemoRole } from "@life-community-os/tenant-life-panoramica";
+import {
+  housingAvailabilityLabel,
+  housingPropertyTypeLabel,
+  propertyMembershipRoleLabel,
+  type PropertyPublicView,
+} from "@life-community-os/types";
 import {
   ExploreLink,
   MobileScreen,
@@ -16,6 +20,7 @@ import {
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
+import { fetchHousingProperties } from "@/lib/housing/housing-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -46,10 +51,13 @@ export function ProfileScreen() {
     demoMembers,
     demoPersonId,
     setDemoPersonId,
+    personId,
+    configuration,
   } = useTenant();
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
   const demoIdentity = isDemoIdentityEnabled();
+  const [homes, setHomes] = useState<PropertyPublicView[]>([]);
 
   const upcomingExperienceCount = joinedExperiences.filter(
     (e) => e.status !== "cancelled" && e.status !== "expired",
@@ -57,28 +65,27 @@ export function ProfileScreen() {
   const upcomingReservationCount = upcomingReservations.length;
   const savedExperienceCount = savedExperiences.length;
 
-  const home = useMemo(() => getMyHomeContext(demoPersonId), [demoPersonId]);
-  const primary = home.primary;
+  useEffect(() => {
+    if (!personId) {
+      setHomes([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchHousingProperties({
+      tenantId: configuration.tenantId,
+      mine: true,
+    }).then((rows) => {
+      if (!cancelled) setHomes(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [personId, configuration.tenantId]);
+
   const territoryAccess = useMemo(
     () => getTerritoryAccessContext(demoPersonId),
     [demoPersonId],
   );
-
-  const narrative =
-    (residencyDemoNarratives as Record<string, { summary?: string }>)[
-      demoMember.narrativeKey
-    ]?.summary ?? home.emptyMessage;
-
-  const residencyTone =
-    primary?.statusKind === "verified"
-      ? "text-[var(--color-success)]"
-      : primary?.statusKind === "pending"
-        ? "text-[var(--color-warning)]"
-        : demoMember.residencyStatusKind === "verified"
-          ? "text-[var(--color-success)]"
-          : demoMember.residencyStatusKind === "pending"
-            ? "text-[var(--color-warning)]"
-            : "text-[var(--color-action-primary)]";
 
   const placeName =
     theme.identity?.territoryName ?? theme.logoText ?? "Tu comunidad";
@@ -122,7 +129,7 @@ export function ProfileScreen() {
         name={demoMember.fullName}
         membershipLabel={demoMember.membershipLabel}
         areaLabel={
-          primary?.communityAreaLabel ||
+          homes[0]?.areaLabel ||
           demoMember.areaLabel ||
           theme.identity?.defaultAreaName ||
           placeName
@@ -158,89 +165,65 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Mi hogar
+          Mis viviendas
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          Tu vínculo con la comunidad — no es un catálogo de viviendas.
+          Tu relación con el hogar. No mostramos viviendas de otros vecinos.
         </p>
-        {primary ? (
-          <div className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]">
-            <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              {primary.relationshipLabel}
-            </p>
-            <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
-              {primary.headline}
-            </p>
-            {primary.property.name || primary.address.line1 ? (
-              <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-                {primary.property.name ?? primary.address.line1}
-              </p>
-            ) : null}
-            <p className={`mt-2 text-[14px] font-semibold ${residencyTone}`}>
-              {primary.statusLabel}
-            </p>
-            <div className="mt-2 space-y-0.5 text-[13px] text-[var(--color-text-secondary)]">
-              {primary.communityAreaLabel ? (
-                <p>
-                  Zona ·{" "}
-                  <span className="font-medium text-[var(--color-text-primary)]">
-                    {primary.communityAreaLabel}
-                  </span>
-                </p>
-              ) : null}
-              <p>
-                Comunidad ·{" "}
-                <span className="font-medium text-[var(--color-text-primary)]">
-                  {placeName}
-                </span>
-              </p>
-              {primary.grantsResidencyAccess ? (
-                <p className="text-[var(--color-success)]">
-                  Zona verificada · disponible para ti.
-                </p>
-              ) : primary.statusKind === "pending" ? (
-                <p className="text-[var(--color-warning)]">
-                  Pendiente de verificación — aún no se abren espacios de zona.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        ) : (
+        {homes.length === 0 ? (
           <div className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]">
             <p className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-              Sin hogar vinculado
+              Sin vivienda vinculada
             </p>
             <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">
-              {home.emptyMessage}
+              Cuando registres un hogar o te añadan como residente, aparecerá
+              aquí.
             </p>
-            <p className={`mt-2 text-[13px] font-semibold ${residencyTone}`}>
-              {demoMember.residencyStatusLabel}
-            </p>
-          </div>
-        )}
-        {home.homes.length > 1 ? (
-          <div className="space-y-2">
-            <p className="text-[13px] font-semibold text-[var(--color-text-tertiary)]">
-              Otros vínculos
-            </p>
-            {home.homes.slice(1).map((entry) => (
-              <div
-                key={entry.relationship.id}
-                className="rounded-[14px] bg-[var(--color-surface-elevated)] px-3.5 py-2.5 shadow-[var(--shadow-elev-1)]"
+            {hasCapability(CAPABILITIES.housingView) ? (
+              <button
+                type="button"
+                onClick={() => router.push("/housing")}
+                className="mt-3 text-[13px] font-semibold text-[var(--color-action-primary)]"
               >
-                <p className="text-[13px] font-semibold text-[var(--color-text-primary)]">
-                  {entry.headline}
+                Ir a Vivienda
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {homes.map((home) => (
+              <button
+                key={home.id}
+                type="button"
+                onClick={() => router.push(`/housing/${home.id}`)}
+                className="w-full rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 text-left shadow-[var(--shadow-elev-1)]"
+              >
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  {home.viewerRole
+                    ? propertyMembershipRoleLabel(
+                        home.viewerRole as
+                          | "owner"
+                          | "resident"
+                          | "tenant"
+                          | "family_member",
+                      )
+                    : housingPropertyTypeLabel(home.propertyType)}
                 </p>
-                <p className="mt-0.5 text-[12px] text-[var(--color-text-secondary)]">
-                  {entry.relationshipLabel} · {entry.statusLabel}
+                <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+                  {home.title}
                 </p>
-              </div>
+                <p className="mt-1 text-[13px] text-[var(--color-text-secondary)]">
+                  {[
+                    home.areaLabel,
+                    housingAvailabilityLabel(home.availability),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </button>
             ))}
           </div>
-        ) : null}
-        <p className="text-[12px] leading-5 text-[var(--color-text-tertiary)]">
-          {narrative}
-        </p>
+        )}
       </section>
 
       <TerritoryBelongingCard access={territoryAccess} />

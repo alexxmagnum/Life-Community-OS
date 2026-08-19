@@ -3,36 +3,34 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  housingPropertyTypeLabel,
+  type HousingAvailability,
+  type HousingPropertyType,
+} from "@life-community-os/types";
+import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import {
-  canCreateHousingListing,
-  housingModerationRequired,
-  resolveHousingCreatePublisherKind,
-  type HousingListingType,
-} from "@life-community-os/types";
-import {
-  canRunHousingContentOperation,
-  planHousingListingCreate,
-} from "@life-community-os/tenant-life-panoramica";
-import {
-  createHousingListing,
-  getHousingModuleConfig,
-} from "@/lib/housing/catalog";
-import { buildHousingActionActor } from "@/lib/housing/actor";
-import { housingCategoryLabel } from "@/lib/housing/labels";
-import { useTenant } from "@/providers/TenantProvider";
+import { createHousingPropertyRequest } from "@/lib/housing/housing-client";
+import { getAddressGeocoder } from "@/lib/location";
+import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-const TYPES: HousingListingType[] = ["rent", "sale", "land", "commercial"];
+const TYPES: HousingPropertyType[] = [
+  "apartment",
+  "villa",
+  "townhouse",
+  "plot",
+  "other",
+];
 
-type CreatePath = "resident" | "professional" | "tenant_managed";
+const AVAIL: { id: HousingAvailability; label: string }[] = [
+  { id: "private", label: "Uso privado" },
+  { id: "rent", label: "En alquiler" },
+  { id: "sale", label: "En venta" },
+];
 
-/**
- * Create housing listing — operations layer (resident / professional / tenant_managed).
- */
 export function HousingComposerScreen() {
   const router = useRouter();
   const {
@@ -40,73 +38,53 @@ export function HousingComposerScreen() {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoMember,
     configuration,
+    personId,
   } = useTenant();
 
   const moduleOn =
     isModuleEnabled("housing") &&
     isFeatureEnabled("housing") &&
     isProductCapabilityEnabled("housing");
-  const config = useMemo(
-    () => getHousingModuleConfig(configuration),
-    [configuration],
-  );
-  const actor = useMemo(
-    () =>
-      buildHousingActionActor({
-        personId: demoMember.personId,
-        moduleEnabled: moduleOn,
-        hasCapability,
-        configuration,
-        config,
-      }),
-    [demoMember.personId, moduleOn, hasCapability, configuration, config],
-  );
 
-  const canResident = canRunHousingContentOperation(actor, "create_resident");
-  const canProfessional = canRunHousingContentOperation(
-    actor,
-    "create_professional",
-  );
-  const canTenantManaged = canRunHousingContentOperation(
-    actor,
-    "create_tenant_managed",
-  );
-  const defaultKind = resolveHousingCreatePublisherKind(actor) ?? "resident";
-  const defaultPath: CreatePath = canResident
-    ? "resident"
-    : canProfessional
-      ? "professional"
-      : canTenantManaged
-        ? "tenant_managed"
-        : "resident";
-
-  const enabledTypes = config.enabledCategories;
-  const [createPath, setCreatePath] = useState<CreatePath>(defaultPath);
-  const [type, setType] = useState<HousingListingType>(
-    enabledTypes[0] ?? "rent",
-  );
+  const [propertyType, setPropertyType] =
+    useState<HousingPropertyType>("apartment");
+  const [availability, setAvailability] =
+    useState<HousingAvailability>("private");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
+  const [address, setAddress] = useState("");
   const [areaLabel, setAreaLabel] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const [preview, setPreview] = useState<{
+    latitude: number;
+    longitude: number;
+    displayName?: string;
+    provider?: string;
+    sourceRef?: string;
+  } | null>(null);
 
   const fieldClass =
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
 
-  const moderationOn = housingModerationRequired(config);
-  const showPathChooser =
-    [canResident, canProfessional, canTenantManaged].filter(Boolean).length > 1;
+  const canCreate =
+    moduleOn &&
+    Boolean(personId) &&
+    hasCapability(CAPABILITIES.housingCreateOwnListing);
+
+  const confirmationLine = useMemo(
+    () => preview?.displayName ?? null,
+    [preview],
+  );
 
   if (!moduleOn) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Crear anuncio"
+          title="Registrar vivienda"
           onBack={() => router.push("/housing")}
           onExit={() => router.push("/")}
         />
@@ -119,32 +97,53 @@ export function HousingComposerScreen() {
     );
   }
 
-  if (!canCreateHousingListing(actor) && !canTenantManaged) {
+  if (!canCreate) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Crear anuncio"
+          title="Registrar vivienda"
           onBack={() => router.push("/housing")}
           onExit={() => router.push("/housing")}
         />
         <EmptyState
           title="Sin acceso"
-          description="No puedes crear anuncios de vivienda con tu cuenta actual."
+          description="No puedes registrar una vivienda con tu cuenta actual."
         />
       </MobileScreen>
     );
   }
 
-  const activePath: CreatePath =
-    createPath === "professional" && canProfessional
-      ? "professional"
-      : createPath === "tenant_managed" && canTenantManaged
-        ? "tenant_managed"
-        : canResident
-          ? "resident"
-          : defaultPath;
+  const onSearchAddress = async () => {
+    setError(null);
+    setPreview(null);
+    const trimmed = address.trim();
+    if (trimmed.length < 5) {
+      setError("Introduce una dirección completa.");
+      return;
+    }
+    setSearching(true);
+    try {
+      const geocoder = getAddressGeocoder();
+      const result = await geocoder.geocode({
+        address: trimmed,
+        country: "ES",
+        language: "es",
+      });
+      if (!result) {
+        setError(
+          "No encontramos esa dirección. Prueba con más detalle (calle, ciudad, país).",
+        );
+        return;
+      }
+      setPreview(result);
+    } catch {
+      setError("No se pudo consultar la ubicación. Inténtalo de nuevo.");
+    } finally {
+      setSearching(false);
+    }
+  };
 
-  const onPublish = () => {
+  const onPublish = async () => {
     setError(null);
     const trimmedTitle = title.trim();
     const trimmedDescription = description.trim();
@@ -153,126 +152,80 @@ export function HousingComposerScreen() {
       return;
     }
     if (trimmedDescription.length < 8) {
-      setError("Describe un poco más el inmueble.");
+      setError("Describe un poco más la vivienda.");
       return;
     }
-
-    const plan = planHousingListingCreate(actor, activePath, type);
-    if (!plan.ok) {
-      setError(plan.reason);
+    if (!preview) {
+      setError("Confirma la dirección en el mapa antes de guardar.");
       return;
     }
-
-    const priceAmount = price.trim()
-      ? Number.parseFloat(price.replace(",", "."))
-      : undefined;
-    if (price.trim() && (priceAmount == null || Number.isNaN(priceAmount))) {
-      setError("El precio no es válido.");
-      return;
-    }
-
     setSubmitting(true);
-    try {
-      const created = createHousingListing({
-        type,
-        title: trimmedTitle,
-        description: trimmedDescription,
-        priceAmount,
-        currency: config.defaultCurrency ?? "EUR",
-        pricePeriodLabel:
-          type === "rent" || type === "commercial" ? "mes" : undefined,
-        areaLabel: areaLabel.trim() || undefined,
-        bedrooms: bedrooms.trim()
-          ? Number.parseInt(bedrooms, 10)
-          : undefined,
-        createdByPersonId: demoMember.personId,
-        publisherKind: plan.publisherKind,
-        contentSource: plan.contentSource,
-        status: plan.status,
-      });
-      router.replace(`/housing/${created.id}`);
-    } catch {
-      setError("No se pudo crear el anuncio. Inténtalo de nuevo.");
+    const created = await createHousingPropertyRequest({
+      tenantId: configuration.tenantId,
+      title: trimmedTitle,
+      description: trimmedDescription,
+      propertyType,
+      address: address.trim(),
+      latitude: preview.latitude,
+      longitude: preview.longitude,
+      availability,
+      areaLabel: areaLabel.trim() || undefined,
+      bedrooms: bedrooms.trim()
+        ? Number.parseInt(bedrooms, 10)
+        : undefined,
+      geocodeProvider: preview.provider,
+      geocodeSourceRef: preview.sourceRef,
+      geocodeDisplayName: preview.displayName,
+    });
+    if ("error" in created) {
+      setError("No se pudo registrar. Inténtalo de nuevo.");
       setSubmitting(false);
+      return;
     }
+    router.replace(`/housing/${created.property.id}`);
   };
 
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Crear anuncio"
-        subtitle={
-          activePath === "tenant_managed"
-            ? "Anuncio gestionado por el tenant"
-            : moderationOn
-              ? "Se enviará a revisión"
-              : "Se publicará al guardar"
-        }
+        title="Registrar vivienda"
+        subtitle="Hogar de la comunidad · no es un negocio"
         onBack={() => router.push("/housing")}
         onExit={() => router.push("/")}
       />
 
-      {showPathChooser ? (
-        <div className="flex flex-wrap gap-2">
-          {(
-            [
-              canResident
-                ? { id: "resident" as const, label: "Propietario" }
-                : null,
-              canProfessional
-                ? { id: "professional" as const, label: "Inmobiliaria" }
-                : null,
-              canTenantManaged
-                ? { id: "tenant_managed" as const, label: "Gestión tenant" }
-                : null,
-            ] as const
-          )
-            .filter(
-              (option): option is { id: CreatePath; label: string } =>
-                option != null,
-            )
-            .map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => {
-                  setCreatePath(option.id);
-                }}
-                aria-pressed={activePath === option.id}
-                className={
-                  activePath === option.id
-                    ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
-                    : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
-                }
-              >
-                {option.label}
-              </button>
-            ))}
-        </div>
-      ) : (
-        <p className="text-[13px] text-[var(--color-text-secondary)]">
-          {activePath === "professional"
-            ? "Publicación profesional autorizada"
-            : activePath === "tenant_managed"
-              ? "Publicación gestionada por el tenant"
-              : "Publicación como propietario residente"}
-        </p>
-      )}
-
       <div className="flex flex-wrap gap-2">
-        {TYPES.filter((t) => enabledTypes.includes(t)).map((t) => (
+        {TYPES.map((item) => (
           <button
-            key={t}
+            key={item}
             type="button"
-            onClick={() => setType(t)}
-            aria-pressed={type === t}
+            onClick={() => setPropertyType(item)}
+            aria-pressed={propertyType === item}
             className={
-              type === t
+              propertyType === item
                 ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
                 : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
             }
           >
-            {housingCategoryLabel(t)}
+            {housingPropertyTypeLabel(item)}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {AVAIL.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setAvailability(item.id)}
+            aria-pressed={availability === item.id}
+            className={
+              availability === item.id
+                ? "min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-3.5 text-[14px] font-semibold text-white"
+                : "min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
+            }
+          >
+            {item.label}
           </button>
         ))}
       </div>
@@ -284,7 +237,7 @@ export function HousingComposerScreen() {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Ej. Piso luminoso de 2 habitaciones"
+          placeholder="Ej. Piso en la aldea"
           className={fieldClass}
         />
       </label>
@@ -304,16 +257,32 @@ export function HousingComposerScreen() {
 
       <label className="block space-y-1.5">
         <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
-          Precio (opcional)
+          Dirección
         </span>
         <input
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
-          inputMode="decimal"
-          placeholder="Ej. 1100"
+          value={address}
+          onChange={(e) => {
+            setAddress(e.target.value);
+            setPreview(null);
+          }}
+          placeholder="Calle, número, ciudad"
           className={fieldClass}
         />
       </label>
+
+      <button
+        type="button"
+        onClick={() => void onSearchAddress()}
+        disabled={searching}
+        className="min-h-[44px] rounded-[14px] border border-[var(--color-border-subtle)] px-4 text-[14px] font-semibold"
+      >
+        {searching ? "Buscando dirección…" : "Confirmar dirección"}
+      </button>
+      {confirmationLine ? (
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          {confirmationLine}
+        </p>
+      ) : null}
 
       <label className="block space-y-1.5">
         <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
@@ -327,7 +296,7 @@ export function HousingComposerScreen() {
         />
       </label>
 
-      {type === "rent" || type === "sale" ? (
+      {propertyType !== "plot" ? (
         <label className="block space-y-1.5">
           <span className="text-[14px] font-semibold text-[var(--color-text-primary)]">
             Habitaciones (opcional)
@@ -352,18 +321,9 @@ export function HousingComposerScreen() {
       ) : null}
 
       <ScreenPrimaryAction
-        label={
-          activePath === "tenant_managed"
-            ? "Publicar (gestión tenant)"
-            : moderationOn
-              ? "Enviar a revisión"
-              : "Publicar anuncio"
-        }
-        onClick={onPublish}
-        disabled={
-          submitting ||
-          !planHousingListingCreate(actor, activePath, type).ok
-        }
+        label="Guardar vivienda"
+        onClick={() => void onPublish()}
+        disabled={submitting || !preview}
       />
     </MobileScreen>
   );

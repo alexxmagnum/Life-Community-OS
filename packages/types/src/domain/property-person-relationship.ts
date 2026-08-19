@@ -38,6 +38,9 @@ export type PropertyPersonRelationship = {
   propertyId: DomainId;
   personId: DomainId;
   relationshipType: PropertyPersonRelationshipType;
+  /** Tenant of the property — denormalized for RLS / product queries. */
+  tenantId?: DomainId;
+  createdBy?: DomainId;
   /** When the relationship begins (maps to start_date). */
   validFrom?: string;
   /** When the relationship ends; omit while open (maps to end_date). */
@@ -51,6 +54,81 @@ export type PropertyPersonRelationship = {
   createdAt?: IsoDateTimeString;
   updatedAt?: IsoDateTimeString;
 };
+
+/**
+ * Product name for PropertyPersonRelationship (Phase 7).
+ * Not a second entity.
+ */
+export type PropertyMembership = PropertyPersonRelationship;
+
+export const PROPERTY_MEMBERSHIP_ROLES: readonly PropertyPersonRelationshipType[] =
+  ["owner", "resident", "tenant", "family_member"] as const;
+
+export function isPropertyMembershipRole(
+  value: string,
+): value is PropertyPersonRelationshipType {
+  return (PROPERTY_MEMBERSHIP_ROLES as readonly string[]).includes(value);
+}
+
+export function propertyMembershipRoleLabel(
+  role: PropertyPersonRelationshipType,
+): string {
+  switch (role) {
+    case "owner":
+      return "Propietario";
+    case "resident":
+      return "Residente";
+    case "tenant":
+      return "Inquilino";
+    case "family_member":
+      return "Familiar";
+    default:
+      return role;
+  }
+}
+
+export type CreatePropertyMembershipInput = {
+  propertyId: DomainId;
+  personId: DomainId;
+  relationshipType: PropertyPersonRelationshipType;
+  tenantId?: DomainId;
+  createdBy?: DomainId;
+  status?: PropertyPersonRelationshipStatus;
+  id?: DomainId;
+};
+
+export function createPropertyMembershipRecord(
+  input: CreatePropertyMembershipInput,
+): PropertyMembership {
+  const now = new Date().toISOString();
+  const personId = input.personId.trim();
+  const propertyId = input.propertyId.trim();
+  if (!personId || !propertyId) {
+    throw new Error("Invalid PropertyMembership: missing_fields");
+  }
+  return {
+    id: input.id?.trim() || cryptoRandomId(),
+    propertyId,
+    personId,
+    relationshipType: input.relationshipType,
+    status: input.status ?? "active",
+    createdAt: now,
+    updatedAt: now,
+    ...(input.tenantId?.trim() ? { tenantId: input.tenantId.trim() } : {}),
+    ...(input.createdBy?.trim() ? { createdBy: input.createdBy.trim() } : {}),
+  };
+}
+
+function cryptoRandomId(): string {
+  const c =
+    typeof globalThis !== "undefined"
+      ? (globalThis as { crypto?: { randomUUID?: () => string } }).crypto
+      : undefined;
+  if (typeof c?.randomUUID === "function") {
+    return c.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 /**
  * Roles that typically contribute Community Area resource eligibility (ADR-037).
@@ -138,7 +216,7 @@ export function resolveResidencyAccessAreas(
     activeRelationshipIds.push(rel.id);
 
     const property = context.propertiesById.get(rel.propertyId);
-    if (!property) continue;
+    if (!property?.addressId) continue;
     const address = context.addressesById.get(property.addressId);
     if (address?.communityAreaId) areas.add(address.communityAreaId);
   }

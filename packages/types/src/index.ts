@@ -221,12 +221,31 @@ export {
 export {
   DEFAULT_RESIDENCY_ELIGIBILITY_ROLES,
   DEFAULT_ROLES_REQUIRING_VERIFICATION,
+  PROPERTY_MEMBERSHIP_ROLES,
+  isPropertyMembershipRole,
+  propertyMembershipRoleLabel,
+  createPropertyMembershipRecord,
   isRelationshipActiveAt,
   isVerifiedResidencyActiveAt,
   deriveCommunityAreaIdsFromResidencies,
   resolveResidencyAccessAreas,
   hasVerifiedResidencyInArea,
 } from "./domain/property-person-relationship";
+
+export {
+  HOUSING_PROPERTY_TYPES,
+  HOUSING_PROPERTY_STATUSES,
+  HOUSING_AVAILABILITIES,
+  isHousingPropertyType,
+  isHousingPropertyStatus,
+  isHousingAvailability,
+  housingPropertyTypeLabel,
+  housingPropertyStatusLabel,
+  housingAvailabilityLabel,
+  createPropertyRecord,
+  toPropertyPublicView,
+  isPropertyPubliclyListed,
+} from "./domain/property";
 
 /** Residency verification cases and evidence (ADR-038). */
 export {

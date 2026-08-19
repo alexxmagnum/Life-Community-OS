@@ -3,48 +3,57 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  housingAvailabilityLabel,
+  housingPropertyTypeLabel,
+  type PropertyPublicView,
+} from "@life-community-os/types";
+import {
   EmptyState,
   FlowScreenHeader,
   HousingListingCard,
   MobileScreen,
 } from "@life-community-os/ui";
-import {
-  getHousingListingById,
-} from "@/lib/housing/catalog";
-import {
-  housingCategoryLabel,
-  housingCoverUrl,
-  housingLocationLabel,
-  housingPriceLabel,
-  housingStatusLabel,
-} from "@/lib/housing/labels";
+import { fetchHousingProperties, propertyCoverUrl } from "@/lib/housing/housing-client";
 import { useHousingSaves } from "@/providers/HousingSavesProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-/**
- * Saved housing listings — uses housing.save capability + local saves store.
- */
 export function HousingSavedScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, isModuleEnabled, hasCapability, isProductCapabilityEnabled } = useTenant();
+  const {
+    isFeatureEnabled,
+    isModuleEnabled,
+    hasCapability,
+    isProductCapabilityEnabled,
+    configuration,
+  } = useTenant();
   const { savedIds } = useHousingSaves();
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
+  const [items, setItems] = useState<PropertyPublicView[]>([]);
+  const [ready, setReady] = useState(false);
 
   const moduleOn =
     isModuleEnabled("housing") &&
     isFeatureEnabled("housing") &&
     isProductCapabilityEnabled("housing");
 
-  const items = useMemo(() => {
-    if (!sessionReady) return [];
-    return savedIds
-      .map((id) => getHousingListingById(id))
-      .filter((listing): listing is NonNullable<typeof listing> => Boolean(listing));
-  }, [savedIds, sessionReady]);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const rows = await fetchHousingProperties({
+        tenantId: configuration.tenantId,
+      });
+      if (cancelled) return;
+      setItems(rows);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId]);
+
+  const saved = useMemo(
+    () => items.filter((item) => savedIds.includes(item.id)),
+    [items, savedIds],
+  );
 
   if (!moduleOn) {
     return (
@@ -69,7 +78,7 @@ export function HousingSavedScreen() {
         />
         <EmptyState
           title="Sin acceso"
-          description="No puedes guardar anuncios con tu cuenta actual."
+          description="No puedes guardar viviendas con tu cuenta actual."
         />
       </MobileScreen>
     );
@@ -79,29 +88,31 @@ export function HousingSavedScreen() {
     <MobileScreen>
       <FlowScreenHeader
         title="Guardados"
-        subtitle="Anuncios que quieres revisar"
         onBack={() => router.push("/housing")}
         onExit={() => router.push("/")}
       />
-
-      {items.length === 0 ? (
+      {!ready ? (
+        <p className="mt-6 text-[15px] text-[var(--color-text-secondary)]">
+          Cargando…
+        </p>
+      ) : saved.length === 0 ? (
         <EmptyState
-          title="Nada guardado todavía"
-          description="Desde el detalle de un anuncio puedes guardarlo para más tarde."
-          actionLabel="Explorar anuncios"
+          title="Nada guardado"
+          description="Cuando guardes una vivienda visible, aparecerá aquí."
+          actionLabel="Explorar"
           onAction={() => router.push("/housing")}
         />
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {saved.map((item) => (
             <HousingListingCard
               key={item.id}
-              categoryLabel={housingCategoryLabel(item.type)}
+              categoryLabel={housingPropertyTypeLabel(item.propertyType)}
               title={item.title}
-              meta={housingLocationLabel(item)}
-              priceLabel={housingPriceLabel(item)}
-              statusLabel={housingStatusLabel(item.status)}
-              imageUrl={housingCoverUrl(item)}
+              meta={[item.areaLabel, housingAvailabilityLabel(item.availability)]
+                .filter(Boolean)
+                .join(" · ")}
+              imageUrl={propertyCoverUrl(item)}
               onClick={() => router.push(`/housing/${item.id}`)}
             />
           ))}

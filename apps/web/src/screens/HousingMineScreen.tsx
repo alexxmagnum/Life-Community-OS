@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  housingAvailabilityLabel,
+  housingPropertyTypeLabel,
+  propertyMembershipRoleLabel,
+  type PropertyPublicView,
+} from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -9,46 +15,9 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import {
-  canCreateHousingListing,
-  canPerformHousingListingAction,
-  housingActionTargetStatus,
-  type HousingListing,
-  type HousingListingAction,
-} from "@life-community-os/types";
-import {
-  getHousingModuleConfig,
-  listHousingListingsByOwner,
-  updateHousingListingStatus,
-} from "@/lib/housing/catalog";
-import { buildHousingActionActor } from "@/lib/housing/actor";
-import {
-  housingCategoryLabel,
-  housingCoverUrl,
-  housingLocationLabel,
-  housingPriceLabel,
-  housingStatusLabel,
-} from "@/lib/housing/labels";
+import { fetchHousingProperties, propertyCoverUrl } from "@/lib/housing/housing-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-const OWNER_ACTIONS: {
-  action: HousingListingAction;
-  label: string;
-}[] = [
-  { action: "publish", label: "Publicar" },
-  { action: "submit_for_review", label: "Enviar a revisión" },
-  { action: "approve_publish", label: "Aprobar" },
-  { action: "reject_to_draft", label: "Devolver a borrador" },
-  { action: "mark_reserved", label: "Marcar reservado" },
-  { action: "unreserve", label: "Quitar reserva" },
-  { action: "close", label: "Cerrar" },
-  { action: "archive", label: "Archivar" },
-  { action: "reopen_to_draft", label: "Reabrir borrador" },
-];
-
-/**
- * Own listings — lifecycle actions gated by permissions.
- */
 export function HousingMineScreen() {
   const router = useRouter();
   const {
@@ -56,48 +25,43 @@ export function HousingMineScreen() {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoMember,
     configuration,
+    personId,
   } = useTenant();
-  const [sessionReady, setSessionReady] = useState(false);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
+  const [items, setItems] = useState<PropertyPublicView[]>([]);
+  const [ready, setReady] = useState(false);
 
   const moduleOn =
     isModuleEnabled("housing") &&
     isFeatureEnabled("housing") &&
     isProductCapabilityEnabled("housing");
-  const config = useMemo(
-    () => getHousingModuleConfig(configuration),
-    [configuration],
-  );
-  const actor = useMemo(
-    () =>
-      buildHousingActionActor({
-        personId: demoMember.personId,
-        moduleEnabled: moduleOn,
-        hasCapability,
-        configuration,
-        config,
-      }),
-    [demoMember.personId, moduleOn, hasCapability, configuration, config],
-  );
 
-  const items = useMemo(() => {
-    void tick;
-    return listHousingListingsByOwner(demoMember.personId, {
-      includeSessionCreated: sessionReady,
-    });
-  }, [demoMember.personId, sessionReady, tick]);
+  useEffect(() => {
+    if (!moduleOn || !personId) {
+      setReady(true);
+      setItems([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const rows = await fetchHousingProperties({
+        tenantId: configuration.tenantId,
+        mine: true,
+      });
+      if (cancelled) return;
+      setItems(rows);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, moduleOn, personId]);
 
   if (!moduleOn) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Mis anuncios"
+          title="Mis viviendas"
           onBack={() => router.push("/housing")}
           onExit={() => router.push("/")}
         />
@@ -110,7 +74,7 @@ export function HousingMineScreen() {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Mis anuncios"
+          title="Mis viviendas"
           onBack={() => router.push("/housing")}
           onExit={() => router.push("/")}
         />
@@ -119,79 +83,59 @@ export function HousingMineScreen() {
     );
   }
 
-  const runAction = (listing: HousingListing, action: HousingListingAction) => {
-    const target = housingActionTargetStatus(action);
-    if (!target) return;
-    const ctx = { actor, listing };
-    if (!canPerformHousingListingAction(ctx, action)) return;
-    updateHousingListingStatus(listing.id, target, demoMember.personId);
-    setTick((t) => t + 1);
-  };
+  const canCreate = hasCapability(CAPABILITIES.housingCreateOwnListing);
 
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Mis anuncios"
-        subtitle="Solo los tuyos"
+        title="Mis viviendas"
+        subtitle="Solo las tuyas"
         onBack={() => router.push("/housing")}
         onExit={() => router.push("/")}
       />
 
-      {canCreateHousingListing(actor) ? (
+      {canCreate ? (
         <ScreenPrimaryAction
-          label="Crear anuncio"
+          label="Registrar vivienda"
           onClick={() => router.push("/housing/create")}
         />
       ) : null}
 
-      {items.length === 0 ? (
+      {!ready ? (
+        <p className="mt-6 text-[15px] text-[var(--color-text-secondary)]">
+          Cargando…
+        </p>
+      ) : items.length === 0 ? (
         <EmptyState
-          title="Aún no tienes anuncios"
-          description="Crea un anuncio para alquiler, venta, terreno o local."
-          actionLabel={
-            canCreateHousingListing(actor) ? "Crear anuncio" : undefined
-          }
+          title="Aún no tienes viviendas"
+          description="Registra tu hogar o espera a que te añadan como residente."
+          actionLabel={canCreate ? "Registrar vivienda" : undefined}
           onAction={
-            canCreateHousingListing(actor)
-              ? () => router.push("/housing/create")
-              : undefined
+            canCreate ? () => router.push("/housing/create") : undefined
           }
         />
       ) : (
-        <div className="space-y-4">
-          {items.map((item) => {
-            const ctx = { actor, listing: item };
-            const actions = OWNER_ACTIONS.filter(({ action }) =>
-              canPerformHousingListingAction(ctx, action),
-            );
-            return (
-              <div key={item.id} className="space-y-2">
-                <HousingListingCard
-                  categoryLabel={housingCategoryLabel(item.type)}
-                  title={item.title}
-                  meta={housingLocationLabel(item)}
-                  priceLabel={housingPriceLabel(item)}
-                  statusLabel={housingStatusLabel(item.status)}
-                  imageUrl={housingCoverUrl(item)}
-                  onClick={() => router.push(`/housing/${item.id}`)}
-                />
-                {actions.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 px-1">
-                    {actions.map(({ action, label }) => (
-                      <button
-                        key={action}
-                        type="button"
-                        onClick={() => runAction(item, action)}
-                        className="min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+        <div className="space-y-3">
+          {items.map((item) => (
+            <HousingListingCard
+              key={item.id}
+              categoryLabel={housingPropertyTypeLabel(item.propertyType)}
+              title={item.title}
+              meta={[
+                item.viewerRole
+                  ? propertyMembershipRoleLabel(
+                      item.viewerRole as "owner" | "resident" | "tenant" | "family_member",
+                    )
+                  : null,
+                housingAvailabilityLabel(item.availability),
+                item.areaLabel,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              imageUrl={propertyCoverUrl(item)}
+              onClick={() => router.push(`/housing/${item.id}`)}
+            />
+          ))}
         </div>
       )}
     </MobileScreen>

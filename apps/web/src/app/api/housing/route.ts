@@ -1,71 +1,156 @@
 import { NextResponse } from "next/server";
 import {
-  readHousingState,
-  writeHousingState,
-  type HousingTenantState,
+  isHousingAvailability,
+  isHousingPropertyType,
+  toPropertyPublicView,
+  type HousingAvailability,
+  type HousingPropertyType,
+} from "@life-community-os/types";
+import {
+  actorCanCreateProperty,
+  actorCanViewHousing,
+  actorMembership,
+  propertyVisibleToActor,
+} from "@/lib/housing/permissions";
+import {
+  createRegisteredProperty,
+  listHousingStore,
 } from "@/lib/housing/server-housing-repository";
+import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
-  const gated = await requireMutationActor(request);
-  if ("error" in gated) return gated.error;
+  const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const { resolveReadTenantId } = await import(
     "@/lib/tenant/resolve-read-tenant"
   );
+  const actor = await resolveRequestActor(request);
+  if (!actorCanViewHousing(actor)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   const url = new URL(request.url);
   const bound = resolveReadTenantId({
     request,
     queryTenantId: url.searchParams.get("tenantId"),
-    actor: gated.actor,
+    actor,
   });
   if ("error" in bound) return bound.error;
-  const tenantId = bound.tenantId;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
-  const scope = persistenceScopeFromRequest(request, gated.actor.personId);
-  const state = await readHousingState(tenantId, scope);
-  return NextResponse.json({ tenantId, ...state });
+  const scope = persistenceScopeFromRequest(request, actor.personId);
+  const store = await listHousingStore(bound.tenantId, scope);
+  const mine = url.searchParams.get("mine") === "1";
+  const type = url.searchParams.get("type")?.trim();
+  const availability = url.searchParams.get("availability")?.trim();
+  const properties = store.properties.flatMap((item) => {
+    if (item.tenantId !== bound.tenantId) return [];
+    if (!propertyVisibleToActor(actor, item, store.memberships)) return [];
+    const role = actorMembership(actor, store.memberships, item.id)
+      ?.relationshipType;
+    if (mine && !role) return [];
+    if (type && item.propertyType !== type) return [];
+    if (availability && item.availability !== availability) return [];
+    const view = toPropertyPublicView(item, role);
+    return view ? [view] : [];
+  });
+  return NextResponse.json({ tenantId: bound.tenantId, properties });
 }
 
-export async function PUT(request: Request) {
+export async function POST(request: Request) {
   const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
   const gated = await requireMutationActor(request);
   if ("error" in gated) return gated.error;
+  if (!actorCanCreateProperty(gated.actor) || !gated.actor.personId) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
-  let body: Partial<HousingTenantState> & { tenantId?: string };
+  let body: {
+    tenantId?: string;
+    title?: string;
+    description?: string;
+    propertyType?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    availability?: string;
+    images?: string[];
+    bedrooms?: number;
+    bathrooms?: number;
+    builtAreaM2?: number;
+    areaLabel?: string;
+    unitLabel?: string;
+    geocodeProvider?: string;
+    geocodeSourceRef?: string;
+    geocodeDisplayName?: string;
+    ownerPersonId?: string;
+    ownerId?: string;
+    createdBy?: string;
+  };
   try {
-    body = (await request.json()) as Partial<HousingTenantState> & {
-      tenantId?: string;
-    };
+    body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
-  const { resolveWriteTenantId } = await import(
-    "@/lib/tenant/resolve-write-tenant"
-  );
+
+  const title = body.title?.trim() ?? "";
+  const description = body.description?.trim() ?? "";
+  const address = body.address?.trim() ?? "";
+  const propertyType = body.propertyType?.trim() ?? "";
+  if (
+    !title ||
+    !description ||
+    !address ||
+    !isHousingPropertyType(propertyType) ||
+    !Number.isFinite(body.latitude) ||
+    !Number.isFinite(body.longitude)
+  ) {
+    return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+  }
+
   const bound = resolveWriteTenantId({
     request,
     bodyTenantId: body.tenantId,
     actorTenantSlug: gated.actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
-  const tenantId = bound.tenantId;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, gated.actor.personId);
-  const current = await readHousingState(tenantId, scope);
-  const next = await writeHousingState(
-    tenantId,
-    {
-      created: body.created ?? current.created,
-      overrides: body.overrides ?? current.overrides,
-      contacts: body.contacts ?? current.contacts,
-    },
+  const created = await createRegisteredProperty({
+    tenantId: bound.tenantId,
+    createdBy: gated.actor.personId,
+    ownerPersonIdFromClient:
+      body.ownerPersonId ?? body.ownerId ?? body.createdBy ?? null,
+    title,
+    description,
+    propertyType: propertyType as HousingPropertyType,
+    address,
+    latitude: body.latitude as number,
+    longitude: body.longitude as number,
+    availability:
+      body.availability && isHousingAvailability(body.availability)
+        ? (body.availability as HousingAvailability)
+        : "private",
+    images: body.images,
+    bedrooms: body.bedrooms,
+    bathrooms: body.bathrooms,
+    builtAreaM2: body.builtAreaM2,
+    areaLabel: body.areaLabel,
+    unitLabel: body.unitLabel,
+    geocodeProvider: body.geocodeProvider,
+    geocodeSourceRef: body.geocodeSourceRef,
+    geocodeDisplayName: body.geocodeDisplayName,
     scope,
+  });
+  const view = toPropertyPublicView(created.property, "owner");
+  return NextResponse.json(
+    {
+      property: view,
+      locationId: created.location.id,
+    },
+    { status: 201 },
   );
-  return NextResponse.json({ tenantId, ...next });
 }

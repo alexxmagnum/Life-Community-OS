@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  housingAvailabilityLabel,
+  housingPropertyTypeLabel,
+  type HousingAvailability,
+  type PropertyPublicView,
+} from "@life-community-os/types";
+import {
   EmptyState,
   FlowScreenHeader,
   HousingFilterBar,
@@ -10,35 +16,18 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import { canCreateHousingListing } from "@life-community-os/types";
-import {
-  getHousingModuleConfig,
-  hydrateHousingFromServer,
-  listPublishedHousingListings,
-} from "@/lib/housing/catalog";
-import { buildHousingActionActor } from "@/lib/housing/actor";
-import {
-  housingCategoryLabel,
-  housingCoverUrl,
-  housingLocationLabel,
-  housingPriceLabel,
-  housingStatusLabel,
-} from "@/lib/housing/labels";
+import { fetchHousingProperties, propertyCoverUrl } from "@/lib/housing/housing-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-type CategoryFilter = "all" | "rent" | "sale" | "land" | "commercial";
+type Filter = "all" | HousingAvailability;
 
-const categoryFilters: { id: CategoryFilter; label: string }[] = [
+const filters: { id: Filter; label: string }[] = [
   { id: "all", label: "Todo" },
   { id: "rent", label: "Alquiler" },
   { id: "sale", label: "Venta" },
-  { id: "land", label: "Terreno" },
-  { id: "commercial", label: "Local" },
+  { id: "private", label: "Privadas" },
 ];
 
-/**
- * Housing explore — published listings with basic category filters.
- */
 export function HousingExploreScreen() {
   const router = useRouter();
   const {
@@ -46,52 +35,45 @@ export function HousingExploreScreen() {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoMember,
     configuration,
   } = useTenant();
-  const [filter, setFilter] = useState<CategoryFilter>("all");
-  const [sessionReady, setSessionReady] = useState(false);
-  const [tick, setTick] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await hydrateHousingFromServer();
-      if (cancelled) return;
-      setSessionReady(true);
-      setTick((n) => n + 1);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [items, setItems] = useState<PropertyPublicView[]>([]);
+  const [ready, setReady] = useState(false);
 
   const moduleOn =
     isModuleEnabled("housing") &&
     isFeatureEnabled("housing") &&
     isProductCapabilityEnabled("housing");
-  const config = useMemo(
-    () => getHousingModuleConfig(configuration),
-    [configuration],
-  );
-  const actor = useMemo(
-    () =>
-      buildHousingActionActor({
-        personId: demoMember.personId,
-        moduleEnabled: moduleOn,
-        hasCapability,
-        configuration,
-        config,
-      }),
-    [demoMember.personId, moduleOn, hasCapability, configuration, config],
-  );
 
-  const items = useMemo(() => {
-    return listPublishedHousingListings({
-      includeSessionCreated: sessionReady,
-      type: filter,
-    });
-  }, [filter, sessionReady, tick]);
+  useEffect(() => {
+    if (!moduleOn) {
+      setReady(true);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const rows = await fetchHousingProperties({
+        tenantId: configuration.tenantId,
+      });
+      if (cancelled) return;
+      setItems(rows);
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, moduleOn]);
+
+  const visible = useMemo(() => {
+    if (filter === "all") {
+      return items.filter((item) => item.availability !== "private" || item.viewerRole);
+    }
+    if (filter === "private") {
+      return items.filter((item) => item.availability === "private" && item.viewerRole);
+    }
+    return items.filter((item) => item.availability === filter);
+  }, [filter, items]);
 
   if (!moduleOn) {
     return (
@@ -108,18 +90,18 @@ export function HousingExploreScreen() {
     return (
       <EmptyState
         title="Sin acceso"
-        description="No puedes ver anuncios de vivienda con tu cuenta actual."
+        description="No puedes ver viviendas con tu cuenta actual."
       />
     );
   }
 
-  const canCreate = canCreateHousingListing(actor);
+  const canCreate = hasCapability(CAPABILITIES.housingCreateOwnListing);
 
   return (
     <MobileScreen>
       <FlowScreenHeader
         title="Vivienda"
-        subtitle="Explora anuncios publicados"
+        subtitle="Hogares de la comunidad"
         onBack={() => router.push("/")}
         onExit={() => router.push("/")}
       />
@@ -130,7 +112,7 @@ export function HousingExploreScreen() {
           onClick={() => router.push("/housing/mine")}
           className="min-h-[40px] rounded-full bg-[var(--color-surface-muted)] px-3.5 text-[14px] font-semibold text-[var(--color-text-secondary)]"
         >
-          Mis anuncios
+          Mis viviendas
         </button>
         {hasCapability(CAPABILITIES.housingSave) ? (
           <button
@@ -145,37 +127,46 @@ export function HousingExploreScreen() {
 
       {canCreate ? (
         <ScreenPrimaryAction
-          label="Crear anuncio"
+          label="Registrar vivienda"
           onClick={() => router.push("/housing/create")}
         />
       ) : null}
 
       <HousingFilterBar
-        items={categoryFilters}
+        items={filters}
         activeId={filter}
-        onChange={(id) => setFilter(id as CategoryFilter)}
+        onChange={(id) => setFilter(id as Filter)}
       />
 
-      {items.length === 0 ? (
+      {!ready ? (
+        <p className="mt-6 text-[15px] text-[var(--color-text-secondary)]">
+          Cargando viviendas…
+        </p>
+      ) : visible.length === 0 ? (
         <EmptyState
-          title="No hay anuncios publicados"
-          description="Cuando haya ofertas de alquiler, venta, terreno o local, las verás aquí."
-          actionLabel={canCreate ? "Crear anuncio" : undefined}
+          title="No hay viviendas para mostrar"
+          description="Las viviendas privadas solo las ves si formas parte del hogar. El alquiler y la venta aparecen a la comunidad."
+          actionLabel={canCreate ? "Registrar vivienda" : undefined}
           onAction={
             canCreate ? () => router.push("/housing/create") : undefined
           }
         />
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {visible.map((item) => (
             <HousingListingCard
               key={item.id}
-              categoryLabel={housingCategoryLabel(item.type)}
+              categoryLabel={housingPropertyTypeLabel(item.propertyType)}
               title={item.title}
-              meta={housingLocationLabel(item)}
-              priceLabel={housingPriceLabel(item)}
-              statusLabel={housingStatusLabel(item.status)}
-              imageUrl={housingCoverUrl(item)}
+              meta={[
+                item.areaLabel,
+                housingAvailabilityLabel(item.availability),
+                item.viewerRole ? "Tu hogar" : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+              statusLabel={item.viewerRole ? "Tu relación" : undefined}
+              imageUrl={propertyCoverUrl(item)}
               onClick={() => router.push(`/housing/${item.id}`)}
             />
           ))}
