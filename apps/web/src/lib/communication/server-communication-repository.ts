@@ -721,6 +721,9 @@ export async function postMessageServer(input: {
   }
   const attachments = (input.attachments ?? []).map((item) => {
     const rawKind = item.kind ?? "file";
+    const url = item.url && !item.url.includes("unsplash") && !item.url.startsWith("blob:")
+      ? item.url
+      : undefined;
     return createMessageAttachmentRecord({
       tenantId: slug,
       messageId: "pending",
@@ -729,7 +732,9 @@ export async function postMessageServer(input: {
       fileName: item.fileName ?? "file",
       mimeType: item.mimeType ?? "application/octet-stream",
       fileId: item.fileId,
-      url: item.url,
+      url: item.fileId
+        ? `/api/media/${encodeURIComponent(item.fileId)}/file`
+        : url,
     });
   });
   const message = createMessageRecord({
@@ -748,6 +753,32 @@ export async function postMessageServer(input: {
   store.messages.push(message);
   store.attachments.push(...boundAttachments);
   conversation.updatedAt = message.createdAt;
+  for (const attachment of boundAttachments) {
+    if (!attachment.fileId) continue;
+    const media = await import("@/lib/media/server-media-repository");
+    try {
+      await media.getMediaAssetServer({
+        tenantId: slug,
+        actor: input.actor,
+        mediaId: attachment.fileId,
+        scope: input.scope,
+      });
+      await media.linkMediaReferenceServer({
+        tenantId: slug,
+        actor: input.actor,
+        mediaId: attachment.fileId,
+        entityType: "message",
+        entityId: message.id,
+        purpose: "attachment",
+        scope: input.scope,
+      });
+    } catch (error) {
+      if (error instanceof media.MediaDeniedError) {
+        throw new CommunicationDeniedError("invalid_attachment");
+      }
+      throw error;
+    }
+  }
   await persistStore(slug, store, input.scope);
   await notifyParticipants({
     tenantId: slug,

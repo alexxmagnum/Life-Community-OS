@@ -26,6 +26,8 @@ import {
   publishBusinessRequest,
   reviewBusinessRequest,
 } from "@/lib/business/business-client";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
+import { useEntityMedia } from "@/lib/media/use-entity-media";
 import { useTenant } from "@/providers/TenantProvider";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -50,6 +52,7 @@ export function LocationDetailScreen() {
   const [editContact, setEditContact] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [business, setBusiness] = useState<BusinessProfile | null>(null);
+  const { coverUrl } = useEntityMedia("business", business?.id);
 
   const isStaff = role === "administrator" || role === "moderator";
 
@@ -73,12 +76,14 @@ export function LocationDetailScreen() {
   const profile = useMemo(() => {
     if (!location) return null;
     return {
-      imageUrl: business?.imageUrl ?? location.imageUrl,
+      imageUrl:
+        preferEntityMediaUrl(coverUrl, business?.imageUrl) ??
+        preferEntityMediaUrl(undefined, location.imageUrl),
       summary: business?.description ?? location.summary,
       hours: business?.hours ?? location.hours,
       contact: business?.contact ?? location.contact,
     };
-  }, [location, business]);
+  }, [location, business, coverUrl]);
 
   useEffect(() => {
     let cancelled = false;

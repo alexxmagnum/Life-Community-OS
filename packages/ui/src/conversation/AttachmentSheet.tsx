@@ -21,12 +21,12 @@ export type AttachmentSheetProps = {
 
 const DEFAULT_ITEMS: AttachmentSheetItem[] = [
   { id: "camera", label: "Cámara", description: "Hacer foto", enabled: false },
-  { id: "gallery", label: "Galería", description: "Fotos", enabled: false },
+  { id: "gallery", label: "Galería", description: "Fotos", enabled: true },
   {
     id: "document",
     label: "Documento",
     description: "PDF u otros",
-    enabled: false,
+    enabled: true,
   },
   {
     id: "location",

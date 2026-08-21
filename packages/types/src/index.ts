@@ -453,7 +453,7 @@ export {
   createNoopNotificationDeliveryPort,
 } from "./platform/notifications";
 
-/** Platform Core Files & Media (ADR-020 / D.0.5c) — contracts only. */
+/** Platform Core Files & Media (ADR-020 / D.0.5c + Phase 10). */
 export {
   FILE_TYPES,
   FILE_REFERENCE_STATUSES,
@@ -471,4 +471,49 @@ export {
   shouldProjectFileReference,
   canDeliverFileReference,
   isFileEligibleForRetentionCleanup,
+  MEDIA_ASSET_TYPES,
+  MEDIA_ASSET_STATUSES,
+  MEDIA_ENTITY_TYPES,
+  MEDIA_PURPOSES,
+  isMediaAssetType,
+  isMediaAssetStatus,
+  isMediaEntityType,
+  isMediaPurpose,
+  isPublicMediaPurpose,
+  createMediaAsset,
+  createMediaReference,
+  validateMediaAsset,
+  mediaAssetTypeFromMime,
+  mediaAssetToFileReference,
+} from "./platform/files";
+
+export type {
+  FileType,
+  FileReferenceStatus,
+  FileOwnerContext,
+  FileReference,
+  FileReferenceIssue,
+  FileReferenceIssueCode,
+  FileVariantKind,
+  PreferredImageFormat,
+  FileMediaFormat,
+  FileVariant,
+  FileVariantIssue,
+  FileVariantIssueCode,
+  MediaPipelineStage,
+  ImageOptimizationOutputKind,
+  ImageOptimizationContract,
+  MediaPipelineContract,
+  FileAccessEnv,
+  MediaAssetType,
+  MediaAssetStatus,
+  MediaEntityType,
+  MediaPurpose,
+  MediaAsset,
+  MediaReference,
+  MediaAssetIssue,
+  MediaAssetIssueCode,
+  MediaStorageUploadInput,
+  MediaStorageObject,
+  MediaStorageProvider,
 } from "./platform/files";

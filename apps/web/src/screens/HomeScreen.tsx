@@ -24,11 +24,12 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { useTenantLocations } from "@/lib/location";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=80";
+  "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
@@ -165,7 +166,9 @@ export function HomeScreen() {
         .map((loc) => ({
           id: loc.id,
           name: loc.name,
-          imageUrl: loc.imageUrl?.trim() || LOCATION_NEARBY_FALLBACK_IMAGE,
+          imageUrl:
+            preferEntityMediaUrl(undefined, loc.imageUrl) ||
+            LOCATION_NEARBY_FALLBACK_IMAGE,
           distanceLabel: loc.areaLabel ?? configuration.branding.name,
           statusLabel: loc.category,
           ratingLabel: undefined as string | undefined,

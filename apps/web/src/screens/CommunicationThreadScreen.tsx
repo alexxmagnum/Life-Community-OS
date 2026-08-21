@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   ConversationKind,
@@ -22,6 +22,7 @@ import {
   patchConversationMessage,
   sendConversationMessage,
 } from "@/lib/communication/communication-client";
+import { uploadMediaFile } from "@/lib/media/media-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
@@ -74,6 +75,10 @@ export function CommunicationThreadScreen({
     null,
   );
   const [infoOpen, setInfoOpen] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<
+    Array<{ fileId: string; fileName: string; mimeType: string; kind: string; url: string }>
+  >([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const peerKey = peerPersonIds?.join(",") ?? "";
 
@@ -197,11 +202,52 @@ export function CommunicationThreadScreen({
           : undefined,
       deleteEnabled: sender === personId,
       forwardEnabled: false,
+      media: message.attachments?.[0]
+        ? {
+            kind:
+              message.attachments[0].kind === "image"
+                ? "image"
+                : message.attachments[0].kind === "document"
+                  ? "document"
+                  : "unknown",
+            title: message.attachments[0].fileName,
+            previewUrl: message.attachments[0].url,
+          }
+        : undefined,
     };
   });
 
   return (
     <MobileScreen dense className="gap-0 pb-0">
+      <input
+        ref={fileInputRef}
+        type="file"
+        hidden
+        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file) return;
+          void uploadMediaFile({
+            file,
+            type: file.type.startsWith("image/") ? "image" : "attachment",
+          }).then((result) => {
+            if ("error" in result) return;
+            setPendingFiles((current) => [
+              ...current,
+              {
+                fileId: result.asset.id,
+                fileName: result.asset.filename,
+                mimeType: result.asset.mimeType,
+                kind: result.asset.mimeType.startsWith("image/")
+                  ? "image"
+                  : "document",
+                url: result.url,
+              },
+            ]);
+          });
+        }}
+      />
       <ConversationExperience
         onBack={() => router.push(backHref)}
         infoOpen={infoOpen}
@@ -223,15 +269,29 @@ export function CommunicationThreadScreen({
         composer={{
           value: draft,
           onChange: setDraft,
+          hasPendingMedia: pendingFiles.length > 0,
+          onAttachSelect: (kind) => {
+            if (kind === "gallery" || kind === "document") {
+              fileInputRef.current?.click();
+            }
+          },
           onSend: () => {
-            if (!threadId || !draft.trim()) return;
+            if (!threadId || (!draft.trim() && pendingFiles.length === 0)) return;
+            const attachments = pendingFiles.map((item) => ({
+              kind: item.kind,
+              fileName: item.fileName,
+              mimeType: item.mimeType,
+              fileId: item.fileId,
+            }));
             void sendConversationMessage({
               conversationId: threadId,
               content: draft,
               replyToMessageId: replyTo?.messageId,
+              attachments,
             }).then((created) => {
               if (created) {
                 setDraft("");
+                setPendingFiles([]);
                 setReplyTo(null);
                 void refresh();
               }

@@ -5,6 +5,7 @@ import type {
   MarketplaceListing,
   MarketplaceListingType,
 } from "@life-community-os/types";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 
 async function parseError(res: Response): Promise<string> {
   try {
@@ -183,6 +184,9 @@ export function listingPriceLabel(price: number | null): string | undefined {
   return `${price} €`;
 }
 
-export function listingImageUrl(images: string[]): string {
-  return images[0]?.trim() || "";
+export function listingImageUrl(
+  images: string[],
+  mediaUrl?: string,
+): string {
+  return preferEntityMediaUrl(mediaUrl, images[0]) ?? "";
 }

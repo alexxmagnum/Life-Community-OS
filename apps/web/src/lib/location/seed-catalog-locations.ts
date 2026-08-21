@@ -5,19 +5,18 @@
 
 import {
   locationTypeFromLocalKind,
+  type CreateLocationInput,
   type Location,
 } from "@life-community-os/types";
 import { localEntityCatalog } from "@life-community-os/tenant-life-panoramica";
-import { listLocations, saveLocation } from "./location-store";
-import { getAddressGeocoder } from "./geocoder";
-import { EXAMPLE_IKON_ADDRESS } from "./example-ikon";
 import { catalogLocationId } from "./location-href";
-import { getTenantPack } from "@/lib/tenant/registry";
+import { enrichLocationFields } from "./enrich-location-presentation";
+import { EXAMPLE_IKON_ADDRESS } from "./example-ikon";
 
 export { catalogLocationId };
 
 /** Stable offsets so catalog places sit near the community nucleus. */
-const OFFSETS: Record<string, { dLat: number; dLng: number }> = {
+export const CATALOG_NUCLEUS_OFFSETS: Record<string, { dLat: number; dLng: number }> = {
   "lp-terraza": { dLat: 0.0008, dLng: -0.0006 },
   "lp-clubhouse": { dLat: -0.0004, dLng: 0.0007 },
   "lp-pan": { dLat: 0.0006, dLng: 0.0009 },
@@ -32,7 +31,9 @@ const OFFSETS: Record<string, { dLat: number; dLng: number }> = {
   "lp-vet": { dLat: 0.0002, dLng: 0.0013 },
 };
 
-function categoryFromEntity(entity: (typeof localEntityCatalog)[number]): string {
+export function categoryFromLocalEntity(
+  entity: (typeof localEntityCatalog)[number],
+): string {
   switch (entity.kind) {
     case "restaurant":
       return "restaurant";
@@ -53,81 +54,19 @@ function categoryFromEntity(entity: (typeof localEntityCatalog)[number]): string
   }
 }
 
-export async function ensureCatalogLocations(
+/**
+ * Pure drafts for Panoramica local-entity catalog.
+ * Persistence belongs on the server (GET /api/locations), never a guest POST.
+ */
+export function buildLocalEntityCatalogInputs(
   tenantId: string,
-): Promise<{ created: number; error?: string }> {
+  nucleus: Pick<Location, "latitude" | "longitude" | "address">,
+  existing: readonly Pick<Location, "id" | "name">[] = [],
+): CreateLocationInput[] {
   const id = tenantId.trim();
-  if (!id) return { created: 0, error: "missing_tenant" };
-  const pack = getTenantPack(id);
-  if (!pack) return { created: 0, error: "unknown_tenant" };
-
-  if (pack.locationSeedMode === "pack") {
-    const existing = listLocations(id);
-    const byName = new Map(
-      existing.map((item) => [item.name.toLowerCase(), item]),
-    );
-    let created = 0;
-    for (const place of pack.getLocationSeeds()) {
-      const locationId = catalogLocationId(place.id, id);
-      if (existing.some((item) => item.id === locationId)) continue;
-      if (byName.has(place.name.toLowerCase())) continue;
-      await saveLocation({
-        id: locationId,
-        tenantId: id,
-        type: place.type ?? "community-place",
-        name: place.name,
-        address: place.address ?? `${place.areaLabel}, ${pack.displayName}`,
-        latitude: place.latitude,
-        longitude: place.longitude,
-        category: place.category,
-        visibility: "public",
-        summary: place.summary,
-        imageUrl: place.imageUrl,
-        areaLabel: place.areaLabel,
-        hours: place.hours,
-        contact: place.contact,
-      });
-      created += 1;
-    }
-    return { created };
-  }
-
-  const existing = listLocations(id);
-  const byName = new Map(existing.map((item) => [item.name.toLowerCase(), item]));
-
-  let base: Pick<Location, "latitude" | "longitude" | "address"> | null = null;
-  const ikon = existing.find((item) =>
-    item.name.toLowerCase().includes("ikon"),
-  );
-  if (ikon) {
-    base = {
-      latitude: ikon.latitude,
-      longitude: ikon.longitude,
-      address: ikon.address,
-    };
-  } else {
-    try {
-      const geocoder = getAddressGeocoder();
-      const result = await geocoder.geocode({
-        address: EXAMPLE_IKON_ADDRESS,
-        country: "ES",
-        language: "es",
-      });
-      if (!result) return { created: 0, error: "geocode_unresolved" };
-      base = {
-        latitude: result.latitude,
-        longitude: result.longitude,
-        address: EXAMPLE_IKON_ADDRESS,
-      };
-    } catch (err) {
-      return {
-        created: 0,
-        error: err instanceof Error ? err.message : "geocode_failed",
-      };
-    }
-  }
-
-  let created = 0;
+  const ids = new Set(existing.map((item) => item.id));
+  const names = new Set(existing.map((item) => item.name.toLowerCase()));
+  const drafts: CreateLocationInput[] = [];
 
   for (const entity of localEntityCatalog) {
     if (
@@ -139,30 +78,29 @@ export async function ensureCatalogLocations(
       continue;
     }
     const locationId = catalogLocationId(entity.id, id);
-    if (existing.some((item) => item.id === locationId)) continue;
-    if (byName.has(entity.name.toLowerCase())) continue;
-
-    const offset = OFFSETS[entity.id] ?? { dLat: 0.0005, dLng: 0.0005 };
-    const { enrichLocationFields } = await import(
-      "./enrich-location-presentation"
-    );
+    if (ids.has(locationId) || names.has(entity.name.toLowerCase())) continue;
+    const offset = CATALOG_NUCLEUS_OFFSETS[entity.id] ?? {
+      dLat: 0.0005,
+      dLng: 0.0005,
+    };
+    const now = new Date().toISOString();
     const draft = enrichLocationFields({
       id: locationId,
       tenantId: id,
       type: locationTypeFromLocalKind(entity.kind),
       name: entity.name,
-      address: `${entity.areaLabel}, ${base.address}`,
-      latitude: base.latitude + offset.dLat,
-      longitude: base.longitude + offset.dLng,
-      category: categoryFromEntity(entity),
+      address: `${entity.areaLabel}, ${nucleus.address}`,
+      latitude: nucleus.latitude + offset.dLat,
+      longitude: nucleus.longitude + offset.dLng,
+      category: categoryFromLocalEntity(entity),
       visibility: "public",
       summary: entity.story,
       imageUrl: entity.imageUrl,
       areaLabel: entity.areaLabel,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as import("@life-community-os/types").Location);
-    await saveLocation({
+      createdAt: now,
+      updatedAt: now,
+    });
+    drafts.push({
       id: draft.id,
       tenantId: draft.tenantId,
       type: draft.type,
@@ -178,8 +116,14 @@ export async function ensureCatalogLocations(
       hours: draft.hours,
       contact: draft.contact,
     });
-    created += 1;
   }
 
-  return { created };
+  return drafts;
 }
+
+export const CATALOG_NUCLEUS_FALLBACK = {
+  latitude: 40.5486,
+  longitude: 0.3308,
+  address: EXAMPLE_IKON_ADDRESS,
+} as const;
+

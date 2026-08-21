@@ -22,4 +22,4 @@ export function isAttachmentPickerKind(
 }
 
 export const ATTACHMENT_FOUNDATION_NOTE =
-  "Attachment picker is UX foundation only. Do not invent uploads or FileReference rows without Files pipeline.";
+  "Attachment picker selects a MediaAsset. Bytes go through the Media Platform upload pipeline — never a client storage_key.";

@@ -9,7 +9,7 @@ export {
   hydrateLocations,
 } from "./location-store";
 export { enrichLocationFields, locationNeedsEnrichment } from "./enrich-location-presentation";
-export { ensureCatalogLocations } from "./seed-catalog-locations";
+export { buildLocalEntityCatalogInputs } from "./seed-catalog-locations";
 export {
   catalogLocationId,
   locationMapFocusHref,

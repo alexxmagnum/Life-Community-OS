@@ -25,6 +25,7 @@ import {
 } from "@/lib/housing/housing-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useHousingSaves } from "@/providers/HousingSavesProvider";
+import { useEntityMedia } from "@/lib/media/use-entity-media";
 
 export function HousingDetailScreen({ listingId }: { listingId: string }) {
   const router = useRouter();
@@ -37,6 +38,10 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
     personId,
   } = useTenant();
   const { isSaved, toggleSave } = useHousingSaves();
+  const { items: mediaItems, coverUrl } = useEntityMedia(
+    "property",
+    listingId,
+  );
   const [ready, setReady] = useState(false);
   const [property, setProperty] = useState<PropertyPublicView | null>(null);
   const [memberships, setMemberships] = useState<PropertyMembership[] | undefined>();
@@ -124,7 +129,7 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
 
   const isOwner = property.viewerRole === "owner";
   const saved = isSaved(property.id);
-  const cover = propertyCoverUrl(property);
+  const cover = propertyCoverUrl(property, coverUrl);
 
   return (
     <MobileScreen dense>
@@ -151,7 +156,13 @@ export function HousingDetailScreen({ listingId }: { listingId: string }) {
           .filter(Boolean)
           .join(" · ")}
         facts={propertyFacts(property)}
-        media={cover ? [{ id: "cover", url: cover }] : []}
+        media={
+          mediaItems.length > 0
+            ? mediaItems.map((item) => ({ id: item.asset.id, url: item.url }))
+            : cover
+              ? [{ id: "cover", url: cover }]
+              : []
+        }
         actions={
           <>
             {memberships && memberships.length > 0 ? (

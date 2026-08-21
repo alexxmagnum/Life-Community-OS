@@ -31,6 +31,7 @@ export type MessageComposerProps = {
   onCancelReply?: () => void;
   attachmentsEnabled?: boolean;
   onAttachSelect?: (kind: string) => void;
+  hasPendingMedia?: boolean;
   voiceEnabled?: boolean;
   onVoiceSendRequest?: () => void;
   onEmojiSelect?: (emoji: string) => void;
@@ -56,6 +57,7 @@ export function MessageComposer({
   onCancelReply,
   attachmentsEnabled = true,
   onAttachSelect,
+  hasPendingMedia = false,
   voiceEnabled = true,
   onVoiceSendRequest,
   onEmojiSelect,
@@ -66,8 +68,8 @@ export function MessageComposer({
   const [voiceMode, setVoiceMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const trimmed = value.trim();
-  const canSend = Boolean(trimmed) && !disabled;
-  const showMic = voiceEnabled && !trimmed;
+  const canSend = (Boolean(trimmed) || hasPendingMedia) && !disabled;
+  const showMic = voiceEnabled && !trimmed && !hasPendingMedia;
 
   useEffect(() => {
     const el = textareaRef.current;

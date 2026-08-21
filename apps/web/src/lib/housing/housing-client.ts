@@ -6,6 +6,7 @@ import type {
   PropertyMembership,
   PropertyPublicView,
 } from "@life-community-os/types";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 
 async function parseError(res: Response): Promise<string> {
   try {
@@ -130,8 +131,11 @@ export async function addHousingMemberRequest(input: {
   return { ok: true };
 }
 
-export function propertyCoverUrl(property: PropertyPublicView): string | undefined {
-  return property.images[0]?.trim() || undefined;
+export function propertyCoverUrl(
+  property: PropertyPublicView,
+  mediaUrl?: string,
+): string | undefined {
+  return preferEntityMediaUrl(mediaUrl, property.images[0]);
 }
 
 export function propertyFacts(property: PropertyPublicView): string[] {

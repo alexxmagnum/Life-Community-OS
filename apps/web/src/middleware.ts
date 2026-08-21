@@ -34,6 +34,7 @@ const PILOT_PUBLIC_API_PREFIXES = [
   "/api/reservations",
   "/api/conversations",
   "/api/messages",
+  "/api/media",
 ];
 
 function isAlwaysPublicPath(pathname: string): boolean {

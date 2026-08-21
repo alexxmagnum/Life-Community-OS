@@ -19,6 +19,8 @@ import {
 } from "@life-community-os/ui";
 import { getAddressGeocoder, LOCATION_CATEGORY_OPTIONS } from "@/lib/location";
 import { createBusinessRequest, publishBusinessRequest } from "@/lib/business/business-client";
+import { linkMediaToEntity } from "@/lib/media/media-client";
+import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { useTenant } from "@/providers/TenantProvider";
 
 const TYPE_LABEL: Record<LocationType, string> = {
@@ -61,6 +63,7 @@ export function BusinessRegistrationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingMediaIds, setPendingMediaIds] = useState<string[]>([]);
 
   const fieldClass =
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
@@ -135,6 +138,16 @@ export function BusinessRegistrationScreen() {
         tenantId,
         businessId: created.business.id,
       });
+      await Promise.all(
+        pendingMediaIds.map((mediaId) =>
+          linkMediaToEntity({
+            mediaId,
+            entityType: "business",
+            entityId: created.business.id,
+            purpose: "cover",
+          }),
+        ),
+      );
       router.push(`/locations/${encodeURIComponent(created.locationId)}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo guardar.");
@@ -280,6 +293,15 @@ export function BusinessRegistrationScreen() {
             </p>
           </div>
         ) : null}
+
+        <EntityMediaField
+          purpose="cover"
+          type="image"
+          label="Foto del negocio"
+          onUploaded={(mediaId) =>
+            setPendingMediaIds((current) => [...current, mediaId])
+          }
+        />
 
         {error ? (
           <p

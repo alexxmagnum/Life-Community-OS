@@ -1,8 +1,8 @@
 /**
- * Platform Core Files & Media contracts (ADR-020 / D.0.5c).
+ * Platform Core Files & Media contracts (ADR-020 / D.0.5c + Phase 10).
  *
- * Types and structural helpers only.
- * No storage provider, uploads UI, CDN, or migrations.
+ * FileReference is the delivery contract.
+ * MediaAsset is the persistence SoT (ownership + storage_key).
  */
 
 export type {
@@ -55,3 +55,36 @@ export {
   canDeliverFileReference,
   isFileEligibleForRetentionCleanup,
 } from "./media-access";
+
+export type {
+  MediaAssetType,
+  MediaAssetStatus,
+  MediaEntityType,
+  MediaPurpose,
+  MediaAsset,
+  MediaReference,
+  MediaAssetIssue,
+  MediaAssetIssueCode,
+} from "./media-asset";
+export {
+  MEDIA_ASSET_TYPES,
+  MEDIA_ASSET_STATUSES,
+  MEDIA_ENTITY_TYPES,
+  MEDIA_PURPOSES,
+  isMediaAssetType,
+  isMediaAssetStatus,
+  isMediaEntityType,
+  isMediaPurpose,
+  isPublicMediaPurpose,
+  createMediaAsset,
+  createMediaReference,
+  validateMediaAsset,
+  mediaAssetTypeFromMime,
+  mediaAssetToFileReference,
+} from "./media-asset";
+
+export type {
+  MediaStorageUploadInput,
+  MediaStorageObject,
+  MediaStorageProvider,
+} from "./media-storage";

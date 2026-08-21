@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAddressGeocoder } from "@life-community-os/address-geocoder";
+import { isAuthConfigured, isAuthEnforced } from "@life-community-os/auth";
 import { requireMutationActor } from "@/lib/auth/mutation-gate";
 
 /**
@@ -34,8 +35,10 @@ function rateLimit(request: Request): boolean {
 }
 
 export async function GET(request: Request) {
-  const gated = await requireMutationActor(request);
-  if ("error" in gated) return gated.error;
+  if (isAuthEnforced() && isAuthConfigured()) {
+    const gated = await requireMutationActor(request);
+    if ("error" in gated) return gated.error;
+  }
 
   if (!rateLimit(request)) {
     return NextResponse.json(

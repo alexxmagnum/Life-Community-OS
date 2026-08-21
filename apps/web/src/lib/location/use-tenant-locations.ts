@@ -12,7 +12,6 @@ import {
   listVisibleMapLocations,
   subscribeLocations,
 } from "./location-store";
-import { ensureCatalogLocations } from "./seed-catalog-locations";
 
 export function useTenantLocations(tenantId: string): {
   locations: Location[];
@@ -42,12 +41,6 @@ export function useTenantLocations(tenantId: string): {
     setSeedReady(false);
     setSeedError(null);
     void (async () => {
-      await hydrateLocations(tenantId);
-      if (cancelled) return;
-      sync();
-      const catalog = await ensureCatalogLocations(tenantId);
-      if (cancelled) return;
-      if (catalog.error) setSeedError(catalog.error);
       await hydrateLocations(tenantId);
       if (cancelled) return;
       setSeedReady(true);

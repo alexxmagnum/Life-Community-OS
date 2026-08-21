@@ -15,6 +15,7 @@ import {
 } from "@life-community-os/ui";
 import { fetchHousingProperties, propertyCoverUrl } from "@/lib/housing/housing-client";
 import { useHousingSaves } from "@/providers/HousingSavesProvider";
+import { useEntityMediaIndex } from "@/lib/media/use-entity-media";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 export function HousingSavedScreen() {
@@ -29,6 +30,7 @@ export function HousingSavedScreen() {
   const { savedIds } = useHousingSaves();
   const [items, setItems] = useState<PropertyPublicView[]>([]);
   const [ready, setReady] = useState(false);
+  const mediaById = useEntityMediaIndex("property");
 
   const moduleOn =
     isModuleEnabled("housing") &&
@@ -112,7 +114,7 @@ export function HousingSavedScreen() {
               meta={[item.areaLabel, housingAvailabilityLabel(item.availability)]
                 .filter(Boolean)
                 .join(" · ")}
-              imageUrl={propertyCoverUrl(item)}
+              imageUrl={propertyCoverUrl(item, mediaById[item.id])}
               onClick={() => router.push(`/housing/${item.id}`)}
             />
           ))}

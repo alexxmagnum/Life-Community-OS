@@ -61,11 +61,7 @@ export function MediaPreview({
           <p className="mt-0.5 truncate text-[11px] text-[var(--color-text-tertiary)]">
             {subtitle}
           </p>
-        ) : (
-          <p className="mt-0.5 text-[11px] text-[var(--color-text-tertiary)]">
-            Vista previa · foundation
-          </p>
-        )}
+        ) : null}
       </div>
     </button>
   );

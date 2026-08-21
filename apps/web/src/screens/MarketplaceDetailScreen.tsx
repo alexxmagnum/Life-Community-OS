@@ -22,6 +22,7 @@ import {
   listingPriceLabel,
 } from "@/lib/marketplace/commerce-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useEntityMedia } from "@/lib/media/use-entity-media";
 
 export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
   const router = useRouter();
@@ -36,6 +37,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
   const [listing, setListing] = useState<MarketplaceListing | null>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { coverUrl } = useEntityMedia("listing", listingId);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +127,7 @@ export function MarketplaceDetailScreen({ listingId }: { listingId: string }) {
     hasCapability,
   });
   const isOwner = Boolean(personId && personId === listing.ownerPersonId);
-  const imageUrl = listingImageUrl(listing.images);
+  const imageUrl = listingImageUrl(listing.images, coverUrl);
 
   return (
     <MobileScreen dense>

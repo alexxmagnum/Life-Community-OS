@@ -20,7 +20,10 @@ import {
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
+import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { fetchHousingProperties } from "@/lib/housing/housing-client";
+import { useEntityMedia } from "@/lib/media/use-entity-media";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -58,6 +61,8 @@ export function ProfileScreen() {
   const { upcoming: upcomingReservations } = useReservations();
   const demoIdentity = isDemoIdentityEnabled();
   const [homes, setHomes] = useState<PropertyPublicView[]>([]);
+  const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
+  const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
 
   const upcomingExperienceCount = joinedExperiences.filter(
     (e) => e.status !== "cancelled" && e.status !== "expired",
@@ -135,8 +140,22 @@ export function ProfileScreen() {
           placeName
         }
         interests={demoMember.interests}
-        avatarUrl={demoMember.avatarUrl}
+        avatarUrl={
+          uploadedAvatar ||
+          preferEntityMediaUrl(avatarMediaUrl, demoMember.avatarUrl)
+        }
       />
+
+      {personId ? (
+        <EntityMediaField
+          entityType="profile"
+          entityId={personId}
+          purpose="avatar"
+          type="avatar"
+          label="Cambiar avatar"
+          onUploaded={(_id, url) => setUploadedAvatar(url)}
+        />
+      ) : null}
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">

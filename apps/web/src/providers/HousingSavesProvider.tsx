@@ -13,6 +13,7 @@ import {
   hydrateDurableState,
   pushDurableState,
 } from "@/lib/durable/client";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTenant } from "@/providers/TenantProvider";
 
 const SAVED_STORAGE_KEY = "lcos:housing-saves";
@@ -44,24 +45,38 @@ function readSavedIds(tenantSlug: string): string[] {
   }
 }
 
-function writeSavedIds(ids: string[], tenantSlug: string) {
+function writeSavedIds(
+  ids: string[],
+  tenantSlug: string,
+  persistRemote: boolean,
+) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(
     `${SAVED_STORAGE_KEY}:${tenantSlug}`,
     JSON.stringify(ids),
   );
-  pushDurableState(DURABLE_KEY, ids, tenantSlug);
+  if (persistRemote) {
+    pushDurableState(DURABLE_KEY, ids, tenantSlug);
+  }
 }
 
 export function HousingSavesProvider({ children }: { children: ReactNode }) {
-  const { tenantSlug } = useTenant();
+  const { tenantSlug, hasMembership } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    if (!sessionReady) return;
     let cancelled = false;
     setReady(false);
     void (async () => {
+      if (!hasMembership) {
+        if (cancelled) return;
+        setSavedIds(readSavedIds(tenantSlug));
+        setReady(true);
+        return;
+      }
       const remote = await hydrateDurableState<string[]>(DURABLE_KEY, tenantSlug);
       if (cancelled) return;
       if (Array.isArray(remote)) {
@@ -78,7 +93,7 @@ export function HousingSavesProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug]);
+  }, [tenantSlug, hasMembership, sessionReady]);
 
   const isSaved = useCallback(
     (listingId: string) => savedIds.includes(listingId),
@@ -93,11 +108,11 @@ export function HousingSavesProvider({ children }: { children: ReactNode }) {
         const next = prev.includes(id)
           ? prev.filter((x) => x !== id)
           : [...prev, id];
-        writeSavedIds(next, tenantSlug);
+        writeSavedIds(next, tenantSlug, hasMembership);
         return next;
       });
     },
-    [tenantSlug],
+    [tenantSlug, hasMembership],
   );
 
   const value = useMemo(

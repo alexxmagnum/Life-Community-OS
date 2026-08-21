@@ -15,6 +15,8 @@ import {
 } from "@life-community-os/ui";
 import { createHousingPropertyRequest } from "@/lib/housing/housing-client";
 import { getAddressGeocoder } from "@/lib/location";
+import { linkMediaToEntity } from "@/lib/media/media-client";
+import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 const TYPES: HousingPropertyType[] = [
@@ -58,6 +60,7 @@ export function HousingComposerScreen() {
   const [bedrooms, setBedrooms] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingMediaIds, setPendingMediaIds] = useState<string[]>([]);
   const [searching, setSearching] = useState(false);
   const [preview, setPreview] = useState<{
     latitude: number;
@@ -182,6 +185,16 @@ export function HousingComposerScreen() {
       setSubmitting(false);
       return;
     }
+    await Promise.all(
+      pendingMediaIds.map((mediaId) =>
+        linkMediaToEntity({
+          mediaId,
+          entityType: "property",
+          entityId: created.property.id,
+          purpose: "cover",
+        }),
+      ),
+    );
     router.replace(`/housing/${created.property.id}`);
   };
 
@@ -310,6 +323,15 @@ export function HousingComposerScreen() {
           />
         </label>
       ) : null}
+
+      <EntityMediaField
+        purpose="cover"
+        type="image"
+        label="Foto de la vivienda"
+        onUploaded={(mediaId) =>
+          setPendingMediaIds((current) => [...current, mediaId])
+        }
+      />
 
       {error ? (
         <p

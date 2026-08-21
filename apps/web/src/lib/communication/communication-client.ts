@@ -65,6 +65,12 @@ export async function sendConversationMessage(input: {
   conversationId: string;
   content: string;
   replyToMessageId?: string;
+  attachments?: Array<{
+    kind?: string;
+    fileName?: string;
+    mimeType?: string;
+    fileId?: string;
+  }>;
 }): Promise<Message | null> {
   const response = await fetch(
     `/api/conversations/${input.conversationId}/messages`,
@@ -74,6 +80,7 @@ export async function sendConversationMessage(input: {
       body: JSON.stringify({
         content: input.content,
         replyToMessageId: input.replyToMessageId,
+        attachments: input.attachments,
       }),
     },
   );

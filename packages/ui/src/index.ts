@@ -87,6 +87,15 @@ export {
   MediaPreviewPlaceholder,
 } from "./media/Media";
 export {
+  MediaUploader,
+  type MediaUploaderProps,
+} from "./media/MediaUploader";
+export {
+  MediaGallery,
+  type MediaGalleryProps,
+  type MediaGalleryItem,
+} from "./media/MediaGallery";
+export {
   MediaLightboxProvider,
   ZoomableImage,
   useMediaLightbox,

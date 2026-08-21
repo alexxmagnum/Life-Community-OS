@@ -13,6 +13,8 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { createMarketplaceListingRequest } from "@/lib/marketplace/commerce-client";
+import { linkMediaToEntity } from "@/lib/media/media-client";
+import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 const KINDS: MarketplaceListingType[] = [
@@ -62,6 +64,7 @@ export function MarketplaceComposerScreen() {
   const [category, setCategory] = useState("general");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingMediaIds, setPendingMediaIds] = useState<string[]>([]);
 
   const fieldClass =
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
@@ -145,6 +148,16 @@ export function MarketplaceComposerScreen() {
       setSubmitting(false);
       return;
     }
+    await Promise.all(
+      pendingMediaIds.map((mediaId) =>
+        linkMediaToEntity({
+          mediaId,
+          entityType: "listing",
+          entityId: created.listing.id,
+          purpose: "cover",
+        }),
+      ),
+    );
     router.replace(`/marketplace/${created.listing.id}`);
   };
 
@@ -225,6 +238,15 @@ export function MarketplaceComposerScreen() {
           />
         </label>
       ) : null}
+
+      <EntityMediaField
+        purpose="cover"
+        type="image"
+        label="Foto del anuncio"
+        onUploaded={(mediaId) =>
+          setPendingMediaIds((current) => [...current, mediaId])
+        }
+      />
 
       {error ? (
         <p

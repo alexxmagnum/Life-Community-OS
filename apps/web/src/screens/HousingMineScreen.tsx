@@ -16,6 +16,7 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { fetchHousingProperties, propertyCoverUrl } from "@/lib/housing/housing-client";
+import { useEntityMediaIndex } from "@/lib/media/use-entity-media";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 export function HousingMineScreen() {
@@ -30,6 +31,7 @@ export function HousingMineScreen() {
   } = useTenant();
   const [items, setItems] = useState<PropertyPublicView[]>([]);
   const [ready, setReady] = useState(false);
+  const mediaById = useEntityMediaIndex("property");
 
   const moduleOn =
     isModuleEnabled("housing") &&
@@ -132,7 +134,7 @@ export function HousingMineScreen() {
               ]
                 .filter(Boolean)
                 .join(" · ")}
-              imageUrl={propertyCoverUrl(item)}
+              imageUrl={propertyCoverUrl(item, mediaById[item.id])}
               onClick={() => router.push(`/housing/${item.id}`)}
             />
           ))}

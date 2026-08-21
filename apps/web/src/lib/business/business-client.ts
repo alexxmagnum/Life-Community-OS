@@ -1,6 +1,7 @@
 "use client";
 
 import type { BusinessProfile } from "@life-community-os/types";
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 
 async function parseError(res: Response): Promise<string> {
   try {
@@ -141,4 +142,11 @@ export async function reviewBusinessRequest(input: {
   );
   if (!res.ok) return { error: await parseError(res) };
   return { ok: true };
+}
+
+export function businessImageUrl(
+  business: BusinessProfile,
+  mediaUrl?: string,
+): string | undefined {
+  return preferEntityMediaUrl(mediaUrl, business.imageUrl);
 }

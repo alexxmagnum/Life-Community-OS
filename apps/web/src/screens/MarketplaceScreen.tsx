@@ -22,6 +22,7 @@ import {
   listingImageUrl,
   listingPriceLabel,
 } from "@/lib/marketplace/commerce-client";
+import { useEntityMediaIndex } from "@/lib/media/use-entity-media";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 type Filter = "all" | MarketplaceListingType;
@@ -45,6 +46,7 @@ export function MarketplaceScreen() {
   const [filter, setFilter] = useState<Filter>("all");
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [ready, setReady] = useState(false);
+  const mediaById = useEntityMediaIndex("listing");
 
   useEffect(() => {
     let cancelled = false;
@@ -136,7 +138,7 @@ export function MarketplaceScreen() {
               title={item.title}
               meta={formatContentWhen(item.createdAt)}
               priceLabel={listingPriceLabel(item.price)}
-              imageUrl={listingImageUrl(item.images)}
+              imageUrl={listingImageUrl(item.images, mediaById[item.id])}
               authorName={item.authorDisplayName}
               onClick={() => router.push(`/marketplace/${item.id}`)}
             />

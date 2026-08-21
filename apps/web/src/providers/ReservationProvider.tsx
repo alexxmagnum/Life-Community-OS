@@ -25,6 +25,7 @@ import {
   fetchResources,
   patchReservationRequest,
 } from "@/lib/reservations/reservations-client";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTenant } from "@/providers/TenantProvider";
 
 type ReservationContextValue = {
@@ -56,13 +57,20 @@ type ReservationContextValue = {
 const ReservationContext = createContext<ReservationContextValue | null>(null);
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
-  const { tenantSlug, personId } = useTenant();
+  const { tenantSlug, hasMembership } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const [resources, setResources] = useState<CommunityResource[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [slotsByKey, setSlotsByKey] = useState<Record<string, TimeSlot[]>>({});
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (!hasMembership) {
+      setResources([]);
+      setReservations([]);
+      setReady(true);
+      return;
+    }
     const [nextResources, nextReservations] = await Promise.all([
       fetchResources({ tenantId: tenantSlug }),
       fetchReservations({ tenantId: tenantSlug }),
@@ -70,11 +78,19 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
     setResources(nextResources);
     setReservations(nextReservations);
     setReady(true);
-  }, [tenantSlug]);
+  }, [tenantSlug, hasMembership]);
 
   useEffect(() => {
+    if (!sessionReady) return;
     let cancelled = false;
     setReady(false);
+    if (!hasMembership) {
+      setResources([]);
+      setReservations([]);
+      setSlotsByKey({});
+      setReady(true);
+      return;
+    }
     void (async () => {
       const [nextResources, nextReservations] = await Promise.all([
         fetchResources({ tenantId: tenantSlug }),
@@ -89,7 +105,7 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug, personId]);
+  }, [tenantSlug, hasMembership, sessionReady]);
 
   const participantCounts = useMemo(() => {
     const counts = new Map<string, number>();
