@@ -8,7 +8,6 @@ import {
   homeSkyMood,
   listHomeHeroSlideUrls,
   listHomeIntents,
-  listHomeMomentCards,
   listHomeMoves,
   listHomeNearbyPlaces,
 } from "@life-community-os/tenant-life-panoramica";
@@ -25,9 +24,8 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { useTenantLocations } from "@/lib/location";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import type { Experience } from "@life-community-os/types";
+import { useReservations } from "@/providers/ReservationProvider";
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=400&q=80";
@@ -51,16 +49,6 @@ function madridHour(nowMs = Date.now()): number {
   return Number(hourStr);
 }
 
-const HYDRATE_SAFE = {
-  includeSessionExperiences: false,
-  stabilizeTime: true,
-} as const;
-
-const LIVE_OPTS = {
-  includeSessionExperiences: true,
-  stabilizeTime: false,
-} as const;
-
 /** How many open moments the main rail shows before deferring to /experiences. */
 const MOMENT_LIMIT = 3;
 
@@ -82,11 +70,9 @@ export function HomeScreen() {
     homeMode,
   } = useTenant();
   const { allLocations } = useTenantLocations(configuration.tenantId);
-  const { items: catalogExperiences, ready: catalogReady } =
-    useCatalogDomain<Experience>("experiences");
+  const { experiences, ready: experiencesReady } = useReservations();
   const premiumHome = homeMode === "premium";
 
-  const [live, setLive] = useState(false);
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
     () => `Hola, ${demoMember.displayName}`,
@@ -95,7 +81,6 @@ export function HomeScreen() {
 
   useEffect(() => {
     const current = madridHour();
-    setLive(true);
     setHour(current);
     setGreeting(belongingGreeting(demoMember.displayName, current));
   }, [demoMember.displayName]);
@@ -113,16 +98,11 @@ export function HomeScreen() {
     isFeatureEnabled("experiences") &&
     hasCapability(CAPABILITIES.experienceView);
 
-  const frontDoorOpts = live ? LIVE_OPTS : HYDRATE_SAFE;
-
-  /** Open moments — Panorámica pack or tenant catalog (never cross-tenant). */
+  /** Open moments — tenant Resource activities (never cross-tenant). */
   const moments = useMemo(() => {
     if (!canExperiences) return [];
-    if (premiumHome) {
-      return listHomeMomentCards({ limit: MOMENT_LIMIT, ...frontDoorOpts });
-    }
-    if (!catalogReady) return [];
-    return catalogExperiences.slice(0, MOMENT_LIMIT).map((experience) => ({
+    if (!experiencesReady) return [];
+    return experiences.slice(0, MOMENT_LIMIT).map((experience) => ({
       experience,
       presentation: {
         tone: "open" as const,
@@ -133,13 +113,7 @@ export function HomeScreen() {
         badgeLabel: undefined as string | undefined,
       },
     }));
-  }, [
-    canExperiences,
-    premiumHome,
-    frontDoorOpts,
-    catalogReady,
-    catalogExperiences,
-  ]);
+  }, [canExperiences, experiencesReady, experiences]);
 
   const moves = useMemo(
     () => (premiumHome ? listHomeMoves() : []),
@@ -293,13 +267,7 @@ export function HomeScreen() {
             {moments.map(({ experience, presentation }) => (
               <HomeMomentCard
                 key={experience.id}
-                tone={
-                  presentation.tone === "soon"
-                    ? "soon"
-                    : presentation.tone === "calm"
-                      ? "calm"
-                      : "open"
-                }
+                tone="open"
                 badgeLabel={
                   presentation.badgeLabel ??
                   formatExperienceTime(experience.startsAt)

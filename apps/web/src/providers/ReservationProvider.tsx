@@ -10,237 +10,231 @@ import {
   type ReactNode,
 } from "react";
 import {
-  deriveReservationStatus,
-  getAvailabilitySlots,
-  getResourceById,
+  experienceFromResource,
+  reservationIsActive,
+  spotsLeft,
   type CommunityResource,
+  type Experience,
   type Reservation,
-  type ReservationStatus,
   type TimeSlot,
-} from "@life-community-os/tenant-life-panoramica";
+} from "@life-community-os/types";
 import {
-  hydrateDurableState,
-  pushDurableState,
-} from "@/lib/durable/client";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
+  createReservationRequest,
+  fetchReservations,
+  fetchResourceAvailability,
+  fetchResources,
+  patchReservationRequest,
+} from "@/lib/reservations/reservations-client";
 import { useTenant } from "@/providers/TenantProvider";
 
-const STORAGE_KEY = "lcos:resource-reservations";
-const DURABLE_KEY = "reservations";
-
-type ReservationStore = {
-  reservations: Reservation[];
-};
-
 type ReservationContextValue = {
+  ready: boolean;
+  resources: CommunityResource[];
+  experiences: Experience[];
   reservations: Reservation[];
   upcoming: Reservation[];
   past: Reservation[];
+  refresh: () => Promise<void>;
+  getResource: (resourceId: string) => CommunityResource | undefined;
+  getExperience: (experienceId: string) => Experience | undefined;
   getReservationsForResourceDate: (
     resourceId: string,
     date: string,
   ) => Reservation[];
   getSlots: (resourceId: string, date: string) => TimeSlot[];
+  loadSlots: (resourceId: string, date: string) => Promise<TimeSlot[]>;
   reserve: (input: {
     resourceId: string;
     date: string;
     start: string;
     end: string;
-  }) => Reservation | null;
-  cancel: (reservationId: string) => void;
+    participantCount?: number;
+  }) => Promise<Reservation | null>;
+  cancel: (reservationId: string) => Promise<boolean>;
 };
 
 const ReservationContext = createContext<ReservationContextValue | null>(null);
 
-function readStore(tenantSlug: string): ReservationStore {
-  if (typeof window === "undefined") return { reservations: [] };
-  try {
-    const raw = window.localStorage.getItem(`${STORAGE_KEY}:${tenantSlug}`);
-    if (!raw) return { reservations: [] };
-    return JSON.parse(raw) as ReservationStore;
-  } catch {
-    return { reservations: [] };
-  }
-}
-
-function writeStore(store: ReservationStore, tenantSlug: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    `${STORAGE_KEY}:${tenantSlug}`,
-    JSON.stringify(store),
-  );
-  pushDurableState(DURABLE_KEY, store, tenantSlug);
-}
-
-function withDerivedStatus(r: Reservation): Reservation {
-  return { ...r, status: deriveReservationStatus(r) };
-}
-
 export function ReservationProvider({ children }: { children: ReactNode }) {
-  const { tenantSlug, homeMode } = useTenant();
-  const { items: catalogResources } =
-    useCatalogDomain<CommunityResource>("resources");
-  const [store, setStore] = useState<ReservationStore>({ reservations: [] });
-  const [hydrated, setHydrated] = useState(false);
+  const { tenantSlug, personId } = useTenant();
+  const [resources, setResources] = useState<CommunityResource[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [slotsByKey, setSlotsByKey] = useState<Record<string, TimeSlot[]>>({});
+  const [ready, setReady] = useState(false);
 
-  const resolveResource = useCallback(
-    (resourceId: string) =>
-      catalogResources.find((r) => r.id === resourceId) ??
-      (homeMode === "premium" ? getResourceById(resourceId) : undefined),
-    [catalogResources, homeMode],
-  );
+  const refresh = useCallback(async () => {
+    const [nextResources, nextReservations] = await Promise.all([
+      fetchResources({ tenantId: tenantSlug }),
+      fetchReservations({ tenantId: tenantSlug }),
+    ]);
+    setResources(nextResources);
+    setReservations(nextReservations);
+    setReady(true);
+  }, [tenantSlug]);
 
   useEffect(() => {
     let cancelled = false;
-    setHydrated(false);
+    setReady(false);
     void (async () => {
-      const remote = await hydrateDurableState<ReservationStore>(
-        DURABLE_KEY,
-        tenantSlug,
-      );
+      const [nextResources, nextReservations] = await Promise.all([
+        fetchResources({ tenantId: tenantSlug }),
+        fetchReservations({ tenantId: tenantSlug }),
+      ]);
       if (cancelled) return;
-      if (remote?.reservations) {
-        setStore(remote);
-        window.localStorage.setItem(
-          `${STORAGE_KEY}:${tenantSlug}`,
-          JSON.stringify(remote),
-        );
-      } else {
-        setStore(readStore(tenantSlug));
-      }
-      setHydrated(true);
+      setResources(nextResources);
+      setReservations(nextReservations);
+      setSlotsByKey({});
+      setReady(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug]);
+  }, [tenantSlug, personId]);
 
-  useEffect(() => {
-    if (!hydrated) return;
-    writeStore(store, tenantSlug);
-  }, [store, hydrated, tenantSlug]);
+  const participantCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of reservations) {
+      if (!reservationIsActive(item.status)) continue;
+      const key = item.experienceId ?? item.resourceId;
+      counts.set(key, (counts.get(key) ?? 0) + (item.participantCount ?? 1));
+    }
+    return counts;
+  }, [reservations]);
 
-  const reservations = useMemo(
-    () => store.reservations.map(withDerivedStatus),
-    [store.reservations],
+  const experiences = useMemo(
+    () =>
+      resources
+        .filter((item) => item.category === "activity")
+        .map((item) =>
+          experienceFromResource(item, participantCounts.get(item.id) ?? 0),
+        ),
+    [resources, participantCounts],
   );
 
   const upcoming = useMemo(
     () =>
       reservations
-        .filter((r) => r.status === "reserved" || r.status === "pending")
-        .sort((a, b) =>
-          `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`),
-        ),
+        .filter((item) => reservationIsActive(item.status))
+        .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`)),
     [reservations],
   );
 
   const past = useMemo(
     () =>
       reservations
-        .filter((r) => r.status === "expired" || r.status === "cancelled")
-        .sort((a, b) =>
-          `${b.date}${b.start}`.localeCompare(`${a.date}${a.start}`),
-        ),
+        .filter((item) => !reservationIsActive(item.status))
+        .sort((a, b) => `${b.date}${b.start}`.localeCompare(`${a.date}${a.start}`)),
     [reservations],
+  );
+
+  const getResource = useCallback(
+    (resourceId: string) => resources.find((item) => item.id === resourceId),
+    [resources],
+  );
+
+  const getExperience = useCallback(
+    (experienceId: string) =>
+      experiences.find((item) => item.id === experienceId),
+    [experiences],
   );
 
   const getReservationsForResourceDate = useCallback(
     (resourceId: string, date: string) =>
       reservations.filter(
-        (r) =>
-          r.resourceId === resourceId &&
-          r.date === date &&
-          (r.status === "reserved" || r.status === "pending"),
+        (item) =>
+          item.resourceId === resourceId &&
+          item.date === date &&
+          reservationIsActive(item.status),
       ),
     [reservations],
   );
 
   const getSlots = useCallback(
-    (resourceId: string, date: string) => {
-      const mine = getReservationsForResourceDate(resourceId, date).map(
-        (r) => r.start,
-      );
-      return getAvailabilitySlots(resourceId, date, mine);
+    (resourceId: string, date: string) => slotsByKey[`${resourceId}:${date}`] ?? [],
+    [slotsByKey],
+  );
+
+  const loadSlots = useCallback(
+    async (resourceId: string, date: string) => {
+      const slots = await fetchResourceAvailability({
+        tenantId: tenantSlug,
+        resourceId,
+        date,
+      });
+      setSlotsByKey((prev) => ({ ...prev, [`${resourceId}:${date}`]: slots }));
+      return slots;
     },
-    [getReservationsForResourceDate],
+    [tenantSlug],
   );
 
   const reserve = useCallback(
-    (input: {
+    async (input: {
       resourceId: string;
       date: string;
       start: string;
       end: string;
+      participantCount?: number;
     }) => {
-      const resource = resolveResource(input.resourceId);
-      if (!resource) return null;
-
-      const slots = getAvailabilitySlots(
-        input.resourceId,
-        input.date,
-        store.reservations
-          .filter(
-            (r) =>
-              r.resourceId === input.resourceId &&
-              r.date === input.date &&
-              r.status !== "cancelled",
-          )
-          .map((r) => r.start),
-      );
-      const slot = slots.find((s) => s.start === input.start);
-      if (!slot || slot.status === "occupied") return null;
-
-      const status: ReservationStatus = resource.requiresApproval
-        ? "pending"
-        : "reserved";
-
-      const reservation: Reservation = {
-        id: `rv-${Date.now()}`,
-        resourceId: resource.id,
+      const result = await createReservationRequest({
+        tenantId: tenantSlug,
+        resourceId: input.resourceId,
         date: input.date,
         start: input.start,
         end: input.end,
-        status,
-        createdAt: new Date().toISOString(),
-        resourceName: resource.name,
-        resourceImageUrl: resource.imageUrl,
-        location: resource.location,
-        areaLabel: resource.areaLabel,
-      };
-
-      setStore((prev) => ({
-        reservations: [reservation, ...prev.reservations],
-      }));
-      return reservation;
+        participantCount: input.participantCount,
+      });
+      if ("error" in result) return null;
+      await refresh();
+      await loadSlots(input.resourceId, input.date);
+      return result.reservation;
     },
-    [store.reservations, resolveResource],
+    [tenantSlug, refresh, loadSlots],
   );
 
-  const cancel = useCallback((reservationId: string) => {
-    setStore((prev) => ({
-      reservations: prev.reservations.map((r) =>
-        r.id === reservationId ? { ...r, status: "cancelled" as const } : r,
-      ),
-    }));
-  }, []);
+  const cancel = useCallback(
+    async (reservationId: string) => {
+      const result = await patchReservationRequest({
+        tenantId: tenantSlug,
+        reservationId,
+        status: "cancelled",
+      });
+      if ("error" in result) return false;
+      await refresh();
+      return true;
+    },
+    [tenantSlug, refresh],
+  );
 
   const value = useMemo(
     () => ({
+      ready,
+      resources,
+      experiences,
       reservations,
       upcoming,
       past,
+      refresh,
+      getResource,
+      getExperience,
       getReservationsForResourceDate,
       getSlots,
+      loadSlots,
       reserve,
       cancel,
     }),
     [
+      ready,
+      resources,
+      experiences,
       reservations,
       upcoming,
       past,
+      refresh,
+      getResource,
+      getExperience,
       getReservationsForResourceDate,
       getSlots,
+      loadSlots,
       reserve,
       cancel,
     ],
@@ -259,4 +253,8 @@ export function useReservations() {
     throw new Error("useReservations must be used within ReservationProvider");
   }
   return ctx;
+}
+
+export function experienceSpotsLeft(experience: Experience): number {
+  return spotsLeft(experience);
 }

@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   filterAccessibleChannels,
   formatExperienceWhen,
   getExplorerActivityBySlug,
   listChannelsForActivity,
-  listExperiencesForActivity,
   listGroupsForActivity,
-  listResourcesForActivity,
-  spotsLeft,
 } from "@life-community-os/tenant-life-panoramica";
+import { spotsLeft } from "@life-community-os/types";
 import {
   EmptyState,
   ExperienceCard,
@@ -24,6 +22,7 @@ import {
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 
 function statusLabelFor(
@@ -48,12 +47,8 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
-  /** After mount, merge localStorage session creates (SSR-safe). */
-  const [sessionReady, setSessionReady] = useState(false);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
+  const { experiences: domainExperiences, resources: domainResources } =
+    useReservations();
 
   const hub = useMemo(() => getExplorerActivityBySlug(slug), [slug]);
 
@@ -71,19 +66,23 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
     () => (hub ? listGroupsForActivity(hub.slug) : []),
     [hub],
   );
-  const experiences = useMemo(
-    () =>
-      hub
-        ? listExperiencesForActivity(hub.slug, {
-            includeSessionCreated: sessionReady,
-          })
-        : [],
-    [hub, sessionReady],
-  );
-  const resources = useMemo(
-    () => (hub ? listResourcesForActivity(hub.slug) : []),
-    [hub],
-  );
+  const experiences = useMemo(() => {
+    if (!hub) return [];
+    const needle = `${hub.slug} ${hub.label}`.toLowerCase();
+    return domainExperiences.filter((item) => {
+      const hay = `${item.title} ${item.description} ${item.location}`.toLowerCase();
+      return needle.split(/\s+/).some((part) => part.length > 3 && hay.includes(part));
+    });
+  }, [hub, domainExperiences]);
+  const resources = useMemo(() => {
+    if (!hub) return [];
+    const needle = `${hub.slug} ${hub.label}`.toLowerCase();
+    return domainResources.filter((item) => {
+      if (item.category === "activity") return false;
+      const hay = `${item.name} ${item.description} ${item.location}`.toLowerCase();
+      return needle.split(/\s+/).some((part) => part.length > 3 && hay.includes(part));
+    });
+  }, [hub, domainResources]);
 
   const openCreateExperience = () => {
     router.push(`/experiences/create?activity=${encodeURIComponent(slug)}`);
@@ -231,7 +230,7 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
                     when={formatExperienceWhen(exp.startsAt)}
                     where={exp.location}
                     meta={`${exp.participantCount} van · ${remaining} plazas`}
-                    imageUrl={exp.imageUrl}
+                    imageUrl={exp.imageUrl ?? ""}
                     organizerName={exp.organizer.name}
                     statusLabel={statusLabelFor(viewer, remaining)}
                     onClick={() => router.push(`/experiences/${exp.id}`)}
@@ -265,9 +264,9 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
                   key={resource.id}
                   name={resource.name}
                   description={resource.description}
-                  availability={resource.availabilityPreview}
+                  availability={resource.availabilityPreview ?? "Ver disponibilidad"}
                   area={resource.areaLabel}
-                  imageUrl={resource.imageUrl}
+                  imageUrl={resource.images?.[0] ?? resource.imageUrl ?? ""}
                   onClick={() => router.push(`/resources/${resource.id}`)}
                 />
               ))}

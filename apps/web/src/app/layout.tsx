@@ -63,10 +63,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <CurrentUserProvider>
           <TenantProvider>
           <CatalogProvider>
+            <ReservationProvider>
             <ExperienceParticipationProvider>
               <HousingSavesProvider>
                 <CommunityInteractionProvider>
-                  <ReservationProvider>
                     <PlaceConversationsDurableProvider>
                       <NotificationProvider>
                         <MediaLightboxProvider>
@@ -74,10 +74,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                         </MediaLightboxProvider>
                       </NotificationProvider>
                     </PlaceConversationsDurableProvider>
-                  </ReservationProvider>
                 </CommunityInteractionProvider>
               </HousingSavesProvider>
             </ExperienceParticipationProvider>
+            </ReservationProvider>
           </CatalogProvider>
           </TenantProvider>
         </CurrentUserProvider>

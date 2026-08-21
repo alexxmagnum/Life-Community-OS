@@ -1,24 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  evaluateDemoResourceAccessForPerson,
-  formatResourceDate,
-  getResourceById,
-  listAvailabilityDates,
-  type CommunityResource,
-} from "@life-community-os/tenant-life-panoramica";
 import {
   AvailabilityPicker,
   Button,
   EmptyState,
   FlowScreenHeader,
+  LoadingState,
   MobileScreen,
   TimeSlotSelector,
 } from "@life-community-os/ui";
+import { formatSlotDate, upcomingDates } from "@/lib/reservations/presentation";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function ResourceAvailabilityScreen({
@@ -27,29 +21,27 @@ export function ResourceAvailabilityScreen({
   resourceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId, demoMember, tenantSlug, homeMode } =
-    useTenant();
-  const { items: catalogResources } =
-    useCatalogDomain<CommunityResource>("resources");
-  const { getSlots } = useReservations();
-  const dates = listAvailabilityDates(7);
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { getResource, getSlots, loadSlots, ready } = useReservations();
+  const dates = upcomingDates(7);
   const [selectedDate, setSelectedDate] = useState(dates[0]!);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const resource =
-    catalogResources.find((r) => r.id === resourceId) ??
-    (homeMode === "premium"
-      ? getResourceById(resourceId)
-      : undefined);
-  const slots = useMemo(
-    () => (resource ? getSlots(resource.id, selectedDate) : []),
-    [getSlots, resource, selectedDate],
-  );
+  const resource = getResource(resourceId);
+  const slots = getSlots(resourceId, selectedDate);
 
-  const dateOptions = dates.map((value) => ({
-    value,
-    label: formatResourceDate(value),
-  }));
+  useEffect(() => {
+    if (!resource) return;
+    let cancelled = false;
+    setLoadingSlots(true);
+    void loadSlots(resource.id, selectedDate).finally(() => {
+      if (!cancelled) setLoadingSlots(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resource, selectedDate, loadSlots]);
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -59,6 +51,10 @@ export function ResourceAvailabilityScreen({
         onAction={() => router.push("/")}
       />
     );
+  }
+
+  if (!ready) {
+    return <LoadingState label="Cargando disponibilidad..." />;
   }
 
   if (!resource) {
@@ -75,26 +71,23 @@ export function ResourceAvailabilityScreen({
     return <EmptyState title="Sin acceso" />;
   }
 
-  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
-  const access = evaluateDemoResourceAccessForPerson(
-    resource.id,
-    demoPersonId,
-    roleCanReserve,
-  );
+  const canReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const selectedSlot = slots.find((s) => s.id === selectedSlotId);
+  const dateOptions = dates.map((value) => ({
+    value,
+    label: formatSlotDate(value),
+  }));
 
-  if (!access.canReserve) {
+  if (!canReserve) {
     return (
       <EmptyState
         title="Reserva no disponible"
-        description="Para reservar este espacio necesitas verificar tu zona. Puedes ver la información pública, pero no reservar todavía."
+        description="Puedes ver la información pública, pero no reservar con esta cuenta."
         actionLabel="Volver al lugar"
         onAction={() => router.push(`/resources/${resource.id}`)}
       />
     );
   }
-
-  const canReserve = roleCanReserve;
-  const selectedSlot = slots.find((s) => s.id === selectedSlotId);
 
   return (
     <MobileScreen>
@@ -123,15 +116,19 @@ export function ResourceAvailabilityScreen({
         <h2 className="text-[14px] font-semibold text-[var(--color-text-secondary)]">
           Hora
         </h2>
-        <TimeSlotSelector
-          slots={slots}
-          selectedId={selectedSlotId}
-          onSelect={setSelectedSlotId}
-        />
+        {loadingSlots ? (
+          <LoadingState label="Consultando huecos..." />
+        ) : (
+          <TimeSlotSelector
+            slots={slots}
+            selectedId={selectedSlotId}
+            onSelect={setSelectedSlotId}
+          />
+        )}
       </section>
 
       <p className="text-[15px] text-[var(--color-text-tertiary)]">
-        Duración · {resource.slotMinutes} minutos
+        Duración · {resource.slotMinutes ?? 60} minutos
         {resource.requiresApproval
           ? " · Puede requerir confirmación"
           : " · Confirmación inmediata"}
@@ -139,7 +136,7 @@ export function ResourceAvailabilityScreen({
 
       <Button
         fullWidth
-        disabled={!canReserve || !selectedSlot}
+        disabled={!selectedSlot}
         onClick={() => {
           if (!selectedSlot) return;
           const params = new URLSearchParams({
@@ -147,9 +144,7 @@ export function ResourceAvailabilityScreen({
             start: selectedSlot.start,
             end: selectedSlot.end,
           });
-          router.push(
-            `/resources/${resource.id}/reserve?${params.toString()}`,
-          );
+          router.push(`/resources/${resource.id}/reserve?${params.toString()}`);
         }}
       >
         Continuar

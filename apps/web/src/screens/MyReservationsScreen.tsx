@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { formatResourceDate } from "@life-community-os/tenant-life-panoramica";
+import { formatSlotDate, reservationBadgeStatus } from "@/lib/reservations/presentation";
 import {
   Button,
   EmptyState,
@@ -56,12 +56,12 @@ export function MyReservationsScreen() {
           upcoming.map((r) => (
             <div key={r.id} className="space-y-3">
               <ReservationSummary
-                resourceName={r.resourceName}
+                resourceName={r.resourceName ?? "Recurso"}
                 imageUrl={r.resourceImageUrl}
-                dateLabel={formatResourceDate(r.date)}
+                dateLabel={formatSlotDate(r.date)}
                 timeLabel={`${r.start}–${r.end}`}
-                location={`${r.location} · ${r.areaLabel}`}
-                status={r.status}
+                location={`${r.location ?? ""}${r.areaLabel ? ` · ${r.areaLabel}` : ""}`}
+                status={reservationBadgeStatus(r.status)}
               />
               <div className="flex gap-3">
                 <Button
@@ -71,7 +71,9 @@ export function MyReservationsScreen() {
                 >
                   Ver lugar
                 </Button>
-                {(r.status === "reserved" || r.status === "pending") && (
+                {(r.status === "reserved" ||
+                  r.status === "confirmed" ||
+                  r.status === "pending") && (
                   <Button
                     variant="ghost"
                     className="flex-1"
@@ -81,7 +83,7 @@ export function MyReservationsScreen() {
                           "¿Cancelar esta reserva? Quedará libre para otros vecinos.",
                         )
                       ) {
-                        cancel(r.id);
+                        void cancel(r.id);
                       }
                     }}
                   >
@@ -115,10 +117,10 @@ export function MyReservationsScreen() {
                   {r.resourceName}
                 </span>
                 <span className="block text-[15px] text-[var(--color-text-tertiary)]">
-                  {formatResourceDate(r.date)} · {r.start}–{r.end}
+                  {formatSlotDate(r.date)} · {r.start}–{r.end}
                 </span>
               </span>
-              <ReservationStatusBadge status={r.status} />
+              <ReservationStatusBadge status={reservationBadgeStatus(r.status)} />
             </button>
           ))
         )}

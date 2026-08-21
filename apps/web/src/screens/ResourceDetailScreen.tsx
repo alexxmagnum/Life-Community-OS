@@ -2,35 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import {
-  evaluateDemoResourceAccessForPerson,
-  getResourceById,
-  type CommunityResource,
-} from "@life-community-os/tenant-life-panoramica";
-import {
   Button,
   EmptyState,
   FlowScreenHeader,
+  LoadingState,
   MobileScreen,
   ReservationStatusBadge,
   ResourceHero,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
-import { resourceAccessHint } from "@/lib/demo-access-copy";
+import { useReservations } from "@/providers/ReservationProvider";
 
 export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
   const router = useRouter();
-  const {
-    isFeatureEnabled,
-    hasCapability,
-    demoPersonId,
-    demoMember,
-    roleSource,
-    tenantSlug,
-    homeMode,
-  } = useTenant();
-  const { items: catalogResources } =
-    useCatalogDomain<CommunityResource>("resources");
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { getResource, ready } = useReservations();
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -42,11 +28,11 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     );
   }
 
-  const resource =
-    catalogResources.find((r) => r.id === resourceId) ??
-    (homeMode === "premium"
-      ? getResourceById(resourceId)
-      : undefined);
+  if (!ready) {
+    return <LoadingState label="Cargando lugar..." />;
+  }
+
+  const resource = getResource(resourceId);
 
   if (!resource) {
     return (
@@ -67,27 +53,11 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
     );
   }
 
-  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
-  const access =
-    roleSource === "demo"
-      ? evaluateDemoResourceAccessForPerson(
-          resource.id,
-          demoPersonId,
-          roleCanReserve,
-        )
-      : {
-          canViewPublicInfo: true,
-          canReserve: roleCanReserve,
-          reasons: roleCanReserve ? [] : ["missing_reserve_permission"],
-        };
-  const { hint, tone } = resourceAccessHint(access);
-  const canReserve = access.canReserve && roleCanReserve;
-  const hintClass =
-    tone === "ok"
-      ? "text-[var(--color-success)]"
-      : tone === "blocked"
-        ? "text-[var(--color-danger)]"
-        : "text-[var(--color-text-secondary)]";
+  const canReserve =
+    hasCapability(CAPABILITIES.resourceReserve) &&
+    resource.bookable !== false &&
+    resource.status === "active";
+  const rules = resource.bookingRules ?? resource.rules ?? [];
 
   return (
     <MobileScreen>
@@ -98,7 +68,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
       />
 
       <ResourceHero
-        imageUrl={resource.imageUrl}
+        imageUrl={resource.images?.[0] ?? resource.imageUrl ?? ""}
         name={resource.name}
       />
 
@@ -110,20 +80,6 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
             No disponible para ti
           </span>
         )}
-        {canReserve ? (
-          <span className="text-[14px] text-[var(--color-text-secondary)]">
-            Próximo hueco · {resource.availabilityPreview}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="rounded-[var(--radius-md)] bg-[var(--color-surface-muted)] px-3 py-2.5">
-        <p className="text-[14px] font-semibold text-[var(--color-text-tertiary)]">
-          Acceso · {demoMember.displayName}
-        </p>
-        <p className={`mt-0.5 text-[14px] font-semibold ${hintClass}`}>
-          {hint}
-        </p>
       </div>
 
       <p className="text-[17px] leading-7 text-[var(--color-text-secondary)]">
@@ -135,26 +91,30 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
           Dónde
         </h2>
         <p className="mt-1 text-[17px] font-semibold">{resource.location}</p>
-        <p className="text-[14px] text-[var(--color-text-secondary)]">
-          {resource.areaLabel}
-        </p>
+        {resource.areaLabel ? (
+          <p className="text-[14px] text-[var(--color-text-secondary)]">
+            {resource.areaLabel}
+          </p>
+        ) : null}
       </section>
 
-      <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Normas de la comunidad
-        </h2>
-        <ul className="mt-3 space-y-2">
-          {resource.rules.map((rule) => (
-            <li
-              key={rule}
-              className="text-[15px] leading-6 text-[var(--color-text-secondary)]"
-            >
-              · {rule}
-            </li>
-          ))}
-        </ul>
-      </section>
+      {rules.length > 0 ? (
+        <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-1)]">
+          <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+            Normas de la comunidad
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {rules.map((rule) => (
+              <li
+                key={rule}
+                className="text-[15px] leading-6 text-[var(--color-text-secondary)]"
+              >
+                · {rule}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="sticky bottom-[88px] z-20 space-y-3 rounded-[var(--radius-xl)] bg-[var(--color-surface-app)]/95 p-3 backdrop-blur">
         {canReserve ? (
@@ -168,9 +128,7 @@ export function ResourceDetailScreen({ resourceId }: { resourceId: string }) {
           </Button>
         ) : (
           <Button fullWidth disabled>
-            {access.canViewPublicInfo
-              ? "Necesitas verificar tu zona"
-              : "Reserva no disponible"}
+            Reserva no disponible
           </Button>
         )}
       </div>

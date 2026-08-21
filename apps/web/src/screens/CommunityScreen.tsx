@@ -22,7 +22,6 @@ import {
   resolveCommunityHubArea,
   COMMUNITY_BELONG_LAYER_IDS,
   type CommunityBelongLayerId,
-  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   Button,
@@ -42,8 +41,8 @@ import {
   type HubProposalStatus,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 import { resolvePlaceHref } from "@/lib/location";
 import type { CommunityEvent, CommunityGroupRecord } from "@life-community-os/types";
@@ -90,7 +89,7 @@ export function CommunityHubScreen() {
     isProductCapabilityEnabled,
   } = useTenant();
   const { feedItems, getContent } = useCommunityInteractions();
-  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
+  const { experiences } = useReservations();
   const premiumHome = homeMode === "premium";
   const tenantId = configuration.tenantId;
   const [domainGroups, setDomainGroups] = useState<CommunityGroupRecord[]>([]);
@@ -192,7 +191,7 @@ export function CommunityHubScreen() {
     () => (premiumHome ? listOfficialEntities() : []),
     [premiumHome],
   );
-  const experienceCount = catalogExperiences.length;
+  const experienceCount = experiences.length;
   const mascotasItems = useMemo(() => {
     if (!premiumHome) return [];
     try {

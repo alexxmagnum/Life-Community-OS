@@ -4,11 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
-  listDiscoverableExperiences,
   listGroups,
-  spotsLeft,
-  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
+import { spotsLeft } from "@life-community-os/types";
 import {
   ActivityCard,
   CommunityLifeSection,
@@ -29,9 +27,9 @@ import {
 import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 /**
  * Descubrir = explore life around you.
@@ -46,21 +44,15 @@ export function DiscoverScreen() {
     homeMode,
   } = useTenant();
   const { getViewerState } = useExperienceParticipation();
-  const { items: catalogExperiences, ready: catalogReady } =
-    useCatalogDomain<Experience>("experiences");
+  const { experiences: domainExperiences } = useReservations();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
-  const [sessionReady, setSessionReady] = useState(false);
 
   const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
   const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
-
-  useEffect(() => {
-    setSessionReady(true);
-  }, []);
 
   useEffect(() => {
     if (!canLocal) {
@@ -160,14 +152,7 @@ export function DiscoverScreen() {
     if (!isFeatureEnabled("experiences")) return [];
     if (!hasCapability(CAPABILITIES.experienceView)) return [];
     const q = query.trim().toLowerCase();
-    const source =
-      catalogReady && catalogExperiences.length > 0
-        ? catalogExperiences
-        : homeMode === "premium"
-          ? listDiscoverableExperiences({
-              includeSessionCreated: sessionReady,
-            })
-          : [];
+    const source = domainExperiences;
     return source.filter((e) => {
       if (!q) return true;
       return (
@@ -176,15 +161,7 @@ export function DiscoverScreen() {
         (e.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [
-    query,
-    isFeatureEnabled,
-    hasCapability,
-    sessionReady,
-    catalogExperiences,
-    catalogReady,
-    homeMode,
-  ]);
+  }, [query, isFeatureEnabled, hasCapability, domainExperiences]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
@@ -309,7 +286,7 @@ export function DiscoverScreen() {
                           ? "Vas a ir"
                           : `${exp.participantCount} van · ${remaining} plazas`
                       }
-                      imageUrl={exp.imageUrl}
+                      imageUrl={exp.imageUrl ?? ""}
                       ctaLabel={viewer === "joined" ? "Ver" : "Apuntarme"}
                       onClick={() => router.push(`/experiences/${exp.id}`)}
                       onCta={() => router.push(`/experiences/${exp.id}`)}

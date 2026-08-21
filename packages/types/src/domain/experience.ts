@@ -1,5 +1,6 @@
 import type { DomainId, IsoDateTimeString } from "./ids";
 import type { DiffusionPolicy } from "./diffusion";
+import type { CommunityResource } from "./resource";
 
 /**
  * Community Experience — participatory activity / event / meeting (ADR-027).
@@ -76,3 +77,76 @@ export type ExperienceViewerState =
   | "full"
   | "cancelled"
   | "expired";
+
+export function spotsLeft(experience: Pick<Experience, "capacity" | "participantCount">): number {
+  return Math.max(0, experience.capacity - experience.participantCount);
+}
+
+export function deriveExperienceViewerState(
+  experience: Pick<Experience, "status" | "capacity" | "participantCount">,
+  participation: "none" | "registered" | "waitlisted",
+): ExperienceViewerState {
+  if (participation === "registered") return "joined";
+  if (participation === "waitlisted") return "waitlisted";
+  if (experience.status === "cancelled") return "cancelled";
+  if (experience.status === "expired" || experience.status === "completed") {
+    return "expired";
+  }
+  if (experience.status === "full" || spotsLeft(experience) <= 0) return "full";
+  return "available";
+}
+
+/**
+ * Activity Resource projection — Experience is not a second reservation type.
+ * Join creates a Reservation on this Resource (or its linked facility).
+ */
+export function experienceFromResource(
+  resource: CommunityResource,
+  participantCount = 0,
+): Experience {
+  const startsAt =
+    resource.scheduleStartsAt ?? resource.createdAt ?? new Date().toISOString();
+  const images = resource.images?.filter(Boolean) ?? [];
+  const imageUrl = images[0] ?? resource.imageUrl;
+  const capacity = resource.capacity && resource.capacity > 0 ? resource.capacity : 8;
+  const status: ExperienceStatus =
+    resource.status === "archived" || resource.status === "retired"
+      ? "archived"
+      : resource.status === "inactive" || resource.status === "maintenance"
+        ? "cancelled"
+        : resource.status === "draft"
+          ? "draft"
+          : participantCount >= capacity
+            ? "full"
+            : "registration_open";
+  return {
+    id: resource.id,
+    tenantId: resource.tenantId,
+    title: resource.name,
+    description: resource.description,
+    imageUrl,
+    startsAt,
+    endsAt: resource.scheduleEndsAt,
+    location: resource.location,
+    areaLabel: resource.areaLabel,
+    resourceId: resource.linkedResourceId ?? resource.id,
+    createdByPersonId: resource.createdBy,
+    organizer: {
+      id: resource.createdBy ?? resource.ownerId,
+      name: resource.organizerName?.trim() || "Comunidad",
+      roleLabel: "Organizador",
+    },
+    capacity,
+    participantCount,
+    status,
+    type: "experience",
+    createdAt: resource.createdAt,
+    updatedAt: resource.updatedAt,
+  };
+}
+
+export function isActivityResource(
+  resource: Pick<CommunityResource, "category">,
+): boolean {
+  return resource.category === "activity";
+}

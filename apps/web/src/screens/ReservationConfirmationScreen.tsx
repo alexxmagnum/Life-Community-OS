@@ -3,19 +3,15 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  formatResourceDate,
-  getResourceById,
-  type CommunityResource,
-} from "@life-community-os/tenant-life-panoramica";
-import {
   Button,
   EmptyState,
   FlowScreenHeader,
+  LoadingState,
   MobileScreen,
   ReservationSummary,
 } from "@life-community-os/ui";
+import { formatSlotDate } from "@/lib/reservations/presentation";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 export function ReservationConfirmationScreen({
@@ -25,24 +21,19 @@ export function ReservationConfirmationScreen({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isFeatureEnabled, hasCapability, tenantSlug, homeMode } = useTenant();
-  const { items: catalogResources } =
-    useCatalogDomain<CommunityResource>("resources");
-  const { reserve } = useReservations();
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { getResource, reserve, ready } = useReservations();
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
+  const [confirmedStatus, setConfirmedStatus] = useState<"pending" | "reserved">("reserved");
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const date = searchParams.get("date") ?? "";
   const start = searchParams.get("start") ?? "";
   const end = searchParams.get("end") ?? "";
+  const resource = getResource(resourceId);
 
-  const resource =
-    catalogResources.find((r) => r.id === resourceId) ??
-    (homeMode === "premium"
-      ? getResourceById(resourceId)
-      : undefined);
-
-  const status = useMemo(() => {
+  const previewStatus = useMemo(() => {
     if (!resource) return "available" as const;
     return resource.requiresApproval ? ("pending" as const) : ("reserved" as const);
   }, [resource]);
@@ -57,15 +48,17 @@ export function ReservationConfirmationScreen({
     );
   }
 
+  if (!ready) {
+    return <LoadingState label="Cargando reserva..." />;
+  }
+
   if (!resource || !date || !start || !end) {
     return (
       <EmptyState
         title="Faltan datos de la reserva"
         description="Elige de nuevo el día y la hora."
         actionLabel="Ver disponibilidad"
-        onAction={() =>
-          router.push(`/resources/${resourceId}/availability`)
-        }
+        onAction={() => router.push(`/resources/${resourceId}/availability`)}
       />
     );
   }
@@ -90,19 +83,17 @@ export function ReservationConfirmationScreen({
             ? "Este espacio está en tu agenda. Cuídalo para el siguiente vecino."
             : "Revisa la hora antes de confirmar."
         }
-        onBack={() =>
-          router.push(`/resources/${resource.id}/availability`)
-        }
+        onBack={() => router.push(`/resources/${resource.id}/availability`)}
         onExit={() => router.push("/resources")}
       />
 
       <ReservationSummary
         resourceName={resource.name}
-        imageUrl={resource.imageUrl}
-        dateLabel={formatResourceDate(date)}
+        imageUrl={resource.images?.[0] ?? resource.imageUrl}
+        dateLabel={formatSlotDate(date)}
         timeLabel={`${start}–${end}`}
-        location={`${resource.location} · ${resource.areaLabel}`}
-        status={confirmed ? status : undefined}
+        location={`${resource.location}${resource.areaLabel ? ` · ${resource.areaLabel}` : ""}`}
+        status={confirmed ? confirmedStatus : previewStatus}
       />
 
       {error ? (
@@ -114,22 +105,34 @@ export function ReservationConfirmationScreen({
       {!confirmed ? (
         <Button
           fullWidth
+          disabled={submitting}
           onClick={() => {
-            const result = reserve({
-              resourceId: resource.id,
-              date,
-              start,
-              end,
-            });
-            if (!result) {
-              setError("Ese horario ya no está libre. Elige otro.");
-              return;
-            }
-            setConfirmedId(result.id);
-            setError(null);
+            setSubmitting(true);
+            void (async () => {
+              const result = await reserve({
+                resourceId: resource.id,
+                date,
+                start,
+                end,
+              });
+              setSubmitting(false);
+              if (!result) {
+                setError("Ese horario ya no está libre. Elige otro.");
+                return;
+              }
+              setConfirmedId(result.id);
+              setConfirmedStatus(
+                result.status === "pending" ? "pending" : "reserved",
+              );
+              setError(null);
+            })();
           }}
         >
-          {resource.requiresApproval ? "Solicitar reserva" : "Confirmar reserva"}
+          {submitting
+            ? "Reservando…"
+            : resource.requiresApproval
+              ? "Solicitar reserva"
+              : "Confirmar reserva"}
         </Button>
       ) : (
         <div className="space-y-3">

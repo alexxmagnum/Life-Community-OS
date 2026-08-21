@@ -2,10 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  evaluateDemoResourceAccessForPerson,
-  type CommunityResource,
-} from "@life-community-os/tenant-life-panoramica";
+import type { CommunityResource } from "@life-community-os/types";
 import {
   EmptyState,
   FlowScreenHeader,
@@ -14,22 +11,23 @@ import {
   ResourceDiscoveryCard,
   ScreenSearch,
 } from "@life-community-os/ui";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { resourceAccessHint } from "@/lib/demo-access-copy";
+import { useReservations } from "@/providers/ReservationProvider";
+
+function resourceMeta(resource: CommunityResource): string {
+  const parts = [resource.location, resource.areaLabel].filter(Boolean);
+  return parts.join(" · ");
+}
 
 export function ResourceDiscoveryScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId, roleSource } =
-    useTenant();
+  const { isFeatureEnabled, hasCapability } = useTenant();
   const [query, setQuery] = useState("");
-  const { items: catalogResources, ready: catalogReady } =
-    useCatalogDomain<CommunityResource>("resources");
-
-  const roleCanReserve = hasCapability(CAPABILITIES.resourceReserve);
+  const { resources, ready } = useReservations();
 
   const items = useMemo(() => {
-    return catalogResources.filter((r) => {
+    return resources.filter((r) => {
+      if (r.category === "activity") return false;
       if (!query) return true;
       const q = query.toLowerCase();
       return (
@@ -38,7 +36,7 @@ export function ResourceDiscoveryScreen() {
         (r.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, catalogResources]);
+  }, [query, resources]);
 
   if (!isFeatureEnabled("resources")) {
     return (
@@ -58,7 +56,7 @@ export function ResourceDiscoveryScreen() {
     );
   }
 
-  if (!catalogReady) {
+  if (!ready) {
     return <LoadingState label="Cargando lugares..." />;
   }
 
@@ -80,54 +78,26 @@ export function ResourceDiscoveryScreen() {
 
       {items.length === 0 ? (
         <EmptyState
-          title="Sin resultados"
-          description="Prueba otra búsqueda."
-          actionLabel="Limpiar"
-          onAction={() => setQuery("")}
+          title="No hay lugares todavía"
+          description="Cuando el equipo publique pistas o salas, aparecerán aquí."
         />
       ) : (
-        <div className="space-y-4">
-          {items.map((resource) => {
-            const href = `/resources/${resource.id}`;
-            const access =
-              roleSource === "demo"
-                ? evaluateDemoResourceAccessForPerson(
-                    resource.id,
-                    demoPersonId,
-                    roleCanReserve,
-                  )
-                : {
-                    canViewPublicInfo: true,
-                    canReserve: roleCanReserve,
-                    reasons: roleCanReserve
-                      ? []
-                      : ["missing_reserve_permission"],
-                  };
-            const { hint, tone } = resourceAccessHint(access);
-            const showReserve = Boolean(access.canReserve && roleCanReserve);
-            return (
-              <ResourceDiscoveryCard
-                key={resource.id}
-                name={resource.name}
-                description={resource.description}
-                availability={
-                  showReserve
-                    ? resource.availabilityPreview ?? "Consultar disponibilidad"
-                    : "No disponible para ti"
-                }
-                area={resource.areaLabel}
-                imageUrl={resource.imageUrl}
-                accessHint={hint}
-                accessTone={tone}
-                onClick={() => router.push(href)}
-                onReserve={
-                  showReserve
-                    ? () => router.push(`${href}/availability`)
-                    : undefined
-                }
-              />
-            );
-          })}
+        <div className="flex flex-col gap-4">
+          {items.map((resource) => (
+            <ResourceDiscoveryCard
+              key={resource.id}
+              name={resource.name}
+              availability={resource.availabilityPreview ?? "Ver disponibilidad"}
+              area={resourceMeta(resource)}
+              description={resource.description}
+              imageUrl={resource.images?.[0] ?? resource.imageUrl ?? ""}
+              onClick={() => router.push(`/resources/${resource.id}`)}
+              onReserve={() =>
+                router.push(`/resources/${resource.id}/availability`)
+              }
+              reserveLabel="Reservar"
+            />
+          ))}
         </div>
       )}
     </MobileScreen>

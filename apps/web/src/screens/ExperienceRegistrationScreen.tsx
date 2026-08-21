@@ -4,22 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
-  getExperienceById,
-  spotsLeft,
-  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
+import { spotsLeft } from "@life-community-os/types";
 import {
   Button,
   EmptyState,
   ExperienceMeta,
   FlowScreenHeader,
+  LoadingState,
   MobileScreen,
   ParticipationStatus,
   ZoomableImage,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 export function ExperienceRegistrationScreen({
   experienceId,
@@ -27,12 +26,13 @@ export function ExperienceRegistrationScreen({
   experienceId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, tenantSlug, homeMode } = useTenant();
-  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
+  const { isFeatureEnabled, hasCapability } = useTenant();
+  const { getExperience, ready } = useReservations();
   const { getViewerState, join, getParticipation, setReminders } =
     useExperienceParticipation();
   const [reminders, setRemindersLocal] = useState(true);
   const [justJoined, setJustJoined] = useState(false);
+  const [joining, setJoining] = useState(false);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -44,11 +44,11 @@ export function ExperienceRegistrationScreen({
     );
   }
 
-  const experience =
-    catalogExperiences.find((e) => e.id === experienceId) ??
-    (homeMode === "premium"
-      ? getExperienceById(experienceId)
-      : undefined);
+  if (!ready) {
+    return <LoadingState label="Cargando experiencia..." />;
+  }
+
+  const experience = getExperience(experienceId);
 
   if (!experience) {
     return (
@@ -93,14 +93,18 @@ export function ExperienceRegistrationScreen({
   }
 
   const confirmJoin = () => {
-    const record = join(experience.id, {
-      reminders,
-      waitlist: isFull && !alreadyJoined,
-    });
-    if (record) {
-      setJustJoined(true);
-      setReminders(experience.id, reminders);
-    }
+    setJoining(true);
+    void (async () => {
+      const record = await join(experience.id, {
+        reminders,
+        waitlist: isFull && !alreadyJoined,
+      });
+      setJoining(false);
+      if (record) {
+        setJustJoined(true);
+        setReminders(experience.id, reminders);
+      }
+    })();
   };
 
   const confirmed = alreadyJoined || justJoined;
@@ -124,7 +128,7 @@ export function ExperienceRegistrationScreen({
 
       <div className="overflow-hidden rounded-[var(--radius-xl)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-1)]">
         <ZoomableImage
-          src={experience.imageUrl}
+          src={experience.imageUrl ?? ""}
           alt=""
           zoomable
           fill={false}
@@ -193,8 +197,12 @@ export function ExperienceRegistrationScreen({
       )}
 
       {!confirmed ? (
-        <Button fullWidth onClick={confirmJoin}>
-          {isFull ? "Apuntarme a la espera" : "Confirmar y participar"}
+        <Button fullWidth disabled={joining} onClick={confirmJoin}>
+          {joining
+            ? "Apuntando…"
+            : isFull
+              ? "Apuntarme a la espera"
+              : "Confirmar y participar"}
         </Button>
       ) : (
         <div className="space-y-3">

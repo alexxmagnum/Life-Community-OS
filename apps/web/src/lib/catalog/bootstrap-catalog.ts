@@ -46,8 +46,8 @@ export async function bootstrapAllCatalogs(
   ];
   const out = {} as Record<CatalogDomain, unknown[]>;
   for (const domain of domains) {
-    if (domain === "marketplace") {
-      // Runtime marketplace is the MarketplaceListing domain, not pack catalog.
+    if (domain === "marketplace" || domain === "resources" || domain === "experiences") {
+      // Runtime listings live in Marketplace / Resource domains, not pack catalogs.
       out[domain] = [];
       continue;
     }

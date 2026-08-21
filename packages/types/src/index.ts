@@ -167,12 +167,39 @@ export {
   assertChannelBoundaries,
 } from "./domain/channel";
 
-/** Resource ownership and area access guards (ADR-031 / ADR-036). */
+/** Resource ownership, availability, and reservation factories (ADR-031 / Phase 8). */
 export {
   validateResourceOwnership,
   validateResourceAccessPolicy,
   evaluateResourceAccess,
-} from "./domain/resource";
+  RESOURCE_CATEGORIES,
+  RESOURCE_PRODUCT_STATUSES,
+  RESERVATION_STATUSES,
+  isResourceCategory,
+  isReservationStatus,
+  isResourceProductStatus,
+  resourceIsBookable,
+  reservationIsActive,
+  intervalsOverlap,
+  resourceTypeFromCategory,
+  resourceCategoryFromType,
+  generateResourceAvailability,
+  createBookableResourceRecord,
+  createResourceAvailabilityRecord,
+  createReservationRecord,
+  createReservationParticipantRecord,
+  usedCapacityForInterval,
+  withReservationLifecycle,
+  dateOffsetIso,
+  minutesToHhmm,
+  hhmmToMinutes,
+  combineDateAndTime,
+  splitIsoToDateTime,
+  spotsLeft,
+  deriveExperienceViewerState,
+  experienceFromResource,
+  isActivityResource,
+} from "./domain";
 
 /** Housing / Living domain helpers (module foundation). */
 export {

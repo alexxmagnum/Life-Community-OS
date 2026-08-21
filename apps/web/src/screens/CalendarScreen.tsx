@@ -6,7 +6,6 @@ import {
   formatExperienceDay,
   formatExperienceTime,
   formatResourceDayHeading,
-  reservationStatusLabel,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   CalendarEventCard,
@@ -18,6 +17,7 @@ import {
 import { useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { reservationBadgeStatus } from "@/lib/reservations/presentation";
 
 export function CalendarScreen() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export function CalendarScreen() {
         place: exp.location,
         status: "Vas a ir" as const,
         kind: "experience" as const,
-        imageUrl: exp.imageUrl,
+        imageUrl: exp.imageUrl ?? "",
         href: `/experiences/${exp.id}`,
       }));
   }, [joinedExperiences]);
@@ -46,11 +46,18 @@ export function CalendarScreen() {
       id: r.id,
       day: formatResourceDayHeading(r.date),
       time: r.start,
-      title: r.resourceName,
-      place: r.location,
-      status: reservationStatusLabel(r.status),
+      title: r.resourceName ?? "Reserva",
+      place: r.location ?? "",
+      status:
+        reservationBadgeStatus(r.status) === "pending"
+          ? "Pendiente"
+          : reservationBadgeStatus(r.status) === "cancelled"
+            ? "Cancelado"
+            : reservationBadgeStatus(r.status) === "expired"
+              ? "Pasado"
+              : "Reservado",
       kind: "reservation" as const,
-      imageUrl: r.resourceImageUrl,
+      imageUrl: r.resourceImageUrl ?? "",
       href: `/resources/${r.resourceId}`,
     }));
   }, [upcomingReservations]);
@@ -115,7 +122,7 @@ export function CalendarScreen() {
                           title={item.title}
                           place={item.place}
                           statusLabel={item.status}
-                          imageUrl={item.imageUrl}
+                          imageUrl={item.imageUrl ?? ""}
                           onClick={() => router.push(item.href)}
                         />
                       ) : (
@@ -124,7 +131,7 @@ export function CalendarScreen() {
                           title={item.title}
                           place={item.place}
                           statusLabel={item.status}
-                          imageUrl={item.imageUrl}
+                          imageUrl={item.imageUrl ?? ""}
                           kind="experience"
                           onClick={() => router.push(item.href)}
                         />

@@ -4,10 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
-  getExperienceById,
-  spotsLeft,
-  type Experience,
 } from "@life-community-os/tenant-life-panoramica";
+import { spotsLeft } from "@life-community-os/types";
 import {
   Button,
   EmptyState,
@@ -15,6 +13,7 @@ import {
   ExperienceMeta,
   FlowScreenHeader,
   JoinButton,
+  LoadingState,
   MobileScreen,
   OrganizerCard,
   ParticipantList,
@@ -22,9 +21,9 @@ import {
 } from "@life-community-os/ui";
 import { canOpenExperienceConversation } from "@/lib/experience-conversation-access";
 import { useTenantLocations } from "@/lib/location";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 export function ExperienceDetailScreen({
   experienceId,
@@ -37,19 +36,13 @@ export function ExperienceDetailScreen({
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
-    tenantSlug,
-    homeMode,
   } = useTenant();
-  const { items: catalogExperiences } = useCatalogDomain<Experience>("experiences");
+  const { getExperience, ready } = useReservations();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
   const [shareNote, setShareNote] = useState<string | null>(null);
 
-  const experience =
-    catalogExperiences.find((e) => e.id === experienceId) ??
-    (homeMode === "premium"
-      ? getExperienceById(experienceId)
-      : undefined);
+  const experience = getExperience(experienceId);
 
   const venueLocationId = useMemo(() => {
     if (!experience?.location) return null;
@@ -73,6 +66,10 @@ export function ExperienceDetailScreen({
         onAction={() => router.push("/")}
       />
     );
+  }
+
+  if (!ready) {
+    return <LoadingState label="Cargando experiencia..." />;
   }
 
   if (!experience) {
@@ -148,7 +145,7 @@ export function ExperienceDetailScreen({
       />
 
       <ExperienceHero
-        imageUrl={experience.imageUrl}
+        imageUrl={experience.imageUrl ?? ""}
         title={experience.title}
       />
 
@@ -221,7 +218,7 @@ export function ExperienceDetailScreen({
       />
 
       <ParticipantList
-        participants={experience.participants}
+        participants={experience.participants ?? []}
         totalCount={
           viewer === "joined"
             ? experience.participantCount + 1

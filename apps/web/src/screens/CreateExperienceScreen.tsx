@@ -3,11 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  createExperience,
   getExplorerActivityBySlug,
   listExplorerActivityHubs,
-  listResources,
-  listResourcesForActivity,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
@@ -15,8 +12,10 @@ import {
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
+import { createResourceRequest } from "@/lib/reservations/reservations-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 function toDateInputValue(d = new Date()): string {
   const y = d.getFullYear();
@@ -31,14 +30,15 @@ function combineLocalDateTime(date: string, time: string): string {
 }
 
 /**
- * Resident create-experience flow — temporary community moments.
- * Demo session storage only (no backend persistence).
+ * Resident create-experience flow — activity Resource + Reservation join.
  */
 export function CreateExperienceScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability, demoMember } = useTenant();
+  const { theme, isFeatureEnabled, hasCapability, tenantSlug, demoMember } =
+    useTenant();
   const { join } = useExperienceParticipation();
+  const { resources, refresh } = useReservations();
 
   const hubs = listExplorerActivityHubs();
   const initialActivity = searchParams.get("activity") ?? "";
@@ -57,10 +57,9 @@ export function CreateExperienceScreen() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const resources = useMemo(() => {
-    if (activitySlug) return listResourcesForActivity(activitySlug);
-    return listResources().slice(0, 12);
-  }, [activitySlug]);
+  const linkedResources = useMemo(() => {
+    return resources.filter((item) => item.category !== "activity");
+  }, [resources]);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -132,33 +131,34 @@ export function CreateExperienceScreen() {
       : undefined;
 
     setSubmitting(true);
-    try {
-      const created = createExperience({
-        title: trimmedTitle,
+    void (async () => {
+      const result = await createResourceRequest({
+        tenantId: tenantSlug,
+        name: trimmedTitle,
         description: trimmedDescription,
-        startsAt,
-        endsAt,
+        category: "activity",
         location: trimmedLocation,
-        capacity: cap,
-        activitySlug: hub?.slug,
-        resourceId: resourceId || undefined,
-        imageUrl: hub?.imageUrl,
         areaLabel: demoMember.areaLabel || theme.identity?.defaultAreaName,
-        organizer: {
-          id: demoMember.personId,
-          name: demoMember.displayName,
-          avatarUrl: demoMember.avatarUrl,
-          roleLabel: "Vecino",
-        },
-        channelId: hub?.channelIds?.[0],
-        groupId: hub?.groupIds?.[0],
+        images: hub?.imageUrl ? [hub.imageUrl] : [],
+        capacity: cap,
+        linkedResourceId: resourceId || undefined,
+        scheduleStartsAt: startsAt,
+        scheduleEndsAt: endsAt,
+        organizerName: demoMember.displayName,
       });
-      join(created.id, { reminders: true });
-      router.push(`/experiences/${created.id}`);
-    } catch {
-      setError("No se pudo crear la experiencia. Inténtalo de nuevo.");
-      setSubmitting(false);
-    }
+      if ("error" in result) {
+        setError(
+          result.error === "forbidden"
+            ? "No tienes permiso para crear esta experiencia."
+            : "No se pudo crear la experiencia. Inténtalo de nuevo.",
+        );
+        setSubmitting(false);
+        return;
+      }
+      await refresh();
+      await join(result.resource.id, { reminders: true });
+      router.push(`/experiences/${result.resource.id}`);
+    })();
   };
 
   const fieldClass =
@@ -285,7 +285,7 @@ export function CreateExperienceScreen() {
             className={fieldClass}
           />
         </label>
-        {resources.length > 0 ? (
+        {linkedResources.length > 0 ? (
           <label className="block space-y-1.5">
             <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
               Recurso relacionado (opcional)
@@ -295,13 +295,13 @@ export function CreateExperienceScreen() {
               onChange={(e) => {
                 const id = e.target.value;
                 setResourceId(id);
-                const res = resources.find((r) => r.id === id);
+                const res = linkedResources.find((r) => r.id === id);
                 if (res && !location.trim()) setLocation(res.location);
               }}
               className={fieldClass}
             >
               <option value="">Ninguno</option>
-              {resources.map((r) => (
+              {linkedResources.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>

@@ -4,9 +4,11 @@ import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   formatExperienceWhen,
+} from "@life-community-os/tenant-life-panoramica";
+import {
   spotsLeft,
   type Experience,
-} from "@life-community-os/tenant-life-panoramica";
+} from "@life-community-os/types";
 import {
   EmptyState,
   ExperienceCard,
@@ -17,9 +19,9 @@ import {
   ScreenPrimaryAction,
   ScreenSearch,
 } from "@life-community-os/ui";
-import { useCatalogDomain } from "@/providers/CatalogProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
+import { useReservations } from "@/providers/ReservationProvider";
 
 function statusLabelFor(
   viewer: ReturnType<
@@ -65,13 +67,12 @@ function ExperienceListBody() {
   const { isFeatureEnabled, hasCapability } = useTenant();
   const { getViewerState, savedExperiences, isSaved } =
     useExperienceParticipation();
-  const { items: catalogExperiences, ready: catalogReady } =
-    useCatalogDomain<Experience>("experiences");
+  const { experiences, ready } = useReservations();
   const [query, setQuery] = useState("");
   const [chip, setChip] = useState("all");
 
   const items = useMemo(() => {
-    const source = savedOnly ? savedExperiences : catalogExperiences;
+    const source = savedOnly ? savedExperiences : experiences;
     return source.filter((e) => {
       if (!matchesChip(e, chip)) return false;
       if (!query) return true;
@@ -82,7 +83,7 @@ function ExperienceListBody() {
         (e.areaLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, chip, savedOnly, savedExperiences, catalogExperiences]);
+  }, [query, chip, savedOnly, savedExperiences, experiences]);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -102,7 +103,7 @@ function ExperienceListBody() {
     );
   }
 
-  if (!catalogReady && !savedOnly) {
+  if (!ready && !savedOnly) {
     return <LoadingState label="Cargando experiencias…" />;
   }
 
@@ -188,7 +189,7 @@ function ExperienceListBody() {
                 when={formatExperienceWhen(exp.startsAt)}
                 where={exp.location}
                 meta={`${exp.participantCount} van · ${remaining} plazas${isSaved(exp.id) ? " · Guardada" : ""}`}
-                imageUrl={exp.imageUrl}
+                imageUrl={exp.imageUrl ?? ""}
                 organizerName={exp.organizer.name}
                 statusLabel={statusLabelFor(viewer, remaining)}
                 ctaLabel="Ver"
