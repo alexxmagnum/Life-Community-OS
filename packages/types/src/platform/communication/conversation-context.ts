@@ -16,13 +16,17 @@ import { getPlatformModuleById } from "../module-registry";
  * via ConversationContextType (open union).
  */
 export const KNOWN_CONVERSATION_CONTEXT_TYPES = [
+  "community",
+  "business",
+  "reservation",
+  "marketplace",
+  "help",
+  "administration",
   "experience",
   "group",
   "service",
   "community_discussion",
-  "reservation",
   "official",
-  "marketplace",
   "place",
   "service_request",
   "housing_listing",

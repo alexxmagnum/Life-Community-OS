@@ -41,14 +41,14 @@ export type ConversationRepository = {
 export type ConversationPersistencePlan = {
   currentMode: ConversationPersistenceMode;
   targetMode: ConversationPersistenceMode;
-  currentOwnerLayer: "D";
+  currentOwnerLayer: "D" | "A";
   targetOwnerLayer: "A";
 };
 
 export const DEFAULT_CONVERSATION_PERSISTENCE_PLAN: ConversationPersistencePlan =
   {
-    currentMode: "demo_session",
+    currentMode: "platform_service",
     targetMode: "platform_service",
-    currentOwnerLayer: "D",
+    currentOwnerLayer: "A",
     targetOwnerLayer: "A",
   };

@@ -26,6 +26,12 @@ export function hrefForNotificationContext(
       return `/reservations`;
     case "housing_listing":
       return `/housing/${context.contextId}`;
+    case "comment":
+    case "community":
+    case "business":
+    case "help":
+    case "administration":
+      return `/messages/${context.contextId}`;
     default:
       return undefined;
   }

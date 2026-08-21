@@ -287,6 +287,11 @@ export function ProfileScreen() {
           />
         ) : null}
         <ExploreLink
+          label="Mensajes"
+          hint="Conversaciones de la comunidad"
+          onClick={() => router.push("/messages")}
+        />
+        <ExploreLink
           label="Notificaciones"
           hint="Lo que necesita tu atención"
           onClick={() => router.push("/notifications")}

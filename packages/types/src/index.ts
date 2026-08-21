@@ -335,6 +335,18 @@ export {
   withHousingTenantModuleConfig,
 } from "./platform/housing-config";
 
+export type {
+  ConversationKind,
+  ConversationMemberRole,
+  ConversationMemberStatus,
+  ConversationParticipantRecord,
+  ConversationListItem,
+  ConversationThread,
+  MessageAttachment,
+  MessageStatus,
+  ProductCommunicationContextType,
+} from "./platform/communication";
+
 /** Contextual Conversation Layer (ADR-043) — contracts + context adapters. */
 export {
   KNOWN_CONVERSATION_CONTEXT_TYPES,
@@ -387,6 +399,25 @@ export {
   isDeliveryChannelKind,
   COMMUNICATION_DELIVERY_ARCHITECTURE_NOTE,
   EPHEMERAL_MEDIA_TTL_PRESETS,
+  CONVERSATION_KINDS,
+  CONVERSATION_MEMBER_ROLES,
+  MESSAGE_STATUSES,
+  MESSAGE_ATTACHMENT_KINDS,
+  PRODUCT_COMMUNICATION_CONTEXT_TYPES,
+  isConversationKind,
+  isConversationMemberRole,
+  isMessageStatus,
+  isMessageAttachmentKind,
+  isProductCommunicationContextType,
+  normalizeCommunicationContextType,
+  moduleIdForCommunicationContext,
+  directConversationContextId,
+  createConversationRecord,
+  createConversationParticipantRecord,
+  createMessageRecord,
+  createMessageAttachmentRecord,
+  messageStatusFromRecord,
+  conversationHref,
 } from "./platform/communication";
 
 /** Participation foundations — Reaction ≠ Support ≠ Vote (Phase 2.5). */

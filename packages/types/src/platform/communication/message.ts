@@ -29,19 +29,42 @@ export type MessageMediaRef = {
   role?: FileVariantKind;
 };
 
+export type MessageAttachmentKind = "image" | "document" | "file";
+
+export type MessageAttachment = {
+  id: DomainId;
+  tenantId: DomainId;
+  messageId: DomainId;
+  createdBy: DomainId;
+  kind: MessageAttachmentKind;
+  fileName: string;
+  mimeType: string;
+  fileId?: DomainId;
+  url?: string;
+  createdAt: IsoDateTimeString;
+  updatedAt: IsoDateTimeString;
+};
+
 export type Message = {
   id: DomainId;
   conversationId: DomainId;
   tenantId: DomainId;
   authorPersonId: DomainId;
+  /** Session sender — alias of authorPersonId (Phase 9). */
+  senderPersonId?: DomainId;
+  createdBy?: DomainId;
   body?: string;
+  content?: string;
   replyToMessageId?: DomainId;
   threadRootId?: DomainId;
   createdAt: IsoDateTimeString;
+  updatedAt?: IsoDateTimeString;
   editedAt?: IsoDateTimeString;
   deletedAt?: IsoDateTimeString;
+  status?: "sent" | "edited" | "deleted";
   ephemeralExpiresAt?: IsoDateTimeString;
   mediaRefs: MessageMediaRef[];
+  attachments?: MessageAttachment[];
   reactionSummary: MessageReactionSummary;
   /** Semantic shortcut — may emit future domain events; not AuthZ. */
   quickActionKind?: QuickActionKind;

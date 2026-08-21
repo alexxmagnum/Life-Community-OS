@@ -50,16 +50,19 @@ export {
 
 export type {
   Conversation,
+  ConversationKind,
   ConversationStatus,
   ConversationParticipantPolicy,
   ConversationIssue,
   ConversationIssueCode,
 } from "./conversation";
-export { validateConversation } from "./conversation";
+export { CONVERSATION_KINDS, validateConversation } from "./conversation";
 
 export type {
   Message,
   MessageMediaRef,
+  MessageAttachment,
+  MessageAttachmentKind,
   MessageIssue,
   MessageIssueCode,
 } from "./message";
@@ -158,3 +161,35 @@ export type {
   OfficialEntityKind,
   OfficialInteractionMode,
 } from "./adapters";
+
+export type {
+  ConversationMemberRole,
+  ConversationMemberStatus,
+  ConversationParticipantRecord,
+  MessageStatus,
+  ProductCommunicationContextType,
+  CreateConversationInput,
+  CreateMessageInput,
+  ConversationListItem,
+  ConversationThread,
+} from "./communication-core";
+export {
+  CONVERSATION_MEMBER_ROLES,
+  MESSAGE_STATUSES,
+  MESSAGE_ATTACHMENT_KINDS,
+  PRODUCT_COMMUNICATION_CONTEXT_TYPES,
+  isConversationKind,
+  isConversationMemberRole,
+  isMessageStatus,
+  isMessageAttachmentKind,
+  isProductCommunicationContextType,
+  normalizeCommunicationContextType,
+  moduleIdForCommunicationContext,
+  directConversationContextId,
+  createConversationRecord,
+  createConversationParticipantRecord,
+  createMessageRecord,
+  createMessageAttachmentRecord,
+  messageStatusFromRecord,
+  conversationHref,
+} from "./communication-core";

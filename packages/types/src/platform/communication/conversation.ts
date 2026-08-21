@@ -9,6 +9,14 @@ import { validateConversationContext } from "./conversation-context";
  * Not a standalone chat room; not a Channel (ADR-035 organization).
  */
 
+export type ConversationKind = "direct" | "group" | "context";
+
+export const CONVERSATION_KINDS: readonly ConversationKind[] = [
+  "direct",
+  "group",
+  "context",
+] as const;
+
 export type ConversationStatus =
   | "draft"
   | "active"
@@ -25,11 +33,17 @@ export type Conversation = {
   id: DomainId;
   tenantId: DomainId;
   context: ConversationContext;
+  /** Product conversation kind (Phase 9). Direct / group / context thread. */
+  type?: ConversationKind;
+  /** Flattened from context — kept for API/SQL projections. */
+  contextType?: ConversationContext["contextType"];
+  contextId?: DomainId;
   title?: string;
   status: ConversationStatus;
   participantPolicy: ConversationParticipantPolicy;
   /** Person who opened the conversation when applicable. */
   createdByPersonId?: DomainId;
+  createdBy?: DomainId;
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
   archivedAt?: IsoDateTimeString;
