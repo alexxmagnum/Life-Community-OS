@@ -240,14 +240,14 @@ export const LIFE_MAP_PREMIUM_CAMERA = {
   territoryOverviewZoom: 13.35,
   territoryOverviewPitch: 28,
   territoryOverviewDurationMs: 0,
-  /** Stage B — community frame. */
-  communityFocusZoom: 15.45,
-  communityFocusPitch: 42,
+  /** Stage B — community frame (wide, not a single venue). */
+  communityFocusZoom: 14.65,
+  communityFocusPitch: 38,
   communityFocusBearing: -18,
   communityFocusDurationMs: 1600,
-  /** Stage C — social living zone. */
-  socialZoneZoom: 16.55,
-  socialZonePitch: 52,
+  /** Stage C — living zone still above street pins. */
+  socialZoneZoom: 15.35,
+  socialZonePitch: 46,
   socialZoneDurationMs: 1400,
   explorationMinZoom: 12.5,
   explorationMaxZoom: 19.2,

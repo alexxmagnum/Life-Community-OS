@@ -516,3 +516,24 @@ export {
   filterLifeMapObjects,
   createLifeMapObjectRegistry,
 } from "./life-map-objects";
+export type {
+  TerritoryObjectType,
+  TerritoryObjectLodBand,
+  TerritoryObjectGeometry,
+  TerritoryObjectAsset,
+  TerritoryObjectVisibility,
+  TerritoryObject,
+  TerritoryObjectIssueCode,
+  TerritoryObjectIssue,
+} from "./life-map-territory-object";
+export {
+  TERRITORY_OBJECT_TYPES,
+  TERRITORY_OBJECT_LOD_BANDS,
+  TERRITORY_OBJECT_LAYER_ID,
+  isTerritoryObjectType,
+  territoryObjectHasPosition,
+  validateTerritoryObject,
+  filterRenderableTerritoryObjects,
+  projectTerritoryObjectToLifeMapObject,
+  projectTerritoryObjectsToLifeMapObjects,
+} from "./life-map-territory-object";

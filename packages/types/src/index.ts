@@ -160,6 +160,19 @@ export {
   createLifeMapObjectRegistry,
 } from "./domain/life-map-objects";
 
+/** Territory digital twin objects (physical fabric — not Location SoT). */
+export {
+  TERRITORY_OBJECT_TYPES,
+  TERRITORY_OBJECT_LOD_BANDS,
+  TERRITORY_OBJECT_LAYER_ID,
+  isTerritoryObjectType,
+  territoryObjectHasPosition,
+  validateTerritoryObject,
+  filterRenderableTerritoryObjects,
+  projectTerritoryObjectToLifeMapObject,
+  projectTerritoryObjectsToLifeMapObjects,
+} from "./domain/life-map-territory-object";
+
 /** Channel boundary validators (ADR-035) — required before persistence. */
 export {
   CHANNEL_OWNER_COMPATIBILITY,

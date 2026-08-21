@@ -24,7 +24,7 @@ import {
   isTerritoryGeoJsonPayload,
   resolveLifeMapBaseLayers,
 } from "@life-community-os/types";
-import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { useEffect, useRef, type CSSProperties } from "react";
 
 import { createMapLibreLifeMapRenderer } from "./create-maplibre-renderer";
@@ -39,7 +39,11 @@ import {
   MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
   resolveLifeMapBasemapStyle,
 } from "./premium-style";
-import { MAPLIBRE_OBJECTS_LAYER_ID } from "./object-frontier";
+import { MAPLIBRE_OBJECTS_LAYER_ID, MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID, MAPLIBRE_OBJECTS_SOURCE_ID } from "./object-frontier";
+import {
+  MAPLIBRE_TERRITORY_INTERACTIVE_LAYER_IDS,
+  type TerritoryFabricGeoJson,
+} from "./territory-frontier";
 
 /** @deprecated Prefer premium local style; kept for debug demotiles toggle. */
 export { MAPLIBRE_TECHNICAL_PREVIEW_STYLE };
@@ -63,38 +67,109 @@ export type MapLibreLifeMapCanvasProps = {
   dataVersion?: string;
   /** Ease camera to this WGS84 point when selection/focus changes. */
   focusCameraTarget?: { lat: number; lng: number } | null;
+  /** Territory amenity polygons (golf, lakes, greens). */
+  territoryAmenities?: TerritoryFabricGeoJson | null;
+  /** Territory landmark points (gate, clubhouse, parking…). */
+  territoryPoints?: TerritoryFabricGeoJson | null;
 };
 
-/** First frame: social cluster center (not a single toy venue). */
-function heroSpatialForFirstFrame(
-  objects: readonly LifeMap3DSpatialObject[],
-): readonly LifeMap3DSpatialObject[] {
-  if (objects.length === 0) return [];
-  const preferred = objects.filter((item) => {
-    const label = (item.label ?? "").toLowerCase();
-    const key = (item.asset3DKey ?? "").toLowerCase();
-    return (
-      label.includes("ikon") ||
-      key.includes("restaurant") ||
-      key.includes("pool") ||
-      key.includes("club")
-    );
-  });
-  const pool = preferred.length > 0 ? preferred : objects;
-  return pool.slice(0, Math.min(5, pool.length));
+/** First frame: territory camera — never spawn on a single object. */
+function resolveFocusCenter(
+  scene: LifeMapScene,
+  map: MapLibreMap,
+): { lat: number; lng: number } {
+  const focus = scene.camera.pose;
+  if (
+    typeof (focus.target as { lng?: number }).lng === "number" &&
+    typeof (focus.target as { lat?: number }).lat === "number"
+  ) {
+    return {
+      lng: (focus.target as { lng: number }).lng,
+      lat: (focus.target as { lat: number }).lat,
+    };
+  }
+  const center = map.getCenter();
+  return { lng: center.lng, lat: center.lat };
 }
 
-function averageSpatialCenter(
-  objects: readonly LifeMap3DSpatialObject[],
-): { lat: number; lng: number } | null {
-  if (objects.length === 0) return null;
-  let lat = 0;
-  let lng = 0;
-  for (const item of objects) {
-    lat += item.position.lat;
-    lng += item.position.lng;
+function existingMapLayers(map: MapLibreMap, ids: readonly string[]): string[] {
+  return ids.filter((id) => Boolean(map.getLayer(id)));
+}
+
+/** Tap Location pins, clusters, or territory fabric. Returns true when handled. */
+function handleLifeMapPointer(
+  map: MapLibreMap,
+  event: MapMouseEvent,
+  onSelect?: (objectId: string | null) => void,
+): boolean {
+  const clusterLayers = existingMapLayers(map, [MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID]);
+  if (clusterLayers.length > 0) {
+    const clusters = map.queryRenderedFeatures(event.point, {
+      layers: clusterLayers,
+    });
+    const clusterId = clusters[0]?.properties?.cluster_id;
+    if (typeof clusterId === "number") {
+      const source = map.getSource(MAPLIBRE_OBJECTS_SOURCE_ID) as
+        | GeoJSONSource
+        | undefined;
+      const geometry = clusters[0]?.geometry;
+      if (!source) return true;
+      const expand = (
+        source as GeoJSONSource & {
+          getClusterExpansionZoom: (
+            id: number,
+            cb?: (err?: Error | null, zoom?: number) => void,
+          ) => unknown;
+        }
+      ).getClusterExpansionZoom;
+      const applyZoom = (zoom: number) => {
+        if (geometry?.type !== "Point") return;
+        const [lng, lat] = geometry.coordinates as [number, number];
+        map.easeTo({ center: [lng, lat], zoom });
+      };
+      const maybePromise = expand.call(
+        source,
+        clusterId,
+        (error, zoom) => {
+          if (error || zoom == null) return;
+          applyZoom(zoom);
+        },
+      );
+      if (
+        maybePromise &&
+        typeof (maybePromise as Promise<number>).then === "function"
+      ) {
+        void (maybePromise as Promise<number>).then(applyZoom);
+      }
+      return true;
+    }
   }
-  return { lat: lat / objects.length, lng: lng / objects.length };
+
+  const objectLayers = existingMapLayers(map, [MAPLIBRE_OBJECTS_LAYER_ID]);
+  if (objectLayers.length > 0) {
+    const hits = map.queryRenderedFeatures(event.point, { layers: objectLayers });
+    const objectId = hits[0]?.properties?.objectId as string | undefined;
+    if (objectId) {
+      onSelect?.(objectId);
+      return true;
+    }
+  }
+
+  const territoryLayers = existingMapLayers(map, [
+    ...MAPLIBRE_TERRITORY_INTERACTIVE_LAYER_IDS,
+  ]);
+  if (territoryLayers.length > 0) {
+    const hits = map.queryRenderedFeatures(event.point, {
+      layers: territoryLayers,
+    });
+    const objectId = hits[0]?.properties?.objectId as string | undefined;
+    if (objectId) {
+      onSelect?.(objectId);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function runCommercialEntrance(
@@ -137,27 +212,6 @@ function runCommercialEntrance(
   }, cam.communityFocusDurationMs + 80);
 }
 
-function resolveFocusCenter(
-  scene: LifeMapScene,
-  map: MapLibreMap,
-  spatial: readonly LifeMap3DSpatialObject[],
-): { lat: number; lng: number } {
-  const focus = scene.camera.pose;
-  let focusCenter =
-    typeof (focus.target as { lng?: number }).lng === "number" &&
-    typeof (focus.target as { lat?: number }).lat === "number"
-      ? {
-          lng: (focus.target as { lng: number }).lng,
-          lat: (focus.target as { lat: number }).lat,
-        }
-      : { lng: map.getCenter().lng, lat: map.getCenter().lat };
-  if (spatial.length > 0) {
-    const heroCenter = averageSpatialCenter(heroSpatialForFirstFrame(spatial));
-    if (heroCenter) focusCenter = heroCenter;
-  }
-  return focusCenter;
-}
-
 function readMapLibreView(map: MapLibreMap) {
   const center = map.getCenter();
   return {
@@ -197,6 +251,8 @@ export function MapLibreLifeMapCanvas({
   cinematicEntrance = true,
   dataVersion = "v1",
   focusCameraTarget = null,
+  territoryAmenities = null,
+  territoryPoints = null,
 }: MapLibreLifeMapCanvasProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -235,6 +291,8 @@ export function MapLibreLifeMapCanvas({
       hideObjectCircles: false,
       deferInitialCamera: cinematicEntrance,
       ...(territoryDataResolver ? { territoryDataResolver } : {}),
+      ...(territoryAmenities ? { territoryAmenities } : {}),
+      ...(territoryPoints ? { territoryPoints } : {}),
     });
     rendererRef.current = renderer;
     renderer.mount({ element: host });
@@ -257,11 +315,7 @@ export function MapLibreLifeMapCanvas({
       await waitForMap(map);
       if (cancelled) return;
       const focus = sceneRef.current.camera.pose;
-      const focusCenter = resolveFocusCenter(
-        sceneRef.current,
-        map,
-        spatialRef.current,
-      );
+      const focusCenter = resolveFocusCenter(sceneRef.current, map);
       const focusBearing =
         focus.headingDegrees ?? LIFE_MAP_PREMIUM_CAMERA.communityFocusBearing;
       entranceTimer = runCommercialEntrance(map, focusCenter, focusBearing);
@@ -281,11 +335,7 @@ export function MapLibreLifeMapCanvas({
       // Cinematic entrance owns camera — hybrid only syncs optional accents.
       if (!cinematicEntrance) {
         const focus = sceneRef.current.camera.pose;
-        const focusCenter = resolveFocusCenter(
-          sceneRef.current,
-          map,
-          spatialRef.current,
-        );
+        const focusCenter = resolveFocusCenter(sceneRef.current, map);
         map.jumpTo({
           center: focusCenter,
           zoom: LIFE_MAP_PREMIUM_CAMERA.socialZoneZoom,
@@ -432,26 +482,14 @@ export function MapLibreLifeMapCanvas({
       };
 
       const onClick = (event: MapMouseEvent) => {
-        // Prefer Life OS object circles on the territorial map.
-        const objectHits = map.queryRenderedFeatures(event.point, {
-          layers: map.getLayer(MAPLIBRE_OBJECTS_LAYER_ID)
-            ? [MAPLIBRE_OBJECTS_LAYER_ID]
-            : [],
-        });
-        const objectId =
-          (objectHits[0]?.properties?.objectId as string | undefined) ?? null;
-        if (objectId) {
-          layer3d.setSelected(objectId);
-          onSelectRef.current?.(objectId);
+        if (handleLifeMapPointer(map, event, onSelectRef.current)) {
           return;
         }
-
         const { ndcX, ndcY } = eventToNdc(map, event);
         const hit = layer3d.pickAt(ndcX, ndcY);
         const nextId = hit?.id ?? null;
         const current = layer3d.getSelected();
-        const resolved =
-          nextId && nextId === current ? null : nextId;
+        const resolved = nextId && nextId === current ? null : nextId;
         layer3d.setSelected(resolved);
         onSelectRef.current?.(resolved);
       };
@@ -479,13 +517,7 @@ export function MapLibreLifeMapCanvas({
       const map = renderer.getMap();
       if (map) {
         const onObjectClick = (event: MapMouseEvent) => {
-          if (!map.getLayer(MAPLIBRE_OBJECTS_LAYER_ID)) return;
-          const hits = map.queryRenderedFeatures(event.point, {
-            layers: [MAPLIBRE_OBJECTS_LAYER_ID],
-          });
-          const objectId =
-            (hits[0]?.properties?.objectId as string | undefined) ?? null;
-          onSelectRef.current?.(objectId);
+          handleLifeMapPointer(map, event, onSelectRef.current);
         };
         const wait = () => {
           if (map.loaded()) {
@@ -517,6 +549,13 @@ export function MapLibreLifeMapCanvas({
   useEffect(() => {
     rendererRef.current?.setScene(scene);
   }, [scene]);
+
+  useEffect(() => {
+    rendererRef.current?.setTerritoryFrontier({
+      amenities: territoryAmenities,
+      points: territoryPoints,
+    });
+  }, [territoryAmenities, territoryPoints]);
 
   // Keep optional 3D accents in sync — never fight the commercial camera.
   useEffect(() => {

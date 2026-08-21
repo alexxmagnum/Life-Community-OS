@@ -12,6 +12,7 @@ import {
   type LocationType,
 } from "@life-community-os/types";
 
+import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { resolveLocationExperience } from "./experience-resolver";
 import { demoPlaceProfileFor } from "./demo-place-profile";
 
@@ -35,6 +36,17 @@ export function projectLocationToLifeMapObject(
   location: Location,
   territoryId: string,
 ): LifeMapObject | null {
+  if (location.visibility === "private") return null;
+  if (
+    !Number.isFinite(location.latitude) ||
+    !Number.isFinite(location.longitude) ||
+    location.latitude < -90 ||
+    location.latitude > 90 ||
+    location.longitude < -180 ||
+    location.longitude > 180
+  ) {
+    return null;
+  }
   try {
     const experience = resolveLocationExperience(location);
     const type = lifeMapTypeForLocation(location.type);
@@ -100,6 +112,13 @@ export function resolveLifeMapObjectsWithLocations(
   }
   const extras: LifeMapObject[] = [];
   for (const packObj of packObjects) {
+    if (packObj.type === "decoration" || String(packObj.layerId) === "territory") {
+      continue;
+    }
+    const pos = packObj.position as { lat?: unknown; lng?: unknown };
+    if (typeof pos.lat !== "number" || typeof pos.lng !== "number") {
+      continue;
+    }
     const entityId = packObj.ref?.entityId;
     if (covered.has(packObj.objectId)) continue;
     if (entityId && covered.has(entityId)) continue;
@@ -126,6 +145,7 @@ export function locationContextEnrichment(location: Location): {
     id: location.id,
     name: location.name,
   });
+  const imageUrl = preferEntityMediaUrl(undefined, demo?.imageUrl);
   return {
     label: location.name,
     summary: demo?.summary ?? experience.summary,
@@ -134,6 +154,6 @@ export function locationContextEnrichment(location: Location): {
     heroTone: experience.heroTone,
     address: location.geocodeDisplayName ?? location.address,
     availableActions: [...experience.availableActions],
-    ...(demo?.imageUrl ? { imageUrl: demo.imageUrl } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
   };
 }

@@ -44,6 +44,10 @@ import {
   syncMapLibreObjectFrontier,
 } from "./object-frontier";
 import { LIFE_MAP_PREMIUM_CAMERA, resolveLifeMapBasemapStyle } from "./premium-style";
+import {
+  syncMapLibreTerritoryFrontier,
+  type TerritoryFabricGeoJson,
+} from "./territory-frontier";
 
 function resolveHostElement(host: LifeMapRendererHost): HTMLElement {
   if (host.element instanceof HTMLElement) {
@@ -96,6 +100,10 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
    * Skip first camera apply — host owns cinematic territory→community→social.
    */
   deferInitialCamera?: boolean;
+  /** Territory digital twin amenity polygons (golf, lakes, greens…). */
+  territoryAmenities?: TerritoryFabricGeoJson | null;
+  /** Territory digital twin landmarks (gate, clubhouse…). */
+  territoryPoints?: TerritoryFabricGeoJson | null;
 };
 
 /**
@@ -104,6 +112,10 @@ export type CreateMapLibreLifeMapRendererOptions = CreateLifeMapRendererOptions 
 export type MapLibreLifeMapRendererHandle = LifeMapRenderer & {
   /** Live MapLibre map instance when mounted — for hybrid overlays. */
   getMap(): MapLibreMap | null;
+  setTerritoryFrontier(input: {
+    amenities?: TerritoryFabricGeoJson | null;
+    points?: TerritoryFabricGeoJson | null;
+  }): void;
 };
 
 /**
@@ -130,6 +142,8 @@ export function createMapLibreLifeMapRenderer(
   const softenEnvironmentFills = options.softenEnvironmentFills === true;
   const hideObjectCircles = options.hideObjectCircles === true;
   const deferInitialCamera = options.deferInitialCamera === true;
+  let territoryAmenities = options.territoryAmenities ?? null;
+  let territoryPoints = options.territoryPoints ?? null;
 
   const resolver =
     options.territoryDataResolver ?? createNullTerritoryDataResolver();
@@ -177,6 +191,10 @@ export function createMapLibreLifeMapRenderer(
         hidden: hideObjectCircles,
         // Commercial pins + labels — MapLibre owns place identity.
         showPlaceLabels: true,
+      });
+      syncMapLibreTerritoryFrontier([...objects.values()], map, {
+        amenities: territoryAmenities,
+        points: territoryPoints,
       });
 
       interaction?.detach();
@@ -336,6 +354,17 @@ export function createMapLibreLifeMapRenderer(
 
     getMap() {
       return map;
+    },
+
+    setTerritoryFrontier(input) {
+      territoryAmenities = input.amenities ?? null;
+      territoryPoints = input.points ?? null;
+      if (map && map.getStyle()) {
+        syncMapLibreTerritoryFrontier([...objects.values()], map, {
+          amenities: territoryAmenities,
+          points: territoryPoints,
+        });
+      }
     },
   };
 }

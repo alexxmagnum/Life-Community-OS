@@ -11,6 +11,7 @@ import {
   bridgeLifeMapObjectsToSpatial,
   buildLifeMapScene,
 } from "@life-community-os/life-map-renderer";
+import type { TerritoryFabricGeoJson } from "@life-community-os/life-map-renderer-maplibre";
 import type { TerritoryDataResolver } from "@life-community-os/types";
 import type { LifeMapObject, LifeMapTerritory } from "@life-community-os/types";
 import { createWebLifeMapAssetResolver } from "@/lib/life-map-asset-resolver";
@@ -78,6 +79,8 @@ export type LifeMapViewportProps = {
   territoryName?: string;
   /** Wait for Location seed before cinematic open (avoids empty GIS frame). */
   locationsReady?: boolean;
+  territoryAmenities?: TerritoryFabricGeoJson | null;
+  territoryPoints?: TerritoryFabricGeoJson | null;
 };
 
 function territoryGeoOrigin(territory: LifeMapTerritory) {
@@ -101,6 +104,8 @@ export function LifeMapViewport({
   dataVersion = "v1",
   territoryName,
   locationsReady = true,
+  territoryAmenities = null,
+  territoryPoints = null,
 }: LifeMapViewportProps) {
   const engine = engineProp ?? getLifeMapDevEngine();
   const hybrid3D =
@@ -119,9 +124,9 @@ export function LifeMapViewport({
 
   const spatialObjects = useMemo(() => {
     const origin = territoryGeoOrigin(territory);
-    // Featured living places only — scene, not inventory dump.
-    const source = objects.slice(0, 12);
-    return bridgeLifeMapObjectsToSpatial(source, origin).map((o) => ({
+    return bridgeLifeMapObjectsToSpatial(objects, origin)
+      .filter((o) => Boolean(o.asset3DKey))
+      .map((o) => ({
       id: o.id,
       position: o.position,
       asset3DKey: o.asset3DKey,
@@ -190,6 +195,8 @@ export function LifeMapViewport({
           cinematicEntrance
           dataVersion={dataVersion}
           focusCameraTarget={focusCameraTarget}
+          territoryAmenities={territoryAmenities}
+          territoryPoints={territoryPoints}
           className="absolute inset-0"
           style={{ minHeight: "100%", height: "100%" }}
         />

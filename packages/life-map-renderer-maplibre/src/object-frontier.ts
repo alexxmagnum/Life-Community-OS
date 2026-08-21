@@ -14,6 +14,8 @@ import type {
   SymbolLayerSpecification,
 } from "maplibre-gl";
 
+import { LIFE_MAP_COMMERCIAL_LOD } from "./commercial-lod";
+
 /** Stable MapLibre custom-layer / source id for a Life OS object. */
 export function mapLibreObjectSourceId(objectId: string): string {
   return `lm-obj-src:${objectId}`;
@@ -27,6 +29,13 @@ export const MAPLIBRE_OBJECTS_SOURCE_ID = "lm-life-os-objects";
 export const MAPLIBRE_OBJECTS_LAYER_ID = "lm-life-os-objects-circle";
 export const MAPLIBRE_OBJECTS_HALO_LAYER_ID = "lm-life-os-objects-halo";
 export const MAPLIBRE_OBJECTS_LABEL_LAYER_ID = "lm-life-os-objects-label";
+export const MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID = "lm-life-os-objects-cluster";
+export const MAPLIBRE_OBJECTS_CLUSTER_COUNT_LAYER_ID =
+  "lm-life-os-objects-cluster-count";
+export const MAPLIBRE_OBJECTS_INTERACTIVE_LAYER_IDS = [
+  MAPLIBRE_OBJECTS_LAYER_ID,
+  MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID,
+] as const;
 
 export type MapLibreObjectBinding = {
   objectId: string;
@@ -109,7 +118,12 @@ export function syncMapLibreObjectFrontier(
   }
 
   const features = objects
-    .filter((o) => isGeoPosition(o.position))
+    .filter(
+      (o) =>
+        isGeoPosition(o.position) &&
+        o.type !== "decoration" &&
+        String(o.layerId) !== "territory",
+    )
     .map((o) => {
       const pos = o.position as { lat: number; lng: number };
       return {
@@ -137,6 +151,9 @@ export function syncMapLibreObjectFrontier(
     map.addSource(MAPLIBRE_OBJECTS_SOURCE_ID, {
       type: "geojson",
       data: collection,
+      cluster: true,
+      clusterMaxZoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom + 0.4,
+      clusterRadius: 52,
       promoteId: "objectId",
     });
   } else {
@@ -144,40 +161,71 @@ export function syncMapLibreObjectFrontier(
     source.setData(collection);
   }
 
+  if (!map.getLayer(MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID)) {
+    map.addLayer({
+      id: MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID,
+      type: "circle",
+      source: MAPLIBRE_OBJECTS_SOURCE_ID,
+      filter: ["has", "point_count"],
+      minzoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom,
+      paint: {
+        "circle-color": "#2f6f68",
+        "circle-radius": [
+          "step",
+          ["get", "point_count"],
+          14,
+          8,
+          18,
+          20,
+          22,
+        ],
+        "circle-opacity": hidden ? 0 : 0.88,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+      },
+      metadata: { lifeMapObjects: true, cluster: true },
+    });
+  }
+
+  if (!map.getLayer(MAPLIBRE_OBJECTS_CLUSTER_COUNT_LAYER_ID)) {
+    map.addLayer({
+      id: MAPLIBRE_OBJECTS_CLUSTER_COUNT_LAYER_ID,
+      type: "symbol",
+      source: MAPLIBRE_OBJECTS_SOURCE_ID,
+      filter: ["has", "point_count"],
+      minzoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom,
+      layout: {
+        "text-field": ["get", "point_count_abbreviated"],
+        "text-size": 12,
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+      },
+      paint: {
+        "text-color": "#f7f4ef",
+        "text-opacity": hidden ? 0 : 1,
+      },
+      metadata: { lifeMapObjects: true, cluster: true },
+    });
+  }
+
   if (!map.getLayer(MAPLIBRE_OBJECTS_HALO_LAYER_ID)) {
     const halo: CircleLayerSpecification = {
       id: MAPLIBRE_OBJECTS_HALO_LAYER_ID,
       type: "circle",
       source: MAPLIBRE_OBJECTS_SOURCE_ID,
-      minzoom: 12,
+      filter: ["!", ["has", "point_count"]],
+      minzoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom,
       paint: {
         "circle-radius": [
           "interpolate",
           ["linear"],
           ["zoom"],
-          12,
-          8,
-          14,
-          12,
+          16.4,
+          10,
+          18,
           16,
-          18,
-          18,
-          22,
         ],
         "circle-color": ["get", "color"],
-        "circle-opacity": hidden
-          ? 0
-          : [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              12,
-              0.12,
-              14,
-              0.18,
-              16,
-              0.22,
-            ],
+        "circle-opacity": hidden ? 0 : 0.2,
         "circle-blur": 0.85,
       },
       metadata: { lifeMapObjects: true },
@@ -190,48 +238,23 @@ export function syncMapLibreObjectFrontier(
       id: MAPLIBRE_OBJECTS_LAYER_ID,
       type: "circle",
       source: MAPLIBRE_OBJECTS_SOURCE_ID,
-      minzoom: 12,
+      filter: ["!", ["has", "point_count"]],
+      minzoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom,
       paint: {
         "circle-radius": [
           "interpolate",
           ["linear"],
           ["zoom"],
-          12,
-          3.5,
-          14,
-          5.5,
-          16,
-          8.5,
+          16.4,
+          7,
           17.5,
-          11,
+          10,
           19,
           13,
         ],
         "circle-color": ["get", "color"],
-        "circle-opacity": hidden
-          ? 0
-          : [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              12,
-              0.72,
-              14,
-              0.85,
-              16,
-              0.95,
-            ],
-        "circle-stroke-width": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          12,
-          1.2,
-          16,
-          2.4,
-          18,
-          3,
-        ],
+        "circle-opacity": hidden ? 0 : 0.95,
+        "circle-stroke-width": 2.2,
         "circle-stroke-color": "#ffffff",
         "circle-stroke-opacity": hidden ? 0 : 0.95,
         "circle-blur": 0.05,
@@ -269,19 +292,20 @@ export function syncMapLibreObjectFrontier(
         id: MAPLIBRE_OBJECTS_LABEL_LAYER_ID,
         type: "symbol",
         source: MAPLIBRE_OBJECTS_SOURCE_ID,
-        minzoom: 15.5,
+        filter: ["!", ["has", "point_count"]],
+        minzoom: LIFE_MAP_COMMERCIAL_LOD.placesMinZoom,
         layout: {
           "text-field": ["get", "label"],
           "text-size": [
             "interpolate",
             ["linear"],
             ["zoom"],
-            15.5,
+            16.45,
             11,
-            17,
-            14,
+            17.5,
+            13,
             19,
-            16,
+            15,
           ],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
           "text-offset": [0, 1.25],
@@ -298,9 +322,9 @@ export function syncMapLibreObjectFrontier(
             "interpolate",
             ["linear"],
             ["zoom"],
-            15.5,
+            16.45,
             0.0,
-            16,
+            16.8,
             0.95,
           ],
         },

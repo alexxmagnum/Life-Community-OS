@@ -24,8 +24,21 @@ const ACTION_LABEL: Record<LifeMapActionKind, string> = {
   reserve: "Reservar",
 };
 
-const PRIMARY_ACTIONS = new Set<LifeMapActionKind>(["open", "navigate"]);
-const HIDDEN_DEMO_ACTIONS = new Set<LifeMapActionKind>(["reserve", "join"]);
+function actionLabel(
+  action: LifeMapActionKind,
+  type: LifeMapContextPanelModel["type"],
+): string {
+  if (action === "open") {
+    if (type === "place") return "Ver negocio";
+    if (type === "housing") return "Información pública";
+    if (type === "decoration") return "Información comunidad";
+    if (type === "resource") return "Ver instalación";
+  }
+  return ACTION_LABEL[action] ?? action;
+}
+
+const PRIMARY_ACTIONS = new Set<LifeMapActionKind>(["open", "navigate", "reserve"]);
+const HIDDEN_DEMO_ACTIONS = new Set<LifeMapActionKind>(["join"]);
 
 export function LifeMapContextPanel({
   model,
@@ -123,7 +136,7 @@ export function LifeMapContextPanel({
                     : "rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
                 }
               >
-                {ACTION_LABEL[action] ?? action}
+                {actionLabel(action, model.type)}
               </button>
             );
           })}

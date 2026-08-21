@@ -29,6 +29,11 @@ import type {
 import { LifeMapContextPanel } from "@/components/life-map/LifeMapContextPanel";
 import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
 import { isLifeMapExperienceUnlocked } from "@/lib/life-map-dev";
+import {
+  filterLifeMapObjectsWithPosition,
+  resolveLifeMapTapHref,
+  territoryObjectsForTenant,
+} from "@/lib/life-map/digital-twin";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
 import {
@@ -158,12 +163,30 @@ export function LifeMapScreen() {
 
   const objects: LifeMapObject[] = useMemo(() => {
     if (!territory || !pack) return [];
-    return resolveLifeMapObjectsWithLocations(
+    const fromLocations = resolveLifeMapObjectsWithLocations(
       pack.listObjects(),
       filteredLocations,
       territory.territoryId,
     );
+    const fromTerritory = territoryObjectsForTenant(
+      pack.listTerritoryObjects?.() ?? [],
+      pack.tenantId,
+      territory.territoryId,
+    );
+    return filterLifeMapObjectsWithPosition([
+      ...fromTerritory,
+      ...fromLocations,
+    ]);
   }, [filteredLocations, territory, pack]);
+
+  const territoryAmenities = useMemo(
+    () => pack?.territoryAmenities?.() ?? null,
+    [pack],
+  );
+  const territoryPoints = useMemo(
+    () => pack?.territoryPoints?.() ?? null,
+    [pack],
+  );
 
   const locationById = useMemo(() => {
     const map = new Map<string, Location>();
@@ -255,10 +278,17 @@ export function LifeMapScreen() {
     (action: LifeMapActionKind) => {
       if (!selectedObject) return;
       const location = resolveLocationForObject(selectedObject);
-      if (action === "open") {
-        const locationId = location?.id ?? selectedObject.ref?.entityId;
-        if (locationId) {
-          router.push(`/locations/${encodeURIComponent(locationId)}`);
+      if (action === "open" || action === "reserve") {
+        const tap = resolveLifeMapTapHref({
+          object: selectedObject,
+          location,
+        });
+        if (action === "reserve" && tap.intent === "resource" && tap.href) {
+          router.push(tap.href);
+          return;
+        }
+        if (action === "open" && tap.href) {
+          router.push(tap.href);
         }
         return;
       }
@@ -353,6 +383,8 @@ export function LifeMapScreen() {
         dataVersion={`loc-${filteredLocations.length}-${seedReady ? "ready" : "boot"}`}
         territoryName={pack.territoryName}
         locationsReady={seedReady}
+        territoryAmenities={territoryAmenities}
+        territoryPoints={territoryPoints}
       />
 
       {contextModel ? (

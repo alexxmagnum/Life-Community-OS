@@ -11,6 +11,7 @@ import { getExperienceById } from "./experiences";
 import { getLocalEntityById } from "./local-places";
 import { getOfficialEntityById } from "./official-entities";
 import { getResourceById } from "./resources";
+import { getLifePanoramicaTerritoryMeta } from "./life-map-territory-objects";
 
 export type LifeMapContextEnrichment = {
   label?: string;
@@ -45,11 +46,14 @@ export function enrichLifePanoramicaLifeMapContext(
 ): LifeMapContextEnrichment | null {
   const ref = object.ref;
   if (!ref?.entityId) {
-    if (object.type === "decoration") {
+    if (String(object.layerId) === "territory" || object.type === "decoration") {
+      const meta = getLifePanoramicaTerritoryMeta(object.objectId);
       return {
-        summary: "Referencia visual de vivienda en el territorio.",
-        experienceTag: "Vivienda",
-        heroTone: TONE_BY_KIND.housing,
+        label: object.label,
+        summary: meta?.summary ?? "Espacio comunitario de la urbanización.",
+        experienceTag: "Comunidad",
+        heroTone: TONE_BY_KIND.golf,
+        categoryHint: "Territorio",
       };
     }
     return null;

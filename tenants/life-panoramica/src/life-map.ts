@@ -156,6 +156,15 @@ export const lifePanoramicaLifeMapLayers: readonly LifeMapLayer[] = [
     label: "Oficial",
     order: 60,
   },
+  {
+    id: "territory",
+    sourceModuleId: "lifeMap",
+    visible: true,
+    requiredCapability: CAPABILITIES.lifeMapView,
+    requiresModuleEnabled: true,
+    label: "Territorio",
+    order: 5,
+  },
 ];
 
 /**
@@ -178,10 +187,10 @@ const lifePanoramicaPreparedCamera = {
     lat: communityFocusGeo.lat,
     lng: communityFocusGeo.lng,
   },
-  /** Community twin distance → human-scale walkable framing. */
-  distance: 300,
+  /** Community twin distance — wide territory frame, not a single venue. */
+  distance: 520,
   headingDegrees: -18,
-  pitchDegrees: 60,
+  pitchDegrees: 42,
 };
 
 export const lifePanoramicaLifeMapVisual: LifePanoramicaLifeMapVisualConfig = {

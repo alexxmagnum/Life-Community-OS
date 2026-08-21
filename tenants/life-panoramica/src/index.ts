@@ -21,6 +21,7 @@ export * from "./life-map-content";
 export * from "./life-map-context";
 export * from "./life-map-territory-data";
 export * from "./life-map-territory-resolver";
+export * from "./life-map-territory-objects";
 export * from "./navigation-projector";
 export * from "./community-areas";
 export * from "./official-entities";

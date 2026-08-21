@@ -199,6 +199,9 @@ function profileFor(
 
 function actionsFor(location: Location): readonly LifeMapActionKind[] {
   const actions: LifeMapActionKind[] = ["open", "navigate"];
+  if (location.type === "facility") {
+    actions.push("reserve");
+  }
   if (location.contact?.trim()) {
     actions.push("message");
   }

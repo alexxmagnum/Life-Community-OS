@@ -74,5 +74,15 @@ export {
   LIFE_MAP_COMMERCIAL_LOD,
   resolveLifeMapCommercialLod,
   shouldShowGrounded3dAccents,
+  shouldLoadTerritoryAssets,
   type LifeMapCommercialLodBand,
 } from "./commercial-lod";
+
+export {
+  syncMapLibreTerritoryFrontier,
+  MAPLIBRE_TERRITORY_AMENITY_SOURCE_ID,
+  MAPLIBRE_TERRITORY_POINT_SOURCE_ID,
+  MAPLIBRE_TERRITORY_INTERACTIVE_LAYER_IDS,
+  type TerritoryFabricGeoJson,
+  type SyncMapLibreTerritoryFrontierOptions,
+} from "./territory-frontier";

@@ -97,6 +97,9 @@ export function createLifeValleyLifeMapPack(): LifeMapTenantPack {
     },
     territory: valleyTerritory,
     listObjects: () => listValleySpatialObjects(),
+    listTerritoryObjects: () => [],
+    territoryAmenities: () => null,
+    territoryPoints: () => null,
     createTerritoryDataResolver: () => createNullTerritoryDataResolver(),
     dataVersion: "life-valley-rc-v1",
     enrichContext: (object) => ({

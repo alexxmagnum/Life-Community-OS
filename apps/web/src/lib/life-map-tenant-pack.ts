@@ -9,7 +9,9 @@ import type {
   LifeMapObject,
   LifeMapTerritory,
   TerritoryDataResolver,
+  TerritoryObject,
 } from "@life-community-os/types";
+import type { TerritoryFabricGeoJson } from "@life-community-os/life-map-renderer-maplibre";
 
 export type LifeMapTenantVisualConfig = {
   atmosphere: "day" | "dusk" | "night";
@@ -24,6 +26,10 @@ export type LifeMapTenantPack = {
   visual: LifeMapTenantVisualConfig;
   territory: LifeMapTerritory;
   listObjects: () => LifeMapObject[];
+  /** Physical territory twin — tenant-scoped, coordinates required. */
+  listTerritoryObjects?: () => TerritoryObject[];
+  territoryAmenities?: () => TerritoryFabricGeoJson | null;
+  territoryPoints?: () => TerritoryFabricGeoJson | null;
   createTerritoryDataResolver: () => TerritoryDataResolver;
   /** Opaque content version for cache / CDN keys. */
   dataVersion: string;
