@@ -110,3 +110,52 @@ export {
   listSpatialCatalogAssets,
   registerSpatialCatalogAsset,
 } from "./spatial-catalog";
+
+export type {
+  SpatialAssetCategory,
+  SpatialAssetFormat,
+  SpatialAssetLodLevel,
+  SpatialAssetLodEntry,
+  SpatialAssetMetadata,
+  SpatialAsset,
+  SpatialAssetIssueCode,
+  SpatialAssetIssue,
+} from "./spatial-asset";
+export {
+  SPATIAL_ASSET_CATEGORIES,
+  SPATIAL_ASSET_FORMATS,
+  isSpatialAssetCategory,
+  isSafeSpatialAssetUrl,
+  validateSpatialAsset,
+  selectSpatialAssetLodUrl,
+} from "./spatial-asset";
+
+export {
+  PLATFORM_SPATIAL_ASSETS,
+  SPATIAL_ASSET_KEY_ALIASES,
+} from "./spatial-asset-library";
+
+export type {
+  SpatialAssetResolveContext,
+  SpatialAssetRegistry,
+} from "./spatial-asset-registry";
+export {
+  createSpatialAssetRegistry,
+  getPlatformSpatialAssetRegistry,
+  resolveSpatialAsset,
+  resolveSpatialAssetUrl,
+} from "./spatial-asset-registry";
+
+export type {
+  TerritorySpatialType,
+  TerritoryObjectAssetRef,
+} from "./spatial-asset-assignment";
+export {
+  DEFAULT_TERRITORY_SPATIAL_ASSIGNMENTS,
+  assignSpatialAssetToTerritoryType,
+  clearSpatialAssetAssignments,
+  spatialAssetIdForTerritoryType,
+  resolveSpatialAssetForTerritoryObject,
+} from "./spatial-asset-assignment";
+
+export { SPATIAL_GLB_ZOOM, shouldLoadSpatialGlb, spatialGlbUrlForView } from "./spatial-asset-pipeline";

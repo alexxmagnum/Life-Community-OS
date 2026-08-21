@@ -1,11 +1,13 @@
 /**
  * Life Map asset3DKey → 3D visual resolver (web host).
- * Asset Library → registry/spatial catalog → visualKind (+ optional glTF).
+ * SpatialAssetRegistry → GLB url. Components never import GLB files.
  */
 
 import {
   ensurePlatformSpatialCatalog,
   resolveLifeMapAsset3DKey,
+  resolveSpatialAsset,
+  resolveSpatialAssetUrl,
 } from "@life-community-os/assets";
 import {
   createProceduralLifeMap3DAssetResolver,
@@ -20,6 +22,15 @@ export function createWebLifeMapAssetResolver(
 ): LifeMap3DAssetResolver {
   const procedural = createProceduralLifeMap3DAssetResolver();
   return (asset3DKey) => {
+    const spatial = resolveSpatialAsset(asset3DKey, {
+      ...(tenantId ? { tenantId } : {}),
+    });
+    const modelPath =
+      resolveSpatialAssetUrl(asset3DKey, {
+        ...(tenantId ? { tenantId } : {}),
+        hasPosition: true,
+      }) ?? spatial?.url;
+
     try {
       const meta = resolveLifeMapAsset3DKey(
         asset3DKey,
@@ -28,13 +39,23 @@ export function createWebLifeMapAssetResolver(
       return {
         key: meta.key,
         path: meta.path,
-        ...(meta.spatial?.modelPath
-          ? { modelPath: meta.spatial.modelPath }
-          : {}),
+        ...(modelPath
+          ? { modelPath }
+          : meta.spatial?.modelPath
+            ? { modelPath: meta.spatial.modelPath }
+            : {}),
         visualKind: inferLifeMap3DAssetVisualKind(asset3DKey),
-        labelHint: meta.spatial?.category,
+        labelHint: meta.spatial?.category ?? spatial?.category,
       };
     } catch {
+      if (modelPath) {
+        return {
+          key: asset3DKey,
+          modelPath,
+          visualKind: inferLifeMap3DAssetVisualKind(asset3DKey),
+          labelHint: spatial?.category,
+        };
+      }
       return procedural(asset3DKey);
     }
   };

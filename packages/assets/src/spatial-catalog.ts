@@ -9,7 +9,9 @@
  */
 
 import { defineSpatialLibraryEntry } from "./spatial-library";
-import type { AssetMetadata } from "./types";
+import type { AssetMetadata, AssetSpatialCategory } from "./types";
+import { PLATFORM_SPATIAL_ASSETS, SPATIAL_ASSET_KEY_ALIASES } from "./spatial-asset-library";
+import type { SpatialAssetCategory } from "./spatial-asset";
 
 type SpatialCatalogSeed = {
   entry: ReturnType<typeof defineSpatialLibraryEntry>;
@@ -177,11 +179,82 @@ function seedToMetadata(seed: SpatialCatalogSeed): AssetMetadata {
       behaviour: entry.behaviour,
       interaction: entry.interaction,
       anchor: entry.anchor ?? "bottom",
-      scale: entry.scale,
+      scale: entry.scale ?? 1,
       lod: entry.lod,
       ...(seed.modelPath ? { modelPath: seed.modelPath } : {}),
     },
   };
+}
+
+function spatialCategoryToLibrary(
+  category: SpatialAssetCategory,
+): AssetSpatialCategory {
+  switch (category) {
+    case "security":
+      return "utility";
+    case "mobility":
+      return "mobility";
+    case "sport":
+      return "recreation";
+    case "hospitality":
+      return "place";
+    case "residential":
+      return "building";
+    case "nature":
+      return "nature";
+    case "facility":
+      return "place";
+    default:
+      return "utility";
+  }
+}
+
+function registerGlbLibrary(): void {
+  for (const asset of PLATFORM_SPATIAL_ASSETS) {
+    catalog.set(asset.id, {
+      key: asset.id,
+      path: asset.url,
+      type: "spatial_object",
+      domain: "life-map",
+      variant: "default",
+      scope: "global",
+      tenant: null,
+      width: 1,
+      height: 1,
+      spatial: {
+        category: spatialCategoryToLibrary(asset.category),
+        subtype: asset.id,
+        behaviour: "static",
+        interaction: "open",
+        anchor: "bottom",
+        scale: asset.scale,
+        modelPath: asset.url,
+        lod: asset.lod.map((entry) => ({
+          level: entry.level,
+          ref: entry.url,
+        })),
+      },
+    });
+  }
+
+  for (const [alias, id] of Object.entries(SPATIAL_ASSET_KEY_ALIASES)) {
+    const glb = catalog.get(id);
+    const existing = catalog.get(alias);
+    if (!glb) continue;
+    if (existing?.spatial) {
+      catalog.set(alias, {
+        ...existing,
+        spatial: {
+          ...existing.spatial,
+          modelPath: glb.spatial?.modelPath,
+          scale: 1,
+          anchor: "bottom",
+        },
+      });
+    } else if (!existing) {
+      catalog.set(alias, { ...glb, key: alias });
+    }
+  }
 }
 
 /** Idempotent — safe to call from resolve / web bootstrap. */
@@ -191,6 +264,7 @@ export function ensurePlatformSpatialCatalog(): void {
   for (const seed of SEEDS) {
     catalog.set(seed.entry.assetKey, seedToMetadata(seed));
   }
+  registerGlbLibrary();
 }
 
 export function getSpatialCatalogAsset(

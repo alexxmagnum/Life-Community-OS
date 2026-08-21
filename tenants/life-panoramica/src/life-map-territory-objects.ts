@@ -21,15 +21,17 @@ import {
 import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { projectLifePanoramicaLocalMetersToGeo } from "./life-map";
 
-/** Spatial Asset Library keys (same vocabulary as life-map-content). */
+/** Spatial Asset Registry ids (platform GLB library). */
 const TERRITORY_ASSET_KEYS = {
-  path: "nature.path.spatial_object",
-  security: "utility.security.spatial_object",
-  clubhouse: "place.clubhouse.spatial_object",
-  pool: "recreation.pool.spatial_object",
-  padel: "recreation.padel.spatial_object",
-  golf: "recreation.golf.spatial_object",
-  housing: "building.house.building",
+  gate: "security-gate-v1",
+  security: "security-booth-v1",
+  barrier: "security-barrier-v1",
+  parking: "parking-area-v1",
+  clubhouse: "clubhouse-v1",
+  pool: "pool-area-v1",
+  padel: "padel-court-v1",
+  golf: "golf-area-v1",
+  lake: "lake-area-v1",
 } as const;
 
 /** Product layer for physical territory fabric (not Location pins). */
@@ -83,7 +85,7 @@ const TERRITORY_LAYOUT = {
     label: "Acceso principal",
     lod: "territory" as const,
     summary: "Entrada principal a Panorámica Golf.",
-    asset3DKey: TERRITORY_ASSET_KEYS.path,
+    asset3DKey: TERRITORY_ASSET_KEYS.gate,
   },
   securityBooth: {
     x: -44,
@@ -101,6 +103,7 @@ const TERRITORY_LAYOUT = {
     label: "Barrera",
     lod: "detail" as const,
     summary: "Barrera de acceso al recinto.",
+    asset3DKey: TERRITORY_ASSET_KEYS.barrier,
   },
   mainParking: {
     x: -30,
@@ -109,6 +112,7 @@ const TERRITORY_LAYOUT = {
     label: "Parking principal",
     lod: "landmark" as const,
     summary: "Aparcamiento principal junto al acceso.",
+    asset3DKey: TERRITORY_ASSET_KEYS.parking,
   },
   clubhouse: {
     x: 12,
@@ -153,6 +157,7 @@ const TERRITORY_LAYOUT = {
     label: "Lago norte",
     lod: "landmark" as const,
     summary: "Espejo de agua del territorio.",
+    asset3DKey: TERRITORY_ASSET_KEYS.lake,
   },
   lakeSouth: {
     x: 58,
@@ -185,7 +190,6 @@ const TERRITORY_LAYOUT = {
     label: "Viviendas",
     lod: "landmark" as const,
     summary: "Edificación residencial de Panorámica.",
-    asset3DKey: TERRITORY_ASSET_KEYS.housing,
   },
   residentialWest: {
     x: -22,
@@ -194,7 +198,6 @@ const TERRITORY_LAYOUT = {
     label: "Edificios oeste",
     lod: "detail" as const,
     summary: "Bloques residenciales al oeste del núcleo social.",
-    asset3DKey: TERRITORY_ASSET_KEYS.housing,
   },
   residentialEast: {
     x: 26,
@@ -203,7 +206,6 @@ const TERRITORY_LAYOUT = {
     label: "Edificios este",
     lod: "detail" as const,
     summary: "Bloques residenciales al este del club.",
-    asset3DKey: TERRITORY_ASSET_KEYS.housing,
   },
   poolVisible: {
     x: -4,

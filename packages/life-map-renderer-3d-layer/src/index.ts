@@ -107,3 +107,4 @@ export {
 } from "./maplibre-sync";
 
 export { createThreeLifeMap3DLayer } from "./three/create-three-3d-layer";
+export { shouldBindGltfToMarker, loadLifeMapGltfModel, clearLifeMapGltfCache } from "./three/gltf-asset";

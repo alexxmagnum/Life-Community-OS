@@ -81,11 +81,10 @@ import { createSpatialObjectsGroup } from "./spatial-markers";
 import { createFlatTerrainMesh } from "./terrain-mesh";
 import {
   resolveLifeMap3DAssetVisual,
-  isLifeMapGltfModelPath,
   type LifeMap3DAssetResolver,
 } from "../asset-visual";
 import { LIFE_MAP_3D_VEGETATION } from "../environment";
-import { loadLifeMapGltfModel } from "./gltf-asset";
+import { loadLifeMapGltfModel, shouldBindGltfToMarker } from "./gltf-asset";
 
 function resolveHostElement(host: LifeMap3DLayerHost): HTMLElement {
   if (host.element instanceof HTMLElement) return host.element;
@@ -480,7 +479,7 @@ export function createThreeLifeMap3DLayer(
           selected: selectedId === obj.id,
           handle: marker,
         });
-        if (isLifeMapGltfModelPath(resolved?.modelPath) && resolved?.modelPath) {
+        if (shouldBindGltfToMarker({ modelPath: resolved?.modelPath }) && resolved?.modelPath) {
           const modelPath = resolved.modelPath;
           void loadLifeMapGltfModel(modelPath).then((gltfRoot) => {
             if (!gltfRoot || !spatialGroup) return;

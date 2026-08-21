@@ -10,12 +10,14 @@
   },
   "scripts": {
     "generate": "node ./scripts/generate.mjs",
+    "spatial:glb": "node ./scripts/generate-spatial-glb.mjs",
     "validate": "node ./scripts/validate.mjs",
-    "test": "node --test ./scripts/test-registry.mjs",
+    "test": "node --test ./scripts/test-registry.mjs && tsx --test ./src/spatial-asset.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
 }
