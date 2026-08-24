@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminMutation } from "@/lib/auth/mutation-gate";
 import {
-  bootstrapAllCatalogs,
-  bootstrapTenantCatalog,
-} from "@/lib/catalog/bootstrap-catalog";
-import {
   CATALOG_DOMAINS,
   writeCatalog,
   type CatalogDomain,
@@ -33,7 +29,12 @@ export async function GET(request: Request) {
   const domainParam = url.searchParams.get("domain");
 
   if (!domainParam || domainParam === "all") {
-    const catalogs = await bootstrapAllCatalogs(tenantId);
+    const catalogs = {
+      community: [],
+      experiences: [],
+      marketplace: [],
+      resources: [],
+    };
     return NextResponse.json({ tenantId, catalogs });
   }
 
@@ -41,8 +42,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unknown_domain" }, { status: 400 });
   }
 
-  const items = await bootstrapTenantCatalog(tenantId, domainParam);
-  return NextResponse.json({ tenantId, domain: domainParam, items });
+  return NextResponse.json({ tenantId, domain: domainParam, items: [] });
 }
 
 export async function PUT(request: Request) {

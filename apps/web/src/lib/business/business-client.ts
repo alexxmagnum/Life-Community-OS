@@ -62,7 +62,6 @@ export async function createBusinessRequest(input: {
   geocodeProvider?: string;
   geocodeSourceRef?: string;
   geocodeDisplayName?: string;
-  ownerPersonId?: string;
 }): Promise<
   | { business: BusinessProfile; locationId: string }
   | { error: string }
@@ -92,7 +91,6 @@ export async function patchBusinessRequest(input: {
   contact?: string;
   hours?: string;
   imageUrl?: string;
-  ownerPersonId?: string;
 }): Promise<{ ok: true } | { error: string }> {
   const res = await fetch(
     `/api/businesses/${encodeURIComponent(input.businessId)}`,

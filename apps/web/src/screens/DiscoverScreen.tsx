@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
-  listGroups,
 } from "@life-community-os/tenant-life-panoramica";
-import { spotsLeft } from "@life-community-os/types";
+import { spotsLeft, type CommunityGroupRecord } from "@life-community-os/types";
 import {
   ActivityCard,
   CommunityLifeSection,
@@ -26,6 +25,7 @@ import {
 } from "@/lib/location";
 import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
+import { fetchCommunityFeed } from "@/lib/community/community-client";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
@@ -50,6 +50,7 @@ export function DiscoverScreen() {
 
   const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
   const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
+  const [persistedGroups, setPersistedGroups] = useState<CommunityGroupRecord[]>([]);
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
@@ -62,6 +63,10 @@ export function DiscoverScreen() {
     }
     let cancelled = false;
     void (async () => {
+      const community = await fetchCommunityFeed(configuration.tenantId);
+      if (!cancelled) {
+        setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
+      }
       if (isFeatureEnabled("recommendations")) {
         const rows = await fetchHelpRequests({
           tenantId: configuration.tenantId,
@@ -167,14 +172,14 @@ export function DiscoverScreen() {
     if (!isFeatureEnabled("groups")) return [];
     if (homeMode !== "premium") return [];
     const q = query.trim().toLowerCase();
-    return listGroups().filter((g) => {
+    return persistedGroups.filter((g) => {
       if (!q) return true;
       return (
         g.name.toLowerCase().includes(q) ||
         g.description.toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled, homeMode]);
+  }, [query, isFeatureEnabled, homeMode, persistedGroups]);
 
   const hasPlans = experiences.length > 0 || groups.length > 0;
   const hasAnything =
@@ -299,8 +304,8 @@ export function DiscoverScreen() {
                       <GroupCard
                         key={g.id}
                         name={g.name}
-                        members={g.memberCount}
-                        imageUrl={g.imageUrl}
+                        members={0}
+                        imageUrl={g.imageUrl ?? ""}
                         onOpen={() =>
                           router.push(`/community/groups/${g.id}/conversation`)
                         }

@@ -129,7 +129,6 @@ export async function patchReservationRequest(input: {
   date?: string;
   start?: string;
   end?: string;
-  createdBy?: string;
 }): Promise<{ reservation?: Reservation } | { error: string }> {
   const res = await fetch(
     `/api/reservations/${encodeURIComponent(input.reservationId)}`,

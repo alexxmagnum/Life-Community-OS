@@ -46,7 +46,7 @@ type CommunityInteractionContextValue = {
     body: string;
     type?: Extract<CommunityContentType, "member_update" | "discussion">;
     areaLabel?: string;
-  }) => CommunityContent | null;
+  }) => Promise<CommunityContent | null>;
 };
 
 const CommunityInteractionContext =
@@ -192,14 +192,17 @@ export function CommunityInteractionProvider({
         body: trimmed,
         createdAt: new Date().toISOString(),
       };
-      setLocalComments((prev) => ({
-        ...prev,
-        [contentId]: [...(prev[contentId] ?? []), comment],
-      }));
+      void comment;
       void addCommunityCommentRequest({
         tenantId: tenantSlug,
         postId: contentId,
         body: trimmed,
+      }).then(() => {
+        void fetchCommunityFeed(tenantSlug).then((data) => {
+          setPosts((prev) => (data.posts as CommunityPost[]) ?? prev);
+          setComments((data.comments as CommunityCommentRecord[]) ?? []);
+          setReactions((data.reactions as CommunityReaction[]) ?? []);
+        });
       });
     },
     [displayName, personId, tenantSlug],
@@ -220,7 +223,7 @@ export function CommunityInteractionProvider({
   }, []);
 
   const createPublication = useCallback(
-    (input: {
+    async (input: {
       title: string;
       body: string;
       type?: Extract<CommunityContentType, "member_update" | "discussion">;
@@ -229,35 +232,16 @@ export function CommunityInteractionProvider({
       const title = input.title.trim();
       const body = input.body.trim();
       if (!title || !body || !personId) return null;
-      const now = new Date().toISOString();
-      const optimistic: CommunityPost = {
-        id: `local-post-${Date.now()}`,
-        tenantId: tenantSlug,
-        authorPersonId: personId,
-        authorDisplayName: displayName,
-        kind: input.type ?? "member_update",
-        title,
-        body,
-        status: "published",
-        createdBy: personId,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setPosts((prev) => [optimistic, ...prev]);
-      void createCommunityPostRequest({
+      const result = await createCommunityPostRequest({
         tenantId: tenantSlug,
         title,
         body,
         kind: input.type,
-      }).then((result) => {
-        if ("post" in result && result.post) {
-          const created = result.post as CommunityPost;
-          setPosts((prev) =>
-            prev.map((item) => (item.id === optimistic.id ? created : item)),
-          );
-        }
       });
-      return postToHubContent(optimistic, [], []);
+      if (!("post" in result) || !result.post) return null;
+      const created = result.post as CommunityPost;
+      setPosts((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      return postToHubContent(created, [], []);
     },
     [displayName, personId, tenantSlug],
   );

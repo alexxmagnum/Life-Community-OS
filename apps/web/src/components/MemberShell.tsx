@@ -509,8 +509,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
       <CreatePostSheet
         open={postOpen}
         onClose={() => setPostOpen(false)}
-        onSubmit={(input) => {
-          const created = createPublication(input);
+        onSubmit={async (input) => {
+          const created = await createPublication(input);
           if (created) {
             showToast("Publicado. Ya puedes verlo en Comunidad.");
             router.push(`/community/content/${created.id}`);

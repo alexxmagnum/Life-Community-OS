@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -19,9 +18,6 @@ import {
   type ExperienceViewerState,
 } from "@life-community-os/types";
 import { useReservations } from "@/providers/ReservationProvider";
-import { useTenant } from "@/providers/TenantProvider";
-
-const SAVED_STORAGE_KEY = "lcos:experience-saves";
 
 export type ParticipationRecord = {
   experienceId: string;
@@ -51,48 +47,14 @@ type ExperienceParticipationContextValue = {
 const ExperienceParticipationContext =
   createContext<ExperienceParticipationContextValue | null>(null);
 
-function readSavedIds(tenantSlug: string): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw =
-      window.localStorage.getItem(`${SAVED_STORAGE_KEY}:${tenantSlug}`) ??
-      window.localStorage.getItem(SAVED_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as string[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeSavedIds(ids: string[], tenantSlug: string) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(
-    `${SAVED_STORAGE_KEY}:${tenantSlug}`,
-    JSON.stringify(ids),
-  );
-}
-
 export function ExperienceParticipationProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const { tenantSlug } = useTenant();
   const { experiences, reservations, reserve, cancel, getExperience } =
     useReservations();
   const [savedIds, setSavedIds] = useState<string[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setSavedIds(readSavedIds(tenantSlug));
-    setHydrated(true);
-  }, [tenantSlug]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    writeSavedIds(savedIds, tenantSlug);
-  }, [savedIds, hydrated, tenantSlug]);
 
   const records = useMemo(() => {
     const map: ParticipationMap = {};

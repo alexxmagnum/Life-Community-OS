@@ -68,7 +68,6 @@ export async function createHousingPropertyRequest(input: {
   geocodeProvider?: string;
   geocodeSourceRef?: string;
   geocodeDisplayName?: string;
-  ownerPersonId?: string;
 }): Promise<{ property: PropertyPublicView } | { error: string }> {
   const res = await fetch("/api/housing", {
     method: "POST",
@@ -89,8 +88,6 @@ export async function patchHousingPropertyRequest(input: {
   description?: string;
   status?: string;
   availability?: string;
-  ownerPersonId?: string;
-  createdBy?: string;
 }): Promise<{ ok: true } | { error: string }> {
   const res = await fetch(
     `/api/housing/${encodeURIComponent(input.propertyId)}`,

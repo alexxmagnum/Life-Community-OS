@@ -54,7 +54,6 @@ export async function createMarketplaceListingRequest(input: {
   category?: string;
   images?: string[];
   price?: number | null;
-  ownerPersonId?: string;
 }): Promise<{ listing: MarketplaceListing } | { error: string }> {
   const res = await fetch("/api/marketplace", {
     method: "POST",
@@ -74,7 +73,6 @@ export async function patchMarketplaceListingRequest(input: {
   title?: string;
   description?: string;
   price?: number | null;
-  ownerPersonId?: string;
 }): Promise<{ ok: true } | { error: string }> {
   const res = await fetch(
     `/api/marketplace/${encodeURIComponent(input.listingId)}`,
@@ -144,8 +142,6 @@ export async function createHelpRequestRequest(input: {
   title: string;
   description: string;
   category?: string;
-  createdBy?: string;
-  ownerPersonId?: string;
 }): Promise<{ request: HelpRequest } | { error: string }> {
   const res = await fetch("/api/help", {
     method: "POST",
@@ -165,7 +161,6 @@ export async function patchHelpRequestRequest(input: {
   title?: string;
   description?: string;
   status?: string;
-  ownerPersonId?: string;
 }): Promise<{ ok: true } | { error: string }> {
   const res = await fetch(`/api/help/${encodeURIComponent(input.helpId)}`, {
     method: "PATCH",

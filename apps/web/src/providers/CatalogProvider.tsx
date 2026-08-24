@@ -1,9 +1,6 @@
 "use client";
 
-/**
- * Tenant catalog cache — hydrates community/experiences/marketplace/resources
- * from /api/catalog (pack seed → durable store).
- */
+/** Runtime domain data is loaded by each persisted domain API. */
 
 import {
   createContext,
@@ -14,8 +11,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useTenant } from "@/providers/TenantProvider";
-
 type Catalogs = {
   community: unknown[];
   experiences: unknown[];
@@ -39,33 +34,13 @@ const empty: Catalogs = {
 const CatalogContext = createContext<CatalogContextValue | null>(null);
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const { tenantSlug } = useTenant();
   const [catalogs, setCatalogs] = useState<Catalogs>(empty);
   const [ready, setReady] = useState(false);
 
   const refresh = useCallback(async () => {
-    const res = await fetch(
-      `/api/catalog?tenantId=${encodeURIComponent(tenantSlug)}&domain=all`,
-      {
-        cache: "no-store",
-        headers: { "x-tenant-slug": tenantSlug },
-      },
-    );
-    if (!res.ok) {
-      setReady(true);
-      return;
-    }
-    const data = (await res.json()) as { catalogs?: Catalogs };
-    if (data.catalogs) {
-      setCatalogs({
-        community: data.catalogs.community ?? [],
-        experiences: data.catalogs.experiences ?? [],
-        marketplace: data.catalogs.marketplace ?? [],
-        resources: data.catalogs.resources ?? [],
-      });
-    }
+    setCatalogs(empty);
     setReady(true);
-  }, [tenantSlug]);
+  }, []);
 
   useEffect(() => {
     setReady(false);
