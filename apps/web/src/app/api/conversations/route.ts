@@ -91,7 +91,6 @@ export async function POST(request: Request) {
     contextId?: string;
     title?: string;
     participantPersonIds?: string[];
-    createdBy?: string;
   };
   try {
     body = (await request.json()) as typeof body;

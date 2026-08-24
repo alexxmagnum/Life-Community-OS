@@ -25,9 +25,6 @@ export async function POST(
     content?: string;
     body?: string;
     replyToMessageId?: string;
-    senderPersonId?: string;
-    authorPersonId?: string;
-    createdBy?: string;
     attachments?: Array<{
       kind?: string;
       fileName?: string;
@@ -66,7 +63,6 @@ export async function POST(
       content,
       replyToMessageId: body.replyToMessageId,
       attachments: body.attachments,
-      senderPersonId: body.senderPersonId ?? body.authorPersonId ?? body.createdBy,
       scope,
     });
     return NextResponse.json({ message }, { status: 201 });

@@ -50,7 +50,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoPersonId,
+    personId,
     configuration,
   } = useTenant();
   const { allLocations } = useTenantLocations(configuration.tenantId);
@@ -86,9 +86,9 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
         hub.content.entityKinds,
         query,
       ).map(locationToLocalEntity),
-      demoPersonId,
+      personId ?? "",
     );
-  }, [hub, canLocal, query, demoPersonId, allLocations]);
+  }, [hub, canLocal, query, personId, allLocations]);
 
   useEffect(() => {
     if (!hub) return;

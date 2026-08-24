@@ -102,7 +102,6 @@ export async function POST(request: Request) {
   const resource = await createResourceServer({
     tenantId: bound.tenantId,
     createdBy: gated.actor.personId,
-    createdByFromClient: body.createdBy ?? body.ownerId ?? null,
     name,
     description,
     category,

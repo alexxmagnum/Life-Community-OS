@@ -25,7 +25,6 @@ export async function POST(request: Request) {
   let type: string | undefined;
   let tenantId: string | undefined;
   let storageKeyFromClient: string | null = null;
-  let ownerPersonIdFromClient: string | null = null;
   let entityType: string | undefined;
   let entityId: string | undefined;
   let purpose: string | undefined;
@@ -42,7 +41,6 @@ export async function POST(request: Request) {
     type = String(form.get("type") ?? "") || undefined;
     tenantId = String(form.get("tenantId") ?? "") || undefined;
     storageKeyFromClient = String(form.get("storageKey") ?? "") || null;
-    ownerPersonIdFromClient = String(form.get("ownerPersonId") ?? "") || null;
     entityType = String(form.get("entityType") ?? "") || undefined;
     entityId = String(form.get("entityId") ?? "") || undefined;
     purpose = String(form.get("purpose") ?? "") || undefined;
@@ -54,8 +52,6 @@ export async function POST(request: Request) {
       contentBase64?: string;
       tenantId?: string;
       storageKey?: string;
-      ownerPersonId?: string;
-      createdBy?: string;
       entityType?: string;
       entityId?: string;
       purpose?: string;
@@ -74,8 +70,6 @@ export async function POST(request: Request) {
     type = body.type;
     tenantId = body.tenantId;
     storageKeyFromClient = body.storageKey ?? null;
-    ownerPersonIdFromClient =
-      body.ownerPersonId ?? body.createdBy ?? null;
     entityType = body.entityType;
     entityId = body.entityId;
     purpose = body.purpose;
@@ -101,7 +95,6 @@ export async function POST(request: Request) {
       bytes,
       type,
       storageKeyFromClient,
-      ownerPersonIdFromClient,
       entityType,
       entityId,
       purpose,

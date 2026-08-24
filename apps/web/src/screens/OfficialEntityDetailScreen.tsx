@@ -52,7 +52,7 @@ function contentTypeLabel(
 export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
   const {
-    demoPersonId,
+    personId,
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
@@ -66,10 +66,10 @@ export function OfficialEntityDetailScreen({ slug }: { slug: string }) {
       entity
         ? filterAccessibleChannels(
             listChannelsForOfficialEntity(entity.id),
-            demoPersonId,
+            personId ?? "",
           )
         : [],
-    [entity, demoPersonId],
+    [entity, personId],
   );
   const communications = useMemo(
     () => (entity ? listContentForOfficialEntity(entity.id) : []),

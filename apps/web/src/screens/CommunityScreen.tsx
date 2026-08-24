@@ -80,8 +80,7 @@ export function CommunityHubScreen() {
     isFeatureEnabled,
     isModuleEnabled,
     hasCapability,
-    demoPersonId,
-    demoMember,
+    personId,
     theme,
     configuration,
     tenantSlug,
@@ -180,8 +179,8 @@ export function CommunityHubScreen() {
     };
   }, [tenantSlug]);
   const accessibleChannels = useMemo(
-    () => (premiumHome ? listAccessibleChannels(demoPersonId) : []),
-    [demoPersonId, premiumHome],
+    () => (premiumHome && personId ? listAccessibleChannels(personId) : []),
+    [personId, premiumHome],
   );
   const espacios = useMemo(
     () => (premiumHome ? listEspaciosComunitarios() : []),

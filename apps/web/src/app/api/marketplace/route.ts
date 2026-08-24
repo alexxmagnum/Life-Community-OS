@@ -66,8 +66,6 @@ export async function POST(request: Request) {
     images?: string[];
     price?: number | null;
     locationId?: string;
-    ownerPersonId?: string;
-    ownerId?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -95,7 +93,6 @@ export async function POST(request: Request) {
   const listing = await createMarketplaceListingServer({
     tenantId: bound.tenantId,
     ownerPersonId: gated.actor.personId,
-    ownerPersonIdFromClient: body.ownerPersonId ?? body.ownerId ?? null,
     type: type as MarketplaceListingType,
     category: body.category,
     title,

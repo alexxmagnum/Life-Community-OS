@@ -45,7 +45,7 @@ function statusLabelFor(
  */
 export function ActivityDetailScreen({ slug }: { slug: string }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoPersonId } = useTenant();
+  const { isFeatureEnabled, hasCapability, personId } = useTenant();
   const { getViewerState } = useExperienceParticipation();
   const { experiences: domainExperiences, resources: domainResources } =
     useReservations();
@@ -57,10 +57,10 @@ export function ActivityDetailScreen({ slug }: { slug: string }) {
       hub
         ? filterAccessibleChannels(
             listChannelsForActivity(hub.slug),
-            demoPersonId,
+            personId ?? "",
           )
         : [],
-    [hub, demoPersonId],
+    [hub, personId],
   );
   const groups = useMemo(
     () => (hub ? listGroupsForActivity(hub.slug) : []),

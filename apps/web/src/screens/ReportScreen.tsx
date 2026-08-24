@@ -9,7 +9,6 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingState } from "@life-community-os/ui";
-import { useTenant } from "@/providers/TenantProvider";
 
 const REPORT_STORAGE_KEY = "lcos:last-incident-report";
 const REPORTS_STORAGE_KEY = "lcos:incident-reports";
@@ -233,13 +232,12 @@ function MyReportsView({
 function ReportScreenBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { demoMember } = useTenant();
   const viewMine =
     searchParams.get("view") === "mine" ||
     searchParams.get("view") === "last";
 
   const [where, setWhere] = useState(
-    demoMember.areaLabel || "Zona norte",
+    "Zona norte",
   );
   const [description, setDescription] = useState("");
   const [photoName, setPhotoName] = useState<string | null>(null);
@@ -319,7 +317,7 @@ function ReportScreenBody() {
 
   const zones = Array.from(
     new Set(
-      [demoMember.areaLabel, "Zona norte", "Centro", "Los pinos"].filter(
+      ["Zona norte", "Centro", "Los pinos"].filter(
         Boolean,
       ) as string[],
     ),

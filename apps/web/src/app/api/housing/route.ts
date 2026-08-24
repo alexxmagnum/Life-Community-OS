@@ -84,9 +84,6 @@ export async function POST(request: Request) {
     geocodeProvider?: string;
     geocodeSourceRef?: string;
     geocodeDisplayName?: string;
-    ownerPersonId?: string;
-    ownerId?: string;
-    createdBy?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -122,8 +119,6 @@ export async function POST(request: Request) {
   const created = await createRegisteredProperty({
     tenantId: bound.tenantId,
     createdBy: gated.actor.personId,
-    ownerPersonIdFromClient:
-      body.ownerPersonId ?? body.ownerId ?? body.createdBy ?? null,
     title,
     description,
     propertyType: propertyType as HousingPropertyType,

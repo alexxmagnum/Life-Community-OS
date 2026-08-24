@@ -91,7 +91,6 @@ export async function POST(request: Request) {
     const reservation = await createReservationServer({
       tenantId: bound.tenantId,
       createdBy: gated.actor.personId,
-      createdByFromClient: body.createdBy ?? body.ownerId ?? null,
       resourceId,
       date,
       start,

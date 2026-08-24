@@ -90,9 +90,6 @@ export async function POST(request: Request) {
     geocodeSourceRef?: string;
     geocodeDisplayName?: string;
     areaLabel?: string;
-    ownerPersonId?: string;
-    ownerId?: string;
-    owner_id?: string;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -126,8 +123,6 @@ export async function POST(request: Request) {
     const created = await createRegisteredBusiness({
       tenantId: bound.tenantId,
       ownerPersonId: gated.actor.personId,
-      ownerPersonIdFromClient:
-        body.ownerPersonId ?? body.ownerId ?? body.owner_id ?? null,
       name,
       category,
       description: body.description,

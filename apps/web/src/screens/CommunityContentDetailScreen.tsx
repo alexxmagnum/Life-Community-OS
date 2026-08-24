@@ -33,9 +33,8 @@ export function CommunityContentDetailScreen({
   contentId: string;
 }) {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, demoMember, configuration, tenantSlug, homeMode } =
+  const { isFeatureEnabled, hasCapability, configuration, tenantSlug, homeMode, personId } =
     useTenant();
-  const demoPersonId = demoMember.personId;
   const {
     getContent,
     getMyReaction,
@@ -264,7 +263,7 @@ export function CommunityContentDetailScreen({
               </span>
             ) : null}
           </h2>
-          {!content.isOfficial && content.author.id !== demoPersonId ? (
+          {!content.isOfficial && content.author.id !== personId ? (
             <button
               type="button"
               className="text-[13px] font-semibold text-[var(--color-action-primary)]"

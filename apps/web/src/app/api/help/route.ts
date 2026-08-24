@@ -97,8 +97,6 @@ export async function POST(request: Request) {
   const item = await createHelpRequestServer({
     tenantId: bound.tenantId,
     createdBy: gated.actor.personId,
-    createdByFromClient:
-      body.createdBy ?? body.ownerPersonId ?? body.ownerId ?? null,
     type: type as HelpRequestType,
     category: body.category,
     title,

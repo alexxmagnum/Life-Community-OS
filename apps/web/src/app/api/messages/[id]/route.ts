@@ -53,9 +53,6 @@ export async function PATCH(
       actor: gated.actor,
       content: body.content ?? body.body,
       deleted: body.deleted,
-      senderPersonId: body.senderPersonId,
-      authorPersonId: body.authorPersonId,
-      createdBy: body.createdBy,
       scope,
     });
     return NextResponse.json({ message });

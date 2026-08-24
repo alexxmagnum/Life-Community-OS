@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { isDemoIdentityEnabled } from "@life-community-os/auth";
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
 import type { TenantThemeMode } from "@life-community-os/design-tokens";
 import {
@@ -18,8 +17,6 @@ import {
   type TenantConfiguration,
 } from "@life-community-os/types";
 import {
-  getDemoMemberByPersonId,
-  listDemoMembers,
   type CapabilityKey,
   type DemoMemberProfile,
   type DemoRole,
@@ -82,6 +79,8 @@ const GUEST_VIEWER: DemoMemberProfile = {
   narrativeKey: "guest",
 };
 
+const EMPTY_DEMO_MEMBERS: DemoMemberProfile[] = [];
+
 function roleLabel(role: MembershipRole | null, brand: string): string {
   if (role === "administrator") return `Administrador · ${brand}`;
   if (role === "moderator") return `Moderador · ${brand}`;
@@ -115,7 +114,6 @@ export function TenantProvider({
   tenantSlug?: string;
 }) {
   const { currentUser } = useCurrentUser();
-  const demoEnabled = isDemoIdentityEnabled();
   const [tenantSlug, setTenantSlug] = useState(() =>
     resolveActiveTenantSlug(tenantSlugProp),
   );
@@ -123,8 +121,6 @@ export function TenantProvider({
   const theme = pack.theme;
   const features = pack.features;
   const configuration = useMemo(() => pack.resolveConfiguration(), [pack]);
-  const [demoRole, setDemoRole] = useState<DemoRole>("member");
-  const [demoPersonId, setDemoPersonIdState] = useState<string>("");
 
   const themeMode: TenantThemeMode = theme.defaultMode ?? "day";
 
@@ -151,35 +147,25 @@ export function TenantProvider({
 
   const roleSource: RoleSource = currentUser.hasMembership
     ? "membership"
-    : demoEnabled
-      ? "demo"
-      : "guest";
+    : "guest";
 
   const role: DemoRole =
     currentUser.hasMembership && currentUser.role
       ? currentUser.role
-      : demoRole;
+      : "member";
 
   const setRole = useCallback(
     (next: DemoRole) => {
-      if (roleSource !== "demo") return;
-      if (!demoEnabled) return;
-      setDemoRole(next);
+      void next;
     },
-    [demoEnabled, roleSource],
+    [],
   );
 
   const setDemoPersonId = useCallback(
     (personId: string) => {
-      if (!demoEnabled || currentUser.hasMembership) return;
-      setDemoPersonIdState(personId);
+      void personId;
     },
-    [currentUser.hasMembership, demoEnabled],
-  );
-
-  const caps = useMemo(
-    () => pack.capabilitiesForRole(role),
-    [pack, role],
+    [],
   );
 
   const hasCapability = useCallback(
@@ -187,9 +173,9 @@ export function TenantProvider({
       if (currentUser.hasMembership && currentUser.permissions.length > 0) {
         return currentUser.permissions.includes(key);
       }
-      return caps.has(key as CapabilityKey);
+      return false;
     },
-    [caps, currentUser.hasMembership, currentUser.permissions],
+    [currentUser.hasMembership, currentUser.permissions],
   );
 
   const isFeatureEnabled = useCallback(
@@ -202,10 +188,7 @@ export function TenantProvider({
     [configuration],
   );
 
-  const demoMembers = useMemo(
-    () => (demoEnabled ? listDemoMembers() : []),
-    [demoEnabled],
-  );
+  const demoMembers = EMPTY_DEMO_MEMBERS;
 
   const demoMember = useMemo((): DemoMemberProfile => {
     if (currentUser.hasMembership && currentUser.personId) {
@@ -227,10 +210,6 @@ export function TenantProvider({
         narrativeKey: currentUser.role ?? "member",
       };
     }
-    if (demoEnabled && demoPersonId) {
-      const demo = getDemoMemberByPersonId(demoPersonId);
-      if (demo) return demo;
-    }
     return {
       ...GUEST_VIEWER,
       areaLabel: configuration.branding.name ?? "",
@@ -243,8 +222,6 @@ export function TenantProvider({
     currentUser.hasMembership,
     currentUser.personId,
     currentUser.role,
-    demoEnabled,
-    demoPersonId,
     theme.identity?.defaultAreaName,
   ]);
 

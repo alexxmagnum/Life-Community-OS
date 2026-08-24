@@ -26,6 +26,7 @@ import {
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
@@ -65,26 +66,31 @@ export function HomeScreen() {
     theme,
     isFeatureEnabled,
     hasCapability,
-    demoMember,
     tenantSlug,
     configuration,
     homeMode,
   } = useTenant();
+  const { currentUser } = useCurrentUser();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const { experiences, ready: experiencesReady } = useReservations();
   const premiumHome = homeMode === "premium";
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
-    () => `Hola, ${demoMember.displayName}`,
+    () => `Hola, ${currentUser.displayName || currentUser.email?.split("@")[0] || "vecino"}`,
   );
   const todaySectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const current = madridHour();
     setHour(current);
-    setGreeting(belongingGreeting(demoMember.displayName, current));
-  }, [demoMember.displayName]);
+    setGreeting(
+      belongingGreeting(
+        currentUser.displayName || currentUser.email?.split("@")[0] || "vecino",
+        current,
+      ),
+    );
+  }, [currentUser.displayName, currentUser.email]);
 
   const territoryName = theme.identity?.territoryName ?? theme.logoText;
   const placeName = theme.shortName || territoryName;

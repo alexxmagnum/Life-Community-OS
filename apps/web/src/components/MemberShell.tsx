@@ -174,7 +174,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
     isModuleEnabled,
     isProductCapabilityEnabled,
     configuration,
-    demoMember,
   } = useTenant();
   const { currentUser, sessionReady } = useCurrentUser();
   const { unreadCount } = useNotifications();
@@ -471,8 +470,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
             notificationCount={unreadCount}
             onNotifications={() => router.push("/notifications")}
             notificationsLabel="Notificaciones"
-            profileImageUrl={demoMember.avatarUrl}
-            profileName={demoMember.displayName}
+            profileImageUrl={undefined}
+            profileName={
+              currentUser.displayName || currentUser.email?.split("@")[0] || "Mi perfil"
+            }
             profileLabel="Mi perfil"
             onProfileClick={() => router.push("/me")}
           />

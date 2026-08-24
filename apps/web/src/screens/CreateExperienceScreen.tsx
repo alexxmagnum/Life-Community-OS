@@ -14,6 +14,7 @@ import {
 } from "@life-community-os/ui";
 import { createResourceRequest } from "@/lib/reservations/reservations-client";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
@@ -35,8 +36,9 @@ function combineLocalDateTime(date: string, time: string): string {
 export function CreateExperienceScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability, tenantSlug, demoMember } =
+  const { theme, isFeatureEnabled, hasCapability, tenantSlug } =
     useTenant();
+  const { currentUser } = useCurrentUser();
   const { join } = useExperienceParticipation();
   const { resources, refresh } = useReservations();
 
@@ -138,13 +140,14 @@ export function CreateExperienceScreen() {
         description: trimmedDescription,
         category: "activity",
         location: trimmedLocation,
-        areaLabel: demoMember.areaLabel || theme.identity?.defaultAreaName,
+        areaLabel: theme.identity?.defaultAreaName,
         images: hub?.imageUrl ? [hub.imageUrl] : [],
         capacity: cap,
         linkedResourceId: resourceId || undefined,
         scheduleStartsAt: startsAt,
         scheduleEndsAt: endsAt,
-        organizerName: demoMember.displayName,
+        organizerName:
+          currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino",
       });
       if ("error" in result) {
         setError(
@@ -335,7 +338,7 @@ export function CreateExperienceScreen() {
           Organizador
         </p>
         <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
-          Organizado por {demoMember.displayName}
+          Organizado por {currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino"}
         </p>
         <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
           Como vecino de la comunidad — no hace falta ser administrador.

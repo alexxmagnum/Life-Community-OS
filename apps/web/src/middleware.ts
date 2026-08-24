@@ -92,7 +92,7 @@ export async function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-slug", tenantSlug);
 
-  const authEnforced = isAuthEnforced() && isAuthConfigured();
+  const authEnforced = isAuthEnforced();
   const publicPath =
     isAlwaysPublicPath(pathname) ||
     (!authEnforced && isPilotPublicApi(pathname));

@@ -81,15 +81,15 @@ export function ServicesHubScreen() {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
-    demoPersonId,
+    personId,
   } = useTenant();
 
   const territoryAccess = useMemo(
     () =>
-      getTerritoryAccessContext(demoPersonId, {
+      getTerritoryAccessContext(personId ?? "", {
         canReservePermission: hasCapability(CAPABILITIES.resourceReserve),
       }),
-    [demoPersonId, hasCapability],
+    [personId, hasCapability],
   );
 
   const entries = useMemo((): ServiceEntry[] => {

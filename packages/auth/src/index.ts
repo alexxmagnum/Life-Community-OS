@@ -51,15 +51,12 @@ export function isAuthConfigured(env: EnvLike = readEnv()): boolean {
   );
 }
 
-/**
- * When true, member routes require a real session.
- * Default false until Supabase Auth is provisioned in the environment.
- */
+/** Member routes require a real Supabase session by default. */
 export function isAuthEnforced(env: EnvLike = readEnv()): boolean {
   if (env.LCOS_AUTH_REQUIRED === "1" || env.LCOS_AUTH_REQUIRED === "true") {
     return true;
   }
-  return false;
+  return env.NODE_ENV === "production";
 }
 
 export type {

@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { isDemoIdentityEnabled } from "@life-community-os/auth";
 import {
   getTerritoryAccessContext,
 } from "@life-community-os/tenant-life-panoramica";
-import type { DemoRole } from "@life-community-os/tenant-life-panoramica";
 import {
   housingAvailabilityLabel,
   housingPropertyTypeLabel,
@@ -29,13 +27,6 @@ import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
-const roles: { id: DemoRole; label: string }[] = [
-  { id: "member", label: "Miembro" },
-  { id: "group_manager", label: "Responsable de grupo" },
-  { id: "moderator", label: "Moderador" },
-  { id: "administrator", label: "Administrador" },
-];
-
 /**
  * Mi perfil — identity, preferences, personal context.
  * Property info only where useful for belonging — never real-estate catalog.
@@ -47,19 +38,11 @@ export function ProfileScreen() {
     theme,
     hasCapability,
     isFeatureEnabled,
-    role,
-    setRole,
-    roleSource,
-    demoMember,
-    demoMembers,
-    demoPersonId,
-    setDemoPersonId,
     personId,
     configuration,
   } = useTenant();
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
-  const demoIdentity = isDemoIdentityEnabled();
   const [homes, setHomes] = useState<PropertyPublicView[]>([]);
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
@@ -88,8 +71,8 @@ export function ProfileScreen() {
   }, [personId, configuration.tenantId]);
 
   const territoryAccess = useMemo(
-    () => getTerritoryAccessContext(demoPersonId),
-    [demoPersonId],
+    () => getTerritoryAccessContext(personId ?? ""),
+    [personId],
   );
 
   const placeName =
@@ -109,20 +92,6 @@ export function ProfileScreen() {
     router.refresh();
   };
 
-  const onLocalJoin = async () => {
-    const email = `vecino.${Date.now().toString(36)}@life.local`;
-    const res = await fetch("/api/auth/local-join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        displayName: demoMember.displayName || email.split("@")[0],
-      }),
-    });
-    if (!res.ok) return;
-    await refreshSession();
-    router.refresh();
-  };
   return (
     <MobileScreen dense>
       <ScreenHeader
@@ -131,18 +100,17 @@ export function ProfileScreen() {
       />
 
       <ProfileCard
-        name={demoMember.fullName}
-        membershipLabel={demoMember.membershipLabel}
+        name={currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino"}
+        membershipLabel={currentUser.role || "Sin membresía"}
         areaLabel={
           homes[0]?.areaLabel ||
-          demoMember.areaLabel ||
           theme.identity?.defaultAreaName ||
           placeName
         }
-        interests={demoMember.interests}
+        interests={[]}
         avatarUrl={
           uploadedAvatar ||
-          preferEntityMediaUrl(avatarMediaUrl, demoMember.avatarUrl)
+          preferEntityMediaUrl(avatarMediaUrl, undefined)
         }
       />
 
@@ -162,24 +130,11 @@ export function ProfileScreen() {
           Mi identidad
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          {demoMember.fullName} · Español
+          {currentUser.displayName || currentUser.email?.split("@")[0] || "Invitado"} · Español
         </p>
-        {demoMember.interests.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {demoMember.interests.map((interest) => (
-              <span
-                key={interest}
-                className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1.5 text-[13px] font-semibold text-[var(--color-action-primary)]"
-              >
-                {interest}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Aún no has marcado intereses.
-          </p>
-        )}
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          Aún no has marcado intereses.
+        </p>
       </section>
 
       <section className="space-y-2">
@@ -324,7 +279,7 @@ export function ProfileScreen() {
         ) : null}
       </section>
 
-      {hasCapability(CAPABILITIES.manageEnter) || role === "administrator" ? (
+      {hasCapability(CAPABILITIES.manageEnter) ? (
         <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">
           Tienes permisos de administración.{" "}
           <button
@@ -389,74 +344,12 @@ export function ProfileScreen() {
                     Crear cuenta
                   </button>
                 </>
-              ) : (
-                <button
-                  type="button"
-                  className="min-h-[40px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
-                  onClick={() => void onLocalJoin()}
-                >
-                  Unirme a la comunidad
-                </button>
-              )}
+              ) : null}
             </div>
           </>
         )}
       </section>
 
-      {demoIdentity && roleSource !== "membership"
-        ? (
-        <>
-          <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
-            <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              Probar como…
-            </p>
-            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-              Solo con demo de roles activada. Cambia de persona o permisos.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {demoMembers.map((m) => (
-                <button
-                  key={m.personId}
-                  type="button"
-                  onClick={() => setDemoPersonId(m.personId)}
-                  className={
-                    demoPersonId === m.personId
-                      ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                      : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-                  }
-                >
-                  {m.displayName}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-[14px] border border-dashed border-[var(--color-border-strong)] p-3.5">
-            <p className="text-[13px] font-semibold text-[var(--color-text-secondary)]">
-              Rol de prueba
-            </p>
-            <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
-              Simula permisos de la comunidad.
-            </p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {roles.map((r) => (
-                <button
-                  key={r.id}
-                  type="button"
-                  onClick={() => setRole(r.id)}
-                  className={
-                    role === r.id
-                      ? "min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                      : "min-h-[36px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-                  }
-                >
-                  {r.label}
-                </button>
-              ))}
-            </div>
-          </section>
-        </>
-      ) : null}
     </MobileScreen>
   );
 }
