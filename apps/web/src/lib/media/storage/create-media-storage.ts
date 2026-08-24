@@ -1,4 +1,4 @@
-import { isDatabaseConfigured } from "@/lib/data/data-plane";
+import { isDatabaseConfigured, isProductionDataPlane } from "@/lib/data/data-plane";
 import { createLocalMediaStorage } from "./local-media-storage";
 import { createS3MediaStorage } from "./s3-media-storage";
 import { createSupabaseMediaStorage } from "./supabase-media-storage";
@@ -13,7 +13,7 @@ export function createMediaStorage(): MediaStorageProvider {
     cached = createS3MediaStorage();
     return cached;
   }
-  if (mode === "local" || process.env.LCOS_MEDIA_FIXTURE === "1") {
+  if (!isProductionDataPlane() && (mode === "local" || process.env.LCOS_MEDIA_FIXTURE === "1")) {
     cached = createLocalMediaStorage();
     return cached;
   }
@@ -24,7 +24,10 @@ export function createMediaStorage(): MediaStorageProvider {
           "@/lib/data/database-access"
         );
         const client = await createServiceDatabaseClientSafe();
-        if (!client) return createLocalMediaStorage().upload(input);
+        if (!client) {
+          if (isProductionDataPlane()) throw new Error("media_storage_unavailable");
+          return createLocalMediaStorage().upload(input);
+        }
         return createSupabaseMediaStorage(client).upload(input);
       },
       async delete(storageKey) {
@@ -32,7 +35,10 @@ export function createMediaStorage(): MediaStorageProvider {
           "@/lib/data/database-access"
         );
         const client = await createServiceDatabaseClientSafe();
-        if (!client) return createLocalMediaStorage().delete(storageKey);
+        if (!client) {
+          if (isProductionDataPlane()) throw new Error("media_storage_unavailable");
+          return createLocalMediaStorage().delete(storageKey);
+        }
         return createSupabaseMediaStorage(client).delete(storageKey);
       },
       async getSignedUrl(storageKey, expiresInSeconds) {
@@ -41,6 +47,7 @@ export function createMediaStorage(): MediaStorageProvider {
         );
         const client = await createServiceDatabaseClientSafe();
         if (!client) {
+          if (isProductionDataPlane()) throw new Error("media_storage_unavailable");
           return createLocalMediaStorage().getSignedUrl(storageKey, expiresInSeconds);
         }
         return createSupabaseMediaStorage(client).getSignedUrl(
@@ -52,8 +59,21 @@ export function createMediaStorage(): MediaStorageProvider {
         return storageKey.startsWith(`${tenantId}/`) && !storageKey.includes("..");
       },
       async read(storageKey) {
+        if (isProductionDataPlane()) throw new Error("media_storage_unavailable");
         return createLocalMediaStorage().read!(storageKey);
       },
+    };
+    return cached;
+  }
+  if (isProductionDataPlane()) {
+    cached = {
+      async upload() { throw new Error("media_storage_unavailable"); },
+      async delete() { throw new Error("media_storage_unavailable"); },
+      async getSignedUrl() { throw new Error("media_storage_unavailable"); },
+      validateAccess(storageKey, tenantId) {
+        return storageKey.startsWith(`${tenantId}/`) && !storageKey.includes("..");
+      },
+      async read() { throw new Error("media_storage_unavailable"); },
     };
     return cached;
   }

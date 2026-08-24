@@ -6,10 +6,6 @@ import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
 export const runtime = "nodejs";
 
-async function bytesFromBase64(contentBase64: string): Promise<Uint8Array> {
-  return Uint8Array.from(Buffer.from(contentBase64, "base64"));
-}
-
 export async function POST(request: Request) {
   const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
   const gated = await requireMutationActor(request);
@@ -45,34 +41,7 @@ export async function POST(request: Request) {
     entityId = String(form.get("entityId") ?? "") || undefined;
     purpose = String(form.get("purpose") ?? "") || undefined;
   } else {
-    let body: {
-      filename?: string;
-      mimeType?: string;
-      type?: string;
-      contentBase64?: string;
-      tenantId?: string;
-      storageKey?: string;
-      entityType?: string;
-      entityId?: string;
-      purpose?: string;
-    };
-    try {
-      body = (await request.json()) as typeof body;
-    } catch {
-      return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-    }
-    if (!body.contentBase64) {
-      return NextResponse.json({ error: "invalid_input" }, { status: 400 });
-    }
-    filename = body.filename ?? "file";
-    mimeType = body.mimeType ?? "application/octet-stream";
-    bytes = await bytesFromBase64(body.contentBase64);
-    type = body.type;
-    tenantId = body.tenantId;
-    storageKeyFromClient = body.storageKey ?? null;
-    entityType = body.entityType;
-    entityId = body.entityId;
-    purpose = body.purpose;
+    return NextResponse.json({ error: "multipart_required" }, { status: 415 });
   }
 
   const bound = resolveWriteTenantId({

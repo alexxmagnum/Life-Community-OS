@@ -368,9 +368,7 @@ async function loadStore(
     return seedFromPackIfEmpty(tenantSlug, emptyStore());
   }
   if (!isDatabaseConfigured()) {
-    if (!isFilePersistenceAllowed()) {
-      throw new PersistenceUnavailableError();
-    }
+    if (!isFilePersistenceAllowed()) throw new PersistenceUnavailableError();
     if (await fileExists(tenantSlug)) return readFileStore(tenantSlug);
     return seedFromPackIfEmpty(tenantSlug, emptyStore());
   }
@@ -722,6 +720,30 @@ export async function createResourceServer(input: {
   ];
   await persistStore(slug, store, input.scope);
   return resource;
+}
+
+export async function updateResourceServer(input: {
+  tenantId: string;
+  resourceId: string;
+  name?: string;
+  description?: string;
+  status?: CommunityResource["status"];
+  scope?: ReservationsWriteScope;
+}): Promise<CommunityResource | null> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const store = await loadStore(slug, input.scope);
+  const index = store.resources.findIndex((item) => item.id === input.resourceId);
+  if (index < 0) return null;
+  const current = store.resources[index]!;
+  const next: CommunityResource = {
+    ...current,
+    name: input.name?.trim() || current.name,
+    description: input.description?.trim() || current.description,
+    status: input.status ?? current.status,
+  };
+  store.resources[index] = next;
+  await persistStore(slug, store, input.scope);
+  return next;
 }
 
 export async function listAvailabilityServer(

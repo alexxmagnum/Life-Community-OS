@@ -21,6 +21,7 @@ import {
 import {
   isDatabaseConfigured,
   isFilePersistenceAllowed,
+  isProductionDataPlane,
   PersistenceUnavailableError,
 } from "@/lib/data/data-plane";
 import { createDomainDatabaseClient } from "@/lib/data/database-access";
@@ -73,7 +74,7 @@ function emptyStore(): MediaStore {
 }
 
 function fileStoreEnabled(): boolean {
-  return fixtureEnabled() || !isDatabaseConfigured();
+  return fixtureEnabled() || (!isProductionDataPlane() && !isDatabaseConfigured());
 }
 
 async function readFileStore(tenantSlug: string): Promise<MediaStore> {

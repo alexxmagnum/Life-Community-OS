@@ -9,65 +9,21 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingState } from "@life-community-os/ui";
+import { fetchIncidents, createIncidentRequest } from "@/lib/incidents/incidents-client";
+import type { Incident } from "@/lib/incidents/server-incidents-repository";
+import { useTenant } from "@/providers/TenantProvider";
 
-const REPORT_STORAGE_KEY = "lcos:last-incident-report";
-const REPORTS_STORAGE_KEY = "lcos:incident-reports";
-
-type StoredReport = {
+type StoredReport = Incident & {
   where: string;
-  description: string;
-  submittedAt: string;
   trackingCode: string;
   photoName?: string;
-  status?: "received" | "in_progress" | "closed";
 };
-
-function readStoredReport(): StoredReport | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(REPORT_STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as StoredReport;
-  } catch {
-    return null;
-  }
-}
-
-function readStoredReports(): StoredReport[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = sessionStorage.getItem(REPORTS_STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as StoredReport[];
-      if (Array.isArray(parsed)) return parsed;
-    }
-    const last = readStoredReport();
-    return last ? [last] : [];
-  } catch {
-    const last = readStoredReport();
-    return last ? [last] : [];
-  }
-}
-
-function persistReport(report: StoredReport) {
-  try {
-    const existing = readStoredReports().filter(
-      (item) => item.trackingCode !== report.trackingCode,
-    );
-    sessionStorage.setItem(
-      REPORTS_STORAGE_KEY,
-      JSON.stringify([report, ...existing]),
-    );
-    sessionStorage.setItem(REPORT_STORAGE_KEY, JSON.stringify(report));
-  } catch {
-    /* session may be unavailable — still confirm */
-  }
-}
 
 function statusLabel(status: StoredReport["status"]): string {
   switch (status) {
-    case "in_progress":
+    case "reviewing":
       return "En revisión";
+    case "resolved":
     case "closed":
       return "Cerrado";
     default:
@@ -232,6 +188,7 @@ function MyReportsView({
 function ReportScreenBody() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { tenantSlug, hasMembership } = useTenant();
   const viewMine =
     searchParams.get("view") === "mine" ||
     searchParams.get("view") === "last";
@@ -247,10 +204,27 @@ function ReportScreenBody() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = readStoredReports();
-    setReports(stored);
-    setHydrated(true);
-  }, []);
+    if (!hasMembership) {
+      setReports([]);
+      setHydrated(true);
+      return;
+    }
+    let cancelled = false;
+    void fetchIncidents(tenantSlug).then((incidents) => {
+      if (cancelled) return;
+      setReports(
+        incidents.map((incident) => ({
+          ...incident,
+          where: incident.locationId ?? "Zona norte",
+          trackingCode: incident.id,
+        })),
+      );
+      setHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantSlug, hasMembership]);
 
   const goBack = () => router.back();
   const exitFlow = () => router.push("/");
@@ -261,22 +235,26 @@ function ReportScreenBody() {
       setError("Cuéntanos qué ha pasado con un poco más de detalle.");
       return;
     }
-    const trackingCode = `AV-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    const payload: StoredReport = {
-      where,
+    void createIncidentRequest({
+      tenantId: tenantSlug,
+      category: "community",
+      priority: "normal",
       description: trimmed,
-      submittedAt: new Date().toISOString(),
-      trackingCode,
-      photoName: photoName ?? undefined,
-      status: "received",
-    };
-    persistReport(payload);
-    setReports((prev) => [
-      payload,
-      ...prev.filter((item) => item.trackingCode !== payload.trackingCode),
-    ]);
-    setError(null);
-    setSubmitted(payload);
+    }).then((result) => {
+      if ("error" in result) {
+        setError("No se pudo registrar el aviso. Inténtalo de nuevo.");
+        return;
+      }
+      const payload: StoredReport = {
+        ...result.incident,
+        where,
+        trackingCode: result.incident.id,
+        photoName: photoName ?? undefined,
+      };
+      setReports((prev) => [payload, ...prev]);
+      setError(null);
+      setSubmitted(payload);
+    });
   };
 
   if (!hydrated) {
