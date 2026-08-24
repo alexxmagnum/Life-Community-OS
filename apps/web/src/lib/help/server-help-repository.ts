@@ -94,7 +94,7 @@ async function loadHelp(
   tenantSlug: string,
   scope?: HelpWriteScope,
 ): Promise<HelpRequest[]> {
-  if (fixtureEnabled()) return readFileStore(tenantSlug);
+  if (fixtureEnabled() && isFilePersistenceAllowed()) return readFileStore(tenantSlug);
   if (!isDatabaseConfigured()) {
     if (!isFilePersistenceAllowed()) throw new PersistenceUnavailableError();
     return readFileStore(tenantSlug);
@@ -123,7 +123,7 @@ async function persistHelp(
   scope?: HelpWriteScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(item.tenantId);
-  if (fixtureEnabled()) {
+  if (fixtureEnabled() && isFilePersistenceAllowed()) {
     const existing = await readFileStore(slug);
     await writeFileStore(slug, [
       ...existing.filter((row) => row.id !== item.id),

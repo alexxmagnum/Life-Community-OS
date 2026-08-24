@@ -91,7 +91,7 @@ async function loadSnapshot(
   tenantSlug: string,
   scope?: CommunityWriteScope,
 ): Promise<CommunityDomainSnapshot> {
-  if (communityFixtureEnabled()) {
+  if (communityFixtureEnabled() && isFilePersistenceAllowed()) {
     return readFileStore(tenantSlug);
   }
   const fromDb = await loadFromDatabase(tenantSlug, scope);
@@ -108,12 +108,13 @@ async function persistSnapshot(
   snapshot: CommunityDomainSnapshot,
   scope?: CommunityWriteScope,
 ): Promise<void> {
-  if (communityFixtureEnabled()) {
+  if (communityFixtureEnabled() && isFilePersistenceAllowed()) {
     await writeFileStore(tenantSlug, snapshot);
     return;
   }
   const wrote = await saveToDatabase(tenantSlug, snapshot, scope);
   if (wrote) return;
+  if (!isFilePersistenceAllowed()) throw new PersistenceUnavailableError();
   await writeFileStore(tenantSlug, snapshot);
 }
 
@@ -466,6 +467,26 @@ export async function moderateCommunityPost(input: {
     updatedAt: new Date().toISOString(),
   };
   snapshot.posts[index] = next;
+  await persistSnapshot(slug, snapshot, input.scope);
+  return next;
+}
+
+export async function moderateCommunityComment(input: {
+  tenantId: string;
+  commentId: string;
+  status: Extract<CommunityCommentRecord["status"], "hidden" | "archived" | "published">;
+  scope?: CommunityWriteScope;
+}): Promise<CommunityCommentRecord | null> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const snapshot = await loadSnapshot(slug, input.scope);
+  const index = snapshot.comments.findIndex((item) => item.id === input.commentId);
+  if (index < 0) return null;
+  const next = {
+    ...snapshot.comments[index]!,
+    status: input.status,
+    updatedAt: new Date().toISOString(),
+  };
+  snapshot.comments[index] = next;
   await persistSnapshot(slug, snapshot, input.scope);
   return next;
 }

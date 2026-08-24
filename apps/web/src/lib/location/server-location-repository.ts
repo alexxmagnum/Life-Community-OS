@@ -223,7 +223,7 @@ export async function listLocationsServer(
   scope?: LocationWriteScope,
 ): Promise<Location[]> {
   const slug = resolveTenantPublicId(tenantId);
-  if (locationFixtureEnabled()) {
+  if (locationFixtureEnabled() && isFilePersistenceAllowed()) {
     return readFileStore(slug);
   }
   const fromDb = await listFromDatabase(slug, scope);

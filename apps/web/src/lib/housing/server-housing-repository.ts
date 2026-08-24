@@ -173,7 +173,7 @@ async function loadStore(
   tenantSlug: string,
   scope?: HousingWriteScope,
 ): Promise<HousingStore> {
-  if (fixtureEnabled()) return readFileStore(tenantSlug);
+  if (fixtureEnabled() && isFilePersistenceAllowed()) return readFileStore(tenantSlug);
   if (!isDatabaseConfigured()) {
     if (!isFilePersistenceAllowed()) {
       throw new PersistenceUnavailableError();
@@ -217,7 +217,7 @@ async function persistStore(
   store: HousingStore,
   scope?: HousingWriteScope,
 ): Promise<void> {
-  if (fixtureEnabled()) {
+  if (fixtureEnabled() && isFilePersistenceAllowed()) {
     await writeFileStore(tenantSlug, store);
     return;
   }

@@ -118,7 +118,7 @@ async function loadListings(
   tenantSlug: string,
   scope?: MarketplaceWriteScope,
 ): Promise<MarketplaceListing[]> {
-  if (fixtureEnabled()) return readFileStore(tenantSlug);
+  if (fixtureEnabled() && isFilePersistenceAllowed()) return readFileStore(tenantSlug);
   if (!isDatabaseConfigured()) {
     if (!isFilePersistenceAllowed()) {
       throw new PersistenceUnavailableError();
@@ -149,7 +149,7 @@ async function persistListing(
   scope?: MarketplaceWriteScope,
 ): Promise<void> {
   const slug = resolveTenantPublicId(listing.tenantId);
-  if (fixtureEnabled()) {
+  if (fixtureEnabled() && isFilePersistenceAllowed()) {
     const existing = await readFileStore(slug);
     await writeFileStore(slug, [
       ...existing.filter((item) => item.id !== listing.id),

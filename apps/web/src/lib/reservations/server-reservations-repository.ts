@@ -363,7 +363,7 @@ async function loadStore(
   tenantSlug: string,
   scope?: ReservationsWriteScope,
 ): Promise<ReservationsStore> {
-  if (fixtureEnabled()) {
+  if (fixtureEnabled() && isFilePersistenceAllowed()) {
     if (await fileExists(tenantSlug)) return readFileStore(tenantSlug);
     return seedFromPackIfEmpty(tenantSlug, emptyStore());
   }
@@ -419,7 +419,7 @@ async function persistStore(
   store: ReservationsStore,
   scope?: ReservationsWriteScope,
 ): Promise<void> {
-  if (fixtureEnabled()) {
+  if (fixtureEnabled() && isFilePersistenceAllowed()) {
     await writeFileStore(tenantSlug, store);
     return;
   }

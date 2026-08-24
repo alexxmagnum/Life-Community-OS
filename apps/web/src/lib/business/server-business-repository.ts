@@ -43,7 +43,7 @@ export type BusinessWriteScope = LocationWriteScope;
 const DATA_DIR = path.join(process.cwd(), ".data", "businesses");
 
 function businessFixtureEnabled(): boolean {
-  return process.env.LCOS_BUSINESS_FIXTURE === "1";
+  return isFilePersistenceAllowed() && process.env.LCOS_BUSINESS_FIXTURE === "1";
 }
 
 function filePath(tenantSlug: string): string {

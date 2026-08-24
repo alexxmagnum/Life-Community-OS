@@ -17,10 +17,7 @@ function isWorkPostType(value: string | null): value is WorkPostType {
   return value === "looking_for_work" || value === "offering_work";
 }
 
-/**
- * Community work board composer — Busco / Ofrezco trabajo.
- * Demo session storage only (no backend persistence).
- */
+/** Community work board composer — Busco / Ofrezco trabajo. */
 export function WorkPostComposerScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
