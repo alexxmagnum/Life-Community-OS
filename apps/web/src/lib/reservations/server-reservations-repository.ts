@@ -37,6 +37,10 @@ import {
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
 import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
+import {
   activityFromPackExperience,
   resourceFromPackItem,
 } from "./seed-from-pack";
@@ -120,6 +124,7 @@ type ResourceRow = {
   tenant_id: string;
   created_by: string;
   location_id: string | null;
+  territory_id: string | null;
   name: string;
   category: ResourceCategory;
   description: string;
@@ -161,6 +166,7 @@ type AvailabilityRow = {
 type ReservationRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   created_by: string;
   resource_id: string;
   participant_count: number;
@@ -228,6 +234,7 @@ function rowToResource(row: ResourceRow, tenantSlug: string): CommunityResource 
     organizerName: row.organizer_name ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -271,6 +278,7 @@ function rowToReservation(row: ReservationRow, tenantSlug: string): Reservation 
     areaLabel: row.area_label ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -432,6 +440,7 @@ async function persistStore(
         tenant_id: tenantUuid,
         created_by: resource.createdBy ?? "unknown",
         location_id: resource.locationId ?? null,
+        territory_id: asTerritoryUuid(resource.territoryId),
         name: resource.name,
         category: resource.category ?? "facility",
         description: resource.description,
@@ -471,6 +480,7 @@ async function persistStore(
       const reservationRows = store.reservations.map((item) => ({
         id: item.id,
         tenant_id: tenantUuid,
+        territory_id: asTerritoryUuid(item.territoryId),
         created_by: item.createdBy ?? item.personId ?? "unknown",
         resource_id: item.resourceId,
         participant_count: item.participantCount ?? 1,
@@ -676,6 +686,7 @@ export async function createResourceServer(input: {
   scheduleStartsAt?: string;
   scheduleEndsAt?: string;
   organizerName?: string;
+  territoryId?: string;
   createdByFromClient?: string | null;
   scope?: ReservationsWriteScope;
 }): Promise<CommunityResource> {
@@ -699,6 +710,10 @@ export async function createResourceServer(input: {
     scheduleStartsAt: input.scheduleStartsAt,
     scheduleEndsAt: input.scheduleEndsAt,
     organizerName: input.organizerName,
+    territoryId: resolveStampTerritoryId({
+      tenantId: slug,
+      explicit: input.territoryId,
+    }),
   });
   const eventId = await linkCommunityEvent({
     tenantId: slug,
@@ -809,6 +824,7 @@ export async function createReservationServer(input: {
   start: string;
   end: string;
   participantCount?: number;
+  territoryId?: string;
   createdByFromClient?: string | null;
   scope?: ReservationsWriteScope;
 }): Promise<Reservation> {
@@ -818,6 +834,14 @@ export async function createReservationServer(input: {
   const resource = store.resources.find((item) => item.id === input.resourceId);
   if (!resource || resource.tenantId !== slug) {
     throw new Error("resource_not_found");
+  }
+  const requestedTerritory = input.territoryId?.trim();
+  if (
+    requestedTerritory &&
+    resource.territoryId &&
+    requestedTerritory !== resource.territoryId
+  ) {
+    throw new Error("cross_territory_forbidden");
   }
   if (!resourceIsBookable(resource)) {
     throw new Error("resource_not_bookable");
@@ -868,6 +892,11 @@ export async function createReservationServer(input: {
     resourceImageUrl: resource.images?.[0] ?? resource.imageUrl,
     location: resource.location,
     areaLabel: resource.areaLabel,
+    territoryId: resolveStampTerritoryId({
+      tenantId: slug,
+      explicit: input.territoryId,
+      inherited: resource.territoryId,
+    }),
   });
   const participant = createReservationParticipantRecord({
     tenantId: slug,

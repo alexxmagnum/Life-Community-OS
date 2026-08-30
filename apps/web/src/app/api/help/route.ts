@@ -14,6 +14,11 @@ import {
   listHelpRequestsServer,
 } from "@/lib/help/server-help-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -33,6 +38,12 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -41,7 +52,8 @@ export async function GET(request: Request) {
   const type = url.searchParams.get("type")?.trim();
   const category = url.searchParams.get("category")?.trim().toLowerCase();
   const board = url.searchParams.get("board")?.trim();
-  const items = all.filter((item) => {
+  const items = filterForActiveTerritory(all, territory.context.territoryId).filter(
+    (item) => {
     if (item.tenantId !== bound.tenantId) return false;
     if (!helpVisibleToActor(actor, item)) return false;
     if (type && item.type !== type) return false;
@@ -50,7 +62,11 @@ export async function GET(request: Request) {
     if (board === "help" && isWorkHelpCategory(item.category)) return false;
     return true;
   });
-  return NextResponse.json({ tenantId: bound.tenantId, requests: items });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    requests: items,
+  });
 }
 
 export async function POST(request: Request) {
@@ -101,6 +117,10 @@ export async function POST(request: Request) {
     category: body.category,
     title,
     description,
+    territoryId: resolveStampTerritoryId({
+      tenantId: bound.tenantId,
+      inherited: gated.actor.territoryId,
+    }),
     authorDisplayName:
       gated.actor.currentUser.displayName?.trim() ||
       gated.actor.currentUser.email?.split("@")[0] ||

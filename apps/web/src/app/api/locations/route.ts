@@ -5,6 +5,11 @@ import {
   saveLocationServer,
 } from "@/lib/location/server-location-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -22,6 +27,12 @@ export async function GET(request: Request) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
+  const territory = resolveActiveTerritoryContext({
+    tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -32,7 +43,10 @@ export async function GET(request: Request) {
   await ensureServerTenantLocations(tenantId);
   const locations = await listLocationsServer(tenantId, scope);
   const visibility = url.searchParams.get("visibility");
-  const scoped = locations.filter((item) => item.tenantId === tenantId);
+  const scoped = filterForActiveTerritory(
+    locations.filter((item) => item.tenantId === tenantId),
+    territory.context.territoryId,
+  );
   const byTrust = actor.authenticated && actor.hasMembership
     ? actor.role === "administrator" || actor.role === "moderator"
       ? scoped
@@ -50,7 +64,11 @@ export async function GET(request: Request) {
             item.visibility === "public" || item.visibility === "members",
         )
       : byTrust;
-  return NextResponse.json({ tenantId, locations: filtered });
+  return NextResponse.json({
+    tenantId,
+    territoryId: territory.context.territoryId,
+    locations: filtered,
+  });
 }
 
 export async function POST(request: Request) {
@@ -70,6 +88,15 @@ export async function POST(request: Request) {
     actorTenantSlug: gated.actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: gated.actor.territoryId,
+    queryTerritoryId:
+      typeof body === "object" && body && "territoryId" in body
+        ? (body as CreateLocationInput).territoryId
+        : null,
+  });
+  if ("error" in territory) return territory.error;
 
   try {
     const { persistenceScopeFromRequest } = await import(
@@ -81,6 +108,11 @@ export async function POST(request: Request) {
         tenantId: bound.tenantId,
         ownerId: gated.actor.personId ?? undefined,
         createdBy: gated.actor.personId ?? undefined,
+        territoryId: resolveStampTerritoryId({
+          tenantId: bound.tenantId,
+          explicit: body.territoryId,
+          inherited: gated.actor.territoryId,
+        }),
       },
       persistenceScopeFromRequest(request, gated.actor.personId),
     );

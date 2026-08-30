@@ -33,6 +33,8 @@ export const HELP_REQUEST_STATUSES: readonly HelpRequestStatus[] = [
 export type HelpRequest = {
   id: DomainId;
   tenantId: DomainId;
+  /** Geographic world inside the Tenant. Additive — tenantId remains. */
+  territoryId?: DomainId;
   createdBy: DomainId;
   type: HelpRequestType;
   category: string;
@@ -65,6 +67,7 @@ export type CreateHelpRequestInput = {
   description: string;
   status?: HelpRequestStatus;
   authorDisplayName?: string;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -97,6 +100,9 @@ export function createHelpRequestRecord(
     authorDisplayName: input.authorDisplayName?.trim() || "Vecino",
     createdAt: now,
     updatedAt: now,
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
   };
 }
 

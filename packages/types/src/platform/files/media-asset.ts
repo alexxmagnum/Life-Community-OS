@@ -53,6 +53,8 @@ export type MediaPurpose = (typeof MEDIA_PURPOSES)[number];
 export type MediaAsset = {
   id: DomainId;
   tenantId: DomainId;
+  /** Inherited from the related entity / active Territory. Additive. */
+  territoryId?: DomainId;
   ownerPersonId: DomainId;
   createdBy: DomainId;
   storageKey: string;
@@ -141,6 +143,7 @@ export function createMediaAsset(input: {
   size: number;
   type: MediaAssetType;
   status?: MediaAssetStatus;
+  territoryId?: DomainId;
   id?: DomainId;
 }): MediaAsset {
   const now = new Date().toISOString();
@@ -157,6 +160,9 @@ export function createMediaAsset(input: {
     status: input.status ?? "pending",
     createdAt: now,
     updatedAt: now,
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
   };
 }
 

@@ -10,6 +10,11 @@ import {
   listResourcesServer,
 } from "@/lib/reservations/server-reservations-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -29,19 +34,30 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const category = url.searchParams.get("category")?.trim();
   const all = await listResourcesServer(bound.tenantId, scope);
-  const resources = all.filter((item) => {
+  const resources = filterForActiveTerritory(all, territory.context.territoryId).filter(
+    (item) => {
     if (item.tenantId !== bound.tenantId) return false;
     if (!resourceVisibleToActor(actor, item)) return false;
     if (category && item.category !== category) return false;
     return true;
   });
-  return NextResponse.json({ tenantId: bound.tenantId, resources });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    resources,
+  });
 }
 
 export async function POST(request: Request) {
@@ -121,6 +137,10 @@ export async function POST(request: Request) {
       gated.actor.currentUser.displayName ??
       gated.actor.currentUser.email?.split("@")[0] ??
       "Vecino",
+    territoryId: resolveStampTerritoryId({
+      tenantId: bound.tenantId,
+      inherited: gated.actor.territoryId,
+    }),
     scope,
   });
   return NextResponse.json({ resource }, { status: 201 });

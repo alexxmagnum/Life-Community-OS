@@ -19,7 +19,12 @@ export type CurrentUserSession = CurrentUserContext & {
   configured: boolean;
   local: boolean;
   tenantDenied: boolean;
-  memberships: Array<{ tenantId: string; membershipId: string; role: string }>;
+  memberships: Array<{
+    tenantId: string;
+    membershipId: string;
+    role: string;
+    territoryId?: string | null;
+  }>;
 };
 
 const EMPTY_SESSION: CurrentUserSession = {
@@ -70,6 +75,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       userId?: string | null;
       personId?: string | null;
       tenantId?: string | null;
+      territoryId?: string | null;
       membershipId?: string | null;
       role?: CurrentUserContext["role"];
       permissions?: string[];
@@ -78,12 +84,18 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       hasMembership?: boolean;
       tenantDenied?: boolean;
       user?: { id: string; email: string | null } | null;
-      memberships?: Array<{ tenantId: string; membershipId: string; role: string }>;
+      memberships?: Array<{
+        tenantId: string;
+        membershipId: string;
+        role: string;
+        territoryId?: string | null;
+      }>;
     };
     setCurrentUser({
       userId: data.userId ?? data.user?.id ?? null,
       personId: data.personId ?? null,
       tenantId: data.tenantId ?? null,
+      territoryId: data.territoryId ?? null,
       membershipId: data.membershipId ?? null,
       role: data.role ?? null,
       permissions: data.permissions ?? [],

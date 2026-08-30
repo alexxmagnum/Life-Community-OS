@@ -42,6 +42,7 @@ function toSummaries(
         membershipId: row.membershipId,
         personId: row.personId,
         role: row.role,
+        territoryId: row.territoryId,
       }),
     );
 }
@@ -246,6 +247,7 @@ export function sessionPayload(session: ResolvedAuthSession) {
     personId: currentUser.personId,
     tenantId: currentUser.tenantId,
     tenantSlug: currentUser.tenantId ?? session.requestedTenantId,
+    territoryId: currentUser.territoryId,
     membershipId: currentUser.membershipId,
     role: currentUser.role,
     permissions: currentUser.permissions,
@@ -255,12 +257,14 @@ export function sessionPayload(session: ResolvedAuthSession) {
       tenantId: m.tenantId,
       membershipId: m.membershipId,
       role: m.role,
+      territoryId: m.territoryId ?? null,
     })),
     tenantDenied: session.tenantDenied,
     membership: currentUser.hasMembership
       ? {
           id: currentUser.membershipId,
           tenantId: currentUser.tenantId,
+          territoryId: currentUser.territoryId,
           membershipType: currentUser.role,
           status: "active",
         }

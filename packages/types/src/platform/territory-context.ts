@@ -16,6 +16,15 @@ export type TerritoryContext = {
   status: Territory["status"];
 };
 
+/**
+ * Session/API isolation: Tenant remains SaaS isolation.
+ * Active Territory is the geographic world inside that Tenant.
+ */
+export type ActiveTerritoryContext = {
+  tenantId: DomainId;
+  territoryId: DomainId | null;
+};
+
 export type TerritoryContextIssueCode =
   | "missing_tenant"
   | "no_territory"

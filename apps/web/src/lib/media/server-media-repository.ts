@@ -29,6 +29,10 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 import type { RequestActor } from "@/lib/auth/request-actor";
 import { issueStorageKey, validateUploadPayload } from "./media-policy";
 import {
@@ -98,6 +102,7 @@ async function writeFileStore(tenantSlug: string, store: MediaStore): Promise<vo
 type AssetRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   created_by: string;
   owner_person_id: string;
   storage_key: string;
@@ -136,6 +141,7 @@ function assetFromRow(row: AssetRow, tenantSlug: string): MediaAsset {
     status: row.status as MediaAsset["status"],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -201,6 +207,7 @@ async function persistStore(
   const assetRows = store.assets.map((item) => ({
     id: item.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(item.territoryId),
     created_by: item.createdBy,
     owner_person_id: item.ownerPersonId,
     storage_key: item.storageKey,
@@ -310,6 +317,10 @@ export async function uploadMediaServer(input: {
       size: input.bytes.byteLength,
       type: checked.type,
       status: "failed",
+      territoryId: resolveStampTerritoryId({
+        tenantId: slug,
+        inherited: input.actor.territoryId,
+      }),
     });
     store.assets.push(failed);
     await persistStore(slug, store, input.scope);
@@ -324,9 +335,13 @@ export async function uploadMediaServer(input: {
     filename: input.filename,
     mimeType: input.mimeType,
     size: input.bytes.byteLength,
-    type: checked.type,
-    status: "ready",
-  });
+      type: checked.type,
+      status: "ready",
+      territoryId: resolveStampTerritoryId({
+        tenantId: slug,
+        inherited: input.actor.territoryId,
+      }),
+    });
   store.assets.push(asset);
   let reference: MediaReference | undefined;
   if (input.entityType && input.entityId && input.purpose) {

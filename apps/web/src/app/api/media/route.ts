@@ -5,6 +5,10 @@ import {
 } from "@/lib/media/server-media-repository";
 import { mediaErrorResponse } from "@/lib/media/http";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -21,6 +25,12 @@ export async function GET(request: Request) {
     actorTenantSlug: actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -33,7 +43,16 @@ export async function GET(request: Request) {
       entityId: url.searchParams.get("entityId") ?? undefined,
       scope,
     });
-    return NextResponse.json({ items });
+    return NextResponse.json({
+      tenantId: bound.tenantId,
+      territoryId: territory.context.territoryId,
+      items: items.filter((item) =>
+        filterForActiveTerritory(
+          [item.asset],
+          territory.context.territoryId,
+        ).length > 0,
+      ),
+    });
   } catch (error) {
     if (error instanceof MediaDeniedError) return mediaErrorResponse(error);
     throw error;

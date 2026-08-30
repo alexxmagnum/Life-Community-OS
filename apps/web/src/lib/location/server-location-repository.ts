@@ -24,6 +24,7 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import { resolveStampTerritoryId } from "@/lib/tenant/resolve-territory";
 
 export type LocationWriteScope = {
   accessToken?: string | null;
@@ -263,13 +264,17 @@ export async function saveLocationServer(
   const ownerId = input.ownerId?.trim() || scope?.personId?.trim() || undefined;
   const createdBy =
     input.createdBy?.trim() || scope?.personId?.trim() || undefined;
+  const slug = resolveTenantPublicId(input.tenantId);
   const location = createLocation({
     ...input,
-    tenantId: resolveTenantPublicId(input.tenantId),
+    tenantId: slug,
     ownerId,
     createdBy,
+    territoryId: resolveStampTerritoryId({
+      tenantId: slug,
+      explicit: input.territoryId,
+    }),
   });
-  const slug = location.tenantId;
   if (!locationFixtureEnabled()) {
     const wroteDb = await upsertDatabase(location, scope);
     if (wroteDb) return location;

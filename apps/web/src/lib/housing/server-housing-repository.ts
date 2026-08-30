@@ -29,6 +29,10 @@ import {
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
 import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
+import {
   getLocationServer,
   saveLocationServer,
   type LocationWriteScope,
@@ -84,6 +88,7 @@ async function writeFileStore(
 type PropertyRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   location_id: string | null;
   address_id: string | null;
   created_by: string | null;
@@ -143,6 +148,7 @@ function rowToProperty(row: PropertyRow, tenantSlug: string): Property {
     updatedAt: row.updated_at,
     ...(row.location_id ? { locationId: row.location_id } : {}),
     ...(row.address_id ? { addressId: row.address_id } : {}),
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
     ...(row.name ? { name: row.name } : {}),
     ...(row.area_label ? { areaLabel: row.area_label } : {}),
     ...(row.unit_label ? { unitLabel: row.unit_label } : {}),
@@ -230,6 +236,7 @@ async function persistStore(
       const propertyRows = store.properties.map((item) => ({
         id: item.id,
         tenant_id: tenantUuid,
+        territory_id: asTerritoryUuid(item.territoryId),
         location_id: item.locationId ?? null,
         address_id: item.addressId ?? null,
         created_by: item.createdBy ?? null,
@@ -393,6 +400,7 @@ export async function createRegisteredProperty(input: {
     builtAreaM2: input.builtAreaM2,
     areaLabel: input.areaLabel,
     unitLabel: input.unitLabel,
+    territoryId: location.territoryId,
   });
 
   const ownerMembership = createPropertyMembershipRecord({

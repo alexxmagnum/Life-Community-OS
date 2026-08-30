@@ -39,11 +39,13 @@ export function membershipSummary(input: {
   membershipId: string;
   personId: string;
   role: MembershipRole;
+  territoryId?: string | null;
 }): MembershipSummary {
   return {
     tenantId: input.tenantId,
     membershipId: input.membershipId,
     personId: input.personId,
     role: input.role,
+    territoryId: input.territoryId?.trim() || null,
   };
 }

@@ -7,7 +7,7 @@ import type {
 
 /**
  * Community Core — tenant-owned social domain.
- * One tenant is one community. Groups/posts/events live under tenant_id.
+ * Tenant remains the SaaS aggregator. Community data is Territory-scoped.
  */
 
 export type CommunityPostStatus =
@@ -39,6 +39,8 @@ export type CommunityNotificationKind =
 export type CommunityGroupRecord = {
   id: DomainId;
   tenantId: DomainId;
+  /** Territory community — tenant remains the SaaS aggregator. */
+  territoryId?: DomainId;
   name: string;
   description: string;
   imageUrl?: string;
@@ -54,6 +56,7 @@ export type CommunityGroupRecord = {
 export type CommunityPost = {
   id: DomainId;
   tenantId: DomainId;
+  territoryId?: DomainId;
   groupId?: DomainId;
   authorPersonId: DomainId;
   authorDisplayName: string;
@@ -69,6 +72,7 @@ export type CommunityPost = {
 export type CommunityEvent = {
   id: DomainId;
   tenantId: DomainId;
+  territoryId?: DomainId;
   groupId?: DomainId;
   authorPersonId: DomainId;
   authorDisplayName: string;

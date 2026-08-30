@@ -10,6 +10,11 @@ import {
   listReservationsServer,
 } from "@/lib/reservations/server-reservations-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -29,18 +34,31 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const all = await listReservationsServer(bound.tenantId, scope);
   const mineOnly = url.searchParams.get("mine") !== "0";
-  const reservations = all.filter((item) => {
+  const reservations = filterForActiveTerritory(
+    all,
+    territory.context.territoryId,
+  ).filter((item) => {
     if (item.tenantId !== bound.tenantId) return false;
     if (isReservationsStaff(actor.role) && !mineOnly) return true;
     return actorOwnsReservation(actor, item);
   });
-  return NextResponse.json({ tenantId: bound.tenantId, reservations });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    reservations,
+  });
 }
 
 export async function POST(request: Request) {
@@ -96,6 +114,10 @@ export async function POST(request: Request) {
       start,
       end,
       participantCount: body.participantCount,
+      territoryId: resolveStampTerritoryId({
+        tenantId: bound.tenantId,
+        inherited: gated.actor.territoryId,
+      }),
       scope,
     });
     return NextResponse.json({ reservation }, { status: 201 });
@@ -103,6 +125,9 @@ export async function POST(request: Request) {
     const code = error instanceof Error ? error.message : "reserve_failed";
     if (code === "resource_not_found") {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    if (code === "cross_territory_forbidden") {
+      return NextResponse.json({ error: code }, { status: 403 });
     }
     if (code === "slot_unavailable" || code === "resource_not_bookable") {
       return NextResponse.json({ error: code }, { status: 409 });

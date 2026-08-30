@@ -33,6 +33,10 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export type CommunityWriteScope = {
   accessToken?: string | null;
@@ -121,6 +125,7 @@ async function persistSnapshot(
 type PostRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   group_id: string | null;
   author_person_id: string;
   author_display_name: string;
@@ -147,6 +152,7 @@ function postFromRow(row: PostRow, tenantSlug: string): CommunityPost {
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -196,6 +202,7 @@ async function loadFromDatabase(
       createdBy: row.created_by,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      ...(row.territory_id ? { territoryId: row.territory_id as string } : {}),
     })),
     posts: (posts.data as PostRow[]).map((row) => postFromRow(row, tenantSlug)),
     events: (events.data ?? []).map((row) => ({
@@ -213,6 +220,7 @@ async function loadFromDatabase(
       createdBy: row.created_by,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+      ...(row.territory_id ? { territoryId: row.territory_id as string } : {}),
     })),
     comments: (comments.data ?? []).map((row) => ({
       id: row.id,
@@ -277,6 +285,7 @@ async function saveToDatabase(
   const groupRows = snapshot.groups.map((item) => ({
     id: item.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(item.territoryId),
     name: item.name,
     description: item.description,
     image_url: item.imageUrl ?? null,
@@ -291,6 +300,7 @@ async function saveToDatabase(
   const postRows = snapshot.posts.map((item) => ({
     id: item.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(item.territoryId),
     group_id: item.groupId ?? null,
     author_person_id: item.authorPersonId,
     author_display_name: item.authorDisplayName,
@@ -305,6 +315,7 @@ async function saveToDatabase(
   const eventRows = snapshot.events.map((item) => ({
     id: item.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(item.territoryId),
     group_id: item.groupId ?? null,
     author_person_id: item.authorPersonId,
     author_display_name: item.authorDisplayName,
@@ -427,10 +438,15 @@ export async function createCommunityPost(input: {
   body: string;
   kind?: CommunityPostKind;
   groupId?: string;
+  territoryId?: string;
   scope?: CommunityWriteScope;
 }): Promise<CommunityPost> {
   const slug = resolveTenantPublicId(input.tenantId);
   const now = new Date().toISOString();
+  const territoryId = resolveStampTerritoryId({
+    tenantId: slug,
+    explicit: input.territoryId,
+  });
   const post: CommunityPost = {
     id: randomUUID(),
     tenantId: slug,
@@ -444,6 +460,7 @@ export async function createCommunityPost(input: {
     createdBy: input.authorPersonId,
     createdAt: now,
     updatedAt: now,
+    ...(territoryId ? { territoryId } : {}),
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.posts = [post, ...snapshot.posts.filter((item) => item.id !== post.id)];
@@ -505,10 +522,15 @@ export async function createCommunityGroup(input: {
   name: string;
   description?: string;
   categoryLabel?: string;
+  territoryId?: string;
   scope?: CommunityWriteScope;
 }): Promise<CommunityGroupRecord> {
   const slug = resolveTenantPublicId(input.tenantId);
   const now = new Date().toISOString();
+  const territoryId = resolveStampTerritoryId({
+    tenantId: slug,
+    explicit: input.territoryId,
+  });
   const group: CommunityGroupRecord = {
     id: randomUUID(),
     tenantId: slug,
@@ -521,6 +543,7 @@ export async function createCommunityGroup(input: {
     createdBy: input.createdBy,
     createdAt: now,
     updatedAt: now,
+    ...(territoryId ? { territoryId } : {}),
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.groups = [group, ...snapshot.groups];
@@ -550,10 +573,15 @@ export async function createCommunityEvent(input: {
   startsAt: string;
   locationLabel?: string;
   groupId?: string;
+  territoryId?: string;
   scope?: CommunityWriteScope;
 }): Promise<CommunityEvent> {
   const slug = resolveTenantPublicId(input.tenantId);
   const now = new Date().toISOString();
+  const territoryId = resolveStampTerritoryId({
+    tenantId: slug,
+    explicit: input.territoryId,
+  });
   const event: CommunityEvent = {
     id: randomUUID(),
     tenantId: slug,
@@ -568,6 +596,7 @@ export async function createCommunityEvent(input: {
     createdBy: input.authorPersonId,
     createdAt: now,
     updatedAt: now,
+    ...(territoryId ? { territoryId } : {}),
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.events = [event, ...snapshot.events];

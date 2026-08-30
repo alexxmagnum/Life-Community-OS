@@ -18,10 +18,19 @@ export {
   filterTerritoriesForTenant,
 } from "./territory";
 export {
+  optionalTerritoryField,
+  recordMatchesTerritoryScope,
   locationBelongsToTerritory,
   filterLocationsForTerritory,
   businessBelongsToTerritory,
   resourceBelongsToTerritory,
+  reservationBelongsToTerritory,
+  propertyBelongsToTerritory,
+  marketplaceBelongsToTerritory,
+  helpBelongsToTerritory,
+  communityRecordBelongsToTerritory,
+  conversationBelongsToTerritory,
+  mediaBelongsToTerritory,
   denyCrossTerritoryAccess,
 } from "./territory-ownership";
 export type { CommunityArea } from "./community-area";

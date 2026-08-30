@@ -24,6 +24,8 @@ export type MembershipSummary = {
   membershipId: string;
   personId: string;
   role: MembershipRole;
+  /** Active Territory for this membership. Never resolved from a tenant pack. */
+  territoryId?: string | null;
 };
 
 /**
@@ -40,6 +42,8 @@ export type CurrentUserContext = {
   displayName: string | null;
   authenticated: boolean;
   hasMembership: boolean;
+  /** Active Territory bound from membership. Null when unbound. */
+  territoryId: string | null;
 };
 
 export const EMPTY_CURRENT_USER: CurrentUserContext = {
@@ -53,6 +57,7 @@ export const EMPTY_CURRENT_USER: CurrentUserContext = {
   displayName: null,
   authenticated: false,
   hasMembership: false,
+  territoryId: null,
 };
 
 export function currentUserFromMembership(input: {
@@ -72,6 +77,7 @@ export function currentUserFromMembership(input: {
     displayName: input.person.displayName,
     authenticated: true,
     hasMembership: true,
+    territoryId: input.membership.territoryId?.trim() || null,
   };
 }
 

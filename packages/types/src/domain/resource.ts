@@ -206,6 +206,8 @@ export type ResourceAvailability = {
 export type Reservation = {
   id: DomainId;
   tenantId?: DomainId;
+  /** Inherited from the Resource Territory. Additive — tenantId remains. */
+  territoryId?: DomainId;
   resourceId: DomainId;
   createdBy?: DomainId;
   personId?: DomainId;
@@ -806,6 +808,7 @@ export type CreateReservationInput = {
   resourceImageUrl?: string;
   location?: string;
   areaLabel?: string;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -839,6 +842,9 @@ export function createReservationRecord(input: CreateReservationInput): Reservat
     areaLabel: input.areaLabel,
     createdAt: now,
     updatedAt: now,
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
   };
 }
 

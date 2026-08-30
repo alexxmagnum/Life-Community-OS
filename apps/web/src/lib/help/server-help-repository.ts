@@ -22,6 +22,10 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export type HelpWriteScope = {
   accessToken?: string | null;
@@ -63,6 +67,7 @@ async function writeFileStore(
 type HelpRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   created_by: string;
   type: HelpRequestType;
   category: string;
@@ -87,6 +92,7 @@ function rowToHelp(row: HelpRow, tenantSlug: string): HelpRequest {
     authorDisplayName: row.author_display_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -140,6 +146,7 @@ async function persistHelp(
       const { error } = await client.from("community_help_requests").upsert({
         id: item.id,
         tenant_id: tenantUuid,
+        territory_id: asTerritoryUuid(item.territoryId),
         created_by: item.createdBy,
         type: item.type,
         category: item.category,
@@ -185,6 +192,7 @@ export async function createHelpRequestServer(input: {
   title: string;
   description: string;
   authorDisplayName?: string;
+  territoryId?: string;
   createdByFromClient?: string | null;
   scope?: HelpWriteScope;
 }): Promise<HelpRequest> {
@@ -198,6 +206,10 @@ export async function createHelpRequestServer(input: {
     description: input.description,
     authorDisplayName: input.authorDisplayName,
     status: "open",
+    territoryId: resolveStampTerritoryId({
+      tenantId: input.tenantId,
+      explicit: input.territoryId,
+    }),
   });
   await persistHelp(item, input.scope);
   return item;
@@ -232,6 +244,7 @@ export async function updateHelpRequestServer(input: {
     id: existing.id,
     tenantId: existing.tenantId,
     authorDisplayName: existing.authorDisplayName,
+    territoryId: existing.territoryId,
   });
   next.createdAt = existing.createdAt;
   next.updatedAt = new Date().toISOString();

@@ -32,6 +32,8 @@ export type ConversationParticipantPolicy =
 export type Conversation = {
   id: DomainId;
   tenantId: DomainId;
+  /** Territory where the conversation occurs. Inherited from the domain context. */
+  territoryId?: DomainId;
   context: ConversationContext;
   /** Product conversation kind (Phase 9). Direct / group / context thread. */
   type?: ConversationKind;

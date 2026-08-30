@@ -6,6 +6,10 @@ import {
   listCommunitySnapshot,
 } from "@/lib/community/server-community-repository";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -22,16 +26,33 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const snapshot = await listCommunitySnapshot(bound.tenantId, scope);
+  const scopeId = territory.context.territoryId;
   return NextResponse.json({
     tenantId: bound.tenantId,
-    posts: snapshot.posts.filter((item) => item.status === "published"),
-    groups: snapshot.groups.filter((item) => item.status !== "archived"),
-    events: snapshot.events.filter((item) => item.status === "published"),
+    territoryId: scopeId,
+    posts: filterForActiveTerritory(
+      snapshot.posts.filter((item) => item.status === "published"),
+      scopeId,
+    ),
+    groups: filterForActiveTerritory(
+      snapshot.groups.filter((item) => item.status !== "archived"),
+      scopeId,
+    ),
+    events: filterForActiveTerritory(
+      snapshot.events.filter((item) => item.status === "published"),
+      scopeId,
+    ),
     comments: snapshot.comments.filter((item) => item.status === "published"),
     reactions: snapshot.reactions,
   });

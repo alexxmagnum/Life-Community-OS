@@ -151,6 +151,7 @@ export type CreateConversationInput = {
   contextType: ConversationContextType | string;
   contextId: DomainId;
   title?: string;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -190,6 +191,9 @@ export function createConversationRecord(
       tenantId,
       moduleId,
     },
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
   };
 }
 

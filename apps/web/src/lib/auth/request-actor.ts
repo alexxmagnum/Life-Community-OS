@@ -19,6 +19,8 @@ export type RequestActor = {
   permissions: readonly string[];
   tenantDenied: boolean;
   currentUser: CurrentUserContext;
+  /** Active Territory from membership. Never a tenant-pack identity. */
+  territoryId?: string | null;
 };
 
 export async function resolveRequestActor(
@@ -39,6 +41,7 @@ export async function resolveRequestActor(
     permissions: currentUser.permissions,
     tenantDenied: session.tenantDenied,
     currentUser,
+    territoryId: currentUser.territoryId,
   };
 }
 

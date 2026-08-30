@@ -49,6 +49,8 @@ export type MarketplaceListing = {
   price: number | null;
   status: MarketplaceListingStatus;
   locationId?: DomainId;
+  /** Geographic world inside the Tenant. Additive — tenantId remains. */
+  territoryId?: DomainId;
   authorDisplayName: string;
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
@@ -93,6 +95,7 @@ export type CreateMarketplaceListingInput = {
   price?: number | null;
   status?: MarketplaceListingStatus;
   locationId?: DomainId;
+  territoryId?: DomainId;
   authorDisplayName?: string;
   id?: DomainId;
 };
@@ -138,6 +141,9 @@ export function createMarketplaceListingRecord(
     updatedAt: now,
     ...(input.locationId?.trim()
       ? { locationId: input.locationId.trim() }
+      : {}),
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
       : {}),
   };
 }

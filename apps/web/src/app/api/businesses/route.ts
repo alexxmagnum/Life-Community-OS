@@ -11,6 +11,11 @@ import {
   listBusinessesServer,
 } from "@/lib/business/server-business-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -30,6 +35,12 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -42,7 +53,8 @@ export async function GET(request: Request) {
   const status = url.searchParams.get("status")?.trim();
   const locationId = url.searchParams.get("locationId")?.trim();
   const staff = isTenantStaffRole(actor.role);
-  const visible = all.filter((item) => {
+  const visible = filterForActiveTerritory(all, territory.context.territoryId).filter(
+    (item) => {
     if (item.tenantId !== bound.tenantId) return false;
     if (!businessVisibleToActor(actor, item)) return false;
     if (locationId && item.locationId !== locationId) return false;
@@ -63,7 +75,11 @@ export async function GET(request: Request) {
     }
     return true;
   });
-  return NextResponse.json({ tenantId: bound.tenantId, businesses: visible });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    businesses: visible,
+  });
 }
 
 export async function POST(request: Request) {
@@ -137,6 +153,10 @@ export async function POST(request: Request) {
       geocodeSourceRef: body.geocodeSourceRef,
       geocodeDisplayName: body.geocodeDisplayName,
       areaLabel: body.areaLabel,
+      territoryId: resolveStampTerritoryId({
+        tenantId: bound.tenantId,
+        inherited: gated.actor.territoryId,
+      }),
       scope,
     });
     return NextResponse.json(created, { status: 201 });

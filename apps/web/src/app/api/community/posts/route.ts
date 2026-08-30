@@ -5,6 +5,7 @@ import {
   createCommunityNotification,
 } from "@/lib/community/server-community-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import { resolveStampTerritoryId } from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,10 @@ export async function POST(request: Request) {
     title,
     body: text,
     kind,
+    territoryId: resolveStampTerritoryId({
+      tenantId: bound.tenantId,
+      inherited: gated.actor.territoryId,
+    }),
     scope,
   });
   await createCommunityNotification({

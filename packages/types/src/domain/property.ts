@@ -55,6 +55,8 @@ export type Property = {
   /** Postal Address when known (ADR-006). Optional when Location carries the place. */
   addressId?: DomainId;
   tenantId?: DomainId;
+  /** Inherited from Property Location. Additive — tenantId remains. */
+  territoryId?: DomainId;
   locationId?: DomainId;
   createdBy?: DomainId;
   title?: string;
@@ -168,6 +170,7 @@ export type CreatePropertyInput = {
   propertyType: HousingPropertyType;
   locationId?: DomainId;
   addressId?: DomainId;
+  territoryId?: DomainId;
   images?: string[];
   status?: HousingPropertyStatus;
   availability?: HousingAvailability;
@@ -216,6 +219,9 @@ export function createPropertyRecord(input: CreatePropertyInput): Property {
     updatedAt: now,
     ...(input.locationId?.trim() ? { locationId: input.locationId.trim() } : {}),
     ...(input.addressId?.trim() ? { addressId: input.addressId.trim() } : {}),
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
     ...(input.areaLabel?.trim() ? { areaLabel: input.areaLabel.trim() } : {}),
     ...(input.unitLabel?.trim() ? { unitLabel: input.unitLabel.trim() } : {}),
     ...(typeof input.bedrooms === "number" && Number.isFinite(input.bedrooms)

@@ -13,6 +13,11 @@ import {
   listMarketplaceListingsServer,
 } from "@/lib/marketplace/server-marketplace-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -32,6 +37,12 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -39,14 +50,21 @@ export async function GET(request: Request) {
   const all = await listMarketplaceListingsServer(bound.tenantId, scope);
   const type = url.searchParams.get("type")?.trim();
   const category = url.searchParams.get("category")?.trim().toLowerCase();
-  const listings = all.filter((item) => {
+  const listings = filterForActiveTerritory(
+    all,
+    territory.context.territoryId,
+  ).filter((item) => {
     if (item.tenantId !== bound.tenantId) return false;
     if (!listingVisibleToActor(actor, item)) return false;
     if (type && item.type !== type) return false;
     if (category && item.category.toLowerCase() !== category) return false;
     return true;
   });
-  return NextResponse.json({ tenantId: bound.tenantId, listings });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    listings,
+  });
 }
 
 export async function POST(request: Request) {
@@ -100,6 +118,10 @@ export async function POST(request: Request) {
     images: body.images,
     price: body.price,
     locationId: body.locationId,
+    territoryId: resolveStampTerritoryId({
+      tenantId: bound.tenantId,
+      inherited: gated.actor.territoryId,
+    }),
     authorDisplayName:
       gated.actor.currentUser.displayName?.trim() ||
       gated.actor.currentUser.email?.split("@")[0] ||

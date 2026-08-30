@@ -10,6 +10,11 @@ import {
   listMyConversationsServer,
 } from "@/lib/communication/server-communication-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 import { isConversationKind } from "@life-community-os/types";
 
 export const runtime = "nodejs";
@@ -41,6 +46,12 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -56,8 +67,18 @@ export async function GET(request: Request) {
         actor,
         scope,
       );
+      if (
+        thread?.conversation &&
+        !filterForActiveTerritory(
+          [thread.conversation],
+          territory.context.territoryId,
+        ).length
+      ) {
+        return NextResponse.json({ error: "not_found" }, { status: 404 });
+      }
       return NextResponse.json({
         tenantId: bound.tenantId,
+        territoryId: territory.context.territoryId,
         conversation: thread?.conversation ?? null,
         participants: thread?.participants ?? [],
         messages: thread?.messages ?? [],
@@ -68,7 +89,16 @@ export async function GET(request: Request) {
       actor,
       scope,
     );
-    return NextResponse.json({ tenantId: bound.tenantId, conversations });
+    return NextResponse.json({
+      tenantId: bound.tenantId,
+      territoryId: territory.context.territoryId,
+      conversations: conversations.filter((item) =>
+        filterForActiveTerritory(
+          [item.conversation],
+          territory.context.territoryId,
+        ).length,
+      ),
+    });
   } catch (error) {
     const denied = deniedStatus(error);
     if (denied) return denied;
@@ -129,6 +159,10 @@ export async function POST(request: Request) {
       displayNames: {
         [gated.actor.personId]: gated.actor.currentUser.displayName ?? "",
       },
+      territoryId: resolveStampTerritoryId({
+        tenantId: bound.tenantId,
+        inherited: gated.actor.territoryId,
+      }),
       scope,
     });
     return NextResponse.json(thread, { status: 201 });

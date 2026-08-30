@@ -24,6 +24,10 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export type MarketplaceWriteScope = {
   accessToken?: string | null;
@@ -75,6 +79,7 @@ type ListingRow = {
   price: number | string | null;
   status: MarketplaceListingStatus;
   location_id: string | null;
+  territory_id: string | null;
   author_display_name: string;
   created_at: string;
   updated_at: string;
@@ -111,6 +116,7 @@ function rowToListing(row: ListingRow, tenantSlug: string): MarketplaceListing {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     ...(row.location_id ? { locationId: row.location_id } : {}),
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -176,6 +182,7 @@ async function persistListing(
         price: listing.price,
         status: listing.status,
         location_id: listing.locationId ?? null,
+        territory_id: asTerritoryUuid(listing.territoryId),
         author_display_name: listing.authorDisplayName,
         created_at: listing.createdAt,
         updated_at: listing.updatedAt,
@@ -217,6 +224,7 @@ export async function createMarketplaceListingServer(input: {
   images?: string[];
   price?: number | null;
   locationId?: string;
+  territoryId?: string;
   authorDisplayName?: string;
   ownerPersonIdFromClient?: string | null;
   scope?: MarketplaceWriteScope;
@@ -235,6 +243,10 @@ export async function createMarketplaceListingServer(input: {
     locationId: input.locationId,
     authorDisplayName: input.authorDisplayName,
     status: "published",
+    territoryId: resolveStampTerritoryId({
+      tenantId: input.tenantId,
+      explicit: input.territoryId,
+    }),
   });
   await persistListing(listing, input.scope);
   return listing;
@@ -277,6 +289,7 @@ export async function updateMarketplaceListingServer(input: {
     id: existing.id,
     tenantId: existing.tenantId,
     authorDisplayName: existing.authorDisplayName,
+    territoryId: existing.territoryId,
   });
   next.createdAt = existing.createdAt;
   next.updatedAt = new Date().toISOString();

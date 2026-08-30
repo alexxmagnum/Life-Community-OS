@@ -36,6 +36,7 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import { asTerritoryUuid } from "@/lib/tenant/resolve-territory";
 import { locationVisibilityForStatus } from "./permissions";
 
 export type BusinessWriteScope = LocationWriteScope;
@@ -80,6 +81,7 @@ async function writeFileStore(
 type BusinessRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   owner_person_id: string;
   location_id: string;
   name: string;
@@ -108,6 +110,7 @@ function rowToBusiness(row: BusinessRow, tenantSlug: string): BusinessProfile {
     ...(row.contact ? { contact: row.contact } : {}),
     ...(row.hours ? { hours: row.hours } : {}),
     ...(row.image_url ? { imageUrl: row.image_url } : {}),
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
   };
 }
 
@@ -118,6 +121,7 @@ function businessToRow(
   return {
     id: business.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(business.territoryId),
     owner_person_id: business.ownerPersonId,
     location_id: business.locationId,
     name: business.name,
@@ -254,6 +258,7 @@ export type RegisterBusinessInput = {
   geocodeSourceRef?: string;
   geocodeDisplayName?: string;
   areaLabel?: string;
+  territoryId?: string;
   /** Ignored. Ownership is session-bound. */
   ownerPersonIdFromClient?: string | null;
   scope?: BusinessWriteScope;
@@ -288,6 +293,7 @@ export async function createRegisteredBusiness(
     hours: input.hours,
     imageUrl: input.imageUrl,
     areaLabel: input.areaLabel,
+    territoryId: input.territoryId,
   };
   const location = await saveLocationServer(locationDraft, input.scope);
 
@@ -302,6 +308,7 @@ export async function createRegisteredBusiness(
     hours: input.hours,
     imageUrl: input.imageUrl,
     status: "draft",
+    territoryId: location.territoryId,
   });
 
   const linked = createLocation({

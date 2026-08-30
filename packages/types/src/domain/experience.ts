@@ -122,6 +122,7 @@ export function experienceFromResource(
   return {
     id: resource.id,
     tenantId: resource.tenantId,
+    ...(resource.territoryId ? { territoryId: resource.territoryId } : {}),
     title: resource.name,
     description: resource.description,
     imageUrl,

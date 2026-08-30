@@ -12,6 +12,11 @@ import {
   canMutateLocation,
 } from "@/lib/location/location-ownership";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  recordVisibleInTerritory,
+  resolveActiveTerritoryContext,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -32,12 +37,26 @@ export async function GET(request: Request, { params }: Params) {
   });
   if ("error" in bound) return bound.error;
   const tenantId = bound.tenantId;
+  const territory = resolveActiveTerritoryContext({
+    tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const location = await getLocationServer(tenantId, id, scope);
   if (!location) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   if (location.tenantId !== tenantId) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (
+    !recordVisibleInTerritory(
+      location.territoryId,
+      territory.context.territoryId,
+    )
+  ) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   if (location.visibility === "private") {

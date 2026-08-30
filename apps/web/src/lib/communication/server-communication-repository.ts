@@ -39,6 +39,10 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
+import {
+  asTerritoryUuid,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 import type { RequestActor } from "@/lib/auth/request-actor";
 import {
   actorCanEditMessage,
@@ -180,6 +184,7 @@ function hydrateMessage(row: Message, tenantSlug: string): Message {
 type ConversationRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   created_by: string;
   type: string;
   context_type: string;
@@ -243,6 +248,7 @@ function rowToConversation(row: ConversationRow, tenantSlug: string): Conversati
     contextType: row.context_type,
     contextId: row.context_id,
     title: row.title ?? undefined,
+    territoryId: row.territory_id ?? undefined,
   });
   return hydrateConversation(
     {
@@ -398,6 +404,7 @@ async function persistStore(
   const conversationRows = store.conversations.map((item) => ({
     id: item.id,
     tenant_id: tenantUuid,
+    territory_id: asTerritoryUuid(item.territoryId),
     created_by: item.createdBy ?? item.createdByPersonId ?? "",
     type: item.type ?? "context",
     context_type: item.contextType ?? item.context.contextType,
@@ -607,6 +614,7 @@ export async function findOrCreateConversationServer(input: {
   title?: string;
   participantPersonIds?: string[];
   displayNames?: Record<string, string>;
+  territoryId?: string;
   scope?: CommunicationWriteScope;
 }): Promise<ConversationThread> {
   const personId = input.actor.personId?.trim();
@@ -654,6 +662,11 @@ export async function findOrCreateConversationServer(input: {
     contextType,
     contextId,
     title: input.title,
+    territoryId: resolveStampTerritoryId({
+      tenantId: slug,
+      explicit: input.territoryId,
+      inherited: input.actor.territoryId,
+    }),
   });
   const names = input.displayNames ?? {};
   const owner = createConversationParticipantRecord({

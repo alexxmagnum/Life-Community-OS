@@ -9,6 +9,11 @@ import {
 } from "@/lib/community/server-community-repository";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+  resolveStampTerritoryId,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -25,12 +30,25 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
-  const groups = await listCommunityGroups(bound.tenantId, scope);
-  return NextResponse.json({ tenantId: bound.tenantId, groups });
+  const groups = filterForActiveTerritory(
+    await listCommunityGroups(bound.tenantId, scope),
+    territory.context.territoryId,
+  );
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    groups,
+  });
 }
 
 export async function POST(request: Request) {
@@ -65,6 +83,10 @@ export async function POST(request: Request) {
     createdBy: gated.actor.personId,
     name,
     description: body.description,
+    territoryId: resolveStampTerritoryId({
+      tenantId: bound.tenantId,
+      inherited: gated.actor.territoryId,
+    }),
     scope,
   });
   return NextResponse.json({ group }, { status: 201 });

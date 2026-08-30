@@ -17,6 +17,10 @@ import {
   listHousingStore,
 } from "@/lib/housing/server-housing-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import {
+  filterForActiveTerritory,
+  resolveActiveTerritoryContext,
+} from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -36,6 +40,12 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
@@ -44,7 +54,11 @@ export async function GET(request: Request) {
   const mine = url.searchParams.get("mine") === "1";
   const type = url.searchParams.get("type")?.trim();
   const availability = url.searchParams.get("availability")?.trim();
-  const properties = store.properties.flatMap((item) => {
+  const scopedProperties = filterForActiveTerritory(
+    store.properties,
+    territory.context.territoryId,
+  );
+  const properties = scopedProperties.flatMap((item) => {
     if (item.tenantId !== bound.tenantId) return [];
     if (!propertyVisibleToActor(actor, item, store.memberships)) return [];
     const role = actorMembership(actor, store.memberships, item.id)
@@ -55,7 +69,11 @@ export async function GET(request: Request) {
     const view = toPropertyPublicView(item, role);
     return view ? [view] : [];
   });
-  return NextResponse.json({ tenantId: bound.tenantId, properties });
+  return NextResponse.json({
+    tenantId: bound.tenantId,
+    territoryId: territory.context.territoryId,
+    properties,
+  });
 }
 
 export async function POST(request: Request) {
