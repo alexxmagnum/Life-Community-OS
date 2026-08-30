@@ -55,6 +55,7 @@ const ROLE_CAPABILITIES: Record<MembershipRole, readonly CapabilityKey[]> = {
   ],
   moderator: [
     ...memberCaps,
+    CAPABILITIES.experienceManage,
     CAPABILITIES.manageEnter,
     CAPABILITIES.residencyVerifyReview,
     CAPABILITIES.housingManage,

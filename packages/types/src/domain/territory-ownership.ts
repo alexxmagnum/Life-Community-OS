@@ -18,6 +18,7 @@ import type {
 } from "./community-core";
 import type { Conversation } from "../platform/communication/conversation";
 import type { MediaAsset } from "../platform/files/media-asset";
+import type { ExperienceRecord } from "./experience";
 
 export function optionalTerritoryField(
   territoryId?: string | null,
@@ -180,6 +181,17 @@ export function mediaBelongsToTerritory(
 ): boolean {
   if (tenantId && asset.tenantId !== tenantId) return false;
   return Boolean(asset.territoryId && asset.territoryId === territoryId);
+}
+
+export function experienceBelongsToTerritory(
+  experience: Pick<ExperienceRecord, "territoryId" | "tenantId">,
+  territoryId: DomainId,
+  tenantId?: DomainId,
+): boolean {
+  if (tenantId && experience.tenantId !== tenantId) return false;
+  return Boolean(
+    experience.territoryId && experience.territoryId === territoryId,
+  );
 }
 
 export function denyCrossTerritoryAccess(

@@ -28,11 +28,12 @@ export type CommunityCommentStatus = "published" | "hidden" | "archived";
 
 export type CommunityReactionKind = "acknowledge" | "support";
 
-export type CommunityTargetType = "post" | "event" | "comment";
+export type CommunityTargetType = "post" | "event" | "comment" | "experience";
 
 export type CommunityNotificationKind =
   | "post_published"
   | "event_created"
+  | "experience_published"
   | "mention"
   | "official_alert";
 

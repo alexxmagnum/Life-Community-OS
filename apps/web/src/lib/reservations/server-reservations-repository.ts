@@ -825,6 +825,7 @@ export async function createReservationServer(input: {
   end: string;
   participantCount?: number;
   territoryId?: string;
+  experienceId?: string;
   createdByFromClient?: string | null;
   scope?: ReservationsWriteScope;
 }): Promise<Reservation> {
@@ -887,7 +888,9 @@ export async function createReservationServer(input: {
     end: input.end,
     status,
     participantCount: count,
-    experienceId: resource.category === "activity" ? resource.id : undefined,
+    experienceId:
+      input.experienceId?.trim() ||
+      (resource.category === "activity" ? resource.id : undefined),
     resourceName: resource.name,
     resourceImageUrl: resource.images?.[0] ?? resource.imageUrl,
     location: resource.location,

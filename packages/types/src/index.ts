@@ -36,6 +36,7 @@ export {
   communityRecordBelongsToTerritory,
   conversationBelongsToTerritory,
   mediaBelongsToTerritory,
+  experienceBelongsToTerritory,
   denyCrossTerritoryAccess,
 } from "./domain";
 
@@ -256,8 +257,18 @@ export {
   splitIsoToDateTime,
   spotsLeft,
   deriveExperienceViewerState,
+  occupyingParticipantRoles,
+  participationOccupiesSeat,
   experienceFromResource,
   isActivityResource,
+  isExperienceLifecycleStatus,
+  isExperienceParticipantRole,
+  isExperienceCategory,
+  createExperienceRecord,
+  createExperienceParticipationRecord,
+  EXPERIENCE_LIFECYCLE_STATUSES,
+  EXPERIENCE_CATEGORIES,
+  EXPERIENCE_PARTICIPANT_ROLES,
 } from "./domain";
 
 /** Housing / Living domain helpers (module foundation). */

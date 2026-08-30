@@ -31,6 +31,7 @@ export {
   communityRecordBelongsToTerritory,
   conversationBelongsToTerritory,
   mediaBelongsToTerritory,
+  experienceBelongsToTerritory,
   denyCrossTerritoryAccess,
 } from "./territory-ownership";
 export type { CommunityArea } from "./community-area";
@@ -220,15 +221,31 @@ export type {
   Experience,
   ExperienceType,
   ExperienceStatus,
+  ExperienceLifecycleStatus,
+  ExperienceCategory,
   ExperienceOrganizer,
   ExperienceParticipant,
+  ExperienceParticipantRole,
+  ExperienceParticipation,
+  ExperienceRecord,
+  CreateExperienceRecordInput,
   ExperienceViewerState,
 } from "./experience";
 export {
+  EXPERIENCE_LIFECYCLE_STATUSES,
+  EXPERIENCE_CATEGORIES,
+  EXPERIENCE_PARTICIPANT_ROLES,
+  isExperienceLifecycleStatus,
+  isExperienceParticipantRole,
+  isExperienceCategory,
   spotsLeft,
   deriveExperienceViewerState,
+  occupyingParticipantRoles,
+  participationOccupiesSeat,
   experienceFromResource,
   isActivityResource,
+  createExperienceRecord,
+  createExperienceParticipationRecord,
 } from "./experience";
 export type {
   Channel,
