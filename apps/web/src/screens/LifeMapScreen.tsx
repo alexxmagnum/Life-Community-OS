@@ -21,20 +21,27 @@ import {
   type LifeMapContextPanelModel,
 } from "@life-community-os/life-map-renderer";
 import type {
+  CommunityFeedItem,
   LifeMapActionKind,
   LifeMapObject,
   LifeMapTerritory,
   Location,
 } from "@life-community-os/types";
+import {
+  buildLifeMapPlaceSheet,
+  projectLocationToLifeMapView,
+} from "@life-community-os/types";
 import { LifeMapContextPanel } from "@/components/life-map/LifeMapContextPanel";
 import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
 import { isLifeMapExperienceUnlocked } from "@/lib/life-map-dev";
+import { getCommunityExperienceFeed } from "@/lib/community/community-client";
 import {
   filterLifeMapObjectsWithPosition,
   resolveLifeMapTapHref,
   territoryObjectsForTenant,
   bindLifeMapToActiveTerritory,
 } from "@/lib/life-map/digital-twin";
+import { assembleLifeMapContext, mapObjectsWithFeedLife } from "@/lib/life-map/life-map-context";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
 import {
@@ -92,6 +99,7 @@ export function LifeMapScreen() {
   );
   const [query, setQuery] = useState("");
   const [filterId, setFilterId] = useState("all");
+  const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
 
   const filteredLocations = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -167,6 +175,31 @@ export function LifeMapScreen() {
     return bindLifeMapToActiveTerritory(base, activeTerritory);
   }, [pack, focusLocation, filteredLocations, locations, selectedObjectId, activeTerritory]);
 
+  useEffect(() => {
+    void getCommunityExperienceFeed({
+      tenantId: configuration.tenantId,
+      territoryId: activeTerritory.territoryId,
+    }).then((data) => setFeedItems(data.items));
+  }, [configuration.tenantId, activeTerritory.territoryId]);
+
+  const livingContext = useMemo(
+    () =>
+      assembleLifeMapContext({
+        tenantId: configuration.tenantId,
+        territoryId: activeTerritory.territoryId ?? "",
+        locations: filteredLocations,
+        feedItems,
+        territoryObjects: pack?.listTerritoryObjects?.() ?? [],
+      }),
+    [
+      configuration.tenantId,
+      activeTerritory.territoryId,
+      filteredLocations,
+      feedItems,
+      pack,
+    ],
+  );
+
   const objects: LifeMapObject[] = useMemo(() => {
     if (!territory || !pack) return [];
     const fromLocations = resolveLifeMapObjectsWithLocations(
@@ -179,11 +212,11 @@ export function LifeMapScreen() {
       pack.tenantId,
       territory.territoryId,
     );
-    return filterLifeMapObjectsWithPosition([
-      ...fromTerritory,
-      ...fromLocations,
-    ]);
-  }, [filteredLocations, territory, pack]);
+    return mapObjectsWithFeedLife(
+      filterLifeMapObjectsWithPosition([...fromTerritory, ...fromLocations]),
+      livingContext.activeFeedItems,
+    );
+  }, [filteredLocations, territory, pack, livingContext.activeFeedItems]);
 
   const territoryAmenities = useMemo(
     () => pack?.territoryAmenities?.() ?? null,
@@ -220,14 +253,33 @@ export function LifeMapScreen() {
     return objects.find((o) => o.objectId === selectedObjectId) ?? null;
   }, [objects, selectedObjectId]);
 
+  const selectedPlaceSheet = useMemo(() => {
+    if (!selectedObject) return null;
+    const location = resolveLocationForObject(selectedObject);
+    const view = location ? projectLocationToLifeMapView(location) : null;
+    if (!view) return null;
+    return buildLifeMapPlaceSheet({
+      location: view,
+      feedItems: livingContext.activeFeedItems,
+    });
+  }, [selectedObject, resolveLocationForObject, livingContext.activeFeedItems]);
+
   const contextModel: LifeMapContextPanelModel | null = useMemo(() => {
     if (!selectedObject) return null;
     const location = resolveLocationForObject(selectedObject);
+    const sheet = selectedPlaceSheet;
     const enrichment = location
-      ? locationContextEnrichment(location)
+      ? {
+          ...locationContextEnrichment(location),
+          availableActions: selectedObject.availableActions,
+          ...(sheet?.nowLabel ? { liveNow: sheet.nowLabel } : {}),
+          ...(sheet?.availabilityLabel
+            ? { liveAvailability: sheet.availabilityLabel }
+            : {}),
+        }
       : pack?.enrichContext?.(selectedObject) ?? null;
     return buildLifeMapContextPanel(selectedObject, enrichment);
-  }, [selectedObject, resolveLocationForObject, pack]);
+  }, [selectedObject, selectedPlaceSheet, resolveLocationForObject, pack]);
 
   useEffect(() => {
     if (!pack) return;
@@ -284,7 +336,16 @@ export function LifeMapScreen() {
     (action: LifeMapActionKind) => {
       if (!selectedObject) return;
       const location = resolveLocationForObject(selectedObject);
+      if (action === "join") {
+        const href = selectedPlaceSheet?.primary.href;
+        if (href) router.push(href);
+        return;
+      }
       if (action === "open" || action === "reserve") {
+        if (action === "reserve" && selectedPlaceSheet?.primary.kind === "reserve") {
+          router.push(selectedPlaceSheet.primary.href);
+          return;
+        }
         const tap = resolveLifeMapTapHref({
           object: selectedObject,
           location,
@@ -293,8 +354,12 @@ export function LifeMapScreen() {
           router.push(tap.href);
           return;
         }
-        if (action === "open" && tap.href) {
-          router.push(tap.href);
+        if (action === "open") {
+          const href =
+            selectedPlaceSheet?.primary.kind === "view"
+              ? selectedPlaceSheet.primary.href
+              : tap.href;
+          if (href) router.push(href);
         }
         return;
       }
@@ -311,7 +376,7 @@ export function LifeMapScreen() {
         openLocationContact(location.contact);
       }
     },
-    [selectedObject, resolveLocationForObject, router],
+    [selectedObject, selectedPlaceSheet, resolveLocationForObject, router],
   );
 
   if (!experienceOn) {
@@ -386,7 +451,7 @@ export function LifeMapScreen() {
         selectedObjectId={selectedObjectId}
         onObjectSelect={onObjectSelect}
         focusLocationId={selectedObjectId}
-        dataVersion={`loc-${filteredLocations.length}-${seedReady ? "ready" : "boot"}`}
+        dataVersion={`loc-${filteredLocations.length}-life-${livingContext.activeFeedItems.length}-${seedReady ? "ready" : "boot"}`}
         territoryName={pack.territoryName}
         locationsReady={seedReady}
         territoryAmenities={territoryAmenities}

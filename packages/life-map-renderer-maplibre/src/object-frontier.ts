@@ -32,8 +32,11 @@ export const MAPLIBRE_OBJECTS_LABEL_LAYER_ID = "lm-life-os-objects-label";
 export const MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID = "lm-life-os-objects-cluster";
 export const MAPLIBRE_OBJECTS_CLUSTER_COUNT_LAYER_ID =
   "lm-life-os-objects-cluster-count";
+export const MAPLIBRE_LANDMARKS_SOURCE_ID = "lm-life-os-landmarks";
+export const MAPLIBRE_LANDMARKS_LAYER_ID = "lm-life-os-landmarks-circle";
 export const MAPLIBRE_OBJECTS_INTERACTIVE_LAYER_IDS = [
   MAPLIBRE_OBJECTS_LAYER_ID,
+  MAPLIBRE_LANDMARKS_LAYER_ID,
   MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID,
 ] as const;
 
@@ -133,7 +136,15 @@ export function syncMapLibreObjectFrontier(
           objectId: o.objectId,
           type: o.type,
           label: o.label ?? "",
-          color: colorForType(o.type),
+          color:
+            o.state === "active" || o.state === "full"
+              ? "#2f8a5a"
+              : colorForType(o.type),
+          lod:
+            o.type === "resource" || String(o.layerId) === "resources"
+              ? "landmark"
+              : "places",
+          alive: o.state === "active" || o.state === "full",
         },
         geometry: {
           type: "Point" as const,
@@ -142,9 +153,20 @@ export function syncMapLibreObjectFrontier(
       };
     });
 
+  const placeFeatures = features.filter(
+    (feature) => feature.properties.lod === "places",
+  );
+  const landmarkFeatures = features.filter(
+    (feature) => feature.properties.lod === "landmark",
+  );
+
   const collection = {
     type: "FeatureCollection" as const,
-    features,
+    features: placeFeatures,
+  };
+  const landmarks = {
+    type: "FeatureCollection" as const,
+    features: landmarkFeatures,
   };
 
   if (!map.getSource(MAPLIBRE_OBJECTS_SOURCE_ID)) {
@@ -159,6 +181,18 @@ export function syncMapLibreObjectFrontier(
   } else {
     const source = map.getSource(MAPLIBRE_OBJECTS_SOURCE_ID) as GeoJSONSource;
     source.setData(collection);
+  }
+
+  if (!map.getSource(MAPLIBRE_LANDMARKS_SOURCE_ID)) {
+    map.addSource(MAPLIBRE_LANDMARKS_SOURCE_ID, {
+      type: "geojson",
+      data: landmarks,
+      cluster: false,
+      promoteId: "objectId",
+    });
+  } else {
+    const source = map.getSource(MAPLIBRE_LANDMARKS_SOURCE_ID) as GeoJSONSource;
+    source.setData(landmarks);
   }
 
   if (!map.getLayer(MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID)) {
@@ -284,6 +318,34 @@ export function syncMapLibreObjectFrontier(
     } catch {
       // ignore
     }
+  }
+
+  if (!map.getLayer(MAPLIBRE_LANDMARKS_LAYER_ID)) {
+    map.addLayer({
+      id: MAPLIBRE_LANDMARKS_LAYER_ID,
+      type: "circle",
+      source: MAPLIBRE_LANDMARKS_SOURCE_ID,
+      minzoom: LIFE_MAP_COMMERCIAL_LOD.landmarkMinZoom,
+      paint: {
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          14.8,
+          6,
+          16.5,
+          9,
+          19,
+          12,
+        ],
+        "circle-color": ["get", "color"],
+        "circle-opacity": hidden ? 0 : 0.94,
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-opacity": hidden ? 0 : 0.95,
+      },
+      metadata: { lifeMapObjects: true, lod: "landmark" },
+    });
   }
 
   if (showPlaceLabels) {

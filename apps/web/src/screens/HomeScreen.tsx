@@ -10,8 +10,8 @@ import {
   listHomeIntents,
 } from "@life-community-os/tenant-life-panoramica";
 import {
-  communityFeedItemHref,
   communityFeedPrimaryLabel,
+  lifeMapHrefForFeedItem,
   territoryHomeQuery,
   type CommunityFeedItem,
 } from "@life-community-os/types";
@@ -191,7 +191,7 @@ export function HomeScreen() {
           personName: undefined as string | undefined,
           personAvatarUrl: undefined as string | undefined,
           liked: false,
-          href: communityFeedItemHref(item),
+          href: lifeMapHrefForFeedItem(item),
         })),
     [feedItems],
   );
@@ -353,7 +353,7 @@ export function HomeScreen() {
                 }
                 statusLabel={presentation.statusLabel}
                 ctaLabel={presentation.ctaLabel}
-                onClick={() => router.push(communityFeedItemHref(item))}
+                onClick={() => router.push(lifeMapHrefForFeedItem(item))}
               />
             ))}
           </HomeRail>

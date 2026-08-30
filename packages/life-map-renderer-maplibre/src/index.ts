@@ -33,6 +33,8 @@ export {
   mapLibreObjectLayerId,
   MAPLIBRE_OBJECTS_SOURCE_ID,
   MAPLIBRE_OBJECTS_LAYER_ID,
+  MAPLIBRE_LANDMARKS_SOURCE_ID,
+  MAPLIBRE_LANDMARKS_LAYER_ID,
   MAPLIBRE_OBJECTS_LABEL_LAYER_ID,
   type MapLibreObjectBinding,
 } from "./object-frontier";

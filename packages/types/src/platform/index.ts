@@ -424,3 +424,31 @@ export {
   mediaAssetTypeFromMime,
   mediaAssetToFileReference,
 } from "./files";
+
+export type {
+  LifeMapLivingLodBand,
+  LifeMapLocationView,
+  LifeMapContext,
+  LifeMapViewportBox,
+  LifeMapQueryInput,
+  LifeMapQueryResult,
+  LifeMapPlaceSheetAction,
+  LifeMapPlaceSheet,
+} from "./life-map-living";
+export {
+  LIFE_MAP_LIVING_LOD,
+  resolveLifeMapLivingLod,
+  isLandmarkLocationType,
+  locationVisibleAtLivingZoom,
+  locationInViewport,
+  projectLocationToLifeMapView,
+  feedItemsForLocation,
+  createLifeMapContext,
+  filterLifeMapContextForQuery,
+  lifeMapFocusHref,
+  lifeMapHrefForFeedItem,
+  lifeMapActionFromFeed,
+  applyFeedLifeToMapObject,
+  buildLifeMapPlaceSheet,
+  isPackOnlyMapMarker,
+} from "./life-map-living";

@@ -93,6 +93,10 @@ async function projectExperiences(input: {
   const rows = await listExperiencesServer(input.tenantId, input.scope, {
     territoryId: input.territoryId,
   });
+  const resources = await listResourcesServer(input.tenantId, input.scope);
+  const locationByResource = new Map(
+    resources.map((row) => [row.id, row.locationId]),
+  );
   const items: CommunityFeedItem[] = [];
   for (const experience of rows) {
     if (!inTerritory(experience.territoryId, input.territoryId)) continue;
@@ -104,6 +108,9 @@ async function projectExperiences(input: {
     const occupied = participants.filter((row) =>
       participationOccupiesSeat(row.role),
     ).length;
+    const locationId = experience.resourceId
+      ? locationByResource.get(experience.resourceId)
+      : undefined;
     const projected = projectExperienceToFeedItem({
       id: experience.id,
       tenantId: experience.tenantId,
@@ -114,6 +121,7 @@ async function projectExperiences(input: {
       startsAt: experience.startsAt,
       endsAt: experience.endsAt,
       location: experience.location,
+      locationId,
       resourceId: experience.resourceId,
       capacity: experience.capacity,
       occupied,

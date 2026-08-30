@@ -9,6 +9,7 @@ import {
   resolveSpatialAsset,
   shouldLoadSpatialGlb,
 } from "@life-community-os/assets";
+import { LIFE_MAP_LIVING_LOD } from "@life-community-os/types";
 
 const ARCHITECTURAL_KEY_HINTS = [
   "gate",
@@ -54,6 +55,7 @@ export function shouldLazyLoadTerritoryGlb(input: {
     const path = input.modelPath.toLowerCase();
     if (!path.endsWith(".glb") && !path.endsWith(".gltf")) return false;
   }
+  if (input.zoom < LIFE_MAP_LIVING_LOD.detail3dMinZoom) return false;
   const asset = input.assetKey ? resolveSpatialAsset(input.assetKey) : null;
   if (!asset) return false;
   if (!isArchitecturalTerritoryAsset(input.assetKey)) return false;

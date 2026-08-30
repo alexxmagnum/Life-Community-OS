@@ -10,6 +10,7 @@ import {
   communityFeedPrimaryLabel,
   discoverExperienceQuery,
   discoverQueryFromActive,
+  lifeMapHrefForFeedItem,
   type CommunityFeedItem,
   type CommunityGroupRecord,
 } from "@life-community-os/types";
@@ -325,7 +326,7 @@ export function DiscoverScreen() {
                       }
                       imageUrl={item.metadata?.imageUrl ?? ""}
                       ctaLabel={communityFeedPrimaryLabel(item)}
-                      onClick={() => router.push(communityFeedItemHref(item))}
+                      onClick={() => router.push(lifeMapHrefForFeedItem(item))}
                       onCta={() => router.push(communityFeedItemHref(item))}
                     />
                   );

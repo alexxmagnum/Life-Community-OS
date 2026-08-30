@@ -29,6 +29,9 @@ export type LifeMapContextPanelModel = {
   imageUrl?: string;
   /** Human address line from Location SoT. */
   address?: string;
+  /** Live activity from Community Experience Feed — not a map entity. */
+  liveNow?: string;
+  liveAvailability?: string;
 };
 
 const CATEGORY_HINT: Record<LifeMapObject["type"], string> = {

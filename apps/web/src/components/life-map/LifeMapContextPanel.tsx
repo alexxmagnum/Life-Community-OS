@@ -37,8 +37,8 @@ function actionLabel(
   return ACTION_LABEL[action] ?? action;
 }
 
-const PRIMARY_ACTIONS = new Set<LifeMapActionKind>(["open", "navigate", "reserve"]);
-const HIDDEN_DEMO_ACTIONS = new Set<LifeMapActionKind>(["join"]);
+const PRIMARY_ACTIONS = new Set<LifeMapActionKind>(["open", "navigate", "reserve", "join"]);
+const HIDDEN_DEMO_ACTIONS = new Set<LifeMapActionKind>([]);
 
 export function LifeMapContextPanel({
   model,
@@ -113,6 +113,19 @@ export function LifeMapContextPanel({
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
           {model.summary}
         </p>
+
+        {model.liveNow ? (
+          <div className="mt-3 rounded-2xl bg-[var(--color-surface-muted,rgba(28,24,18,0.04))] px-3 py-2.5">
+            <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+              {model.liveNow}
+            </p>
+            {model.liveAvailability ? (
+              <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+                {model.liveAvailability}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {model.asset3DKey && !customerDemo ? (
           <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">

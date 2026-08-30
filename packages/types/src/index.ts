@@ -46,6 +46,35 @@ export {
   lifeMapContextsFromFeed,
 } from "./community/community-feed";
 
+/** Life Map living Territory — Territory + Location + Feed projection. */
+export type {
+  LifeMapLivingLodBand,
+  LifeMapLocationView,
+  LifeMapContext,
+  LifeMapViewportBox,
+  LifeMapQueryInput,
+  LifeMapQueryResult,
+  LifeMapPlaceSheetAction,
+  LifeMapPlaceSheet,
+} from "./platform/life-map-living";
+export {
+  LIFE_MAP_LIVING_LOD,
+  resolveLifeMapLivingLod,
+  isLandmarkLocationType,
+  locationVisibleAtLivingZoom,
+  locationInViewport,
+  projectLocationToLifeMapView,
+  feedItemsForLocation,
+  createLifeMapContext,
+  filterLifeMapContextForQuery,
+  lifeMapFocusHref,
+  lifeMapHrefForFeedItem,
+  lifeMapActionFromFeed,
+  applyFeedLifeToMapObject,
+  buildLifeMapPlaceSheet,
+  isPackOnlyMapMarker,
+} from "./platform/life-map-living";
+
 /** Runtime helpers for Location (map SoT). */
 export {
   LOCATION_TYPES,

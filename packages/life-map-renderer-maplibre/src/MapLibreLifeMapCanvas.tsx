@@ -39,7 +39,7 @@ import {
   MAPLIBRE_TECHNICAL_PREVIEW_STYLE,
   resolveLifeMapBasemapStyle,
 } from "./premium-style";
-import { MAPLIBRE_OBJECTS_LAYER_ID, MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID, MAPLIBRE_OBJECTS_SOURCE_ID } from "./object-frontier";
+import { MAPLIBRE_OBJECTS_LAYER_ID, MAPLIBRE_LANDMARKS_LAYER_ID, MAPLIBRE_OBJECTS_CLUSTER_LAYER_ID, MAPLIBRE_OBJECTS_SOURCE_ID } from "./object-frontier";
 import {
   MAPLIBRE_TERRITORY_INTERACTIVE_LAYER_IDS,
   type TerritoryFabricGeoJson,
@@ -145,7 +145,10 @@ function handleLifeMapPointer(
     }
   }
 
-  const objectLayers = existingMapLayers(map, [MAPLIBRE_OBJECTS_LAYER_ID]);
+  const objectLayers = existingMapLayers(map, [
+    MAPLIBRE_OBJECTS_LAYER_ID,
+    MAPLIBRE_LANDMARKS_LAYER_ID,
+  ]);
   if (objectLayers.length > 0) {
     const hits = map.queryRenderedFeatures(event.point, { layers: objectLayers });
     const objectId = hits[0]?.properties?.objectId as string | undefined;

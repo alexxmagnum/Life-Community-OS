@@ -4,6 +4,7 @@
  */
 
 import {
+  isLandmarkLocationType,
   projectLifeMapObject,
   type LifeMapActionKind,
   type LifeMapObject,
@@ -14,7 +15,6 @@ import {
 
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { resolveLocationExperience } from "./experience-resolver";
-import { demoPlaceProfileFor } from "./demo-place-profile";
 
 function lifeMapTypeForLocation(type: LocationType): LifeMapObjectType {
   switch (type) {
@@ -50,11 +50,21 @@ export function projectLocationToLifeMapObject(
   try {
     const experience = resolveLocationExperience(location);
     const type = lifeMapTypeForLocation(location.type);
+    const landmark = isLandmarkLocationType(location.type);
     return projectLifeMapObject({
       tenantId: location.tenantId,
       territoryId,
       objectId: location.id,
       type,
+      layerId: landmark
+        ? "resources"
+        : type === "service"
+          ? "services"
+          : type === "experience"
+            ? "experiences"
+            : type === "resource"
+              ? "resources"
+              : "community",
       position: {
         lat: location.latitude,
         lng: location.longitude,
@@ -93,43 +103,18 @@ export function projectLocationsToLifeMapObjects(
 }
 
 /**
- * Resolve map markers: Location SoT projections win; pack objects fill gaps
- * (e.g. before seed hydrate) and never hide registered businesses.
+ * Location SoT projections only — pack extras are never runtime markers.
  */
 export function resolveLifeMapObjectsWithLocations(
   packObjects: readonly LifeMapObject[],
   locations: readonly Location[],
   territoryId: string,
 ): LifeMapObject[] {
-  const fromLocations = projectLocationsToLifeMapObjects(
-    locations,
-    territoryId,
-  );
-  const covered = new Set<string>();
-  for (const obj of fromLocations) {
-    covered.add(obj.objectId);
-    if (obj.ref?.entityId) covered.add(obj.ref.entityId);
-  }
-  const extras: LifeMapObject[] = [];
-  for (const packObj of packObjects) {
-    if (packObj.type === "decoration" || String(packObj.layerId) === "territory") {
-      continue;
-    }
-    const pos = packObj.position as { lat?: unknown; lng?: unknown };
-    if (typeof pos.lat !== "number" || typeof pos.lng !== "number") {
-      continue;
-    }
-    const entityId = packObj.ref?.entityId;
-    if (covered.has(packObj.objectId)) continue;
-    if (entityId && covered.has(entityId)) continue;
-    extras.push(packObj);
-    covered.add(packObj.objectId);
-    if (entityId) covered.add(entityId);
-  }
-  return [...fromLocations, ...extras];
+  void packObjects;
+  return projectLocationsToLifeMapObjects(locations, territoryId);
 }
 
-/** Context-card enrichment driven by Location + Experience + demo lifestyle profile. */
+/** Context-card enrichment from Location SoT — not demo lifestyle copy. */
 export function locationContextEnrichment(location: Location): {
   label: string;
   summary: string;
@@ -141,14 +126,12 @@ export function locationContextEnrichment(location: Location): {
   imageUrl?: string;
 } {
   const experience = resolveLocationExperience(location);
-  const demo = demoPlaceProfileFor({
-    id: location.id,
-    name: location.name,
-  });
-  const imageUrl = preferEntityMediaUrl(undefined, demo?.imageUrl);
+  const imageUrl = preferEntityMediaUrl(undefined, location.imageUrl);
   return {
     label: location.name,
-    summary: demo?.summary ?? experience.summary,
+    summary:
+      location.summary?.trim() ||
+      `${location.name} · ${experience.typeHint}`,
     experienceTag: experience.categoryLabel,
     categoryHint: experience.typeHint,
     heroTone: experience.heroTone,

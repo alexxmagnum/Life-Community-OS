@@ -147,6 +147,14 @@ describe("Life Map digital twin", () => {
     );
     assert.equal(
       shouldLazyLoadTerritoryGlb({
+        zoom: 16.5,
+        assetKey: "utility.security.spatial_object",
+        modelPath: "/assets/3d/gate.glb",
+      }),
+      false,
+    );
+    assert.equal(
+      shouldLazyLoadTerritoryGlb({
         zoom: 18.1,
         assetKey: "utility.security.spatial_object",
         modelPath: "/assets/3d/gate.glb",
