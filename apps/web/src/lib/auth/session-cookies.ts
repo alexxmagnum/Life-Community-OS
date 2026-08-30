@@ -11,6 +11,7 @@ export const AUTH_COOKIE = {
   refresh: "lcos-refresh-token",
   localIdentity: "lcos-local-identity",
   tenant: "lcos-tenant-slug",
+  territory: "lcos-territory-id",
 } as const;
 
 export function setAuthCookie(
@@ -43,6 +44,12 @@ export function clearAuthCookies(response: NextResponse): void {
       maxAge: 0,
     });
   }
+}
+
+export function selectedTerritoryIdFromRequest(request: Request): string | null {
+  const header = request.headers.get("x-territory-id")?.trim();
+  if (header) return header;
+  return readCookie(request, AUTH_COOKIE.territory);
 }
 
 export function readCookie(request: Request, name: string): string | null {

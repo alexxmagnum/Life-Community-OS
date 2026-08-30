@@ -14,12 +14,14 @@ async function parseError(res: Response): Promise<string> {
 
 export async function fetchBusinesses(input: {
   tenantId: string;
+  territoryId?: string | null;
   category?: string;
   categories?: readonly string[];
   status?: string;
   locationId?: string;
 }): Promise<BusinessProfile[]> {
   const params = new URLSearchParams({ tenantId: input.tenantId });
+  if (input.territoryId?.trim()) params.set("territoryId", input.territoryId.trim());
   if (input.status) params.set("status", input.status);
   if (input.locationId) params.set("locationId", input.locationId);
   if (input.category) params.set("category", input.category);

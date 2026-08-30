@@ -22,6 +22,7 @@ import {
 import { requireTenantPack } from "@/lib/tenant/registry";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { BrandSplash } from "@/components/BrandSplash";
 import { useNotifications } from "@/providers/NotificationProvider";
@@ -176,6 +177,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
     configuration,
   } = useTenant();
   const { currentUser, sessionReady } = useCurrentUser();
+  const { context: activeTerritory } = useTerritory();
   const { unreadCount } = useNotifications();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
@@ -190,7 +192,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   const brandName = theme.logoText;
   const wordmarkPrimary = theme.identity?.wordmarkPrimary ?? theme.logoText;
-  const wordmarkSecondary = theme.identity?.wordmarkSecondary;
+  const territoryDisplayName =
+    activeTerritory.territoryName?.trim() ||
+    theme.identity?.wordmarkSecondary;
+  const wordmarkSecondary = territoryDisplayName;
   const isHome = pathname === "/";
 
   /** The most severe live advisory rides inside the floating tab bar. */
@@ -461,7 +466,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
             brandLogoUrl={brandLogoUrl}
             weatherTemperature={theme.identity?.weatherTemperature}
             weatherCondition={theme.identity?.weatherCondition}
-            placeLabel={theme.identity?.municipalityName}
+            placeLabel={
+              activeTerritory.territoryName || theme.identity?.municipalityName
+            }
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Explorar comunidad"

@@ -83,7 +83,10 @@ export function listVisibleMapLocations(tenantId: string): Location[] {
   );
 }
 
-export async function hydrateLocations(tenantId: string): Promise<Location[]> {
+export async function hydrateLocations(
+  tenantId: string,
+  territoryId?: string | null,
+): Promise<Location[]> {
   const id = tenantId.trim();
   if (!id) return [];
   const existing = inflightHydrate.get(id);
@@ -93,10 +96,11 @@ export async function hydrateLocations(tenantId: string): Promise<Location[]> {
   }
   const task = (async () => {
     try {
-      const res = await fetch(
-        `/api/locations?tenantId=${encodeURIComponent(id)}`,
-        { cache: "no-store" },
-      );
+      const params = new URLSearchParams({ tenantId: id });
+      if (territoryId?.trim()) params.set("territoryId", territoryId.trim());
+      const res = await fetch(`/api/locations?${params.toString()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) return;
       const data = (await res.json()) as { locations?: Location[] };
       if (Array.isArray(data.locations)) {

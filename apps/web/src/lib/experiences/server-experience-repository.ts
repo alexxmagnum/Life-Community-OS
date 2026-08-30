@@ -16,6 +16,7 @@ import {
   participationOccupiesSeat,
   hhmmToMinutes,
   minutesToHhmm,
+  recordMatchesTerritoryScope,
   splitIsoToDateTime,
   type ExperienceLifecycleStatus,
   type ExperienceParticipation,
@@ -383,10 +384,16 @@ async function notifyExperiencePublished(input: {
 export async function listExperiencesServer(
   tenantId: string,
   scope?: ExperienceWriteScope,
+  query?: { territoryId?: string | null },
 ): Promise<ExperienceRecord[]> {
   const slug = resolveTenantPublicId(tenantId);
   const store = await loadStore(slug, scope);
-  return store.experiences.filter((item) => item.tenantId === slug);
+  const rows = store.experiences.filter((item) => item.tenantId === slug);
+  const territoryId = query?.territoryId?.trim();
+  if (!territoryId) return rows;
+  return rows.filter((item) =>
+    recordMatchesTerritoryScope(item.territoryId, territoryId),
+  );
 }
 
 export async function getExperienceServer(

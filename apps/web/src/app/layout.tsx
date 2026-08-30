@@ -7,6 +7,7 @@ import "@life-community-os/ui/asset-pad.css";
 
 import { CurrentUserProvider } from "@/providers/CurrentUserProvider";
 import { TenantProvider } from "@/providers/TenantProvider";
+import { TerritoryProvider } from "@/providers/TerritoryProvider";
 import { CatalogProvider } from "@/providers/CatalogProvider";
 import { ExperienceParticipationProvider } from "@/providers/ExperienceParticipationProvider";
 import { HousingSavesProvider } from "@/providers/HousingSavesProvider";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-[var(--life-bg,var(--color-surface-app))] font-sans antialiased">
         <CurrentUserProvider>
           <TenantProvider>
+          <TerritoryProvider>
           <CatalogProvider>
             <ReservationProvider>
             <ExperienceParticipationProvider>
@@ -79,6 +81,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </ExperienceParticipationProvider>
             </ReservationProvider>
           </CatalogProvider>
+          </TerritoryProvider>
           </TenantProvider>
         </CurrentUserProvider>
       </body>

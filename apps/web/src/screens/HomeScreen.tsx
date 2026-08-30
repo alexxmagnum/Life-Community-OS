@@ -28,6 +28,8 @@ import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
+import { territoryHomeQuery } from "@life-community-os/types";
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
   "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
@@ -71,9 +73,14 @@ export function HomeScreen() {
     homeMode,
   } = useTenant();
   const { currentUser } = useCurrentUser();
-  const { allLocations } = useTenantLocations(configuration.tenantId);
+  const { context: activeTerritory } = useTerritory();
+  const { allLocations } = useTenantLocations(
+    configuration.tenantId,
+    activeTerritory.territoryId,
+  );
   const { experiences, ready: experiencesReady } = useReservations();
   const premiumHome = homeMode === "premium";
+  const homeQuery = territoryHomeQuery(activeTerritory);
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
@@ -92,7 +99,10 @@ export function HomeScreen() {
     );
   }, [currentUser.displayName, currentUser.email]);
 
-  const territoryName = theme.identity?.territoryName ?? theme.logoText;
+  const territoryName =
+    activeTerritory.territoryName ??
+    theme.identity?.territoryName ??
+    theme.logoText;
   const placeName = theme.shortName || territoryName;
   const todayTitle = resolveCopyTemplate(
     theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
@@ -103,7 +113,8 @@ export function HomeScreen() {
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
   const canExperiences =
     isFeatureEnabled("experiences") &&
-    hasCapability(CAPABILITIES.experienceView);
+    hasCapability(CAPABILITIES.experienceView) &&
+    homeQuery.sources.includes("experience");
 
   /** Open moments — tenant Resource activities (never cross-tenant). */
   const moments = useMemo(() => {

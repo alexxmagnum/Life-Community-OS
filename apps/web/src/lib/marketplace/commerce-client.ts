@@ -18,10 +18,12 @@ async function parseError(res: Response): Promise<string> {
 
 export async function fetchMarketplaceListings(input: {
   tenantId: string;
+  territoryId?: string | null;
   type?: string;
   category?: string;
 }): Promise<MarketplaceListing[]> {
   const params = new URLSearchParams({ tenantId: input.tenantId });
+  if (input.territoryId?.trim()) params.set("territoryId", input.territoryId.trim());
   if (input.type) params.set("type", input.type);
   if (input.category) params.set("category", input.category);
   const res = await fetch(`/api/marketplace?${params.toString()}`, {
@@ -119,11 +121,13 @@ export async function fetchHelpRequest(
 
 export async function fetchHelpRequests(input: {
   tenantId: string;
+  territoryId?: string | null;
   type?: string;
   category?: string;
   board?: "work" | "help";
 }): Promise<HelpRequest[]> {
   const params = new URLSearchParams({ tenantId: input.tenantId });
+  if (input.territoryId?.trim()) params.set("territoryId", input.territoryId.trim());
   if (input.type) params.set("type", input.type);
   if (input.category) params.set("category", input.category);
   if (input.board) params.set("board", input.board);

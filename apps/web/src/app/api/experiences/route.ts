@@ -68,7 +68,9 @@ export async function GET(request: Request) {
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
-  const all = await listExperiencesServer(bound.tenantId, scope);
+  const all = await listExperiencesServer(bound.tenantId, scope, {
+    territoryId: territory.context.territoryId,
+  });
   const status = url.searchParams.get("status")?.trim();
   const category = url.searchParams.get("category")?.trim().toLowerCase();
   const items = filterForActiveTerritory(

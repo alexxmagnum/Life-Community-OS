@@ -31,6 +31,29 @@ export {
 } from "./territory-context";
 
 export type {
+  TerritoryExperienceContext,
+  ActiveTerritorySource,
+  ResolveActiveTerritoryInput,
+  ResolveActiveTerritoryResult,
+  TerritorySwitcherOption,
+  TerritorySwitcherContract,
+  DiscoverQueryContext,
+  TerritoryHomeSource,
+  TerritoryHomeQuery,
+  LifeMapTerritoryBinding,
+} from "./territory-experience";
+export {
+  TERRITORY_HOME_SOURCES,
+  emptyTerritoryExperienceContext,
+  resolveActiveTerritory,
+  canSwitchTerritory,
+  createTerritorySwitcher,
+  discoverQueryFromActive,
+  territoryHomeQuery,
+  lifeMapBindingFromActive,
+} from "./territory-experience";
+
+export type {
   ActingIdentityId,
   AuthenticationResult,
   AuthorizationDecision,

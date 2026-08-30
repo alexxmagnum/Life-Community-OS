@@ -6,6 +6,7 @@ import type {
   ResourceCategory,
   TimeSlot,
 } from "@life-community-os/types";
+import { withTerritoryQuery } from "@/lib/tenant/territory-query";
 
 async function parseError(res: Response): Promise<string> {
   try {
@@ -18,9 +19,13 @@ async function parseError(res: Response): Promise<string> {
 
 export async function fetchResources(input: {
   tenantId: string;
+  territoryId?: string | null;
   category?: ResourceCategory | string;
 }): Promise<CommunityResource[]> {
-  const params = new URLSearchParams({ tenantId: input.tenantId });
+  const params = withTerritoryQuery(
+    new URLSearchParams({ tenantId: input.tenantId }),
+    input.territoryId,
+  );
   if (input.category) params.set("category", input.category);
   const res = await fetch(`/api/resources?${params.toString()}`, {
     cache: "no-store",
@@ -91,8 +96,12 @@ export async function createResourceRequest(input: {
 
 export async function fetchReservations(input: {
   tenantId: string;
+  territoryId?: string | null;
 }): Promise<Reservation[]> {
-  const params = new URLSearchParams({ tenantId: input.tenantId });
+  const params = withTerritoryQuery(
+    new URLSearchParams({ tenantId: input.tenantId }),
+    input.territoryId,
+  );
   const res = await fetch(`/api/reservations?${params.toString()}`, {
     cache: "no-store",
     headers: { "x-tenant-slug": input.tenantId },

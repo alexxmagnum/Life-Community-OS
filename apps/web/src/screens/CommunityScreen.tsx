@@ -43,6 +43,7 @@ import {
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 import { resolvePlaceHref } from "@/lib/location";
 import type { CommunityEvent, CommunityGroupRecord } from "@life-community-os/types";
@@ -87,6 +88,7 @@ export function CommunityHubScreen() {
     homeMode,
     isProductCapabilityEnabled,
   } = useTenant();
+  const { context: activeTerritory } = useTerritory();
   const { feedItems, getContent } = useCommunityInteractions();
   const { experiences } = useReservations();
   const premiumHome = homeMode === "premium";
@@ -160,11 +162,18 @@ export function CommunityHubScreen() {
   );
 
   useEffect(() => {
+    if (!communityOn) return;
     let cancelled = false;
     void (async () => {
-      const res = await fetch(
-        `/api/community/feed?tenantId=${encodeURIComponent(tenantSlug)}`,
-        { cache: "no-store", headers: { "x-tenant-slug": tenantSlug } },
+      const params = new URLSearchParams({ tenantId: tenantSlug });
+      if (activeTerritory.territoryId) {
+        params.set("territoryId", activeTerritory.territoryId);
+      }
+      const res = await fetch(`/api/community/feed?${params.toString()}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: { "x-tenant-slug": tenantSlug },
+        },
       );
       if (!res.ok || cancelled) return;
       const data = (await res.json()) as {
@@ -177,7 +186,7 @@ export function CommunityHubScreen() {
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug]);
+  }, [tenantSlug, communityOn, activeTerritory.territoryId]);
   const accessibleChannels = useMemo(
     () => (premiumHome && personId ? listAccessibleChannels(personId) : []),
     [personId, premiumHome],

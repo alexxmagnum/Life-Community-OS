@@ -27,6 +27,7 @@ import {
 } from "@/lib/reservations/reservations-client";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTenant } from "@/providers/TenantProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
 
 type ReservationContextValue = {
   ready: boolean;
@@ -58,6 +59,7 @@ const ReservationContext = createContext<ReservationContextValue | null>(null);
 
 export function ReservationProvider({ children }: { children: ReactNode }) {
   const { tenantSlug, hasMembership } = useTenant();
+  const { context: territory } = useTerritory();
   const { sessionReady } = useCurrentUser();
   const [resources, setResources] = useState<CommunityResource[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -72,13 +74,19 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
       return;
     }
     const [nextResources, nextReservations] = await Promise.all([
-      fetchResources({ tenantId: tenantSlug }),
-      fetchReservations({ tenantId: tenantSlug }),
+      fetchResources({
+        tenantId: tenantSlug,
+        territoryId: territory.territoryId,
+      }),
+      fetchReservations({
+        tenantId: tenantSlug,
+        territoryId: territory.territoryId,
+      }),
     ]);
     setResources(nextResources);
     setReservations(nextReservations);
     setReady(true);
-  }, [tenantSlug, hasMembership]);
+  }, [tenantSlug, hasMembership, territory.territoryId]);
 
   useEffect(() => {
     if (!sessionReady) return;
@@ -93,8 +101,14 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
     }
     void (async () => {
       const [nextResources, nextReservations] = await Promise.all([
-        fetchResources({ tenantId: tenantSlug }),
-        fetchReservations({ tenantId: tenantSlug }),
+        fetchResources({
+          tenantId: tenantSlug,
+          territoryId: territory.territoryId,
+        }),
+        fetchReservations({
+          tenantId: tenantSlug,
+          territoryId: territory.territoryId,
+        }),
       ]);
       if (cancelled) return;
       setResources(nextResources);
@@ -105,7 +119,7 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug, hasMembership, sessionReady]);
+  }, [tenantSlug, hasMembership, sessionReady, territory.territoryId]);
 
   const participantCounts = useMemo(() => {
     const counts = new Map<string, number>();

@@ -51,11 +51,15 @@ export function resolveActiveTerritoryContext(input: {
   tenantId: string;
   actorTerritoryId?: string | null;
   queryTerritoryId?: string | null;
+  selectedTerritoryId?: string | null;
 }):
   | { context: ActiveTerritoryContext }
   | { error: NextResponse } {
   const allowed = listTerritoryUuidsForTenant(input.tenantId);
-  const requested = input.queryTerritoryId?.trim() || null;
+  const requested =
+    input.queryTerritoryId?.trim() ||
+    input.selectedTerritoryId?.trim() ||
+    null;
 
   if (requested) {
     if (allowed.length > 0 && !allowed.includes(requested)) {

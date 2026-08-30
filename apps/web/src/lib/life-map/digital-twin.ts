@@ -7,6 +7,7 @@
 import type {
   LifeMapActionKind,
   LifeMapObject,
+  LifeMapTerritory,
   Location,
   TerritoryObject,
 } from "@life-community-os/types";
@@ -14,6 +15,7 @@ import {
   filterRenderableTerritoryObjects,
   projectTerritoryObjectsToLifeMapObjects,
 } from "@life-community-os/types";
+import type { TerritoryBounds } from "@life-community-os/types";
 
 export function hasLifeMapGeoPosition(
   position: LifeMapObject["position"] | undefined,
@@ -106,6 +108,30 @@ export function resolveLifeMapTapHref(input: {
   return {
     href: `/locations/${encodeURIComponent(locationId)}`,
     intent: "location",
+  };
+}
+
+export function bindLifeMapToActiveTerritory(
+  mapTerritory: LifeMapTerritory,
+  active: {
+    territoryId: string | null;
+    bounds?: TerritoryBounds;
+  },
+): LifeMapTerritory {
+  if (!active.territoryId) return mapTerritory;
+  return {
+    ...mapTerritory,
+    territoryId: active.territoryId,
+    ...(active.bounds
+      ? {
+          bounds: {
+            north: active.bounds.north,
+            south: active.bounds.south,
+            east: active.bounds.east,
+            west: active.bounds.west,
+          },
+        }
+      : {}),
   };
 }
 

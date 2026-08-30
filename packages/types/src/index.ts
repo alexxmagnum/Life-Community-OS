@@ -45,6 +45,17 @@ export {
   territoryScopedQuery,
 } from "./platform/territory-context";
 
+export {
+  TERRITORY_HOME_SOURCES,
+  emptyTerritoryExperienceContext,
+  resolveActiveTerritory,
+  canSwitchTerritory,
+  createTerritorySwitcher,
+  discoverQueryFromActive,
+  territoryHomeQuery,
+  lifeMapBindingFromActive,
+} from "./platform/territory-experience";
+
 /** Runtime helpers for Business Profile (commercial identity). */
 export {
   BUSINESS_PROFILE_STATUSES,

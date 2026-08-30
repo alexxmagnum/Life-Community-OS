@@ -30,6 +30,8 @@ import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
+import { discoverQueryFromActive } from "@life-community-os/types";
 
 /**
  * Descubrir = explore life around you.
@@ -43,9 +45,14 @@ export function DiscoverScreen() {
     configuration,
     homeMode,
   } = useTenant();
+  const { context: activeTerritory } = useTerritory();
+  const discoverQuery = discoverQueryFromActive(activeTerritory);
   const { getViewerState } = useExperienceParticipation();
   const { experiences: domainExperiences } = useReservations();
-  const { allLocations } = useTenantLocations(configuration.tenantId);
+  const { allLocations } = useTenantLocations(
+    configuration.tenantId,
+    discoverQuery.territoryId,
+  );
   const [query, setQuery] = useState("");
 
   const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
@@ -63,13 +70,16 @@ export function DiscoverScreen() {
     }
     let cancelled = false;
     void (async () => {
-      const community = await fetchCommunityFeed(configuration.tenantId);
+      const community = await fetchCommunityFeed(configuration.tenantId, {
+        territoryId: discoverQuery.territoryId,
+      });
       if (!cancelled) {
         setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
       }
       if (isFeatureEnabled("recommendations")) {
         const rows = await fetchHelpRequests({
           tenantId: configuration.tenantId,
+          territoryId: discoverQuery.territoryId,
           type: "offer_help",
           board: "help",
         });
@@ -91,6 +101,7 @@ export function DiscoverScreen() {
       if (isFeatureEnabled("services")) {
         const rows = await fetchBusinesses({
           tenantId: configuration.tenantId,
+          territoryId: discoverQuery.territoryId,
           status: "published",
         });
         if (!cancelled) {
@@ -117,6 +128,7 @@ export function DiscoverScreen() {
     isFeatureEnabled,
     configuration.tenantId,
     query,
+    discoverQuery.territoryId,
   ]);
 
   const nearYou = useMemo(() => {

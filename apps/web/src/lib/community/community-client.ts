@@ -1,10 +1,17 @@
 "use client";
 
-export async function fetchCommunityFeed(tenantId: string) {
-  const res = await fetch(
-    `/api/community/feed?tenantId=${encodeURIComponent(tenantId)}`,
-    { cache: "no-store", headers: { "x-tenant-slug": tenantId } },
-  );
+export async function fetchCommunityFeed(
+  tenantId: string,
+  options?: { territoryId?: string | null },
+) {
+  const params = new URLSearchParams({ tenantId });
+  if (options?.territoryId?.trim()) {
+    params.set("territoryId", options.territoryId.trim());
+  }
+  const res = await fetch(`/api/community/feed?${params.toString()}`, {
+    cache: "no-store",
+    headers: { "x-tenant-slug": tenantId },
+  });
   if (!res.ok) {
     return { posts: [], groups: [], events: [], comments: [], reactions: [] };
   }

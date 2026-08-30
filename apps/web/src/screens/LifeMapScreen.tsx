@@ -33,6 +33,7 @@ import {
   filterLifeMapObjectsWithPosition,
   resolveLifeMapTapHref,
   territoryObjectsForTenant,
+  bindLifeMapToActiveTerritory,
 } from "@/lib/life-map/digital-twin";
 import { ensureLifeMapTenantPacksRegistered } from "@/lib/life-map-tenant-registry";
 import { resolveLifeMapTenantPack } from "@/lib/life-map-tenant-pack";
@@ -48,6 +49,7 @@ import {
   cameraPoseFromLocations,
 } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
 
 ensureLifeMapTenantPacksRegistered();
 
@@ -61,6 +63,7 @@ export function LifeMapScreen() {
     isProductCapabilityEnabled,
     configuration,
   } = useTenant();
+  const { context: activeTerritory } = useTerritory();
 
   const featureOn =
     isModuleEnabled("lifeMap") &&
@@ -76,6 +79,7 @@ export function LifeMapScreen() {
 
   const { locations, seedReady, seedError } = useTenantLocations(
     configuration.tenantId,
+    activeTerritory.territoryId,
   );
 
   const territoryDataResolver = useMemo(
@@ -140,26 +144,28 @@ export function LifeMapScreen() {
     );
     // Locations always win over territory framing when any exist.
     if (cluster) {
-      return {
-        ...base,
-        defaultCamera: {
-          ...base.defaultCamera,
-          ...cluster,
-          // Selection pin overrides cluster center for focus.
-          ...(focusLocation && selectedObjectId
-            ? {
-                target: {
-                  lat: focusLocation.latitude,
-                  lng: focusLocation.longitude,
-                },
-                distance: Math.min(cluster.distance, 280),
-              }
-            : {}),
+      return bindLifeMapToActiveTerritory(
+        {
+          ...base,
+          defaultCamera: {
+            ...base.defaultCamera,
+            ...cluster,
+            ...(focusLocation && selectedObjectId
+              ? {
+                  target: {
+                    lat: focusLocation.latitude,
+                    lng: focusLocation.longitude,
+                  },
+                  distance: Math.min(cluster.distance, 280),
+                }
+              : {}),
+          },
         },
-      };
+        activeTerritory,
+      );
     }
-    return base;
-  }, [pack, focusLocation, filteredLocations, locations, selectedObjectId]);
+    return bindLifeMapToActiveTerritory(base, activeTerritory);
+  }, [pack, focusLocation, filteredLocations, locations, selectedObjectId, activeTerritory]);
 
   const objects: LifeMapObject[] = useMemo(() => {
     if (!territory || !pack) return [];
@@ -228,10 +234,10 @@ export function LifeMapScreen() {
     emitLifeMapTelemetry({
       type: "life_map.opened",
       tenantId: pack.tenantId,
-      territoryId: pack.territory.territoryId,
+      territoryId: activeTerritory.territoryId ?? pack.territory.territoryId,
       dataVersion: `locations:${locations.length}`,
     });
-  }, [pack, locations.length]);
+  }, [pack, locations.length, activeTerritory.territoryId]);
 
   useEffect(() => {
     const focus = searchParams.get("focus");

@@ -13,7 +13,10 @@ import {
   subscribeLocations,
 } from "./location-store";
 
-export function useTenantLocations(tenantId: string): {
+export function useTenantLocations(
+  tenantId: string,
+  territoryId?: string | null,
+): {
   locations: Location[];
   allLocations: Location[];
   refresh: () => void;
@@ -41,7 +44,7 @@ export function useTenantLocations(tenantId: string): {
     setSeedReady(false);
     setSeedError(null);
     void (async () => {
-      await hydrateLocations(tenantId);
+      await hydrateLocations(tenantId, territoryId);
       if (cancelled) return;
       setSeedReady(true);
       sync();
@@ -49,7 +52,7 @@ export function useTenantLocations(tenantId: string): {
     return () => {
       cancelled = true;
     };
-  }, [tenantId, sync]);
+  }, [tenantId, territoryId, sync]);
 
   return {
     locations,
