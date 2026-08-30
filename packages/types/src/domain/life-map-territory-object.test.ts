@@ -11,6 +11,7 @@ import {
 const GATE: TerritoryObject = {
   id: "terr-gate-1",
   tenantId: "life-panoramica",
+  territoryId: "terr-panoramica-golf",
   type: "gate",
   location: { lat: 37.412, lng: -4.751 },
   visibility: { lod: "territory", interactive: true },
@@ -27,6 +28,7 @@ describe("TerritoryObject", () => {
     const floating: TerritoryObject = {
       id: "terr-float",
       tenantId: "life-panoramica",
+      territoryId: "terr-panoramica-golf",
       type: "clubhouse",
       visibility: { lod: "landmark" },
     };
@@ -48,6 +50,25 @@ describe("TerritoryObject", () => {
       validateTerritoryObject(GATE, "life-valley").some(
         (issue) => issue.code === "tenant_mismatch",
       ),
+    );
+  });
+
+  it("does not leak objects across territories of the same tenant", () => {
+    const other: TerritoryObject = {
+      ...GATE,
+      id: "terr-gate-ocean",
+      territoryId: "terr-ocean-hills",
+    };
+    const visible = filterRenderableTerritoryObjects(
+      [GATE, other],
+      "life-panoramica",
+      "terr-panoramica-golf",
+    );
+    assert.equal(visible.length, 1);
+    assert.equal(visible[0]?.id, GATE.id);
+    assert.equal(
+      projectTerritoryObjectToLifeMapObject(GATE, "terr-ocean-hills"),
+      null,
     );
   });
 });

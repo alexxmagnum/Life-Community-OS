@@ -41,6 +41,8 @@ export const LOCATION_VISIBILITIES: readonly LocationVisibility[] = [
 export type Location = {
   id: DomainId;
   tenantId: DomainId;
+  /** Geographic Territory this place belongs to. Additive — tenantId remains. */
+  territoryId?: DomainId;
   type: LocationType;
   name: string;
   /** Free-text postal / place address used for geocoding. */
@@ -90,7 +92,8 @@ export type LocationIssueCode =
   | "invalid_coordinates"
   | "invalid_type"
   | "invalid_visibility"
-  | "missing_category";
+  | "missing_category"
+  | "territory_mismatch";
 
 export type LocationIssue = {
   code: LocationIssueCode;
@@ -178,6 +181,7 @@ export type CreateLocationInput = {
   ownerId?: DomainId;
   createdBy?: DomainId;
   businessId?: DomainId;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -209,6 +213,9 @@ export function createLocation(input: CreateLocationInput): Location {
     ...(input.ownerId?.trim() ? { ownerId: input.ownerId.trim() } : {}),
     ...(input.createdBy?.trim() ? { createdBy: input.createdBy.trim() } : {}),
     ...(input.businessId?.trim() ? { businessId: input.businessId.trim() } : {}),
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
     createdAt: now,
     updatedAt: now,
   };

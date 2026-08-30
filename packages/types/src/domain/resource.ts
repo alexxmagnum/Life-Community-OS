@@ -648,6 +648,7 @@ export type CreateBookableResourceInput = {
   type?: ResourceType;
   ownerKind?: ResourceOwnerKind;
   ownerId?: DomainId;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -690,6 +691,9 @@ export function createBookableResourceRecord(
     category: input.category,
     ownerKind: input.ownerKind ?? "territory_authority",
     ownerId: input.ownerId?.trim() || input.tenantId.trim(),
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
     bookable: input.bookable ?? true,
     status,
     rules,

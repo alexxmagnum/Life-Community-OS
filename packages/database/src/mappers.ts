@@ -10,6 +10,10 @@ import type {
   Tenant,
   Territory,
 } from "@life-community-os/types";
+import {
+  isTerritoryStatus,
+  slugifyTerritoryName,
+} from "@life-community-os/types";
 
 import type {
   IdentityRow,
@@ -32,13 +36,20 @@ export function mapTenantRow(row: TenantRow): Tenant {
 }
 
 export function mapTerritoryRow(row: TerritoryRow): Territory {
+  const status = isTerritoryStatus(row.status) ? row.status : "active";
   return {
     id: row.id,
     tenantId: row.tenant_id,
     name: row.name,
+    slug: row.slug?.trim() || slugifyTerritoryName(row.name),
     description: row.description,
+    status,
+    metadata: row.metadata ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.locale ? { locale: row.locale } : {}),
+    ...(row.timezone ? { timezone: row.timezone } : {}),
+    ...(row.bounds ? { bounds: row.bounds } : {}),
   };
 }
 

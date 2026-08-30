@@ -23,7 +23,18 @@ export type TerritoryRow = {
   id: string;
   tenant_id: string;
   name: string;
+  slug: string;
   description: string | null;
+  status: string;
+  locale: string | null;
+  timezone: string | null;
+  bounds: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  } | null;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };
@@ -63,6 +74,7 @@ export type MembershipRow = {
 export type LocationRow = {
   id: string;
   tenant_id: string;
+  territory_id: string | null;
   type: string;
   name: string;
   address: string;
@@ -127,7 +139,13 @@ export type Database = {
           id?: string;
           tenant_id: string;
           name: string;
+          slug?: string;
           description?: string | null;
+          status?: string;
+          locale?: string | null;
+          timezone?: string | null;
+          bounds?: TerritoryRow["bounds"];
+          metadata?: Record<string, unknown>;
           created_at?: string;
           updated_at?: string;
         };
@@ -221,6 +239,7 @@ export type Database = {
         Insert: {
           id: string;
           tenant_id: string;
+          territory_id?: string | null;
           type: string;
           name: string;
           address: string;
@@ -248,6 +267,13 @@ export type Database = {
             columns: ["tenant_id"];
             isOneToOne: false;
             referencedRelation: "tenants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "locations_territory_id_fkey";
+            columns: ["territory_id"];
+            isOneToOne: false;
+            referencedRelation: "territories";
             referencedColumns: ["id"];
           },
         ];

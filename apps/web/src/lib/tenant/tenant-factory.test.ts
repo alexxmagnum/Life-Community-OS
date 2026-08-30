@@ -11,6 +11,7 @@ import {
   LIFE_OCEAN_HILLS_TENANT_SLUG,
   LIFE_PANORAMICA_TENANT_SLUG,
   LIFE_VALLEY_TENANT_SLUG,
+  listTerritoryUuidsForTenant,
   sanitizeTenantSlug,
 } from "@/lib/tenant/ids";
 import { resolveTenantContract } from "@/lib/tenant/admin-tenant";
@@ -154,5 +155,19 @@ describe("TEST 6 — branding does not leak across tenants", () => {
     assert.equal(pano.capabilities.golf, true);
     assert.equal(ocean.capabilities.golf, false);
     assert.equal(ocean.capabilities.marketplace, false);
+  });
+});
+
+describe("Territory Core — Tenant 1:N", () => {
+  it("lists distinct Territories per Tenant without Panorámica coupling", () => {
+    const pano = listTerritoryUuidsForTenant(LIFE_PANORAMICA_TENANT_SLUG);
+    const valley = listTerritoryUuidsForTenant(LIFE_VALLEY_TENANT_SLUG);
+    const ocean = listTerritoryUuidsForTenant(LIFE_OCEAN_HILLS_TENANT_SLUG);
+    assert.equal(pano.length, 1);
+    assert.equal(valley.length, 1);
+    assert.equal(ocean.length, 1);
+    assert.notEqual(pano[0], valley[0]);
+    assert.notEqual(pano[0], ocean[0]);
+    assert.notEqual(valley[0], ocean[0]);
   });
 });

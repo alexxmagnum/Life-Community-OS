@@ -17,6 +17,7 @@ const VALLEY = "life-valley";
 const gate: TerritoryObject = {
   id: "lmo-terr-mainAccess",
   tenantId: PANORAMICA,
+  territoryId: "terr-panoramica-golf",
   type: "gate",
   location: { lat: 37.41, lng: -4.75 },
   visibility: { lod: "territory", interactive: true },
@@ -26,6 +27,7 @@ const gate: TerritoryObject = {
 const floating: TerritoryObject = {
   id: "lmo-terr-ghost",
   tenantId: PANORAMICA,
+  territoryId: "terr-panoramica-golf",
   type: "clubhouse",
   visibility: { lod: "landmark" },
 };

@@ -32,6 +32,15 @@ export type LocationWriteScope = {
 
 const DATA_DIR = path.join(process.cwd(), ".data", "locations");
 
+function uuidOrNull(value?: string | null): string | null {
+  if (!value?.trim()) return null;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  )
+    ? value
+    : null;
+}
+
 function locationFixtureEnabled(): boolean {
   return (
     process.env.LCOS_LOCATION_FIXTURE === "1" ||
@@ -91,6 +100,7 @@ type LocationRow = {
   owner_id: string | null;
   created_by: string | null;
   business_id: string | null;
+  territory_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -123,6 +133,7 @@ function rowToLocation(row: LocationRow, tenantSlug: string): Location {
     ...(row.owner_id ? { ownerId: row.owner_id } : {}),
     ...(row.created_by ? { createdBy: row.created_by } : {}),
     ...(row.business_id ? { businessId: row.business_id } : {}),
+    ...(row.territory_id ? { territoryId: row.territory_id } : {}),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -150,6 +161,7 @@ function locationToRow(location: Location, tenantUuid: string): LocationRow {
     owner_id: location.ownerId ?? null,
     created_by: location.createdBy ?? null,
     business_id: location.businessId ?? null,
+    territory_id: uuidOrNull(location.territoryId),
     created_at: location.createdAt ?? new Date().toISOString(),
     updated_at: location.updatedAt ?? new Date().toISOString(),
   };

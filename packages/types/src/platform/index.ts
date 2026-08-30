@@ -17,6 +17,19 @@ export type {
 } from "./tenant-context";
 
 export type {
+  TerritoryContext,
+  TerritoryContextIssueCode,
+  TerritoryContextIssue,
+  ResolveTerritoryContextInput,
+  TerritoryContextResult,
+  TerritoryScopedQuery,
+} from "./territory-context";
+export {
+  resolveTerritoryContext,
+  territoryScopedQuery,
+} from "./territory-context";
+
+export type {
   ActingIdentityId,
   AuthenticationResult,
   AuthorizationDecision,
@@ -111,6 +124,7 @@ export {
   productCapabilitiesFromFeatures,
   isProductCapabilityEnabled,
   resolveHostHintToSlug,
+  territoryIdsForTenant,
 } from "./tenant-contract";
 
 export {

@@ -6,7 +6,9 @@
 import {
   defaultTenantSlug,
   TENANT_MANIFEST,
+  getTenantManifestRecord,
 } from "./manifest";
+import { territoryIdsForTenant } from "@life-community-os/types";
 
 export const LIFE_PANORAMICA_TENANT_SLUG = "life-panoramica";
 export const LIFE_VALLEY_TENANT_SLUG = "life-valley";
@@ -92,6 +94,14 @@ export function tenantUuidToSlug(uuid: string): string | null {
 export function tenantSlugToTerritoryUuid(slugOrId: string): string | null {
   const slug = resolveTenantPublicId(slugOrId);
   return SLUG_TO_TERRITORY[slug] ?? null;
+}
+
+/** Tenant 1:N Territory — manifest may list many; default is territoryUuid. */
+export function listTerritoryUuidsForTenant(slugOrId: string): string[] {
+  const slug = resolveTenantPublicId(slugOrId);
+  const record = getTenantManifestRecord(slug);
+  if (!record) return [];
+  return [...territoryIdsForTenant(record)];
 }
 
 export function resolveTenantPublicId(slugOrId: string): string {

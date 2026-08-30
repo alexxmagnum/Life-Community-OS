@@ -27,6 +27,8 @@ export const BUSINESS_PROFILE_STATUSES: readonly BusinessProfileStatus[] = [
 export type BusinessProfile = {
   id: DomainId;
   tenantId: DomainId;
+  /** Inherited from Location when omitted. Additive — tenantId remains. */
+  territoryId?: DomainId;
   ownerPersonId: DomainId;
   locationId: DomainId;
   name: string;
@@ -108,6 +110,7 @@ export type CreateBusinessProfileInput = {
   hours?: string;
   imageUrl?: string;
   status?: BusinessProfileStatus;
+  territoryId?: DomainId;
   id?: DomainId;
 };
 
@@ -132,6 +135,9 @@ export function createBusinessProfile(
     ...(contact ? { contact } : {}),
     ...(hours ? { hours } : {}),
     ...(imageUrl ? { imageUrl } : {}),
+    ...(input.territoryId?.trim()
+      ? { territoryId: input.territoryId.trim() }
+      : {}),
   };
   const issues = validateBusinessProfile(profile);
   if (issues.length > 0) {

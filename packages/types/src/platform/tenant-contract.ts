@@ -35,7 +35,10 @@ export type TenantIdentityRecord = {
   slug: string;
   name: string;
   tenantUuid: string;
+  /** Default / active Territory for this Tenant (operational fallback). */
   territoryUuid: string;
+  /** All Territories owned by this Tenant. Defaults to [territoryUuid]. */
+  territoryUuids?: readonly string[];
   hostHints: readonly string[];
   locale: string;
   timezone: string;
@@ -157,4 +160,14 @@ export function resolveHostHintToSlug(
     }
   }
   return null;
+}
+
+/** Tenant 1:N Territory — identity record may list many; default is territoryUuid. */
+export function territoryIdsForTenant(
+  record: TenantIdentityRecord,
+): readonly string[] {
+  if (record.territoryUuids && record.territoryUuids.length > 0) {
+    return record.territoryUuids;
+  }
+  return [record.territoryUuid];
 }

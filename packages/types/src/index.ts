@@ -14,6 +14,27 @@ export {
   createLocation,
 } from "./domain/location";
 
+/** Territory Core — physical world owned by a Tenant (1:N). */
+export {
+  TERRITORY_STATUSES,
+  isTerritoryStatus,
+  slugifyTerritoryName,
+  validateTerritory,
+  createTerritory,
+  territoryBelongsToTenant,
+  filterTerritoriesForTenant,
+  locationBelongsToTerritory,
+  filterLocationsForTerritory,
+  businessBelongsToTerritory,
+  resourceBelongsToTerritory,
+  denyCrossTerritoryAccess,
+} from "./domain";
+
+export {
+  resolveTerritoryContext,
+  territoryScopedQuery,
+} from "./platform/territory-context";
+
 /** Runtime helpers for Business Profile (commercial identity). */
 export {
   BUSINESS_PROFILE_STATUSES,
@@ -353,6 +374,7 @@ export {
   productCapabilitiesFromFeatures,
   isProductCapabilityEnabled,
   resolveHostHintToSlug,
+  territoryIdsForTenant,
 } from "./platform/tenant-contract";
 
 /** Housing settings on TenantConfiguration. */

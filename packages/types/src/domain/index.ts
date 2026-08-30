@@ -1,6 +1,29 @@
 export type { DomainId, IsoDateTimeString } from "./ids";
 export type { Tenant, TenantStatus } from "./tenant";
-export type { Territory } from "./territory";
+export type {
+  Territory,
+  TerritoryStatus,
+  TerritoryBounds,
+  TerritoryIssue,
+  TerritoryIssueCode,
+  CreateTerritoryInput,
+} from "./territory";
+export {
+  TERRITORY_STATUSES,
+  isTerritoryStatus,
+  slugifyTerritoryName,
+  validateTerritory,
+  createTerritory,
+  territoryBelongsToTenant,
+  filterTerritoriesForTenant,
+} from "./territory";
+export {
+  locationBelongsToTerritory,
+  filterLocationsForTerritory,
+  businessBelongsToTerritory,
+  resourceBelongsToTerritory,
+  denyCrossTerritoryAccess,
+} from "./territory-ownership";
 export type { CommunityArea } from "./community-area";
 export type { Address } from "./address";
 export type {

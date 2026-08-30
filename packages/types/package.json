@@ -12,7 +12,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "tsx --test ./src/domain/location-discovery.test.ts ./src/domain/business-profile.test.ts ./src/platform/membership-role.test.ts ./src/platform/tenant-contract.test.ts ./src/platform/files/media-asset.test.ts ./src/domain/life-map-territory-object.test.ts ./src/domain/admin-operations.test.ts ./src/platform/authorization.test.ts ./src/platform/navigation-contract.test.ts"
+    "test": "tsx --test ./src/domain/location-discovery.test.ts ./src/domain/business-profile.test.ts ./src/platform/membership-role.test.ts ./src/platform/tenant-contract.test.ts ./src/platform/files/media-asset.test.ts ./src/domain/life-map-territory-object.test.ts ./src/domain/admin-operations.test.ts ./src/platform/authorization.test.ts ./src/platform/navigation-contract.test.ts ./src/domain/territory.test.ts"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",

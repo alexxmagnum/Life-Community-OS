@@ -69,6 +69,8 @@ export type TerritoryObjectVisibility = {
 export type TerritoryObject = {
   id: DomainId;
   tenantId: DomainId;
+  /** Geographic Territory this fabric object belongs to. */
+  territoryId: DomainId;
   type: TerritoryObjectType;
   /** WGS84 anchor. Required unless geometry already encodes a point/polygon. */
   location?: LifeMapGeoPosition;
@@ -77,7 +79,6 @@ export type TerritoryObject = {
   visibility: TerritoryObjectVisibility;
   label?: string;
   summary?: string;
-  territoryId?: DomainId;
 };
 
 export type TerritoryObjectIssueCode =
@@ -85,7 +86,8 @@ export type TerritoryObjectIssueCode =
   | "unknown_type"
   | "missing_position"
   | "invalid_coordinates"
-  | "tenant_mismatch";
+  | "tenant_mismatch"
+  | "territory_mismatch";
 
 export type TerritoryObjectIssue = {
   code: TerritoryObjectIssueCode;
@@ -136,12 +138,13 @@ export function territoryObjectHasPosition(
 export function validateTerritoryObject(
   object: TerritoryObject,
   expectedTenantId?: DomainId,
+  expectedTerritoryId?: DomainId,
 ): TerritoryObjectIssue[] {
   const issues: TerritoryObjectIssue[] = [];
-  if (!object.id || !object.tenantId) {
+  if (!object.id || !object.tenantId || !object.territoryId) {
     issues.push({
       code: "missing_ids",
-      message: "id and tenantId are required.",
+      message: "id, tenantId and territoryId are required.",
     });
   }
   if (!isTerritoryObjectType(object.type)) {
@@ -169,18 +172,25 @@ export function validateTerritoryObject(
       message: "TerritoryObject tenantId does not match the requesting tenant.",
     });
   }
+  if (expectedTerritoryId && object.territoryId !== expectedTerritoryId) {
+    issues.push({
+      code: "territory_mismatch",
+      message: "TerritoryObject territoryId does not match the requesting territory.",
+    });
+  }
   return issues;
 }
 
 export function filterRenderableTerritoryObjects(
   objects: readonly TerritoryObject[],
   tenantId: DomainId,
+  territoryId?: DomainId,
 ): TerritoryObject[] {
-  return objects.filter(
-    (object) =>
-      object.tenantId === tenantId &&
-      validateTerritoryObject(object, tenantId).length === 0,
-  );
+  return objects.filter((object) => {
+    if (object.tenantId !== tenantId) return false;
+    if (territoryId && object.territoryId !== territoryId) return false;
+    return validateTerritoryObject(object, tenantId).length === 0;
+  });
 }
 
 function geoFromTerritoryObject(
@@ -220,6 +230,7 @@ export function projectTerritoryObjectToLifeMapObject(
   territoryId: DomainId,
 ): LifeMapObject | null {
   if (validateTerritoryObject(object).length > 0) return null;
+  if (object.territoryId !== territoryId) return null;
   const position = geoFromTerritoryObject(object);
   if (!position) return null;
   const interactive = object.visibility.interactive !== false;
