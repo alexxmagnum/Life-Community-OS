@@ -110,7 +110,9 @@ export function reservationBelongsToTerritory(
   if (reservation.territoryId) {
     return reservation.territoryId === territoryId;
   }
-  if (!resource || resource.id !== reservation.resourceId) return false;
+  if (!resource || !reservation.resourceId || resource.id !== reservation.resourceId) {
+    return false;
+  }
   return resourceBelongsToTerritory(resource, territoryId, tenantId);
 }
 

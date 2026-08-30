@@ -10,6 +10,7 @@ import type {
   CommunityResource,
   MembershipRole,
   Reservation,
+  ReservationContextType,
   ResourceCategory,
 } from "@life-community-os/types";
 import { resourceIsBookable } from "@life-community-os/types";
@@ -40,6 +41,23 @@ export function actorCanReserveResource(actor: RequestActor): boolean {
     (actorHasCapability(actor.permissions, CAPABILITIES.resourceReserve) ||
       actorHasCapability(actor.permissions, CAPABILITIES.experienceJoin))
   );
+}
+
+export function actorCanCreateReservation(
+  actor: RequestActor,
+  contextType?: ReservationContextType,
+): boolean {
+  if (!actor.authenticated || !actor.hasMembership || !actor.personId) {
+    return false;
+  }
+  if (actor.tenantDenied) return false;
+  if (contextType === "experience" || contextType === "event") {
+    return (
+      actorHasCapability(actor.permissions, CAPABILITIES.experienceJoin) ||
+      actorHasCapability(actor.permissions, CAPABILITIES.resourceReserve)
+    );
+  }
+  return actorCanReserveResource(actor);
 }
 
 export function actorCanManageResources(actor: RequestActor): boolean {

@@ -591,12 +591,13 @@ export async function joinExperienceServer(input: {
   const full = used >= experience.capacity;
   let reservationId: string | undefined;
   let role: ExperienceParticipation["role"] = full ? "waitlist" : "participant";
-  if (!full && experience.resourceId) {
+  if (!full) {
     try {
       const slot = slotFromExperience(experience);
       const reservation = await createReservationServer({
         tenantId: slug,
         createdBy: input.personId,
+        context: { type: "experience", id: experience.id },
         resourceId: experience.resourceId,
         date: slot.date,
         start: slot.start,
@@ -606,6 +607,7 @@ export async function joinExperienceServer(input: {
         scope: input.scope,
       });
       reservationId = reservation.id;
+      role = "participant";
     } catch (error) {
       const code = error instanceof Error ? error.message : "";
       if (code === "slot_unavailable") {

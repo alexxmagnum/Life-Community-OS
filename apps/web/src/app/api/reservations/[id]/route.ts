@@ -14,6 +14,7 @@ import {
   updateReservationServer,
 } from "@/lib/reservations/server-reservations-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
+import { resolveActiveTerritoryContext } from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -36,11 +37,23 @@ export async function GET(request: Request, { params }: Params) {
     actor,
   });
   if ("error" in bound) return bound.error;
+  const territory = resolveActiveTerritoryContext({
+    tenantId: bound.tenantId,
+    actorTerritoryId: actor.territoryId,
+    queryTerritoryId: url.searchParams.get("territoryId"),
+  });
+  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const reservation = await getReservationServer(bound.tenantId, id, scope);
+  if (
+    reservation?.territoryId &&
+    reservation.territoryId !== territory.context.territoryId
+  ) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
   if (!reservation || !actorOwnsReservation(actor, reservation)) {
     if (reservation && actorCanCancelReservation(actor, reservation)) {
       return NextResponse.json({ reservation });
@@ -67,6 +80,16 @@ export async function PATCH(request: Request, { params }: Params) {
   const existing = await getReservationServer(bound.tenantId, id, scope);
   if (!existing) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+  if (
+    existing.territoryId &&
+    gated.actor.territoryId &&
+    existing.territoryId !== gated.actor.territoryId
+  ) {
+    return NextResponse.json(
+      { error: "territory_context_mismatch" },
+      { status: 403 },
+    );
   }
   if (!actorCanModifyReservation(gated.actor, existing)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });

@@ -218,6 +218,24 @@ export {
   splitIsoToDateTime,
 } from "./resource";
 export type {
+  ReservationContext,
+  ReservationContextType,
+  ReservationParticipantRole,
+  ReservationAvailabilityContext,
+} from "./reservation-context";
+export {
+  RESERVATION_CONTEXT_TYPES,
+  RESERVATION_PARTICIPANT_ROLES,
+  isReservationContextType,
+  isReservationParticipantRole,
+  createReservationContext,
+  reservationContextOf,
+  reservationMatchesContext,
+  occupyingReservationParticipantRoles,
+  reservationParticipantOccupiesSeat,
+  usedCapacityForContext,
+} from "./reservation-context";
+export type {
   Experience,
   ExperienceType,
   ExperienceStatus,

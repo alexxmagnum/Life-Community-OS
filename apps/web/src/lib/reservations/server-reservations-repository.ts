@@ -10,15 +10,23 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   createBookableResourceRecord,
+  createReservationContext,
   createReservationParticipantRecord,
   createReservationRecord,
   generateResourceAvailability,
+  hhmmToMinutes,
   isReservationStatus,
+  minutesToHhmm,
+  reservationContextOf,
   resourceIsBookable,
+  splitIsoToDateTime,
+  usedCapacityForContext,
   usedCapacityForInterval,
   withReservationLifecycle,
   type CommunityResource,
   type Reservation,
+  type ReservationContext,
+  type ReservationContextType,
   type ReservationParticipant,
   type ReservationStatus,
   type ResourceAvailability,
@@ -33,6 +41,7 @@ import {
 } from "@/lib/data/data-plane";
 import { createDomainDatabaseClient } from "@/lib/data/database-access";
 import {
+  listTerritoryUuidsForTenant,
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
@@ -168,8 +177,12 @@ type ReservationRow = {
   tenant_id: string;
   territory_id: string | null;
   created_by: string;
-  resource_id: string;
+  resource_id: string | null;
+  context_type: ReservationContextType | null;
+  context_id: string | null;
   participant_count: number;
+  capacity: number | null;
+  metadata: unknown;
   start_time: string;
   end_time: string;
   status: ReservationStatus;
@@ -191,6 +204,7 @@ type ParticipantRow = {
   created_by: string;
   reservation_id: string;
   person_id: string;
+  role: ReservationParticipant["role"] | null;
   created_at: string;
   updated_at: string;
 };
@@ -257,21 +271,36 @@ function rowToAvailability(
   };
 }
 
+function parseMetadata(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return {};
+}
+
 function rowToReservation(row: ReservationRow, tenantSlug: string): Reservation {
+  const resourceId = row.resource_id?.trim() || undefined;
+  const experienceId = row.experience_id ?? undefined;
+  const contextType = row.context_type ?? undefined;
+  const contextId = row.context_id ?? undefined;
   return {
     id: row.id,
     tenantId: tenantSlug,
-    resourceId: row.resource_id,
+    ...(resourceId ? { resourceId } : {}),
+    ...(contextType ? { contextType } : {}),
+    ...(contextId ? { contextId } : {}),
     createdBy: row.created_by,
     personId: row.created_by,
     participantCount: row.participant_count,
+    ...(row.capacity && row.capacity > 0 ? { capacity: row.capacity } : {}),
+    metadata: parseMetadata(row.metadata),
     startTime: row.start_time,
     endTime: row.end_time,
     date: String(row.slot_date).slice(0, 10),
     start: row.start_hhmm,
     end: row.end_hhmm,
     status: row.status,
-    experienceId: row.experience_id ?? undefined,
+    experienceId,
     resourceName: row.resource_name ?? undefined,
     resourceImageUrl: row.resource_image_url ?? undefined,
     location: row.location_label ?? undefined,
@@ -292,6 +321,7 @@ function rowToParticipant(
     reservationId: row.reservation_id,
     personId: row.person_id,
     createdBy: row.created_by,
+    role: row.role ?? "participant",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -477,33 +507,50 @@ async function persistStore(
         created_at: slot.createdAt,
         updated_at: slot.updatedAt,
       }));
-      const reservationRows = store.reservations.map((item) => ({
-        id: item.id,
-        tenant_id: tenantUuid,
-        territory_id: asTerritoryUuid(item.territoryId),
-        created_by: item.createdBy ?? item.personId ?? "unknown",
-        resource_id: item.resourceId,
-        participant_count: item.participantCount ?? 1,
-        start_time: item.startTime,
-        end_time: item.endTime,
-        status: item.status,
-        experience_id: item.experienceId ?? null,
-        slot_date: item.date,
-        start_hhmm: item.start,
-        end_hhmm: item.end,
-        resource_name: item.resourceName ?? null,
-        resource_image_url: item.resourceImageUrl ?? null,
-        location_label: item.location ?? null,
-        area_label: item.areaLabel ?? null,
-        created_at: item.createdAt,
-        updated_at: item.updatedAt,
-      }));
+      const reservationRows = store.reservations.map((item) => {
+        const context = (() => {
+          try {
+            return reservationContextOf(item);
+          } catch {
+            return {
+              type: "resource" as const,
+              id: item.resourceId ?? "",
+            };
+          }
+        })();
+        return {
+          id: item.id,
+          tenant_id: tenantUuid,
+          territory_id: asTerritoryUuid(item.territoryId),
+          created_by: item.createdBy ?? item.personId ?? "unknown",
+          resource_id: item.resourceId ?? null,
+          context_type: context.type,
+          context_id: context.id,
+          participant_count: item.participantCount ?? 1,
+          capacity: item.capacity ?? null,
+          metadata: item.metadata ?? {},
+          start_time: item.startTime,
+          end_time: item.endTime,
+          status: item.status,
+          experience_id: item.experienceId ?? null,
+          slot_date: item.date,
+          start_hhmm: item.start,
+          end_hhmm: item.end,
+          resource_name: item.resourceName ?? null,
+          resource_image_url: item.resourceImageUrl ?? null,
+          location_label: item.location ?? null,
+          area_label: item.areaLabel ?? null,
+          created_at: item.createdAt,
+          updated_at: item.updatedAt,
+        };
+      });
       const participantRows = store.participants.map((item) => ({
         id: item.id,
         tenant_id: tenantUuid,
         created_by: item.createdBy,
         reservation_id: item.reservationId,
         person_id: item.personId,
+        role: item.role ?? "participant",
         created_at: item.createdAt,
         updated_at: item.updatedAt,
       }));
@@ -535,9 +582,76 @@ function occupyingReservations(
 ): Reservation[] {
   return store.reservations.filter((item) => {
     if (item.resourceId === resourceId) return true;
-    const source = store.resources.find((row) => row.id === item.resourceId);
+    try {
+      const context = reservationContextOf(item);
+      if (context.type === "resource" && context.id === resourceId) return true;
+    } catch {
+      /* legacy row without context */
+    }
+    const source = item.resourceId
+      ? store.resources.find((row) => row.id === item.resourceId)
+      : undefined;
     return source?.linkedResourceId === resourceId;
   });
+}
+
+function assertTerritoryOwnedByTenant(tenantId: string, territoryId: string): void {
+  const allowed = listTerritoryUuidsForTenant(tenantId);
+  if (allowed.length > 0 && !allowed.includes(territoryId)) {
+    throw new Error("territory_context_mismatch");
+  }
+}
+
+function assertSameTerritory(
+  left?: string | null,
+  right?: string | null,
+): void {
+  if (left && right && left !== right) {
+    throw new Error("territory_context_mismatch");
+  }
+}
+
+function slotFromSchedule(startsAt: string, endsAt?: string): {
+  date: string;
+  start: string;
+  end: string;
+} {
+  const start = splitIsoToDateTime(startsAt);
+  if (endsAt) {
+    const end = splitIsoToDateTime(endsAt);
+    return { date: start.date, start: start.start, end: end.start };
+  }
+  return {
+    date: start.date,
+    start: start.start,
+    end: minutesToHhmm(hhmmToMinutes(start.start) + 60),
+  };
+}
+
+function resolveInputContext(input: {
+  context?: { type?: string; id?: string };
+  resourceId?: string;
+  experienceId?: string;
+}): ReservationContext {
+  if (input.context?.type && input.context.id) {
+    return createReservationContext({
+      type: input.context.type,
+      id: input.context.id,
+    });
+  }
+  if (input.experienceId?.trim() && !input.resourceId) {
+    return createReservationContext({
+      type: "experience",
+      id: input.experienceId,
+    });
+  }
+  if (input.resourceId?.trim()) {
+    return createReservationContext({
+      type: "resource",
+      id: input.resourceId,
+    });
+  }
+  throw new Error("missing_context");
 }
 
 function usedCapacity(
@@ -796,6 +910,82 @@ export async function listAvailabilityServer(
   });
 }
 
+/**
+ * One availability engine for every Reservation Context.
+ * Resource / Service: facility slots. Experience with Resource: inherited.
+ * Experience / Event without Resource: schedule occupancy vs capacity.
+ */
+export async function listReservationAvailabilityServer(input: {
+  tenantId: string;
+  context: { type: string; id: string };
+  date?: string;
+  scope?: ReservationsWriteScope;
+}): Promise<TimeSlot[]> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const context = createReservationContext(input.context);
+  if (context.type === "resource" || context.type === "service") {
+    return listAvailabilityServer(slug, context.id, input.date, input.scope);
+  }
+  if (context.type === "experience") {
+    const { getExperienceServer } = await import(
+      "@/lib/experiences/server-experience-repository"
+    );
+    const experience = await getExperienceServer(slug, context.id, input.scope);
+    if (!experience || experience.tenantId !== slug) return [];
+    if (experience.resourceId) {
+      return listAvailabilityServer(
+        slug,
+        experience.resourceId,
+        input.date,
+        input.scope,
+      );
+    }
+    const slot = slotFromSchedule(experience.startsAt, experience.endsAt);
+    if (input.date && input.date !== slot.date) return [];
+    const store = await loadStore(slug, input.scope);
+    const used = usedCapacityForContext({
+      reservations: store.reservations,
+      context,
+      date: slot.date,
+      start: slot.start,
+      end: slot.end,
+    });
+    const capacity = experience.capacity > 0 ? experience.capacity : 8;
+    return [
+      {
+        id: `${experience.id}:${slot.date}:${slot.start}`,
+        start: slot.start,
+        end: slot.end,
+        status: used >= capacity ? "occupied" : "available",
+      },
+    ];
+  }
+  const { listCommunityEvents } = await import(
+    "@/lib/community/server-community-repository"
+  );
+  const events = await listCommunityEvents(slug, input.scope);
+  const event = events.find((item) => item.id === context.id);
+  if (!event) return [];
+  const slot = slotFromSchedule(event.startsAt, event.endsAt);
+  if (input.date && input.date !== slot.date) return [];
+  const store = await loadStore(slug, input.scope);
+  const used = usedCapacityForContext({
+    reservations: store.reservations,
+    context,
+    date: slot.date,
+    start: slot.start,
+    end: slot.end,
+  });
+  return [
+    {
+      id: `${event.id}:${slot.date}:${slot.start}`,
+      start: slot.start,
+      end: slot.end,
+      status: used >= 1 ? "occupied" : "available",
+    },
+  ];
+}
+
 export async function listReservationsServer(
   tenantId: string,
   scope?: ReservationsWriteScope,
@@ -819,10 +1009,11 @@ export async function getReservationServer(
 export async function createReservationServer(input: {
   tenantId: string;
   createdBy: string;
-  resourceId: string;
-  date: string;
-  start: string;
-  end: string;
+  resourceId?: string;
+  context?: { type?: string; id?: string };
+  date?: string;
+  start?: string;
+  end?: string;
   participantCount?: number;
   territoryId?: string;
   experienceId?: string;
@@ -832,80 +1023,199 @@ export async function createReservationServer(input: {
   void input.createdByFromClient;
   const slug = resolveTenantPublicId(input.tenantId);
   const store = await loadStore(slug, input.scope);
-  const resource = store.resources.find((item) => item.id === input.resourceId);
-  if (!resource || resource.tenantId !== slug) {
-    throw new Error("resource_not_found");
+  const context = resolveInputContext(input);
+  const stampTerritory = resolveStampTerritoryId({
+    tenantId: slug,
+    explicit: input.territoryId,
+  });
+  if (stampTerritory) {
+    assertTerritoryOwnedByTenant(slug, stampTerritory);
   }
-  const requestedTerritory = input.territoryId?.trim();
-  if (
-    requestedTerritory &&
-    resource.territoryId &&
-    requestedTerritory !== resource.territoryId
-  ) {
-    throw new Error("cross_territory_forbidden");
+
+  let resource: CommunityResource | undefined;
+  let experienceId = input.experienceId?.trim() || undefined;
+  let displayName: string | undefined;
+  let location: string | undefined;
+  let areaLabel: string | undefined;
+  let imageUrl: string | undefined;
+  let inheritedTerritory = stampTerritory;
+  let date = input.date?.trim() ?? "";
+  let start = input.start?.trim() ?? "";
+  let end = input.end?.trim() ?? "";
+  let capacity = 1;
+  let requiresApproval = false;
+
+  if (context.type === "resource" || context.type === "service") {
+    resource = store.resources.find((item) => item.id === context.id);
+    if (!resource || resource.tenantId !== slug) {
+      throw new Error("resource_not_found");
+    }
+    assertSameTerritory(stampTerritory, resource.territoryId);
+    if (!resourceIsBookable(resource)) {
+      throw new Error("resource_not_bookable");
+    }
+    inheritedTerritory = resource.territoryId ?? stampTerritory;
+    displayName = resource.name;
+    location = resource.location;
+    areaLabel = resource.areaLabel;
+    imageUrl = resource.images?.[0] ?? resource.imageUrl;
+    requiresApproval = Boolean(resource.requiresApproval);
+    if (!date || !start || !end) {
+      throw new Error("invalid_input");
+    }
+    capacity = slotCapacity(store, resource, date, start, end);
+    const used = usedCapacity(store, resource.id, date, start, end);
+    const count =
+      typeof input.participantCount === "number" && input.participantCount > 0
+        ? input.participantCount
+        : 1;
+    if (used + count > capacity) {
+      throw new Error("slot_unavailable");
+    }
+    if (resource.linkedResourceId) {
+      const linked = store.resources.find(
+        (item) => item.id === resource!.linkedResourceId,
+      );
+      if (linked) {
+        const linkedCapacity = slotCapacity(
+          store,
+          linked,
+          date,
+          start,
+          end,
+        );
+        const linkedUsed = usedCapacity(
+          store,
+          linked.id,
+          date,
+          start,
+          end,
+        );
+        if (linkedUsed >= linkedCapacity) {
+          throw new Error("slot_unavailable");
+        }
+      }
+    }
+  } else if (context.type === "experience") {
+    const { getExperienceServer } = await import(
+      "@/lib/experiences/server-experience-repository"
+    );
+    const experience = await getExperienceServer(
+      slug,
+      context.id,
+      input.scope,
+    );
+    if (!experience || experience.tenantId !== slug) {
+      throw new Error("context_not_found");
+    }
+    assertSameTerritory(stampTerritory, experience.territoryId);
+    inheritedTerritory = experience.territoryId ?? stampTerritory;
+    experienceId = experience.id;
+    displayName = experience.title;
+    location = experience.location;
+    if (!date || !start || !end) {
+      const slot = slotFromSchedule(experience.startsAt, experience.endsAt);
+      date = slot.date;
+      start = slot.start;
+      end = slot.end;
+    }
+    capacity = experience.capacity > 0 ? experience.capacity : 8;
+    const used = usedCapacityForContext({
+      reservations: store.reservations,
+      context,
+      date,
+      start,
+      end,
+    });
+    const count =
+      typeof input.participantCount === "number" && input.participantCount > 0
+        ? input.participantCount
+        : 1;
+    if (experience.resourceId) {
+      resource = store.resources.find((item) => item.id === experience.resourceId);
+      if (!resource || resource.tenantId !== slug) {
+        throw new Error("resource_not_found");
+      }
+      assertSameTerritory(experience.territoryId, resource.territoryId);
+      if (!resourceIsBookable(resource)) {
+        throw new Error("resource_not_bookable");
+      }
+      const facilityCap = slotCapacity(store, resource, date, start, end);
+      const facilityUsed = usedCapacity(
+        store,
+        resource.id,
+        date,
+        start,
+        end,
+      );
+      if (facilityUsed + count > facilityCap || used + count > capacity) {
+        throw new Error("slot_unavailable");
+      }
+    } else if (used + count > capacity) {
+      throw new Error("slot_unavailable");
+    }
+  } else {
+    const { listCommunityEvents } = await import(
+      "@/lib/community/server-community-repository"
+    );
+    const events = await listCommunityEvents(slug, input.scope);
+    const event = events.find((item) => item.id === context.id);
+    if (!event) throw new Error("context_not_found");
+    assertSameTerritory(stampTerritory, event.territoryId);
+    inheritedTerritory = event.territoryId ?? stampTerritory;
+    displayName = event.title;
+    location = event.locationLabel;
+    if (!date || !start || !end) {
+      const slot = slotFromSchedule(event.startsAt, event.endsAt);
+      date = slot.date;
+      start = slot.start;
+      end = slot.end;
+    }
+    capacity = 1;
+    const used = usedCapacityForContext({
+      reservations: store.reservations,
+      context,
+      date,
+      start,
+      end,
+    });
+    if (used >= capacity) throw new Error("slot_unavailable");
   }
-  if (!resourceIsBookable(resource)) {
-    throw new Error("resource_not_bookable");
+
+  if (inheritedTerritory) {
+    assertTerritoryOwnedByTenant(slug, inheritedTerritory);
   }
+
   const count =
     typeof input.participantCount === "number" && input.participantCount > 0
       ? input.participantCount
       : 1;
-  const capacity = slotCapacity(store, resource, input.date, input.start, input.end);
-  const used = usedCapacity(store, resource.id, input.date, input.start, input.end);
-  if (used + count > capacity) {
-    throw new Error("slot_unavailable");
-  }
-  if (resource.linkedResourceId) {
-    const linked = store.resources.find((item) => item.id === resource.linkedResourceId);
-    if (linked) {
-      const linkedCapacity = slotCapacity(
-        store,
-        linked,
-        input.date,
-        input.start,
-        input.end,
-      );
-      const linkedUsed = usedCapacity(
-        store,
-        linked.id,
-        input.date,
-        input.start,
-        input.end,
-      );
-      if (linkedUsed >= linkedCapacity) {
-        throw new Error("slot_unavailable");
-      }
-    }
-  }
-  const status: ReservationStatus = resource.requiresApproval ? "pending" : "confirmed";
+  const status: ReservationStatus = requiresApproval ? "pending" : "confirmed";
   const reservation = createReservationRecord({
     tenantId: slug,
-    resourceId: resource.id,
+    resourceId: resource?.id,
     createdBy: input.createdBy,
-    date: input.date,
-    start: input.start,
-    end: input.end,
+    date,
+    start,
+    end,
     status,
     participantCount: count,
-    experienceId:
-      input.experienceId?.trim() ||
-      (resource.category === "activity" ? resource.id : undefined),
-    resourceName: resource.name,
-    resourceImageUrl: resource.images?.[0] ?? resource.imageUrl,
-    location: resource.location,
-    areaLabel: resource.areaLabel,
-    territoryId: resolveStampTerritoryId({
-      tenantId: slug,
-      explicit: input.territoryId,
-      inherited: resource.territoryId,
-    }),
+    capacity,
+    experienceId,
+    contextType: context.type,
+    contextId: context.id,
+    resourceName: displayName,
+    resourceImageUrl: imageUrl,
+    location,
+    areaLabel,
+    territoryId: inheritedTerritory,
   });
   const participant = createReservationParticipantRecord({
     tenantId: slug,
     reservationId: reservation.id,
     personId: input.createdBy,
     createdBy: input.createdBy,
+    role: "creator",
   });
   store.reservations = [reservation, ...store.reservations];
   store.participants = [participant, ...store.participants];
@@ -946,16 +1256,31 @@ export async function updateReservationServer(input: {
   const nextStart = input.start ?? current.start;
   const nextEnd = input.end ?? current.end;
   if (input.date || input.start || input.end) {
-    const resource = store.resources.find((item) => item.id === current.resourceId);
-    if (!resource) throw new Error("resource_not_found");
     const others: ReservationsStore = {
       ...store,
       reservations: store.reservations.filter((item) => item.id !== current.id),
     };
-    const capacity = slotCapacity(others, resource, nextDate, nextStart, nextEnd);
-    const used = usedCapacity(others, resource.id, nextDate, nextStart, nextEnd);
-    if (used + (current.participantCount ?? 1) > capacity) {
-      throw new Error("slot_unavailable");
+    if (current.resourceId) {
+      const resource = store.resources.find((item) => item.id === current.resourceId);
+      if (!resource) throw new Error("resource_not_found");
+      const capacity = slotCapacity(others, resource, nextDate, nextStart, nextEnd);
+      const used = usedCapacity(others, resource.id, nextDate, nextStart, nextEnd);
+      if (used + (current.participantCount ?? 1) > capacity) {
+        throw new Error("slot_unavailable");
+      }
+    } else {
+      const context = reservationContextOf(current);
+      const capacity = current.capacity && current.capacity > 0 ? current.capacity : 1;
+      const used = usedCapacityForContext({
+        reservations: others.reservations,
+        context,
+        date: nextDate,
+        start: nextStart,
+        end: nextEnd,
+      });
+      if (used + (current.participantCount ?? 1) > capacity) {
+        throw new Error("slot_unavailable");
+      }
     }
   }
   const next: Reservation = {

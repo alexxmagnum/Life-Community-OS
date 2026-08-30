@@ -111,7 +111,8 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
     const counts = new Map<string, number>();
     for (const item of reservations) {
       if (!reservationIsActive(item.status)) continue;
-      const key = item.experienceId ?? item.resourceId;
+      const key = item.experienceId ?? item.contextId ?? item.resourceId;
+      if (!key) continue;
       counts.set(key, (counts.get(key) ?? 0) + (item.participantCount ?? 1));
     }
     return counts;

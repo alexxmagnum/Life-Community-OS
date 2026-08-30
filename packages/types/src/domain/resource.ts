@@ -206,12 +206,21 @@ export type ResourceAvailability = {
 export type Reservation = {
   id: DomainId;
   tenantId?: DomainId;
-  /** Inherited from the Resource Territory. Additive — tenantId remains. */
+  /** Geographic world inside the Tenant. Additive — tenantId remains. */
   territoryId?: DomainId;
-  resourceId: DomainId;
+  /**
+   * Physical inventory when the context is a Resource / Service.
+   * Nullable for Experience / Event bookings that do not occupy a facility.
+   */
+  resourceId?: DomainId;
+  /** Universal booking target: resource | experience | service | event. */
+  contextType?: "resource" | "experience" | "service" | "event";
+  contextId?: DomainId;
   createdBy?: DomainId;
   personId?: DomainId;
   participantCount?: number;
+  capacity?: number;
+  metadata?: Record<string, unknown>;
   startTime?: IsoDateTimeString;
   endTime?: IsoDateTimeString;
   date: string;
@@ -233,6 +242,7 @@ export type ReservationParticipant = {
   reservationId: DomainId;
   personId: DomainId;
   createdBy: DomainId;
+  role?: "creator" | "participant" | "guest" | "waitlist";
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
 };
@@ -796,14 +806,18 @@ export function generateResourceAvailability(input: {
 
 export type CreateReservationInput = {
   tenantId: DomainId;
-  resourceId: DomainId;
+  resourceId?: DomainId;
   createdBy: DomainId;
   date: string;
   start: string;
   end: string;
   status?: ReservationStatus;
   participantCount?: number;
+  capacity?: number;
   experienceId?: DomainId;
+  contextType?: "resource" | "experience" | "service" | "event";
+  contextId?: DomainId;
+  metadata?: Record<string, unknown>;
   resourceName?: string;
   resourceImageUrl?: string;
   location?: string;
@@ -818,24 +832,48 @@ export function createReservationRecord(input: CreateReservationInput): Reservat
   if (!isReservationStatus(status)) {
     throw new Error("Invalid Reservation: invalid_status");
   }
+  const resourceId = input.resourceId?.trim() || undefined;
+  const experienceId = input.experienceId?.trim() || undefined;
+  const contextType =
+    input.contextType ??
+    (experienceId && !resourceId ? "experience" : "resource");
+  const contextId =
+    input.contextId?.trim() || experienceId || resourceId;
+  if (!contextId) {
+    throw new Error("Invalid Reservation: missing_context");
+  }
+  if (
+    (contextType === "resource" || contextType === "service") &&
+    !resourceId
+  ) {
+    throw new Error("Invalid Reservation: missing_resource");
+  }
   const participantCount =
     typeof input.participantCount === "number" && input.participantCount > 0
       ? input.participantCount
       : 1;
+  const capacity =
+    typeof input.capacity === "number" && input.capacity > 0
+      ? Math.floor(input.capacity)
+      : undefined;
   return {
     id: input.id?.trim() || `rv-${cryptoRandomId()}`,
     tenantId: input.tenantId.trim(),
-    resourceId: input.resourceId.trim(),
+    ...(resourceId ? { resourceId } : {}),
+    contextType,
+    contextId,
     createdBy: input.createdBy.trim(),
     personId: input.createdBy.trim(),
     participantCount,
+    ...(capacity ? { capacity } : {}),
+    metadata: input.metadata ?? {},
     date: input.date,
     start: input.start,
     end: input.end,
     startTime: combineDateAndTime(input.date, input.start),
     endTime: combineDateAndTime(input.date, input.end),
     status,
-    experienceId: input.experienceId?.trim() || undefined,
+    ...(experienceId ? { experienceId } : {}),
     resourceName: input.resourceName,
     resourceImageUrl: input.resourceImageUrl,
     location: input.location,
@@ -853,6 +891,7 @@ export function createReservationParticipantRecord(input: {
   reservationId: DomainId;
   personId: DomainId;
   createdBy: DomainId;
+  role?: "creator" | "participant" | "guest" | "waitlist";
   id?: DomainId;
 }): ReservationParticipant {
   const now = new Date().toISOString();
@@ -862,6 +901,7 @@ export function createReservationParticipantRecord(input: {
     reservationId: input.reservationId.trim(),
     personId: input.personId.trim(),
     createdBy: input.createdBy.trim(),
+    role: input.role ?? "participant",
     createdAt: now,
     updatedAt: now,
   };
@@ -875,7 +915,11 @@ export function usedCapacityForInterval(input: {
   end: string;
 }): number {
   return input.reservations.reduce((sum, item) => {
-    if (item.resourceId !== input.resourceId) return sum;
+    const matchesResource = item.resourceId === input.resourceId;
+    const matchesContext =
+      (item.contextType === "resource" || item.contextType === "service") &&
+      item.contextId === input.resourceId;
+    if (!matchesResource && !matchesContext) return sum;
     if (item.date !== input.date) return sum;
     if (!reservationIsActive(item.status)) return sum;
     if (!intervalsOverlap(item.start, item.end, input.start, input.end)) return sum;

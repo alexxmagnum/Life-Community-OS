@@ -269,6 +269,16 @@ export {
   EXPERIENCE_LIFECYCLE_STATUSES,
   EXPERIENCE_CATEGORIES,
   EXPERIENCE_PARTICIPANT_ROLES,
+  RESERVATION_CONTEXT_TYPES,
+  RESERVATION_PARTICIPANT_ROLES,
+  isReservationContextType,
+  isReservationParticipantRole,
+  createReservationContext,
+  reservationContextOf,
+  reservationMatchesContext,
+  occupyingReservationParticipantRoles,
+  reservationParticipantOccupiesSeat,
+  usedCapacityForContext,
 } from "./domain";
 
 /** Housing / Living domain helpers (module foundation). */

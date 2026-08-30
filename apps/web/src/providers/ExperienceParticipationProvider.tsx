@@ -59,8 +59,11 @@ export function ExperienceParticipationProvider({
   const records = useMemo(() => {
     const map: ParticipationMap = {};
     for (const item of reservations) {
-      const experienceId = item.experienceId ?? item.resourceId;
-      if (!reservationIsActive(item.status)) continue;
+      const experienceId =
+        item.experienceId ??
+        (item.contextType === "experience" ? item.contextId : undefined) ??
+        item.resourceId;
+      if (!experienceId || !reservationIsActive(item.status)) continue;
       if (!getExperience(experienceId) && !experiences.some((e) => e.id === experienceId)) {
         continue;
       }
