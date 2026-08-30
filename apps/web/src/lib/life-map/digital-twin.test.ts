@@ -155,4 +155,22 @@ describe("Life Map digital twin", () => {
     );
     assert.equal(isArchitecturalTerritoryAsset("character.npc.scene"), false);
   });
+
+  it("prepares Life Map marker context from a feed item locationId", async () => {
+    const { feedMarkersForLifeMap } = await import("./digital-twin");
+    const markers = feedMarkersForLifeMap([
+      {
+        id: "resource_activity:rs-pool",
+        tenantId: PANORAMICA,
+        territoryId: "terr-panoramica-golf",
+        type: "resource_activity",
+        title: "Aquagym 18:00",
+        locationId: "loc-pool",
+        actions: { primary: "reserve" },
+      },
+    ]);
+    assert.equal(markers.length, 1);
+    assert.equal(markers[0]?.locationId, "loc-pool");
+    assert.equal(markers[0]?.title, "Aquagym 18:00");
+  });
 });

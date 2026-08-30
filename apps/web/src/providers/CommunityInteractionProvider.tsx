@@ -23,6 +23,7 @@ import {
 } from "@life-community-os/tenant-life-panoramica";
 import { useTenant } from "./TenantProvider";
 import { useCurrentUser } from "./CurrentUserProvider";
+import { useTerritory } from "./TerritoryProvider";
 import { postToHubContent } from "@/lib/community/map-to-ui";
 import {
   addCommunityCommentRequest,
@@ -59,6 +60,7 @@ export function CommunityInteractionProvider({
 }) {
   const { tenantSlug, hasMembership } = useTenant();
   const { currentUser } = useCurrentUser();
+  const { context: activeTerritory } = useTerritory();
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [comments, setComments] = useState<CommunityCommentRecord[]>([]);
   const [reactions, setReactions] = useState<CommunityReaction[]>([]);
@@ -83,7 +85,9 @@ export function CommunityInteractionProvider({
       return;
     }
     void (async () => {
-      const data = await fetchCommunityFeed(tenantSlug);
+      const data = await fetchCommunityFeed(tenantSlug, {
+        territoryId: activeTerritory.territoryId,
+      });
       if (cancelled) return;
       setPosts((data.posts as CommunityPost[]) ?? []);
       setComments((data.comments as CommunityCommentRecord[]) ?? []);
@@ -92,7 +96,7 @@ export function CommunityInteractionProvider({
     return () => {
       cancelled = true;
     };
-  }, [tenantSlug, hasMembership]);
+  }, [tenantSlug, hasMembership, activeTerritory.territoryId]);
 
   const feedItems = useMemo(() => {
     return posts
@@ -198,14 +202,16 @@ export function CommunityInteractionProvider({
         postId: contentId,
         body: trimmed,
       }).then(() => {
-        void fetchCommunityFeed(tenantSlug).then((data) => {
+        void fetchCommunityFeed(tenantSlug, {
+          territoryId: activeTerritory.territoryId,
+        }).then((data) => {
           setPosts((prev) => (data.posts as CommunityPost[]) ?? prev);
           setComments((data.comments as CommunityCommentRecord[]) ?? []);
           setReactions((data.reactions as CommunityReaction[]) ?? []);
         });
       });
     },
-    [displayName, personId, tenantSlug],
+    [displayName, personId, tenantSlug, activeTerritory.territoryId],
   );
 
   const toggleSave = useCallback((contentId: string) => {

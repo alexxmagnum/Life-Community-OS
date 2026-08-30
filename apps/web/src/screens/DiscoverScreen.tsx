@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
 } from "@life-community-os/tenant-life-panoramica";
-import { spotsLeft, type CommunityGroupRecord } from "@life-community-os/types";
+import {
+  communityFeedItemHref,
+  communityFeedPrimaryLabel,
+  discoverExperienceQuery,
+  discoverQueryFromActive,
+  type CommunityFeedItem,
+  type CommunityGroupRecord,
+} from "@life-community-os/types";
 import {
   ActivityCard,
   CommunityLifeSection,
@@ -28,10 +35,7 @@ import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import { fetchCommunityFeed } from "@/lib/community/community-client";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
-import { useReservations } from "@/providers/ReservationProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-import { discoverQueryFromActive } from "@life-community-os/types";
 
 /**
  * Descubrir = explore life around you.
@@ -47,8 +51,10 @@ export function DiscoverScreen() {
   } = useTenant();
   const { context: activeTerritory } = useTerritory();
   const discoverQuery = discoverQueryFromActive(activeTerritory);
-  const { getViewerState } = useExperienceParticipation();
-  const { experiences: domainExperiences } = useReservations();
+  const experienceQuery = discoverExperienceQuery({
+    tenantId: configuration.tenantId,
+    territoryId: discoverQuery.territoryId,
+  });
   const { allLocations } = useTenantLocations(
     configuration.tenantId,
     discoverQuery.territoryId,
@@ -58,23 +64,27 @@ export function DiscoverScreen() {
   const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
   const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
   const [persistedGroups, setPersistedGroups] = useState<CommunityGroupRecord[]>([]);
+  const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
 
   useEffect(() => {
-    if (!canLocal) {
-      setNeighbourTips([]);
-      setTrustedHelp([]);
-      return;
-    }
     let cancelled = false;
     void (async () => {
       const community = await fetchCommunityFeed(configuration.tenantId, {
-        territoryId: discoverQuery.territoryId,
+        territoryId: experienceQuery?.territoryId ?? discoverQuery.territoryId,
       });
       if (!cancelled) {
         setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
+        setFeedItems(community.items ?? []);
+      }
+      if (!canLocal) {
+        if (!cancelled) {
+          setNeighbourTips([]);
+          setTrustedHelp([]);
+        }
+        return;
       }
       if (isFeatureEnabled("recommendations")) {
         const rows = await fetchHelpRequests({
@@ -129,6 +139,7 @@ export function DiscoverScreen() {
     configuration.tenantId,
     query,
     discoverQuery.territoryId,
+    experienceQuery?.territoryId,
   ]);
 
   const nearYou = useMemo(() => {
@@ -166,19 +177,24 @@ export function DiscoverScreen() {
   ]);
 
   const experiences = useMemo(() => {
-    if (!isFeatureEnabled("experiences")) return [];
-    if (!hasCapability(CAPABILITIES.experienceView)) return [];
     const q = query.trim().toLowerCase();
-    const source = domainExperiences;
-    return source.filter((e) => {
+    return feedItems.filter((item) => {
+      if (
+        item.type !== "experience" &&
+        item.type !== "event" &&
+        item.type !== "resource_activity" &&
+        item.type !== "reservation"
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
-        e.title.toLowerCase().includes(q) ||
-        (e.location ?? "").toLowerCase().includes(q) ||
-        (e.areaLabel ?? "").toLowerCase().includes(q)
+        item.title.toLowerCase().includes(q) ||
+        (item.description ?? "").toLowerCase().includes(q) ||
+        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q)
       );
     });
-  }, [query, isFeatureEnabled, hasCapability, domainExperiences]);
+  }, [query, feedItems]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
@@ -289,24 +305,28 @@ export function DiscoverScreen() {
               subtitle="Lo que está pasando y grupos abiertos."
             >
               <div className="space-y-4">
-                {experiences.map((exp) => {
-                  const viewer = getViewerState(exp);
-                  const remaining = spotsLeft(exp);
+                {experiences.map((item) => {
                   return (
                     <ActivityCard
-                      key={exp.id}
-                      title={exp.title}
-                      when={formatExperienceWhen(exp.startsAt)}
-                      where={exp.location}
-                      peopleLabel={
-                        viewer === "joined"
-                          ? "Vas a ir"
-                          : `${exp.participantCount} van · ${remaining} plazas`
+                      key={item.id}
+                      title={item.title}
+                      when={
+                        item.startsAt
+                          ? formatExperienceWhen(item.startsAt)
+                          : communityFeedPrimaryLabel(item)
                       }
-                      imageUrl={exp.imageUrl ?? ""}
-                      ctaLabel={viewer === "joined" ? "Ver" : "Apuntarme"}
-                      onClick={() => router.push(`/experiences/${exp.id}`)}
-                      onCta={() => router.push(`/experiences/${exp.id}`)}
+                      where={
+                        item.metadata?.locationLabel || item.description || ""
+                      }
+                      peopleLabel={
+                        item.capacity
+                          ? `${item.capacity.available} plazas disponibles`
+                          : undefined
+                      }
+                      imageUrl={item.metadata?.imageUrl ?? ""}
+                      ctaLabel={communityFeedPrimaryLabel(item)}
+                      onClick={() => router.push(communityFeedItemHref(item))}
+                      onCta={() => router.push(communityFeedItemHref(item))}
                     />
                   );
                 })}

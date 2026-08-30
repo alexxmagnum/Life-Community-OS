@@ -4,6 +4,48 @@ export type * from "./platform";
 /** Community Core snapshot helper. */
 export { emptyCommunityDomain } from "./domain/community-core";
 
+/** Community Experience Feed — projection of existing domains, not a SoT. */
+export type {
+  CommunityFeedItem,
+  CommunityFeedItemType,
+  CommunityFeedPrimaryAction,
+  CommunityFeedRankBand,
+  CommunityFeedCapacity,
+  CommunityFeedItemMetadata,
+  CommunityFeedResponse,
+  CommunityExperienceFeedQuery,
+  DiscoverExperienceQuery,
+  CommunityFeedLifeMapContext,
+  ProjectExperienceFeedInput,
+  ProjectEventFeedInput,
+  ProjectResourceFeedInput,
+  ProjectBusinessFeedInput,
+  ProjectHelpFeedInput,
+} from "./community/community-feed";
+export {
+  COMMUNITY_FEED_ITEM_TYPES,
+  COMMUNITY_FEED_PRIMARY_ACTIONS,
+  COMMUNITY_FEED_RANK_BANDS,
+  isCommunityFeedItemType,
+  isCommunityFeedPrimaryAction,
+  discoverExperienceQuery,
+  primaryActionForFeedType,
+  communityFeedPrimaryLabel,
+  communityFeedItemHref,
+  feedSourceEnabled,
+  filterFeedItemsByCapabilities,
+  occupancyRatio,
+  communityFeedRankBand,
+  sortCommunityFeedItems,
+  projectExperienceToFeedItem,
+  projectEventToFeedItem,
+  projectResourceToFeedItem,
+  projectBusinessToFeedItem,
+  projectHelpToFeedItem,
+  lifeMapContextFromFeedItem,
+  lifeMapContextsFromFeed,
+} from "./community/community-feed";
+
 /** Runtime helpers for Location (map SoT). */
 export {
   LOCATION_TYPES,

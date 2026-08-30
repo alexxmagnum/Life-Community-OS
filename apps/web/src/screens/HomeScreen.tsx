@@ -8,9 +8,13 @@ import {
   homeSkyMood,
   listHomeHeroSlideUrls,
   listHomeIntents,
-  listHomeMoves,
-  listHomeNearbyPlaces,
 } from "@life-community-os/tenant-life-panoramica";
+import {
+  communityFeedItemHref,
+  communityFeedPrimaryLabel,
+  territoryHomeQuery,
+  type CommunityFeedItem,
+} from "@life-community-os/types";
 import {
   EmptyState,
   HomeHeroStage,
@@ -23,13 +27,19 @@ import {
   type HomeHeroPill,
   type HomeHeroSlide,
 } from "@life-community-os/ui";
+import { getCommunityExperienceFeed } from "@/lib/community/community-client";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
-import { useReservations } from "@/providers/ReservationProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-import { territoryHomeQuery } from "@life-community-os/types";
+
+const HOY_FEED_TYPES = new Set([
+  "experience",
+  "event",
+  "reservation",
+  "resource_activity",
+]);
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
   "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
@@ -78,9 +88,10 @@ export function HomeScreen() {
     configuration.tenantId,
     activeTerritory.territoryId,
   );
-  const { experiences, ready: experiencesReady } = useReservations();
   const premiumHome = homeMode === "premium";
   const homeQuery = territoryHomeQuery(activeTerritory);
+  const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
+  const [feedReady, setFeedReady] = useState(false);
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
@@ -116,26 +127,73 @@ export function HomeScreen() {
     hasCapability(CAPABILITIES.experienceView) &&
     homeQuery.sources.includes("experience");
 
-  /** Open moments — tenant Resource activities (never cross-tenant). */
+  useEffect(() => {
+    let cancelled = false;
+    const territoryId = homeQuery.territoryId;
+    if (!territoryId) {
+      setFeedItems([]);
+      setFeedReady(true);
+      return;
+    }
+    setFeedReady(false);
+    void getCommunityExperienceFeed({
+      tenantId: configuration.tenantId,
+      territoryId,
+    }).then((data) => {
+      if (cancelled) return;
+      setFeedItems(data.items);
+      setFeedReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [configuration.tenantId, homeQuery.territoryId]);
+
+  /** Open moments — Territory feed projection of existing domains. */
   const moments = useMemo(() => {
-    if (!canExperiences) return [];
-    if (!experiencesReady) return [];
-    return experiences.slice(0, MOMENT_LIMIT).map((experience) => ({
-      experience,
-      presentation: {
-        tone: "open" as const,
-        glyph: "people" as const,
-        whereLabel: experience.location,
-        statusLabel: "Abierto",
-        ctaLabel: "Ver",
-        badgeLabel: undefined as string | undefined,
-      },
-    }));
-  }, [canExperiences, experiencesReady, experiences]);
+    if (!feedReady) return [];
+    return feedItems
+      .filter((item) => HOY_FEED_TYPES.has(item.type))
+      .slice(0, MOMENT_LIMIT)
+      .map((item) => ({
+        item,
+        presentation: {
+          tone: "open" as const,
+          glyph: "people" as const,
+          whereLabel:
+            item.metadata?.locationLabel || item.description || placeName,
+          statusLabel: item.capacity
+            ? `${item.capacity.available} plazas disponibles`
+            : "Abierto",
+          ctaLabel: communityFeedPrimaryLabel(item),
+          badgeLabel: item.startsAt
+            ? formatExperienceTime(item.startsAt)
+            : "Hoy",
+        },
+      }));
+  }, [feedReady, feedItems, placeName]);
 
   const moves = useMemo(
-    () => (premiumHome ? listHomeMoves() : []),
-    [premiumHome],
+    () =>
+      feedItems
+        .filter(
+          (item) =>
+            item.type === "community" || item.type === "business_activity",
+        )
+        .slice(0, 6)
+        .map((item) => ({
+          id: item.id,
+          tone: "default" as const,
+          glyph: "people" as const,
+          headline: item.title,
+          meta: item.description || communityFeedPrimaryLabel(item),
+          quote: undefined as string | undefined,
+          personName: undefined as string | undefined,
+          personAvatarUrl: undefined as string | undefined,
+          liked: false,
+          href: communityFeedItemHref(item),
+        })),
+    [feedItems],
   );
   const intents = useMemo(() => {
     if (premiumHome) return listHomeIntents();
@@ -176,31 +234,23 @@ export function HomeScreen() {
   }, [premiumHome, tenantSlug, theme, placeName]);
   const nearby = useMemo(() => {
     if (!canLocal) return [];
-    if (!premiumHome) {
-      return allLocations
-        .filter((loc) => loc.visibility !== "private")
-        .slice(0, 8)
-        .map((loc) => ({
-          id: loc.id,
-          name: loc.name,
-          imageUrl:
-            preferEntityMediaUrl(undefined, loc.imageUrl) ||
-            LOCATION_NEARBY_FALLBACK_IMAGE,
-          distanceLabel: loc.areaLabel ?? configuration.branding.name,
-          statusLabel: loc.category,
-          ratingLabel: undefined as string | undefined,
-          ratingCountLabel: undefined as string | undefined,
-          badgeLabel: undefined as string | undefined,
-          href: `/map?focus=${encodeURIComponent(loc.id)}`,
-        }));
-    }
-    return listHomeNearbyPlaces();
-  }, [
-    canLocal,
-    premiumHome,
-    allLocations,
-    configuration.branding.name,
-  ]);
+    return allLocations
+      .filter((loc) => loc.visibility !== "private")
+      .slice(0, 8)
+      .map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        imageUrl:
+          preferEntityMediaUrl(undefined, loc.imageUrl) ||
+          LOCATION_NEARBY_FALLBACK_IMAGE,
+        distanceLabel: loc.areaLabel ?? configuration.branding.name,
+        statusLabel: loc.category,
+        ratingLabel: undefined as string | undefined,
+        ratingCountLabel: undefined as string | undefined,
+        badgeLabel: undefined as string | undefined,
+        href: `/map?focus=${encodeURIComponent(loc.id)}`,
+      }));
+  }, [canLocal, allLocations, configuration.branding.name]);
 
   const heroSlides = useMemo((): HomeHeroSlide[] => {
     const sources = listHomeHeroSlideUrls(theme.imagery);
@@ -271,12 +321,12 @@ export function HomeScreen() {
               title="Hoy está tranquilo por aquí."
               description="Cuando alguien abra un plan, lo verás aquí."
               actionLabel={
-                hasCapability(CAPABILITIES.experienceCreate)
+                canExperiences && hasCapability(CAPABILITIES.experienceCreate)
                   ? "Proponer un plan"
                   : undefined
               }
               onAction={
-                hasCapability(CAPABILITIES.experienceCreate)
+                canExperiences && hasCapability(CAPABILITIES.experienceCreate)
                   ? () => router.push("/experiences/create")
                   : undefined
               }
@@ -284,25 +334,26 @@ export function HomeScreen() {
           </div>
         ) : (
           <HomeRail>
-            {moments.map(({ experience, presentation }) => (
+            {moments.map(({ item, presentation }) => (
               <HomeMomentCard
-                key={experience.id}
+                key={item.id}
                 tone="open"
-                badgeLabel={
-                  presentation.badgeLabel ??
-                  formatExperienceTime(experience.startsAt)
-                }
+                badgeLabel={presentation.badgeLabel}
                 glyph={presentation.glyph}
-                title={experience.title}
-                where={presentation.whereLabel ?? experience.location}
+                title={item.title}
+                where={presentation.whereLabel}
                 imageUrl={
-                  experience.imageUrl?.trim() || LOCATION_NEARBY_FALLBACK_IMAGE
+                  item.metadata?.imageUrl?.trim() ||
+                  LOCATION_NEARBY_FALLBACK_IMAGE
                 }
-                people={experience.participants}
-                peopleLabel={`${experience.participantCount} vecinos van`}
+                peopleLabel={
+                  item.capacity
+                    ? `${item.capacity.available} plazas disponibles`
+                    : undefined
+                }
                 statusLabel={presentation.statusLabel}
                 ctaLabel={presentation.ctaLabel}
-                onClick={() => router.push(`/experiences/${experience.id}`)}
+                onClick={() => router.push(communityFeedItemHref(item))}
               />
             ))}
           </HomeRail>

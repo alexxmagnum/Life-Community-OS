@@ -5,6 +5,7 @@
  */
 
 import type {
+  CommunityFeedItem,
   LifeMapActionKind,
   LifeMapObject,
   LifeMapTerritory,
@@ -13,6 +14,7 @@ import type {
 } from "@life-community-os/types";
 import {
   filterRenderableTerritoryObjects,
+  lifeMapContextsFromFeed,
   projectTerritoryObjectsToLifeMapObjects,
 } from "@life-community-os/types";
 import type { TerritoryBounds } from "@life-community-os/types";
@@ -133,6 +135,14 @@ export function bindLifeMapToActiveTerritory(
         }
       : {}),
   };
+}
+
+/**
+ * Feed → Life Map marker context. Location remains SoT.
+ * Does not touch MapLibre / Three — callers bind locationId to existing markers.
+ */
+export function feedMarkersForLifeMap(items: readonly CommunityFeedItem[]) {
+  return lifeMapContextsFromFeed(items);
 }
 
 export function resolveLifeMapPrimaryAction(

@@ -1,9 +1,32 @@
 "use client";
 
+import type { CommunityFeedItem } from "@life-community-os/types";
+
+export type CommunityFeedPayload = {
+  tenantId?: string;
+  territoryId: string | null;
+  items: CommunityFeedItem[];
+  posts: unknown[];
+  groups: unknown[];
+  events: unknown[];
+  comments: unknown[];
+  reactions: unknown[];
+};
+
+const EMPTY_FEED: CommunityFeedPayload = {
+  territoryId: null,
+  items: [],
+  posts: [],
+  groups: [],
+  events: [],
+  comments: [],
+  reactions: [],
+};
+
 export async function fetchCommunityFeed(
   tenantId: string,
   options?: { territoryId?: string | null },
-) {
+): Promise<CommunityFeedPayload> {
   const params = new URLSearchParams({ tenantId });
   if (options?.territoryId?.trim()) {
     params.set("territoryId", options.territoryId.trim());
@@ -13,15 +36,29 @@ export async function fetchCommunityFeed(
     headers: { "x-tenant-slug": tenantId },
   });
   if (!res.ok) {
-    return { posts: [], groups: [], events: [], comments: [], reactions: [] };
+    return EMPTY_FEED;
   }
-  return (await res.json()) as {
-    posts: unknown[];
-    groups: unknown[];
-    events: unknown[];
-    comments: unknown[];
-    reactions: unknown[];
+  const data = (await res.json()) as Partial<CommunityFeedPayload>;
+  return {
+    tenantId: data.tenantId,
+    territoryId: data.territoryId ?? options?.territoryId ?? null,
+    items: Array.isArray(data.items) ? data.items : [],
+    posts: data.posts ?? [],
+    groups: data.groups ?? [],
+    events: data.events ?? [],
+    comments: data.comments ?? [],
+    reactions: data.reactions ?? [],
   };
+}
+
+export async function getCommunityExperienceFeed(input: {
+  tenantId: string;
+  territoryId?: string | null;
+}): Promise<{ territoryId: string | null; items: CommunityFeedItem[] }> {
+  const data = await fetchCommunityFeed(input.tenantId, {
+    territoryId: input.territoryId,
+  });
+  return { territoryId: data.territoryId, items: data.items };
 }
 
 export async function createCommunityPostRequest(input: {

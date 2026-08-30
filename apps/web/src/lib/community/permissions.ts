@@ -30,6 +30,14 @@ export function actorCanViewCommunity(actor: RequestActor): boolean {
   return actorHasCapability(actor.permissions, CAPABILITIES.contentView);
 }
 
+/** Community Experience Feed — members of the tenant only. */
+export function actorCanReadCommunityExperienceFeed(
+  actor: RequestActor,
+): boolean {
+  if (actor.tenantDenied) return false;
+  return Boolean(actor.authenticated && actor.hasMembership);
+}
+
 export function actorCanCreatePost(actor: RequestActor): boolean {
   if (!actorCanViewCommunity(actor)) return false;
   return actorHasCapability(actor.permissions, CAPABILITIES.contentCreate);

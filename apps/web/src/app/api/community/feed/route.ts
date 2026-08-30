@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import {
-  actorCanViewCommunity,
-} from "@/lib/community/permissions";
+import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
+import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
 import {
   listCommunitySnapshot,
 } from "@/lib/community/server-community-repository";
+import { getTenantPack } from "@/lib/tenant/registry";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 import {
   filterForActiveTerritory,
@@ -16,8 +16,11 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
-  if (!actorCanViewCommunity(actor)) {
+  if (!actor.authenticated) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+  if (!actorCanReadCommunityExperienceFeed(actor)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const bound = resolveReadTenantId({
@@ -38,9 +41,20 @@ export async function GET(request: Request) {
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const snapshot = await listCommunitySnapshot(bound.tenantId, scope);
   const scopeId = territory.context.territoryId;
+  const pack = getTenantPack(bound.tenantId);
+  const items = scopeId
+    ? await CommunityExperienceFeedService.list({
+        tenantId: bound.tenantId,
+        territoryId: scopeId,
+        productCapabilities: pack?.productCapabilities,
+        permissions: actor.permissions,
+        scope,
+      })
+    : [];
   return NextResponse.json({
     tenantId: bound.tenantId,
     territoryId: scopeId,
+    items,
     posts: filterForActiveTerritory(
       snapshot.posts.filter((item) => item.status === "published"),
       scopeId,
