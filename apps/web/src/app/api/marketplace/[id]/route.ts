@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import {
+  isMarketplaceListingStatus,
   isMarketplaceListingType,
+  type MarketplaceListingStatus,
   type MarketplaceListingType,
 } from "@life-community-os/types";
 import {
@@ -75,6 +77,7 @@ export async function PATCH(request: Request, { params }: Params) {
     images?: string[];
     price?: number | null;
     type?: string;
+    status?: string;
     ownerPersonId?: string;
     ownerId?: string;
   };
@@ -90,6 +93,10 @@ export async function PATCH(request: Request, { params }: Params) {
     body.type && isMarketplaceListingType(body.type)
       ? (body.type as MarketplaceListingType)
       : undefined;
+  const status =
+    body.status && isMarketplaceListingStatus(body.status)
+      ? (body.status as MarketplaceListingStatus)
+      : undefined;
   const listing = await updateMarketplaceListingServer({
     tenantId: bound.tenantId,
     listingId: id,
@@ -100,6 +107,7 @@ export async function PATCH(request: Request, { params }: Params) {
       images: body.images,
       price: body.price,
       type,
+      status,
     },
     scope,
   });

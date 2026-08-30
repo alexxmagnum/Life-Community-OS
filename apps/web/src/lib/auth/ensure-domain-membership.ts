@@ -25,6 +25,7 @@ import {
   listFileMembershipDirectory,
   listMembershipsForProvider,
   updateFileMembershipRole,
+  updateFileMembershipStatus,
   upsertFileMembership,
   type StoredMembership,
 } from "./membership-store";
@@ -334,6 +335,7 @@ export async function resolveMembershipForAuthUser(input: {
 
 export async function listMembershipDirectory(
   tenantSlug: string,
+  options?: { includeInactive?: boolean },
 ): Promise<
   Array<{
     membership: StoredMembership;
@@ -351,11 +353,13 @@ export async function listMembershipDirectory(
       const { data, error } = await client
         .from("memberships")
         .select("id, person_id, territory_id, membership_type, status, created_at, updated_at")
-        .eq("tenant_id", tenantUuid)
-        .eq("status", "active");
+        .eq("tenant_id", tenantUuid);
       if (!error && data) {
+        const rows = options?.includeInactive
+          ? data
+          : data.filter((row) => row.status === "active");
         const personIds = [
-          ...new Set(data.map((row) => row.person_id as string)),
+          ...new Set(rows.map((row) => row.person_id as string)),
         ];
         const { data: persons } = personIds.length
           ? await client
@@ -369,7 +373,7 @@ export async function listMembershipDirectory(
             p as { id: string; display_name: string | null; email: string | null },
           ]),
         );
-        return data
+        return rows
           .map((row) => {
             const person = byPerson.get(row.person_id as string);
             const membership: StoredMembership = {
@@ -403,7 +407,7 @@ export async function listMembershipDirectory(
     }
     if (!isFilePersistenceAllowed()) return [];
   }
-  return listFileMembershipDirectory(slug);
+  return listFileMembershipDirectory(slug, options?.includeInactive === true);
 }
 
 export async function updateMembershipRole(input: {
@@ -451,6 +455,49 @@ export async function updateMembershipRole(input: {
     tenantSlug: slug,
     personId: input.personId,
     role,
+  });
+}
+
+export async function updateMembershipStatus(input: {
+  tenantSlug: string;
+  personId: string;
+  status: StoredMembership["status"];
+}): Promise<StoredMembership | null> {
+  const slug = resolveTenantPublicId(input.tenantSlug);
+  const tenantUuid = tenantSlugToUuid(slug);
+  if (isDatabaseConfigured() && tenantUuid) {
+    const client = await createServiceDatabaseClientSafe();
+    if (client) {
+      const { data, error } = await client
+        .from("memberships")
+        .update({
+          status: input.status,
+          updated_at: new Date().toISOString(),
+        } as never)
+        .eq("tenant_id", tenantUuid)
+        .eq("person_id", input.personId)
+        .select("id, person_id, territory_id, membership_type, status, created_at, updated_at")
+        .maybeSingle();
+      if (!error && data) {
+        return {
+          id: data.id as string,
+          personId: data.person_id as string,
+          tenantSlug: slug,
+          territoryId: data.territory_id as string,
+          role: coerceMembershipRole(data.membership_type as string),
+          status: (data.status as StoredMembership["status"]) ?? "inactive",
+          createdAt: data.created_at as string,
+          updatedAt: data.updated_at as string,
+        };
+      }
+      if (!isFilePersistenceAllowed()) return null;
+    }
+  }
+  if (!isFilePersistenceAllowed()) return null;
+  return updateFileMembershipStatus({
+    tenantSlug: slug,
+    personId: input.personId,
+    status: input.status,
   });
 }
 

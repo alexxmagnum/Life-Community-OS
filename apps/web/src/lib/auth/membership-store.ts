@@ -217,8 +217,30 @@ export async function updateFileMembershipRole(input: {
   return next;
 }
 
+export async function updateFileMembershipStatus(input: {
+  tenantSlug: string;
+  personId: string;
+  status: StoredMembership["status"];
+}): Promise<StoredMembership | null> {
+  const slug = resolveTenantPublicId(input.tenantSlug);
+  const data = await readFile(slug);
+  const idx = data.memberships.findIndex((m) => m.personId === input.personId);
+  if (idx < 0) return null;
+  const current = data.memberships[idx];
+  if (!current) return null;
+  const next: StoredMembership = {
+    ...current,
+    status: input.status,
+    updatedAt: new Date().toISOString(),
+  };
+  data.memberships[idx] = next;
+  await writeFile(slug, data);
+  return next;
+}
+
 export async function listFileMembershipDirectory(
   tenantSlug: string,
+  includeInactive = false,
 ): Promise<
   Array<{
     membership: StoredMembership;
@@ -228,7 +250,7 @@ export async function listFileMembershipDirectory(
   const slug = resolveTenantPublicId(tenantSlug);
   const data = await readFile(slug);
   return data.memberships
-    .filter((m) => m.status === "active")
+    .filter((m) => includeInactive || m.status === "active")
     .map((membership) => ({
       membership,
       identity:

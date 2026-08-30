@@ -1,5 +1,5 @@
-import { AdminScreen } from "@/screens/AdminScreen";
+import { AdminDashboardScreen } from "@/screens/admin/AdminDashboardScreen";
 
 export default function AdminPage() {
-  return <AdminScreen />;
+  return <AdminDashboardScreen />;
 }

@@ -530,3 +530,14 @@ export type {
   MediaStorageObject,
   MediaStorageProvider,
 } from "./platform/files";
+
+export {
+  ADMIN_AUDIT_ACTIONS,
+  isAdminAuditAction,
+  createAdminAuditLog,
+  ADMIN_OPERATIONS_ROLES,
+  ADMIN_SECTION_ROLES,
+  canAccessAdminOperations,
+  canAccessAdminSection,
+  canAssignMembershipRole,
+} from "./domain";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { canModerateCommunity } from "@/lib/community/permissions";
-import { moderateCommunityPost } from "@/lib/community/server-community-repository";
+import { moderateCommunityComment } from "@/lib/community/server-community-repository";
 import { recordAdminAudit } from "@/lib/admin/server-admin-repository";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
@@ -17,7 +17,7 @@ export async function POST(
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const { id } = await context.params;
-  let body: { status?: string; tenantId?: string };
+  let body: { status?: string; tenantId?: string; reason?: string };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -37,13 +37,13 @@ export async function POST(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, gated.actor.personId);
-  const post = await moderateCommunityPost({
+  const comment = await moderateCommunityComment({
     tenantId: bound.tenantId,
-    postId: id,
+    commentId: id,
     status,
     scope,
   });
-  if (!post) {
+  if (!comment) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   await recordAdminAudit({
@@ -54,9 +54,10 @@ export async function POST(
         : status === "archived"
           ? "content.archive"
           : "content.hide",
-    entityType: "post",
+    entityType: "comment",
     entityId: id,
+    reason: body.reason,
     scope,
   });
-  return NextResponse.json({ post });
+  return NextResponse.json({ comment });
 }

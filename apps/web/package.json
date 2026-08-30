@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:isolation": "tsx --test --test-concurrency=1 ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts ./src/lib/tenant/tenant-factory.test.ts ./src/lib/community/community-isolation.test.ts ./src/lib/business/business-ownership.test.ts ./src/lib/marketplace/marketplace-isolation.test.ts ./src/lib/housing/housing-isolation.test.ts ./src/lib/reservations/reservations-isolation.test.ts ./src/lib/communication/communication-isolation.test.ts ./src/lib/media/media-isolation.test.ts ./src/lib/life-map/digital-twin.test.ts",
+    "test:isolation": "tsx --test --test-concurrency=1 ./src/lib/tenant/isolation.test.ts ./src/lib/data/data-plane.test.ts ./src/lib/location/location-ownership.test.ts ./src/lib/tenant/tenant-factory.test.ts ./src/lib/community/community-isolation.test.ts ./src/lib/business/business-ownership.test.ts ./src/lib/marketplace/marketplace-isolation.test.ts ./src/lib/housing/housing-isolation.test.ts ./src/lib/reservations/reservations-isolation.test.ts ./src/lib/communication/communication-isolation.test.ts ./src/lib/media/media-isolation.test.ts ./src/lib/life-map/digital-twin.test.ts ./src/lib/admin/admin-isolation.test.ts",
     "migrate:files": "tsx ./scripts/import-file-fixtures.ts"
   },
   "dependencies": {

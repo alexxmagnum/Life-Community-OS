@@ -537,3 +537,26 @@ export {
   projectTerritoryObjectToLifeMapObject,
   projectTerritoryObjectsToLifeMapObjects,
 } from "./life-map-territory-object";
+export type {
+  AdminAuditAction,
+  AdminAuditEntityType,
+  AdminAuditLog,
+} from "./admin-audit-log";
+export {
+  ADMIN_AUDIT_ACTIONS,
+  isAdminAuditAction,
+  createAdminAuditLog,
+} from "./admin-audit-log";
+export type {
+  AdminOperationsSection,
+  TenantOperationsSettings,
+  MembershipInvitation,
+  TerritoryAssetAssignment,
+} from "./admin-operations";
+export {
+  ADMIN_OPERATIONS_ROLES,
+  ADMIN_SECTION_ROLES,
+  canAccessAdminOperations,
+  canAccessAdminSection,
+  canAssignMembershipRole,
+} from "./admin-operations";

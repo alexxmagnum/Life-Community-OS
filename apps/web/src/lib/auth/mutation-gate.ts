@@ -69,6 +69,21 @@ export async function requireAdministratorMutation(
   return gated;
 }
 
+export async function requireOperationsActor(
+  request: Request,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  const gated = await requireMutationActor(request);
+  if ("error" in gated) return gated;
+  if (
+    gated.actor.role !== "administrator" &&
+    gated.actor.role !== "moderator" &&
+    gated.actor.role !== "group_manager"
+  ) {
+    return deny("forbidden", 403);
+  }
+  return gated;
+}
+
 export async function requireCapabilityMutation(
   request: Request,
   capability: string,

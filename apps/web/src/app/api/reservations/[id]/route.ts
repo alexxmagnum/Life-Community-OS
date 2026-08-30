@@ -109,6 +109,18 @@ export async function PATCH(request: Request, { params }: Params) {
     if (!reservation) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
+    if (body.status === "cancelled") {
+      const { recordAdminAudit } = await import(
+        "@/lib/admin/server-admin-repository"
+      );
+      await recordAdminAudit({
+        actor: gated.actor,
+        action: "reservation.cancel",
+        entityType: "reservation",
+        entityId: id,
+        scope,
+      });
+    }
     return NextResponse.json({ reservation });
   } catch (error) {
     const code = error instanceof Error ? error.message : "update_failed";

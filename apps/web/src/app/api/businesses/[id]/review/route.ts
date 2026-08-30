@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { BusinessProfileStatus } from "@life-community-os/types";
 import { actorCanReviewBusiness } from "@/lib/business/permissions";
+import { recordAdminAudit } from "@/lib/admin/server-admin-repository";
 import {
   getBusinessServer,
   setBusinessStatus,
@@ -67,6 +68,14 @@ export async function POST(request: Request, { params }: Params) {
     tenantId: bound.tenantId,
     businessId: id,
     status,
+    scope,
+  });
+  await recordAdminAudit({
+    actor: gated.actor,
+    action: status === "published" ? "business.approve" : "business.suspend",
+    entityType: "business",
+    entityId: id,
+    metadata: { status },
     scope,
   });
   return NextResponse.json({ business });
