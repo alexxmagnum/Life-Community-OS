@@ -12,10 +12,9 @@
  * Does not grant Permissions.
  */
 
-import type { TenantConfiguration } from "@life-community-os/types";
-import { isTenantModuleEnabled } from "@life-community-os/types";
+import type { TenantConfiguration, TenantFeatureFlags } from "@life-community-os/types";
+import { CAPABILITIES, isTenantModuleEnabled } from "@life-community-os/types";
 
-import { CAPABILITIES } from "./capabilities";
 import {
   listCommunityHubNavLeaves,
 } from "./community-hub";
@@ -23,7 +22,6 @@ import {
   listExplorerActivities,
   type ExplorerNavLeaf,
 } from "./explorer-nav";
-import type { TenantFeatureFlags } from "./features";
 import {
   listOfficialEntities,
   officialEntityNavIcon,

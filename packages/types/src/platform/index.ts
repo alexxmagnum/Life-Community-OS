@@ -22,12 +22,42 @@ export type {
   AuthorizationDecision,
 } from "./security-boundaries";
 
-export type { MembershipRole } from "./membership-role";
+export type { MembershipRole, DemoRole } from "./membership-role";
 export {
   MEMBERSHIP_ROLES,
   isMembershipRole,
   coerceMembershipRole,
 } from "./membership-role";
+
+export type { CapabilityKey, TenantFeatureFlags } from "./capabilities";
+export { CAPABILITIES } from "./capabilities";
+
+export type { EffectivePermissionInput } from "./authorization";
+export {
+  capabilitiesForRole,
+  resolveEffectivePermissions,
+  isCapabilityEnabledForTenant,
+  canAccessSecurityModule,
+  canAccessMunicipalityModule,
+  canAccessHousingModule,
+  canAccessLifeMapModule,
+} from "./authorization";
+
+export type {
+  ProjectedNavIcon,
+  ProjectedNavArea,
+  ProjectedNavLeaf,
+  ProjectedNavCategory,
+  PlatformNavigationInput,
+  BoundNavLeaf,
+  BoundNavCategory,
+} from "./navigation-contract";
+export {
+  navItemVisible,
+  filterLeavesByCapability,
+  bindProjectedNavigation,
+  projectPlatformNavigation,
+} from "./navigation-contract";
 
 export type {
   PlatformModule,

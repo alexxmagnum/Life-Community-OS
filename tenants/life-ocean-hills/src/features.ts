@@ -1,4 +1,4 @@
-import type { TenantFeatureFlags } from "@life-community-os/tenant-life-panoramica";
+import type { TenantFeatureFlags } from "@life-community-os/types";
 
 /** No golf, no marketplace, no housing — proves capability-driven modules. */
 export const oceanHillsFeatures: TenantFeatureFlags = {

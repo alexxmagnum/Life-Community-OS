@@ -8,6 +8,8 @@
  * OFF = hidden but still supported by architecture — never delete a module row.
  */
 
+import { CAPABILITIES as CAP } from "./capabilities";
+
 /** Registry document version — bump when module contracts change. */
 export const PLATFORM_MODULE_REGISTRY_VERSION = "1.0.0" as const;
 
@@ -75,56 +77,6 @@ export type PlatformModuleRegistryIssue = {
   message: string;
   dependencyId?: string;
 };
-
-/** Capability string constants used by registry mapping (tenant-neutral). */
-const CAP = {
-  contentView: "community.content.view",
-  contentCreate: "community.content.create",
-  channelView: "community.channel.view",
-  channelCreate: "community.channel.create",
-  channelPublish: "community.channel.publish",
-  groupCreate: "community.group.create",
-  proposalCreate: "community.proposal.create",
-  experienceView: "community.experience.view",
-  experienceCreate: "community.experience.create",
-  experienceJoin: "community.experience.join",
-  experienceManage: "community.experience.manage",
-  resourceView: "community.resource.view",
-  resourceReserve: "community.resource.reserve",
-  resourceManage: "community.resource.manage",
-  localView: "community.local.view",
-  marketplaceView: "community.marketplace.view",
-  marketplaceCreate: "community.marketplace.create",
-  recommendationCreate: "community.recommendation.create",
-  residencyClaim: "community.residency.claim",
-  residencyVerifyReview: "community.residency.verify_review",
-  manageEnter: "community.manage.enter",
-  announcementPublishOfficial: "community.announcement.publish_official",
-  securityView: "community.security.view",
-  securityNoticesView: "community.security.notices.view",
-  securityGateView: "community.security.gate.view",
-  securityPatrolView: "community.security.patrol.view",
-  securityIncidentCreate: "community.security.incident.create",
-  pulseView: "community.pulse.view",
-  /** Housing / Living — platform module (fail closed until tenant enables). */
-  housingView: "housing.view",
-  /** Resident owner — publish own property. */
-  housingCreateOwnListing: "housing.create_own_listing",
-  /** Resident owner — edit own listing. */
-  housingEditOwnListing: "housing.edit_own_listing",
-  /** Authorized agency / promoter publisher. */
-  housingPublisher: "housing.publisher",
-  housingContact: "housing.contact",
-  housingSave: "housing.save",
-  housingManage: "housing.manage",
-  /**
-   * Life Map — spatial digital twin surface (premium, fail closed).
-   * Transversal projection layer — not owned by Community/Housing/Services.
-   */
-  lifeMapView: "lifeMap.view",
-  lifeMapInteract: "lifeMap.interact",
-  lifeMapManage: "lifeMap.manage",
-} as const;
 
 function mod(module: PlatformModule): PlatformModule {
   return module;

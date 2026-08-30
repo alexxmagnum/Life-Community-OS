@@ -1,20 +1,28 @@
 /**
- * Server-side permission resolution from membership role.
+ * Server-side permission resolution from membership role + tenant configuration.
  * UI may hide actions; this matrix is what APIs enforce.
+ * Tenant packs never define or grant permissions.
  */
 
 import {
-  capabilitiesForRole,
+  CAPABILITIES,
+  resolveEffectivePermissions,
   type CapabilityKey,
-  type DemoRole,
-} from "@life-community-os/tenant-life-panoramica";
+} from "@life-community-os/types";
 import type { MembershipRole } from "@life-community-os/types";
+import { getTenantPack } from "@/lib/tenant/registry";
 
 export function permissionsForRole(
   role: MembershipRole | null,
+  tenantSlug?: string | null,
 ): readonly string[] {
   if (!role) return [];
-  return [...capabilitiesForRole(role as DemoRole)];
+  const pack = tenantSlug ? getTenantPack(tenantSlug) : null;
+  return resolveEffectivePermissions({
+    role,
+    features: pack?.features,
+    productCapabilities: pack?.productCapabilities,
+  });
 }
 
 export function actorHasCapability(
@@ -23,3 +31,6 @@ export function actorHasCapability(
 ): boolean {
   return permissions.includes(capability);
 }
+
+export { CAPABILITIES };
+export type { CapabilityKey };

@@ -1,18 +1,18 @@
 /**
- * @deprecated Import AuthZ from @life-community-os/types.
- * Tenant packs do not own capabilities, roles, or permissions.
+ * Platform capability vocabulary — re-exported from contracts.
+ * Tenant packs never own this list.
  */
 
 export {
   CAPABILITIES,
   capabilitiesForRole,
-  canAccessMunicipalityModule,
   canAccessSecurityModule,
+  canAccessMunicipalityModule,
   canAccessHousingModule,
   canAccessLifeMapModule,
 } from "@life-community-os/types";
 
 export type {
   CapabilityKey,
-  DemoRole,
+  TenantFeatureFlags,
 } from "@life-community-os/types";

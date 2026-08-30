@@ -12,27 +12,25 @@ import {
 import { tenantThemeToCssVars } from "@life-community-os/design-tokens";
 import type { TenantThemeMode } from "@life-community-os/design-tokens";
 import {
-  isTenantModuleEnabled,
-  type MembershipRole,
-  type TenantConfiguration,
-} from "@life-community-os/types";
-import {
-  type CapabilityKey,
-  type DemoMemberProfile,
-  type DemoRole,
-  type TenantFeatureFlags,
-} from "@life-community-os/tenant-life-panoramica";
-import {
   CAPABILITIES,
   canAccessMunicipalityModule,
   canAccessSecurityModule,
   canAccessLifeMapModule,
-} from "@life-community-os/tenant-life-panoramica";
+  isProductCapabilityEnabled,
+  isTenantModuleEnabled,
+  type CapabilityKey,
+  type MembershipRole,
+  type ProductCapabilityKey,
+  type ProductCapabilityMap,
+  type TenantConfiguration,
+  type TenantFeatureFlags,
+  type TenantHomeMode,
+} from "@life-community-os/types";
+import type { DemoMemberProfile } from "@life-community-os/tenant-life-panoramica";
 import {
   requireTenantPack,
   resolveActiveTenantSlug,
 } from "@/lib/tenant/registry";
-import { isProductCapabilityEnabled, type ProductCapabilityKey, type ProductCapabilityMap, type TenantHomeMode } from "@life-community-os/types";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
 type RoleSource = "membership" | "demo" | "guest";
@@ -43,11 +41,11 @@ type TenantContextValue = {
   themeMode: TenantThemeMode;
   features: TenantFeatureFlags;
   configuration: TenantConfiguration;
-  role: DemoRole;
+  role: MembershipRole;
   /**
    * Demo-only. No-op when a real membership session is active or in production.
    */
-  setRole: (role: DemoRole) => void;
+  setRole: (role: MembershipRole) => void;
   roleSource: RoleSource;
   personId: string | null;
   authenticated: boolean;
@@ -149,13 +147,13 @@ export function TenantProvider({
     ? "membership"
     : "guest";
 
-  const role: DemoRole =
+  const role: MembershipRole =
     currentUser.hasMembership && currentUser.role
       ? currentUser.role
       : "member";
 
   const setRole = useCallback(
-    (next: DemoRole) => {
+    (next: MembershipRole) => {
       void next;
     },
     [],

@@ -17,10 +17,9 @@ import {
 } from "@life-community-os/ui";
 import {
   bindProjectedNavigation,
-  communityAlertIcon,
-  listActiveCommunityAlerts,
-  projectMemberNavigation,
-} from "@life-community-os/tenant-life-panoramica";
+  projectPlatformNavigation,
+} from "@life-community-os/types";
+import { requireTenantPack } from "@/lib/tenant/registry";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
@@ -167,6 +166,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const {
+    tenantSlug,
     theme,
     themeMode,
     hasCapability,
@@ -201,24 +201,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
     href: string;
   } | null>(null);
 
+  const pack = requireTenantPack(tenantSlug);
+
   useEffect(() => {
-    const weight = { alert: 0, important: 1, info: 2 } as const;
-    const next = [...listActiveCommunityAlerts(Date.now())].sort(
-      (a, b) => weight[a.level] - weight[b.level],
-    )[0];
-    setNavAlert(
-      next
-        ? {
-            title: next.areaLabel
-              ? `${next.title} · ${next.areaLabel}`
-              : next.title,
-            context: next.body,
-            icon: communityAlertIcon(next.kind, next.level),
-            href: next.href ?? "/community",
-          }
-        : null,
-    );
-  }, []);
+    setNavAlert(pack.getNavAlert?.(Date.now()) ?? null);
+  }, [pack]);
   /**
    * Night chrome needs a light mark. Prefer logoLight; fall back to logo
    * (the Panorámica icon is transparent and reads on dark surfaces).
@@ -230,11 +217,15 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   /** Hamburger menu — hide actions that cannot complete a real flow yet. */
   const menuCategories = useMemo((): AppMenuCategory[] => {
-    const projected = projectMemberNavigation({
+    const navInput = {
       configuration,
       hasCapability,
       isFeatureEnabled,
-    });
+      isProductCapabilityEnabled,
+    };
+    const projected =
+      pack.projectNavigation?.(navInput) ??
+      projectPlatformNavigation(navInput);
     const bound = bindProjectedNavigation(projected, {
       onNavigate: (href) => router.push(href),
       onSignOut: () => undefined,
@@ -245,7 +236,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
         children: category.children.filter((leaf) => leaf.id !== "p-sign-out"),
       }))
       .filter((category) => category.children.length > 0);
-  }, [configuration, hasCapability, isFeatureEnabled, router]);
+  }, [
+    configuration,
+    hasCapability,
+    isFeatureEnabled,
+    isProductCapabilityEnabled,
+    pack,
+    router,
+  ]);
 
   /**
    * Contribution entry (+) — only actions that complete a real flow.

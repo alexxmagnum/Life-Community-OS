@@ -5,7 +5,7 @@
 
 import { actorHasCapability } from "@/lib/auth/permissions";
 import type { RequestActor } from "@/lib/auth/request-actor";
-import { CAPABILITIES } from "@life-community-os/tenant-life-panoramica";
+import { CAPABILITIES } from "@life-community-os/types";
 import type { MembershipRole } from "@life-community-os/types";
 
 export function canModerateCommunity(

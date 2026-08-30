@@ -19,8 +19,10 @@ export {
 export {
   CAPABILITIES,
   capabilitiesForRole,
-  type CapabilityKey,
-  type DemoRole,
-} from "@life-community-os/tenant-life-panoramica";
+} from "@life-community-os/types";
+export type {
+  CapabilityKey,
+  DemoRole,
+} from "@life-community-os/types";
 
 export const tenantId = "life-ocean-hills" as const;

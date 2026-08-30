@@ -1,34 +1,37 @@
 /**
  * Tenant pack registry — configuration-driven factory.
  * Core never branches on a customer slug. Packs register themselves here.
+ * AuthZ (roles, capabilities, permissions) is platform-owned.
  */
 
 import type {
+  PlatformNavigationInput,
   ProductCapabilityMap,
+  ProjectedNavCategory,
   TenantCatalogDomain,
   TenantConfiguration,
+  TenantFeatureFlags,
   TenantHomeMode,
   TenantLocationSeed,
 } from "@life-community-os/types";
 import {
+  CAPABILITIES,
   productCapabilitiesFromFeatures,
   isProductCapabilityEnabled,
   type ProductCapabilityKey,
 } from "@life-community-os/types";
 import type { TenantBrandTokens } from "@life-community-os/design-tokens";
 import {
-  CAPABILITIES,
-  capabilitiesForRole,
+  communityAlertIcon,
   communityContentCatalog,
   experienceCatalog,
   lifePanoramicaFeatures,
   lifePanoramicaTheme,
+  listActiveCommunityAlerts,
   marketplaceCatalog,
+  projectMemberNavigation,
   resolveLifePanoramicaTenantConfiguration,
   resourceCatalog,
-  type CapabilityKey,
-  type DemoRole,
-  type TenantFeatureFlags,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   lifeValleyCatalogSeed,
@@ -52,6 +55,13 @@ import {
   resolveTenantPublicId,
 } from "./ids";
 
+export type TenantNavAlert = {
+  title: string;
+  context: string;
+  icon: string;
+  href: string;
+};
+
 export type TenantPackRuntime = {
   slug: string;
   displayName: string;
@@ -63,9 +73,13 @@ export type TenantPackRuntime = {
   homeMode: TenantHomeMode;
   locationSeedMode: "pack" | "local-entity-catalog";
   resolveConfiguration: () => TenantConfiguration;
-  capabilitiesForRole: (role: DemoRole) => Set<CapabilityKey>;
   getCatalogSeed: (domain: TenantCatalogDomain) => unknown[];
   getLocationSeeds: () => TenantLocationSeed[];
+  /** Catalog-backed hamburger. Visibility only — not AuthZ. */
+  projectNavigation?: (
+    input: PlatformNavigationInput,
+  ) => ProjectedNavCategory[];
+  getNavAlert?: (nowMs?: number) => TenantNavAlert | null;
 };
 
 const packs = new Map<string, TenantPackRuntime>();
@@ -96,6 +110,20 @@ function panoramicaCatalogSeed(domain: TenantCatalogDomain): unknown[] {
   }
 }
 
+function panoramicaNavAlert(nowMs: number = Date.now()): TenantNavAlert | null {
+  const weight = { alert: 0, important: 1, info: 2 } as const;
+  const next = [...listActiveCommunityAlerts(nowMs)].sort(
+    (a, b) => weight[a.level] - weight[b.level],
+  )[0];
+  if (!next) return null;
+  return {
+    title: next.areaLabel ? `${next.title} · ${next.areaLabel}` : next.title,
+    context: next.body,
+    icon: communityAlertIcon(next.kind, next.level),
+    href: next.href ?? "/community",
+  };
+}
+
 registerPack({
   slug: LIFE_PANORAMICA_TENANT_SLUG,
   ...identityMeta(LIFE_PANORAMICA_TENANT_SLUG),
@@ -108,9 +136,10 @@ registerPack({
   homeMode: "premium",
   locationSeedMode: "local-entity-catalog",
   resolveConfiguration: resolveLifePanoramicaTenantConfiguration,
-  capabilitiesForRole,
   getCatalogSeed: panoramicaCatalogSeed,
   getLocationSeeds: () => [],
+  projectNavigation: (input) => projectMemberNavigation(input),
+  getNavAlert: panoramicaNavAlert,
 });
 
 registerPack({
@@ -125,7 +154,6 @@ registerPack({
   homeMode: "catalog",
   locationSeedMode: "pack",
   resolveConfiguration: resolveLifeValleyTenantConfiguration,
-  capabilitiesForRole,
   getCatalogSeed: lifeValleyCatalogSeed,
   getLocationSeeds: () => lifeValleyLocationSeeds,
 });
@@ -145,7 +173,6 @@ registerPack({
   homeMode: "catalog",
   locationSeedMode: "pack",
   resolveConfiguration: resolveOceanHillsTenantConfiguration,
-  capabilitiesForRole,
   getCatalogSeed: oceanHillsCatalogSeed,
   getLocationSeeds: () => oceanHillsLocationSeeds,
 });

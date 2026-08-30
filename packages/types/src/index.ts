@@ -63,6 +63,22 @@ export {
   coerceMembershipRole,
 } from "./platform/membership-role";
 
+/** Platform AuthZ — capabilities, roles, effective permissions. */
+export {
+  CAPABILITIES,
+  capabilitiesForRole,
+  resolveEffectivePermissions,
+  isCapabilityEnabledForTenant,
+  canAccessSecurityModule,
+  canAccessMunicipalityModule,
+  canAccessHousingModule,
+  canAccessLifeMapModule,
+  navItemVisible,
+  filterLeavesByCapability,
+  bindProjectedNavigation,
+  projectPlatformNavigation,
+} from "./platform";
+
 /** Runtime helpers for Local Discovery (platform capability). */
 export {
   filterLocalEntities,

@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@life-community-os/design-tokens": "workspace:*",
-    "@life-community-os/types": "workspace:*",
-    "@life-community-os/tenant-life-panoramica": "workspace:*"
+    "@life-community-os/types": "workspace:*"
   },
   "devDependencies": {
     "@life-community-os/config": "workspace:*",

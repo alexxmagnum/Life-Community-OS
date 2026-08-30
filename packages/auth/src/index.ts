@@ -21,6 +21,29 @@ export {
 } from "./bind-active-tenant";
 export { isDemoIdentityEnabled, resolveJoinRole } from "./demo-identity";
 
+export {
+  MEMBERSHIP_ROLES,
+  isMembershipRole,
+  coerceMembershipRole,
+} from "./roles";
+export type { MembershipRole, DemoRole } from "./roles";
+
+export {
+  CAPABILITIES,
+  capabilitiesForRole,
+  canAccessSecurityModule,
+  canAccessMunicipalityModule,
+  canAccessHousingModule,
+  canAccessLifeMapModule,
+} from "./capabilities";
+export type { CapabilityKey, TenantFeatureFlags } from "./capabilities";
+
+export {
+  resolveEffectivePermissions,
+  isCapabilityEnabledForTenant,
+} from "./permissions";
+export type { EffectivePermissionInput } from "./permissions";
+
 export type AuthSession = {
   userId: string;
   email: string | null;

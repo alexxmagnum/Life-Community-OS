@@ -12,6 +12,9 @@ export const MEMBERSHIP_ROLES = [
 
 export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
 
+/** @deprecated Use MembershipRole. Packs never define roles. */
+export type DemoRole = MembershipRole;
+
 export function isMembershipRole(value: string): value is MembershipRole {
   return (MEMBERSHIP_ROLES as readonly string[]).includes(value);
 }

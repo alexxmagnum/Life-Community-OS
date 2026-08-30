@@ -1,4 +1,4 @@
-import type { TenantFeatureFlags } from "@life-community-os/tenant-life-panoramica";
+import type { TenantFeatureFlags } from "@life-community-os/types";
 
 /** Slim feature set for isolation validation. */
 export const lifeValleyFeatures: TenantFeatureFlags = {

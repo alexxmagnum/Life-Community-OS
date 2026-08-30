@@ -2,65 +2,12 @@
  * Feature availability for this tenant (ADR-023 readiness).
  * UI hides entry points when false — not a permission system.
  *
- * Phase 1 Community Communication flags align with ADR-035–038.
- * Legacy keys kept for existing screens; new keys are additive aliases.
+ * Values are tenant configuration. The flag shape lives on the platform.
  */
-export type TenantFeatureFlags = {
-  experiences: boolean;
-  /** Alias semantic for experiences (Activity product language). */
-  activities: boolean;
-  services: boolean;
-  /**
-   * Community job board inside Servicios (Busco / Ofrezco trabajo).
-   * Not professionals, not neighbour-help, not marketplace goods.
-   */
-  work: boolean;
-  resources: boolean;
-  recommendations: boolean;
-  /** Local Entity / Local Discovery ecosystem (ADR-017 / ADR-032). */
-  localLife: boolean;
-  /** Alias for localLife. */
-  localEntities: boolean;
-  /** Community Life Pulse aggregation on Home (TECH-011). */
-  communityPulse: boolean;
-  groups: boolean;
-  decide: boolean;
-  interactions: boolean;
-  incidents: boolean;
-  feed: boolean;
-  calendar: boolean;
-  marketplace: boolean;
-  /** Channel organization layer (ADR-035). */
-  communityChannels: boolean;
-  officialChannels: boolean;
-  /**
-   * Municipality / Ayuntamiento module.
-   * Reference demo: ON (full product showcase). Production tenants may disable.
-   */
-  municipalServices: boolean;
-  /**
-   * Official Security module (entity, gates, patrol, notices, incidents).
-   * Reference demo: ON (full product showcase). Production tenants may disable.
-   */
-  securityModule: boolean;
-  mobility: boolean;
-  /** Residency verification workflows (ADR-038). */
-  residencyVerification: boolean;
-  /** Soft trust projection — foundation only. */
-  participationTrust: boolean;
-  /** Diffusion policy data — engine off. */
-  intelligentDiffusion: boolean;
-  /**
-   * Housing / Living module (rent, sale, land, commercial).
-   * Reference demo: ON — tenant activation config in `./housing`.
-   */
-  housing: boolean;
-  /**
-   * Life Map — spatial digital twin (premium).
-   * Fail closed until a tenant explicitly enables it.
-   */
-  lifeMap: boolean;
-};
+
+import type { TenantFeatureFlags } from "@life-community-os/types";
+
+export type { TenantFeatureFlags } from "@life-community-os/types";
 
 /**
  * Life Panoramica reference demo — FULL PRODUCT MODE.

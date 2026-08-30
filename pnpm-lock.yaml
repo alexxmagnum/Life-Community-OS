@@ -337,9 +337,6 @@ importers:
       '@life-community-os/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@life-community-os/tenant-life-panoramica':
-        specifier: workspace:*
-        version: link:../life-panoramica
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -372,9 +369,6 @@ importers:
       '@life-community-os/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
-      '@life-community-os/tenant-life-panoramica':
-        specifier: workspace:*
-        version: link:../life-panoramica
       '@life-community-os/types':
         specifier: workspace:*
         version: link:../../packages/types

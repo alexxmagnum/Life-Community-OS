@@ -94,7 +94,10 @@ function bindUser(input: {
           displayName: input.displayName,
         },
         membership: fallback.membership,
-        permissions: permissionsForRole(fallback.membership.role),
+        permissions: permissionsForRole(
+          fallback.membership.role,
+          fallback.membership.tenantId,
+        ),
       }),
     };
   }
@@ -108,7 +111,10 @@ function bindUser(input: {
         displayName: input.displayName,
       },
       membership: bind.membership,
-      permissions: permissionsForRole(bind.membership.role),
+      permissions: permissionsForRole(
+        bind.membership.role,
+        bind.membership.tenantId,
+      ),
     }),
   };
 }

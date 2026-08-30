@@ -14,7 +14,7 @@ import type {
   LifeMapTerritory,
 } from "@life-community-os/types";
 
-import { CAPABILITIES } from "./capabilities";
+import { CAPABILITIES } from "@life-community-os/types";
 import { DEMO_TENANT_ID, DEMO_TERRITORY_ID } from "./demo-ids";
 import { lifePanoramicaFeatures } from "./features";
 import {
