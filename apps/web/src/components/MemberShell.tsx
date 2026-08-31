@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   AppShell,
@@ -18,6 +18,7 @@ import {
   CommunityActionRegistry,
   communityCreationRoute,
   projectPlatformNavigation,
+  sanitizeCommunityCreationContext,
   type CommunityCreationContext,
 } from "@life-community-os/types";
 import { requireTenantPack } from "@/lib/tenant/registry";
@@ -29,6 +30,7 @@ import { BrandSplash } from "@/components/BrandSplash";
 import { ActionComposer } from "@/components/community/ActionComposer";
 import {
   ACTION_COMPOSER_EVENT,
+  inferCreationSource,
   type ActionComposerDetail,
 } from "@/lib/community/action-composer-client";
 import { useNotifications } from "@/providers/NotificationProvider";
@@ -111,10 +113,9 @@ function IconMap() {
 
 function buildNav(flags: {
   services: boolean;
-  showCreate: boolean;
   showMap: boolean;
 }): NavItem[] {
-  /** Map-first community OS — high-frequency destinations only. */
+  /** Magic Plus is the FAB — destinations only. */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
   ];
@@ -125,25 +126,14 @@ function buildNav(flags: {
       href: "/map",
       icon: <IconMap />,
     });
-  } else {
-    items.push({
-      id: "community",
-      label: "Comunidad",
-      href: "/community",
-      icon: <IconCommunity />,
-    });
   }
-  if (flags.showCreate) {
-    items.push({ id: "create", label: "Crear", href: "#create", icon: "+" });
-  }
-  if (flags.showMap) {
-    items.push({
-      id: "community",
-      label: "Comunidad",
-      href: "/community",
-      icon: <IconCommunity />,
-    });
-  } else if (flags.services) {
+  items.push({
+    id: "community",
+    label: "Comunidad",
+    href: "/community",
+    icon: <IconCommunity />,
+  });
+  if (!flags.showMap && flags.services) {
     items.push({
       id: "services",
       label: "Servicios",
@@ -294,23 +284,32 @@ export function MemberShell({ children }: { children: ReactNode }) {
     () =>
       buildNav({
         services: isModuleEnabled("services"),
-        showCreate: createActionCount > 0,
         showMap:
           isModuleEnabled("lifeMap") &&
           isFeatureEnabled("lifeMap") &&
           isProductCapabilityEnabled("lifeMap"),
       }),
-    [createActionCount, isModuleEnabled, isFeatureEnabled, isProductCapabilityEnabled],
+    [isModuleEnabled, isFeatureEnabled, isProductCapabilityEnabled],
+  );
+
+  const openComposer = useCallback(
+    (detail?: ActionComposerDetail) => {
+      setComposeContext(
+        sanitizeCommunityCreationContext({
+          source: detail?.source ?? inferCreationSource(pathname),
+          locationId: detail?.locationId,
+          locationName: detail?.locationName,
+        }),
+      );
+      setCreateOpen(true);
+    },
+    [pathname],
   );
 
   useEffect(() => {
     const openCreate = (event: Event) => {
       const detail = (event as CustomEvent<ActionComposerDetail>).detail;
-      setComposeContext({
-        locationId: detail?.locationId,
-        locationName: detail?.locationName,
-      });
-      setCreateOpen(true);
+      openComposer(detail);
     };
     const openPost = () => setPostOpen(true);
     window.addEventListener(ACTION_COMPOSER_EVENT, openCreate);
@@ -319,7 +318,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
       window.removeEventListener(ACTION_COMPOSER_EVENT, openCreate);
       window.removeEventListener("lcos:open-post", openPost);
     };
-  }, []);
+  }, [openComposer]);
 
   useEffect(() => {
     for (const item of navItems) {
@@ -338,18 +337,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
         activeId={activeFromPath(pathname)}
         flushTop={isHome}
         onNavigate={(item) => {
-          if (item.id === "create") {
-            setComposeContext({});
-            setCreateOpen(true);
-            return;
-          }
           router.push(item.href);
         }}
-        onCreate={() => {
-          setComposeContext({});
-          setCreateOpen(true);
-        }}
-        showCreateFab={false}
+        onCreate={() => openComposer({ source: inferCreationSource(pathname) })}
+        showCreateFab={createActionCount > 0}
+        createFabLabel="Crear en comunidad"
         navNotice={
           navAlert ? (
             <button
@@ -431,6 +423,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
           setComposeContext({});
         }}
         actions={createActions}
+        locationName={composeContext.locationName}
       />
       <CreatePostSheet
         open={postOpen}

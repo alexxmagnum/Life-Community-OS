@@ -10,6 +10,9 @@ import {
   feedSourceEnabled,
   filterFeedItemsByCapabilities,
   lifeMapContextFromFeedItem,
+  communityFeedLivingLabel,
+  communityFeedTimeLabel,
+  partitionLivingCommunityFeed,
   projectExperienceToFeedItem,
   projectResourceToFeedItem,
   sortCommunityFeedItems,
@@ -169,5 +172,45 @@ describe("Community Experience Feed contract", () => {
       discoverExperienceQuery({ tenantId: PANO, territoryId: null }),
       null,
     );
+  });
+
+  it("projects living labels and partitions now / upcoming / help", () => {
+    const yoga = projectExperienceToFeedItem({
+      id: "exp-live",
+      tenantId: PANO,
+      territoryId: PANO_TERRITORY,
+      title: "Aquagym",
+      description: "Piscina",
+      status: "published",
+      startsAt: "2026-08-31T16:00:00.000Z",
+      location: "Piscina",
+      capacity: 10,
+      occupied: 8,
+    });
+    assert.ok(yoga);
+    assert.equal(communityFeedLivingLabel(yoga), "8 vecinos participan");
+    assert.equal(communityFeedTimeLabel(yoga), "18:00");
+    const padel = item({
+      id: "exp-padel",
+      title: "Pádel",
+      type: "experience",
+      startsAt: "2026-08-31T18:00:00.000Z",
+      capacity: { total: 4, available: 2 },
+      actions: { primary: "reserve" },
+    });
+    assert.equal(communityFeedLivingLabel(padel), "2 plazas libres");
+    const help = item({
+      id: "community:help:1",
+      title: "Necesito una mano",
+      type: "community",
+      metadata: { domain: "help" },
+    });
+    const partition = partitionLivingCommunityFeed(
+      [yoga, padel, help],
+      Date.parse("2026-08-31T16:30:00.000Z"),
+    );
+    assert.equal(partition.now.some((row) => row.id === yoga.id), true);
+    assert.equal(partition.upcoming.some((row) => row.id === padel.id), true);
+    assert.equal(partition.help.length, 1);
   });
 });

@@ -27,6 +27,8 @@ export type CreateSheetProps = {
   /** Preferred: community-value hierarchy. */
   sections?: CreateActionSection[];
   title?: string;
+  /** Optional place line, e.g. "En Piscina". */
+  contextLine?: string;
 };
 
 export function CreateSheet({
@@ -34,7 +36,8 @@ export function CreateSheet({
   onClose,
   actions = [],
   sections,
-  title = "Crear en comunidad",
+  title = "¿Qué quieres aportar?",
+  contextLine,
 }: CreateSheetProps) {
   if (!open) return null;
 
@@ -70,9 +73,11 @@ export function CreateSheet({
         <h2 className="px-1 text-[22px] font-semibold text-[var(--color-text-primary)]">
           {title}
         </h2>
-        <p className="mt-1 px-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
-          ¿Qué quieres aportar a tu comunidad?
-        </p>
+        {contextLine ? (
+          <p className="mt-1 px-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+            {contextLine}
+          </p>
+        ) : null}
 
         {totalActions === 0 ? (
           <p className="px-2 py-8 text-center text-[16px] text-[var(--color-text-secondary)]">

@@ -6,6 +6,8 @@
  */
 
 import {
+  LIVING_EMPTY_CTA,
+  LIVING_EMPTY_TITLE,
   lifePlaceActionLabel,
   lifePlaceAvailabilityLabel,
   lifePlaceNowLabel,
@@ -31,10 +33,23 @@ export function LifePlaceSheet({
   const when = formatLifePlaceWhen(context.currentActivity[0]?.startsAt);
   const facilities = context.resources.map((item) => item.name);
   const upcoming = context.experiences.slice(0, 6);
+  const joinOrReserve = context.actions.filter(
+    (action) =>
+      action.kind === "join_experience" ||
+      action.kind === "reserve_resource" ||
+      action.kind === "participate",
+  );
+  const otherActions = context.actions.filter(
+    (action) =>
+      action.kind !== "join_experience" &&
+      action.kind !== "reserve_resource" &&
+      action.kind !== "participate" &&
+      action.kind !== "create_activity",
+  );
 
   return (
     <aside
-      className="mt-4 overflow-hidden rounded-[20px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-[0_16px_48px_rgba(28,24,18,0.12)]"
+      className="ui-pop mt-4 overflow-hidden rounded-[20px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-[0_16px_48px_rgba(28,24,18,0.12)]"
       aria-label="Qué puedo hacer aquí"
     >
       <div className="p-4">
@@ -62,66 +77,94 @@ export function LifePlaceSheet({
           </p>
         ) : null}
 
-        {context.location.summary ? (
-          <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-text-secondary)]">
-            {context.location.summary}
+        <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted,rgba(28,24,18,0.04))] px-3 py-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+            Ahora
           </p>
-        ) : null}
-
-        {now ? (
-          <div className="mt-3 rounded-2xl bg-[var(--color-surface-muted,rgba(28,24,18,0.04))] px-3 py-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-              Ahora
-            </p>
-            <p className="mt-1 text-[15px] font-medium text-[var(--color-text-primary)]">
-              {now}
-            </p>
-            {when ? (
-              <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                {when}
+          {now ? (
+            <>
+              <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+                {now}
               </p>
-            ) : null}
-            {availability ? (
-              <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                {availability}
+              {when ? (
+                <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+                  {when}
+                </p>
+              ) : null}
+              {context.community ? (
+                <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+                  {context.community.label}
+                </p>
+              ) : availability ? (
+                <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+                  {availability}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <p className="mt-1 text-[15px] font-medium text-[var(--color-text-primary)]">
+                {LIVING_EMPTY_TITLE}
               </p>
-            ) : null}
-          </div>
-        ) : null}
-
-        {onCompose ? (
-          <button
-            type="button"
-            onClick={onCompose}
-            className="mt-4 text-[13px] font-medium text-[var(--color-action-primary)] underline-offset-2 hover:underline"
-          >
-            Crear algo aquí
-          </button>
-        ) : null}
-
-        {context.actions.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {context.actions.map((action) => {
-              const primary =
-                action.kind === "join_experience" ||
-                action.kind === "reserve_resource" ||
-                action.kind === "participate";
-              return (
+              {onCompose ? (
                 <button
-                  key={`${action.kind}:${action.href}`}
                   type="button"
-                  onClick={() => onAction(action)}
-                  className={
-                    primary
-                      ? "rounded-full bg-[var(--color-action-primary,#1a5c56)] px-3.5 py-1.5 text-[13px] font-medium text-white"
-                      : "rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
-                  }
+                  onClick={onCompose}
+                  className="mt-2 text-[13px] font-semibold text-[var(--color-action-primary)]"
                 >
-                  {action.label || lifePlaceActionLabel(action.kind)}
+                  {LIVING_EMPTY_CTA}
                 </button>
-              );
-            })}
+              ) : null}
+            </>
+          )}
+        </section>
+
+        <section className="mt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+            Qué puedo hacer
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {joinOrReserve.map((action) => (
+              <button
+                key={`${action.kind}:${action.href}`}
+                type="button"
+                onClick={() => onAction(action)}
+                className="rounded-full bg-[var(--color-action-primary,#1a5c56)] px-3.5 py-1.5 text-[13px] font-medium text-white"
+              >
+                {action.label || lifePlaceActionLabel(action.kind)}
+              </button>
+            ))}
+            {onCompose ? (
+              <button
+                type="button"
+                onClick={onCompose}
+                className="rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-on-action)]"
+              >
+                Crear algo aquí
+              </button>
+            ) : null}
+            {otherActions.map((action) => (
+              <button
+                key={`${action.kind}:${action.href}`}
+                type="button"
+                onClick={() => onAction(action)}
+                className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
+              >
+                {action.label || lifePlaceActionLabel(action.kind)}
+              </button>
+            ))}
           </div>
+        </section>
+
+        {context.community && now ? (
+          <section className="mt-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+              Quién participa
+            </h3>
+            <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
+              {context.community.label}
+            </p>
+          </section>
         ) : null}
 
         {facilities.length > 0 ? (
@@ -153,17 +196,6 @@ export function LifePlaceSheet({
                 <li key={item.id}>{item.title}</li>
               ))}
             </ul>
-          </section>
-        ) : null}
-
-        {context.community ? (
-          <section className="mt-5">
-            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-              Personas participando
-            </h3>
-            <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
-              {context.community.label}
-            </p>
           </section>
         ) : null}
       </div>

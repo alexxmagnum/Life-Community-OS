@@ -17,8 +17,9 @@ export type AppShellProps = {
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
   onCreate?: () => void;
-  /** @deprecated Create lives in bottom nav — keep false */
+  /** Magic Plus — floating + above the tab bar. Not a nav destination. */
   showCreateFab?: boolean;
+  createFabLabel?: string;
   /** Persistent mobile app header (fixed). */
   header?: ReactNode;
   /** Live notice carried by the floating tab bar. */
@@ -45,6 +46,7 @@ export function AppShell({
   onNavigate,
   onCreate,
   showCreateFab = false,
+  createFabLabel = "Crear en comunidad",
   header,
   navNotice,
   immersive = false,
@@ -93,10 +95,10 @@ export function AppShell({
           <button
             type="button"
             onClick={onCreate}
-            className="fixed bottom-[76px] right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-action-primary)] text-2xl text-[var(--color-text-on-action)] shadow-[var(--shadow-elev-2)] transition-transform active:scale-95 md:hidden"
-            aria-label="Añadir algo"
+            className="ui-pop fixed bottom-[calc(64px+env(safe-area-inset-bottom))] left-1/2 z-50 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-[image:var(--gradient-brand)] text-[28px] leading-none text-[var(--color-text-on-action)] shadow-[0_0_28px_rgba(0,212,229,0.55),0_8px_20px_rgba(0,0,0,0.45)] ring-[3px] ring-[var(--color-surface-app)]/70 transition-transform active:scale-95 md:hidden"
+            aria-label={createFabLabel}
           >
-            +
+            <span aria-hidden>+</span>
           </button>
         ) : null}
         {!immersive ? (

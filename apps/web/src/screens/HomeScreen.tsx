@@ -3,14 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  formatExperienceTime,
   homeHeroIndexForHour,
   homeSkyMood,
   listHomeHeroSlideUrls,
   listHomeIntents,
 } from "@life-community-os/tenant-life-panoramica";
 import {
+  communityFeedLivingLabel,
   communityFeedPrimaryLabel,
+  communityFeedTimeLabel,
+  isLivingMomentFeedItem,
+  LIVING_EMPTY_CTA,
+  LIVING_EMPTY_DESCRIPTION,
+  LIVING_EMPTY_TITLE,
   lifeMapHrefForFeedItem,
   territoryHomeQuery,
   type CommunityFeedItem,
@@ -24,6 +29,7 @@ import {
   HomeNearbyCard,
   HomeRail,
   HomeSectionHead,
+  staggerItemProps,
   type HomeHeroPill,
   type HomeHeroSlide,
 } from "@life-community-os/ui";
@@ -35,13 +41,6 @@ import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-
-const HOY_FEED_TYPES = new Set([
-  "experience",
-  "event",
-  "reservation",
-  "resource_activity",
-]);
 
 const LOCATION_NEARBY_FALLBACK_IMAGE =
   "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
@@ -65,8 +64,7 @@ function madridHour(nowMs = Date.now()): number {
   return Number(hourStr);
 }
 
-/** How many open moments the main rail shows before deferring to /experiences. */
-const MOMENT_LIMIT = 3;
+const MOMENT_LIMIT = 6;
 
 /**
  * Home = the place where Panorámica lives today.
@@ -165,7 +163,7 @@ export function HomeScreen() {
   const moments = useMemo(() => {
     if (!feedReady) return [];
     return feedItems
-      .filter((item) => HOY_FEED_TYPES.has(item.type))
+      .filter(isLivingMomentFeedItem)
       .slice(0, MOMENT_LIMIT)
       .map((item) => ({
         item,
@@ -174,13 +172,13 @@ export function HomeScreen() {
           glyph: "people" as const,
           whereLabel:
             item.metadata?.locationLabel || item.description || placeName,
-          statusLabel: item.capacity
-            ? `${item.capacity.available} plazas disponibles`
-            : "Abierto",
+          statusLabel:
+            communityFeedLivingLabel(item) ||
+            (item.capacity
+              ? `${item.capacity.available} plazas disponibles`
+              : "Abierto"),
           ctaLabel: communityFeedPrimaryLabel(item),
-          badgeLabel: item.startsAt
-            ? formatExperienceTime(item.startsAt)
-            : "Hoy",
+          badgeLabel: communityFeedTimeLabel(item) || "Hoy",
         },
       }));
   }, [feedReady, feedItems, placeName]);
@@ -212,7 +210,7 @@ export function HomeScreen() {
     return [
       {
         id: `${tenantSlug}-map`,
-        title: "Map",
+        title: "Mapa",
         subtitle: theme.identity?.homeCallout ?? theme.tagline ?? placeName,
         tone: "discover" as const,
         glyph: "compass" as const,
@@ -222,7 +220,7 @@ export function HomeScreen() {
       },
       {
         id: `${tenantSlug}-plans`,
-        title: "Plans",
+        title: "Planes",
         subtitle: theme.identity?.pulseTitleTemplate
           ? theme.identity.pulseTitleTemplate.replaceAll("{territory}", placeName)
           : placeName,
@@ -234,7 +232,7 @@ export function HomeScreen() {
       },
       {
         id: `${tenantSlug}-discover`,
-        title: "Discover",
+        title: "Descubrir",
         subtitle: placeName,
         tone: "discover" as const,
         glyph: "compass" as const,
@@ -330,25 +328,28 @@ export function HomeScreen() {
         {moments.length === 0 ? (
           <div>
             <EmptyState
-              title="Hoy está tranquilo por aquí."
-              description="Cuando alguien abra un plan, lo verás aquí."
+              title={LIVING_EMPTY_TITLE}
+              description={LIVING_EMPTY_DESCRIPTION}
               actionLabel={
                 canExperiences && hasCapability(CAPABILITIES.experienceCreate)
-                  ? "Proponer un plan"
+                  ? LIVING_EMPTY_CTA
                   : undefined
               }
               onAction={
                 canExperiences && hasCapability(CAPABILITIES.experienceCreate)
-                  ? () => openActionComposer()
+                  ? () => openActionComposer({ source: "home" })
                   : undefined
               }
             />
           </div>
         ) : (
           <HomeRail>
-            {moments.map(({ item, presentation }) => (
+            {moments.map(({ item, presentation }, index) => {
+              const stagger = staggerItemProps(index);
+              return (
               <HomeMomentCard
                 key={item.id}
+                className={stagger.className}
                 tone="open"
                 badgeLabel={presentation.badgeLabel}
                 glyph={presentation.glyph}
@@ -358,11 +359,7 @@ export function HomeScreen() {
                   item.metadata?.imageUrl?.trim() ||
                   LOCATION_NEARBY_FALLBACK_IMAGE
                 }
-                peopleLabel={
-                  item.capacity
-                    ? `${item.capacity.available} plazas disponibles`
-                    : undefined
-                }
+                peopleLabel={communityFeedLivingLabel(item)}
                 statusLabel={presentation.statusLabel}
                 ctaLabel={presentation.ctaLabel}
                 onClick={() => {
@@ -372,8 +369,10 @@ export function HomeScreen() {
                   }
                   router.push(lifeMapHrefForFeedItem(item));
                 }}
+                onCta={() => router.push(lifeMapHrefForFeedItem(item))}
               />
-            ))}
+              );
+            })}
           </HomeRail>
         )}
       </section>

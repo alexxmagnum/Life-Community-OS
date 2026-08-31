@@ -408,6 +408,7 @@ export type HomeMomentCardProps = {
   ctaLabel: string;
   onClick?: () => void;
   onCta?: () => void;
+  className?: string;
 };
 
 /** One open moment — full-bleed photo card with glass footer (reference Home). */
@@ -425,11 +426,12 @@ export function HomeMomentCard({
   ctaLabel,
   onClick,
   onCta,
+  className,
 }: HomeMomentCardProps) {
   const faces = people.slice(0, 3);
   const glyph3d = glyphImageUrl;
   return (
-    <article className="relative flex h-[200px] w-[148px] shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/12 shadow-[0_10px_28px_rgba(0,0,0,0.4)]">
+    <article className={cn("relative flex h-[200px] w-[148px] shrink-0 flex-col overflow-hidden rounded-[18px] border border-white/12 shadow-[0_10px_28px_rgba(0,0,0,0.4)]", className)}>
       <img
         src={imageUrl}
         alt=""

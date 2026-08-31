@@ -259,6 +259,96 @@ const BAND_ORDER: Record<CommunityFeedRankBand, number> = {
  * Territory life order: now → next → relevant → popular.
  * Never sort by id, seed, or pack priority.
  */
+/** Empty community copy — invitation, never a catalog gap. */
+export const LIVING_EMPTY_TITLE = "Todavía no hay planes aquí";
+export const LIVING_EMPTY_DESCRIPTION =
+  "Sé el primero en aportar algo a tu comunidad.";
+export const LIVING_EMPTY_CTA = "Crear el primero";
+
+export function isHelpFeedItem(item: CommunityFeedItem): boolean {
+  return item.metadata?.domain === "help";
+}
+
+export function communityFeedOccupied(item: CommunityFeedItem): number {
+  if (typeof item.metadata?.occupied === "number") {
+    return Math.max(0, item.metadata.occupied);
+  }
+  if (item.capacity) {
+    return Math.max(0, item.capacity.total - item.capacity.available);
+  }
+  return 0;
+}
+
+export function communityFeedLivingLabel(
+  item: CommunityFeedItem,
+): string | undefined {
+  if (item.actions.primary === "reserve" && item.capacity) {
+    if (item.capacity.available <= 0) return undefined;
+    return item.capacity.available === 1
+      ? "1 plaza libre"
+      : `${item.capacity.available} plazas libres`;
+  }
+  const occupied = communityFeedOccupied(item);
+  if (occupied > 0) {
+    return occupied === 1
+      ? "1 vecino participa"
+      : `${occupied} vecinos participan`;
+  }
+  if (item.capacity && item.capacity.available > 0) {
+    return item.capacity.available === 1
+      ? "1 plaza libre"
+      : `${item.capacity.available} plazas libres`;
+  }
+  return undefined;
+}
+
+export function communityFeedTimeLabel(
+  item: CommunityFeedItem,
+): string | undefined {
+  if (!item.startsAt?.trim()) return undefined;
+  const date = new Date(item.startsAt);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return new Intl.DateTimeFormat("es-ES", {
+    timeZone: "Europe/Madrid",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+export function isLivingMomentFeedItem(item: CommunityFeedItem): boolean {
+  if (isHelpFeedItem(item)) return true;
+  return (
+    item.type === "experience" ||
+    item.type === "event" ||
+    item.type === "reservation" ||
+    item.type === "resource_activity"
+  );
+}
+
+export type LivingCommunityFeedPartition = {
+  now: CommunityFeedItem[];
+  upcoming: CommunityFeedItem[];
+  help: CommunityFeedItem[];
+  moments: CommunityFeedItem[];
+};
+
+export function partitionLivingCommunityFeed(
+  items: readonly CommunityFeedItem[],
+  now = Date.now(),
+): LivingCommunityFeedPartition {
+  const help = items.filter(isHelpFeedItem);
+  const moments = items.filter(isLivingMomentFeedItem);
+  const rest = moments.filter((item) => !isHelpFeedItem(item));
+  const nowItems = rest.filter(
+    (item) => communityFeedRankBand(item, now) === "now",
+  );
+  const upcoming = rest.filter(
+    (item) => communityFeedRankBand(item, now) !== "now",
+  );
+  return { now: nowItems, upcoming, help, moments };
+}
+
 export function sortCommunityFeedItems(
   items: readonly CommunityFeedItem[],
   now = Date.now(),

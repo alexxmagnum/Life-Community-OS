@@ -15,6 +15,7 @@ export type ActionComposerProps = {
   onClose: () => void;
   actions?: CreateAction[];
   sections?: CreateActionSection[];
+  locationName?: string;
 };
 
 export function ActionComposer({
@@ -22,14 +23,17 @@ export function ActionComposer({
   onClose,
   actions,
   sections,
+  locationName,
 }: ActionComposerProps) {
+  const place = locationName?.trim();
   return (
     <CreateSheet
       open={open}
       onClose={onClose}
       actions={actions}
       sections={sections}
-      title="Crear en comunidad"
+      title="¿Qué quieres aportar?"
+      contextLine={place ? `En ${place}` : undefined}
     />
   );
 }

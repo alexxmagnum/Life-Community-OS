@@ -13,6 +13,7 @@ import {
   CommunityActionRegistry,
   communityCreationRoute,
   isCommunityCreationActionType,
+  sanitizeCommunityCreationContext,
 } from "./action-composer";
 
 const PANO_TERRITORY = "10000000-0000-4000-8000-000000000002";
@@ -83,12 +84,14 @@ describe("Action Composer contract", () => {
     );
     assert.ok(action);
     const href = communityCreationRoute(action, {
+      source: "life_place",
       locationId: "loc-pool",
       locationName: "Piscina",
     });
     assert.equal(href.includes("locationId=loc-pool"), true);
     assert.equal(/territoryId=/.test(href), false);
     assert.equal(/createdBy=/.test(href), false);
+    assert.equal(/source=/.test(href), false);
   });
 
   it("does not invent a universal creation entity", () => {
@@ -101,5 +104,24 @@ describe("Action Composer contract", () => {
     assert.equal(/unsplash/i.test(source), false);
     assert.equal(isCommunityCreationActionType("experience_create"), true);
     assert.equal(isCommunityCreationActionType("resource_admin"), false);
+  });
+
+  it("sanitizes CreationContext without territory or owner", () => {
+    const clean = sanitizeCommunityCreationContext({
+      source: "life_place",
+      locationId: " loc-pool ",
+      locationName: " Piscina ",
+    });
+    assert.equal(clean.source, "life_place");
+    assert.equal(clean.locationId, "loc-pool");
+    assert.equal(clean.locationName, "Piscina");
+    const extra = sanitizeCommunityCreationContext({
+      source: "home",
+      locationId: "loc-1",
+      ...({ territoryId: PANO_TERRITORY, createdBy: "person-x" } as object),
+    });
+    assert.equal("territoryId" in extra, false);
+    assert.equal("createdBy" in extra, false);
+    assert.equal(extra.source, "home");
   });
 });

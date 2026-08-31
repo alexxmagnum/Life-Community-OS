@@ -3,19 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  formatExperienceWhen,
-} from "@life-community-os/tenant-life-panoramica";
-import {
-  communityFeedItemHref,
-  communityFeedPrimaryLabel,
   discoverExperienceQuery,
   discoverQueryFromActive,
-  lifeMapHrefForFeedItem,
+  LIVING_EMPTY_CTA,
+  LIVING_EMPTY_DESCRIPTION,
+  LIVING_EMPTY_TITLE,
+  partitionLivingCommunityFeed,
   type CommunityFeedItem,
   type CommunityGroupRecord,
 } from "@life-community-os/types";
 import {
-  ActivityCard,
   CommunityLifeSection,
   EmptyState,
   FlowScreenHeader,
@@ -33,6 +30,7 @@ import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import { fetchCommunityFeed } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
+import { LivingFeedCard } from "@/components/community/LivingFeedCard";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -191,25 +189,21 @@ export function DiscoverScreen() {
     configuration.branding.name,
   ]);
 
-  const experiences = useMemo(() => {
+  const living = useMemo(
+    () => partitionLivingCommunityFeed(feedItems),
+    [feedItems],
+  );
+  const happening = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return feedItems.filter((item) => {
-      if (
-        item.type !== "experience" &&
-        item.type !== "event" &&
-        item.type !== "resource_activity" &&
-        item.type !== "reservation"
-      ) {
-        return false;
-      }
-      if (!q) return true;
-      return (
+    const rows = [...living.now, ...living.upcoming];
+    if (!q) return rows;
+    return rows.filter(
+      (item) =>
         item.title.toLowerCase().includes(q) ||
         (item.description ?? "").toLowerCase().includes(q) ||
-        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [query, feedItems]);
+        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q),
+    );
+  }, [query, living.now, living.upcoming]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
@@ -224,12 +218,13 @@ export function DiscoverScreen() {
     });
   }, [query, isFeatureEnabled, homeMode, persistedGroups]);
 
-  const hasPlans = experiences.length > 0 || groups.length > 0;
+  const hasPlans = happening.length > 0 || groups.length > 0;
   const hasAnything =
     nearYou.length > 0 ||
     neighbourTips.length > 0 ||
     hasPlans ||
-    trustedHelp.length > 0;
+    trustedHelp.length > 0 ||
+    living.help.length > 0;
 
   return (
     <MobileScreen>
@@ -249,25 +244,51 @@ export function DiscoverScreen() {
 
       {!hasAnything ? (
         <EmptyState
-          title={query ? "Sin resultados" : "Nada cerca todavía"}
+          title={query ? "Sin resultados" : LIVING_EMPTY_TITLE}
           description={
-            query
-              ? "Prueba con otras palabras."
-              : "Cuando haya vida local, la verás aquí."
+            query ? "Prueba con otras palabras." : LIVING_EMPTY_DESCRIPTION
           }
           actionLabel={
-            query ? "Limpiar búsqueda" : "Ver el mapa"
+            query
+              ? "Limpiar búsqueda"
+              : authenticated && hasMembership
+                ? LIVING_EMPTY_CTA
+                : "Ver el mapa"
           }
           onAction={
-            query ? () => setQuery("") : () => router.push("/map")
+            query
+              ? () => setQuery("")
+              : authenticated && hasMembership
+                ? () => openActionComposer({ source: "discover" })
+                : () => router.push("/map")
           }
         />
       ) : (
         <div className="space-y-10">
+          {happening.length > 0 ? (
+            <CommunityLifeSection
+              title="Qué ocurre cerca"
+              subtitle="La misma vida que ves en Inicio y en el mapa."
+            >
+              <div className="space-y-4">
+                {happening.map((item, index) => (
+                  <LivingFeedCard
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    fallbackImage=""
+                    onOpenPlace={setPlaceLocationId}
+                    onOpenHref={(href) => router.push(href)}
+                  />
+                ))}
+              </div>
+            </CommunityLifeSection>
+          ) : null}
+
           {nearYou.length > 0 ? (
             <CommunityLifeSection
-              title="Cerca de ti"
-              subtitle="Restaurantes, cafés, tiendas y sitios del barrio."
+              title="Qué puedo hacer"
+              subtitle="Lugares de tu territorio. Abre cada uno como Life Place."
             >
               <LocalLifeRail>
                 {nearYou.map((place) => (
@@ -308,58 +329,21 @@ export function DiscoverScreen() {
             </CommunityLifeSection>
           ) : null}
 
-          {hasPlans ? (
+          {groups.length > 0 ? (
             <CommunityLifeSection
-              title="Experiencias y actividades"
-              subtitle="Lo que está pasando y grupos abiertos."
+              title="Grupos abiertos"
+              subtitle="Entra y participa."
             >
-              <div className="space-y-4">
-                {experiences.map((item) => {
-                  return (
-                    <ActivityCard
-                      key={item.id}
-                      title={item.title}
-                      when={
-                        item.startsAt
-                          ? formatExperienceWhen(item.startsAt)
-                          : communityFeedPrimaryLabel(item)
-                      }
-                      where={
-                        item.metadata?.locationLabel || item.description || ""
-                      }
-                      peopleLabel={
-                        item.capacity
-                          ? `${item.capacity.available} plazas disponibles`
-                          : undefined
-                      }
-                      imageUrl={item.metadata?.imageUrl ?? ""}
-                      ctaLabel={communityFeedPrimaryLabel(item)}
-                      onClick={() => {
-                        if (item.locationId) {
-                          setPlaceLocationId(item.locationId);
-                          return;
-                        }
-                        router.push(lifeMapHrefForFeedItem(item));
-                      }}
-                      onCta={() => router.push(communityFeedItemHref(item))}
-                    />
-                  );
-                })}
-                {groups.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3 pt-2">
-                    {groups.map((g) => (
-                      <GroupCard
-                        key={g.id}
-                        name={g.name}
-                        members={0}
-                        imageUrl={g.imageUrl ?? ""}
-                        onOpen={() =>
-                          router.push(`/community/groups/${g.id}/conversation`)
-                        }
-                      />
-                    ))}
-                  </div>
-                ) : null}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                {groups.map((g) => (
+                  <GroupCard
+                    key={g.id}
+                    name={g.name}
+                    members={0}
+                    imageUrl={g.imageUrl ?? ""}
+                    onOpen={() => router.push(`/community/groups/${g.id}`)}
+                  />
+                ))}
               </div>
             </CommunityLifeSection>
           ) : null}
@@ -391,11 +375,11 @@ export function DiscoverScreen() {
       {authenticated && hasMembership ? (
         <button
           type="button"
-          onClick={() => openActionComposer()}
+          onClick={() => openActionComposer({ source: "discover" })}
           className="mt-8 w-full rounded-[16px] border border-[var(--color-border-subtle)] px-4 py-3 text-left"
         >
           <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
-            ¿Quieres crear algo aquí?
+            Qué puedo aportar
           </span>
           <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
             Organiza, pide ayuda o comparte con tu comunidad.

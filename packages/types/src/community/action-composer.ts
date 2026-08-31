@@ -34,7 +34,20 @@ export type CommunityCreationAction = {
   territoryRequired: boolean;
 };
 
+/** Where the + opened. Client UX only — never sent as territory or owner. */
+export const COMMUNITY_CREATION_SOURCES = [
+  "global_plus",
+  "life_place",
+  "life_map",
+  "home",
+  "discover",
+] as const;
+
+export type CommunityCreationSource =
+  (typeof COMMUNITY_CREATION_SOURCES)[number];
+
 export type CommunityCreationContext = {
+  source?: CommunityCreationSource;
   locationId?: string;
   locationName?: string;
 };
@@ -50,9 +63,9 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
   {
     id: "experience_create",
     type: "experience_create",
-    title: "Crear experiencia",
+    title: "Crear una experiencia",
     description: "Organiza una actividad",
-    icon: "🎯",
+    icon: "✨",
     requiredCapability: CAPABILITIES.experienceCreate,
     route: "/experiences/create",
     territoryRequired: true,
@@ -60,7 +73,7 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
   {
     id: "event_create",
     type: "event_create",
-    title: "Crear evento",
+    title: "Organizar un evento",
     description: "Convoca vecinos",
     icon: "📅",
     requiredCapability: CAPABILITIES.contentCreate,
@@ -82,7 +95,7 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     type: "marketplace_listing",
     title: "Vender o regalar",
     description: "Marketplace",
-    icon: "🛒",
+    icon: "🎁",
     requiredCapability: CAPABILITIES.marketplaceCreate,
     route: "/marketplace/create",
     territoryRequired: true,
@@ -102,7 +115,7 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     type: "business_create",
     title: "Registrar negocio",
     description: "Tu negocio en el mapa",
-    icon: "📍",
+    icon: "🏢",
     requiredCapability: CAPABILITIES.localView,
     route: "/business/register",
     territoryRequired: true,
@@ -113,6 +126,31 @@ export function isCommunityCreationActionType(
   value: string,
 ): value is CommunityCreationActionType {
   return (COMMUNITY_CREATION_ACTION_TYPES as readonly string[]).includes(value);
+}
+
+export function isCommunityCreationSource(
+  value: string | null | undefined,
+): value is CommunityCreationSource {
+  return (COMMUNITY_CREATION_SOURCES as readonly string[]).includes(value ?? "");
+}
+
+/**
+ * Client context for the +. Strips territoryId / createdBy / ownerId
+ * even if a caller tries to pass them.
+ */
+export function sanitizeCommunityCreationContext(
+  input?: CommunityCreationContext | null,
+): CommunityCreationContext {
+  const source = isCommunityCreationSource(input?.source)
+    ? input.source
+    : undefined;
+  const locationId = input?.locationId?.trim() || undefined;
+  const locationName = input?.locationName?.trim() || undefined;
+  return {
+    ...(source ? { source } : {}),
+    ...(locationId ? { locationId } : {}),
+    ...(locationName ? { locationName } : {}),
+  };
 }
 
 function productKeyForCreation(

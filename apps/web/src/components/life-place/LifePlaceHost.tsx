@@ -54,6 +54,7 @@ export function LifePlaceHost({
       onClose={onClose}
       onCompose={() =>
         openActionComposer({
+          source: "life_place",
           locationId: context.location.id,
           locationName: context.location.name,
         })

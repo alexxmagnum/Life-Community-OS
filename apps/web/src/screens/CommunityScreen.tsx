@@ -5,9 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   communityAlertIcon,
   communityAlertTone,
-  communityBelongLayerDefinition,
-  communityBelongLayers,
-  communityHubHref,
   communityHubSectionIdForArea,
   formatContentWhen,
   listAccessibleChannels,
@@ -20,7 +17,6 @@ import {
   listParticipacionContent,
   resolveCommunityBelongLayer,
   resolveCommunityHubArea,
-  COMMUNITY_BELONG_LAYER_IDS,
   type CommunityBelongLayerId,
 } from "@life-community-os/tenant-life-panoramica";
 import {
@@ -46,8 +42,17 @@ import { useReservations } from "@/providers/ReservationProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 import { resolvePlaceHref } from "@/lib/location";
-import type { CommunityEvent, CommunityGroupRecord } from "@life-community-os/types";
+import type { CommunityEvent, CommunityFeedItem, CommunityGroupRecord, CommunityOwnActivity } from "@life-community-os/types";
+import {
+  LIVING_EMPTY_CTA,
+  LIVING_EMPTY_DESCRIPTION,
+  LIVING_EMPTY_TITLE,
+  partitionLivingCommunityFeed,
+} from "@life-community-os/types";
 import { groupToHubCard } from "@/lib/community/map-to-ui";
+import { LivingFeedCard } from "@/components/community/LivingFeedCard";
+import { openActionComposer } from "@/lib/community/action-composer-client";
+import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 
 const PLAZA_PEEK = 4;
 const OFFICIAL_CHANNEL_PEEK = 3;
@@ -95,7 +100,12 @@ export function CommunityHubScreen() {
   const tenantId = configuration.tenantId;
   const [domainGroups, setDomainGroups] = useState<CommunityGroupRecord[]>([]);
   const [domainEvents, setDomainEvents] = useState<CommunityEvent[]>([]);
+  const [experienceFeed, setExperienceFeed] = useState<CommunityFeedItem[]>([]);
+  const [ownActivity, setOwnActivity] = useState<CommunityOwnActivity | null>(
+    null,
+  );
 
+  const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
   const [expandGroups, setExpandGroups] = useState(false);
   const [expandPlaza, setExpandPlaza] = useState(false);
   const [expandActualidad, setExpandActualidad] = useState(false);
@@ -179,14 +189,44 @@ export function CommunityHubScreen() {
       const data = (await res.json()) as {
         groups?: CommunityGroupRecord[];
         events?: CommunityEvent[];
+        items?: CommunityFeedItem[];
       };
       setDomainGroups(data.groups ?? []);
       setDomainEvents(data.events ?? []);
+      setExperienceFeed(data.items ?? []);
     })();
     return () => {
       cancelled = true;
     };
   }, [tenantSlug, communityOn, activeTerritory.territoryId]);
+
+  useEffect(() => {
+    if (!personId) {
+      setOwnActivity(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch(
+      `/api/community/activity?tenantId=${encodeURIComponent(tenantSlug)}`,
+      {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "x-tenant-slug": tenantSlug },
+      },
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { activity?: CommunityOwnActivity } | null) => {
+        if (!cancelled) setOwnActivity(data?.activity ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [personId, tenantSlug]);
+
+  const living = useMemo(
+    () => partitionLivingCommunityFeed(experienceFeed),
+    [experienceFeed],
+  );
   const accessibleChannels = useMemo(
     () => (premiumHome && personId ? listAccessibleChannels(personId) : []),
     [personId, premiumHome],
@@ -218,21 +258,6 @@ export function CommunityHubScreen() {
   const activeBelongLayer: CommunityBelongLayerId | "" =
     resolveCommunityBelongLayer(tabParam) ?? (tabParam ? "" : "ahora");
 
-  const belongNavItems = useMemo(
-    () => communityBelongLayers.map((layer) => ({ id: layer.id, label: layer.label })),
-    [],
-  );
-
-  const goToBelongLayer = (layerId: string) => {
-    if (!(COMMUNITY_BELONG_LAYER_IDS as readonly string[]).includes(layerId)) {
-      return;
-    }
-    const layer = communityBelongLayerDefinition(
-      layerId as CommunityBelongLayerId,
-    );
-    router.push(communityHubHref(layer.primaryAreaId));
-  };
-
   useEffect(() => {
     // Deep links (?tab=) jump to a layer. Plain /community stays at top.
     if (!tabParam || !resolvedTab) {
@@ -263,7 +288,7 @@ export function CommunityHubScreen() {
   if (!communityOn) {
     return (
       <EmptyState
-        title="La comunidad está tranquila"
+        title="La comunidad está viva"
         description="Aún no hay funciones de participación activadas."
       />
     );
@@ -278,8 +303,7 @@ export function CommunityHubScreen() {
     );
   }
 
-  const openPostComposer = () =>
-    window.dispatchEvent(new Event("lcos:open-post"));
+  const openComposer = () => openActionComposer({ source: "global_plus" });
 
   const communityName = theme.shortName || theme.name;
 
@@ -339,7 +363,9 @@ export function CommunityHubScreen() {
         ]
           .filter(Boolean)
           .join(" · ")
-      : `Todo tranquilo en ${communityName}`;
+      : living.moments.length > 0
+        ? `Hoy en ${communityName}`
+        : `Hoy en ${communityName}`;
 
   const visibleChannels = expandChannels
     ? accessibleChannels
@@ -356,6 +382,7 @@ export function CommunityHubScreen() {
     ? activityItems
     : activityItems.slice(0, PLAZA_PEEK);
   const ahoraHasBody =
+    living.now.length > 0 ||
     alerts.length > 0 ||
     closingSoon.length > 0 ||
     actualidadItems.length > 0 ||
@@ -375,10 +402,10 @@ export function CommunityHubScreen() {
         {canCreate ? (
           <Button
             variant="secondary"
-            onClick={openPostComposer}
+            onClick={openComposer}
             className="mt-3 min-h-[44px] w-full text-[15px]"
           >
-            Escribir en la comunidad
+            Aportar a la comunidad
           </Button>
         ) : null}
       </header>
@@ -386,9 +413,39 @@ export function CommunityHubScreen() {
       {/* Belong H1 internal nav — adapters write canonical ?tab= area ids. */}
       <nav aria-label="Áreas de la comunidad" className="mt-3">
         <FilterChipRow
-          items={belongNavItems}
-          activeId={activeBelongLayer}
-          onChange={goToBelongLayer}
+          items={[
+            { id: "ahora", label: "Ahora" },
+            { id: "proximamente", label: "Próximamente" },
+            { id: "grupos", label: "Grupos" },
+            { id: "ayudas", label: "Ayudas" },
+            { id: "yo", label: "Mis participaciones" },
+          ]}
+          activeId={
+            activeBelongLayer === "grupos"
+              ? "grupos"
+              : tabParam === "yo"
+                ? "yo"
+                : tabParam === "ayudas"
+                  ? "ayudas"
+                  : tabParam === "proximamente"
+                    ? "proximamente"
+                    : "ahora"
+          }
+          onChange={(id) => {
+            const target =
+              id === "grupos"
+                ? "plaza-people"
+                : id === "proximamente"
+                  ? "plaza-events"
+                  : id === "ayudas"
+                    ? "plaza-help"
+                    : id === "yo"
+                      ? "plaza-mine"
+                      : "plaza-important";
+            document
+              .getElementById(target)
+              ?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
         />
       </nav>
 
@@ -409,7 +466,7 @@ export function CommunityHubScreen() {
         <span id="plaza-avisos" className="sr-only" />
         <HomeSection
           title="Ahora"
-          subtitle="Avisos, actualidad y actividad reciente."
+          subtitle="Lo que está ocurriendo en tu territorio."
           actionLabel={
             ahoraCanExpand
               ? ahoraExpanded
@@ -428,13 +485,23 @@ export function CommunityHubScreen() {
         >
           {!ahoraHasBody ? (
             <EmptyState
-              title="Todo tranquilo por ahora"
-              description={`Cuando haya avisos o movimiento en ${communityName}, lo verás aquí.`}
-              actionLabel={canCreate ? "Escribir en la comunidad" : undefined}
-              onAction={canCreate ? openPostComposer : undefined}
+              title={LIVING_EMPTY_TITLE}
+              description={LIVING_EMPTY_DESCRIPTION}
+              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              onAction={canCreate ? openComposer : undefined}
             />
           ) : (
             <div className="space-y-2.5">
+              {living.now.map((item, index) => (
+                <LivingFeedCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  fallbackImage=""
+                  onOpenPlace={setPlaceLocationId}
+                  onOpenHref={(href) => router.push(href)}
+                />
+              ))}
               {alerts.map((alert) => {
                 const area =
                   alert.areaLabel ??
@@ -613,8 +680,10 @@ export function CommunityHubScreen() {
         >
           {groupItems.length === 0 ? (
             <EmptyState
-              title="Aún no hay grupos"
-              description="Cuando haya grupos en la comunidad, los verás aquí."
+              title={LIVING_EMPTY_TITLE}
+              description="Crea el primer grupo de tu comunidad."
+              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              onAction={canCreate ? openComposer : undefined}
             />
           ) : expandGroups ? (
             <div className="space-y-2.5">
@@ -653,28 +722,123 @@ export function CommunityHubScreen() {
       </section>
 
       <section id="plaza-events" className="scroll-mt-3">
-        <HomeSection title="Eventos" subtitle="Actividades de la comunidad.">
-          {domainEvents.length === 0 ? (
+        <HomeSection title="Próximamente" subtitle="Planes y eventos que vienen.">
+          {living.upcoming.length === 0 && domainEvents.length === 0 ? (
             <EmptyState
-              title="Aún no hay eventos"
-              description="Cuando se publique un evento, lo verás aquí."
+              title={LIVING_EMPTY_TITLE}
+              description={LIVING_EMPTY_DESCRIPTION}
+              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              onAction={canCreate ? openComposer : undefined}
             />
           ) : (
-            <HubRail label="Eventos de la comunidad">
-              {domainEvents.map((event) => (
-                <HubRailCard
-                  key={event.id}
-                  title={event.title}
-                  meta={[
-                    event.locationLabel,
-                    formatContentWhen(event.startsAt),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                  onClick={() => router.push("/experiences")}
+            <div className="space-y-3">
+              {living.upcoming.map((item, index) => (
+                <LivingFeedCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  fallbackImage=""
+                  onOpenPlace={setPlaceLocationId}
+                  onOpenHref={(href) => router.push(href)}
                 />
               ))}
-            </HubRail>
+              {living.upcoming.length === 0
+                ? domainEvents.map((event) => (
+                    <HubRailCard
+                      key={event.id}
+                      title={event.title}
+                      meta={[
+                        event.locationLabel,
+                        formatContentWhen(event.startsAt),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      onClick={() => router.push("/community")}
+                    />
+                  ))
+                : null}
+            </div>
+          )}
+        </HomeSection>
+      </section>
+
+      <section id="plaza-help" className="scroll-mt-3">
+        <HomeSection title="Ayudas" subtitle="Vecinos que piden o ofrecen una mano.">
+          {living.help.length === 0 ? (
+            <EmptyState
+              title="Todavía no hay ayudas aquí"
+              description="Si alguien necesita una mano, aparecerá aquí."
+              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              onAction={canCreate ? openComposer : undefined}
+            />
+          ) : (
+            <div className="space-y-3">
+              {living.help.map((item, index) => (
+                <LivingFeedCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  fallbackImage=""
+                  onOpenPlace={setPlaceLocationId}
+                  onOpenHref={(href) => router.push(href)}
+                />
+              ))}
+            </div>
+          )}
+        </HomeSection>
+      </section>
+
+      <section id="plaza-mine" className="scroll-mt-3">
+        <HomeSection
+          title="Mis participaciones"
+          subtitle="Solo tú ves esto."
+        >
+          {!ownActivity ||
+          (ownActivity.experiencesCreated.length === 0 &&
+            ownActivity.upcomingEvents.length === 0 &&
+            ownActivity.helpOffered.length === 0 &&
+            ownActivity.upcomingReservations.length === 0) ? (
+            <EmptyState
+              title="Aún no has participado"
+              description="Únete a un plan o crea el primero."
+              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              onAction={canCreate ? openComposer : undefined}
+            />
+          ) : (
+            <div className="space-y-2">
+              {ownActivity.experiencesCreated.map((item) => (
+                <HubDoorCard
+                  key={item.id}
+                  title={item.title}
+                  meta="Has creado"
+                  onClick={() => router.push(item.href)}
+                />
+              ))}
+              {ownActivity.upcomingEvents.map((item) => (
+                <HubDoorCard
+                  key={item.id}
+                  title={item.title}
+                  meta="Evento"
+                  onClick={() => router.push(item.href)}
+                />
+              ))}
+              {ownActivity.upcomingReservations.map((item) => (
+                <HubDoorCard
+                  key={item.id}
+                  title={item.title}
+                  meta="Reserva"
+                  onClick={() => router.push(item.href)}
+                />
+              ))}
+              {ownActivity.helpOffered.map((item) => (
+                <HubDoorCard
+                  key={item.id}
+                  title={item.title}
+                  meta="Has ayudado"
+                  onClick={() => router.push(item.href)}
+                />
+              ))}
+            </div>
           )}
         </HomeSection>
       </section>
@@ -944,6 +1108,12 @@ export function CommunityHubScreen() {
           </span>
         )}
       </section>
+      <LifePlaceHost
+        tenantId={tenantId}
+        locationId={placeLocationId}
+        territoryId={activeTerritory.territoryId}
+        onClose={() => setPlaceLocationId(null)}
+      />
     </MobileScreen>
   );
 }

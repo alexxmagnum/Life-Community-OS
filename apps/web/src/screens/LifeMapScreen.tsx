@@ -539,14 +539,18 @@ export function LifeMapScreen() {
         ) : (
           <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
             {filteredLocations.map((location) => {
-              const socialLabel = livingContext.locations.find(
+              const live = livingContext.locations.find(
                 (item) => item.id === location.id,
-              )?.socialLabel;
+              );
+              const lead = livingContext.activeFeedItems.find(
+                (item) => item.locationId === location.id,
+              );
+              const socialLabel = live?.socialLabel;
               return (
               <li key={location.id}>
                 <button
                   type="button"
-                  className="w-full py-3 text-left"
+                  className="ui-press w-full py-3 text-left"
                   onClick={() => {
                     setSelectedObjectId(location.id);
                   }}
@@ -554,11 +558,17 @@ export function LifeMapScreen() {
                   <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
                     {location.name}
                   </p>
+                  {lead ? (
+                    <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+                      {lead.title} ahora
+                    </p>
+                  ) : null}
                   <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                    {locationCategoryLabel(location.category)}
-                    {socialLabel ? ` · ${socialLabel}` : ""}
-                    {location.address ? ` · ${location.address}` : ""}
+                    {socialLabel || locationCategoryLabel(location.category)}
                   </p>
+                  <span className="mt-1 inline-block text-[13px] font-semibold text-[var(--color-action-primary)]">
+                    Ver
+                  </span>
                 </button>
               </li>
               );

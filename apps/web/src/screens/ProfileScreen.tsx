@@ -231,35 +231,39 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Mi actividad
+          Mi vida comunitaria
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
           Solo tú ves esto. No es un muro público.
         </p>
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          He creado
+        </p>
         {ownActivity?.experiencesCreated[0] ? (
           <ExploreLink
-            label="Experiencias creadas"
+            label="Experiencias"
             hint={ownActivity.experiencesCreated[0].title}
             onClick={() => router.push(ownActivity.experiencesCreated[0]!.href)}
           />
         ) : null}
         {ownActivity?.upcomingEvents[0] ? (
           <ExploreLink
-            label="Próximos eventos"
+            label="Eventos"
             hint={ownActivity.upcomingEvents[0].title}
             onClick={() => router.push("/community")}
           />
         ) : null}
-        {ownActivity?.helpOffered[0] ? (
-          <ExploreLink
-            label="Ayudas ofrecidas"
-            hint={ownActivity.helpOffered[0].title}
-            onClick={() => router.push(ownActivity.helpOffered[0]!.href)}
-          />
+        {!ownActivity?.experiencesCreated[0] && !ownActivity?.upcomingEvents[0] ? (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Todavía no has creado planes.
+          </p>
         ) : null}
+        <p className="pt-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          He participado
+        </p>
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
-            label="Experiencias"
+            label="Actividades"
             hint={
               upcomingExperienceCount > 0
                 ? `${upcomingExperienceCount} próximas`
@@ -275,22 +279,36 @@ export function ProfileScreen() {
             onClick={() => router.push("/community?tab=grupos")}
           />
         ) : null}
-        {isFeatureEnabled("feed") || isFeatureEnabled("decide") ? (
-          <ExploreLink
-            label="Comunidad"
-            hint="Publicaciones y propuestas"
-            onClick={() => router.push("/community")}
-          />
-        ) : null}
         {isFeatureEnabled("resources") ? (
           <ExploreLink
-            label="Mis reservas"
+            label="Reservas"
             hint={
               upcomingReservationCount > 0
                 ? `${upcomingReservationCount} activas`
                 : "Espacios que has reservado"
             }
             onClick={() => router.push("/reservations")}
+          />
+        ) : null}
+        <p className="pt-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          He ayudado
+        </p>
+        {ownActivity?.helpOffered[0] ? (
+          <ExploreLink
+            label="Vecinos"
+            hint={ownActivity.helpOffered[0].title}
+            onClick={() => router.push(ownActivity.helpOffered[0]!.href)}
+          />
+        ) : (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Cuando ofrezcas una mano, aparecerá aquí.
+          </p>
+        )}
+        {isFeatureEnabled("feed") || isFeatureEnabled("decide") ? (
+          <ExploreLink
+            label="Comunidad"
+            hint="Vida de tu territorio"
+            onClick={() => router.push("/community")}
           />
         ) : null}
         {isFeatureEnabled("experiences") ? (
