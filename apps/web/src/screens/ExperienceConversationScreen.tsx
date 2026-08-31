@@ -10,8 +10,8 @@ export function ExperienceConversationScreen({
   return (
     <CommunicationThreadScreen
       type="context"
-      contextType="community"
-      contextId={`experience:${experienceId}`}
+      contextType="experience"
+      contextId={experienceId}
       title="Experiencia"
       subtitle="Conversación de la experiencia"
       reason="Experiencia"

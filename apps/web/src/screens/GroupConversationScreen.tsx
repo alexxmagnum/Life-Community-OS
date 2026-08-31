@@ -6,7 +6,7 @@ export function GroupConversationScreen({ groupId }: { groupId: string }) {
   return (
     <CommunicationThreadScreen
       type="group"
-      contextType="community"
+      contextType="group"
       contextId={groupId}
       title="Grupo"
       subtitle="Conversación del grupo"

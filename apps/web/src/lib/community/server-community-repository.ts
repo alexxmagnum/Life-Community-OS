@@ -14,13 +14,19 @@ import {
   type CommunityCommentRecord,
   type CommunityDomainSnapshot,
   type CommunityEvent,
+  type CommunityEventParticipation,
+  type CommunityEventParticipantRole,
+  type CommunityGroupMembershipRecord,
   type CommunityGroupRecord,
   type CommunityNotificationRecord,
+  type CommunityParticipationPrivacy,
+  type CommunityParticipationPrivacyRecord,
   type CommunityPost,
   type CommunityPostKind,
   type CommunityReaction,
   type CommunityReactionKind,
   type CommunitySave,
+  type GroupMembershipStatus,
 } from "@life-community-os/types";
 import {
   isDatabaseConfigured,
@@ -66,6 +72,9 @@ async function readFileStore(
       reactions: parsed.reactions ?? [],
       saves: parsed.saves ?? [],
       notifications: parsed.notifications ?? [],
+      eventParticipants: parsed.eventParticipants ?? [],
+      groupMemberships: parsed.groupMemberships ?? [],
+      participationPrivacy: parsed.participationPrivacy ?? [],
     };
   } catch {
     return emptyCommunityDomain();
@@ -268,6 +277,9 @@ async function loadFromDatabase(
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     })),
+    eventParticipants: [],
+    groupMemberships: [],
+    participationPrivacy: [],
   };
 }
 
@@ -547,6 +559,18 @@ export async function createCommunityGroup(input: {
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.groups = [group, ...snapshot.groups];
+  const membership: CommunityGroupMembershipRecord = {
+    id: randomUUID(),
+    tenantId: slug,
+    groupId: group.id,
+    personId: input.createdBy,
+    createdBy: input.createdBy,
+    status: "active",
+    role: "owner",
+    createdAt: now,
+    updatedAt: now,
+  };
+  snapshot.groupMemberships = [membership, ...snapshot.groupMemberships];
   await persistSnapshot(slug, snapshot, input.scope);
   return group;
 }
@@ -562,6 +586,24 @@ export async function listCommunityEvents(
       (a, b) =>
         new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
     );
+}
+
+export async function getCommunityEventServer(
+  tenantId: string,
+  eventId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityEvent | null> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return snapshot.events.find((item) => item.id === eventId) ?? null;
+}
+
+export async function getCommunityGroupServer(
+  tenantId: string,
+  groupId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityGroupRecord | null> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return snapshot.groups.find((item) => item.id === groupId) ?? null;
 }
 
 export async function createCommunityEvent(input: {
@@ -600,6 +642,17 @@ export async function createCommunityEvent(input: {
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.events = [event, ...snapshot.events];
+  const organizer: CommunityEventParticipation = {
+    id: randomUUID(),
+    tenantId: slug,
+    eventId: event.id,
+    personId: input.authorPersonId,
+    createdBy: input.authorPersonId,
+    role: "organizer",
+    createdAt: now,
+    updatedAt: now,
+  };
+  snapshot.eventParticipants = [organizer, ...snapshot.eventParticipants];
   await persistSnapshot(slug, snapshot, input.scope);
   return event;
 }
@@ -780,6 +833,155 @@ export async function markCommunityNotificationRead(input: {
   return next;
 }
 
+export async function listEventParticipantsServer(
+  tenantId: string,
+  eventId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityEventParticipation[]> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return snapshot.eventParticipants.filter((item) => item.eventId === eventId);
+}
+
+export async function addEventParticipantServer(input: {
+  tenantId: string;
+  eventId: string;
+  personId: string;
+  createdBy: string;
+  role?: CommunityEventParticipantRole;
+  scope?: CommunityWriteScope;
+}): Promise<CommunityEventParticipation> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const snapshot = await loadSnapshot(slug, input.scope);
+  const event = snapshot.events.find((item) => item.id === input.eventId);
+  if (!event) throw new Error("not_found");
+  const existing = snapshot.eventParticipants.find(
+    (item) =>
+      item.eventId === input.eventId && item.personId === input.personId,
+  );
+  if (existing && (existing.role === "organizer" || existing.role === "participant")) {
+    throw new Error("already_joined");
+  }
+  const now = new Date().toISOString();
+  const row: CommunityEventParticipation = {
+    id: existing?.id ?? randomUUID(),
+    tenantId: slug,
+    eventId: input.eventId,
+    personId: input.personId,
+    createdBy: input.createdBy,
+    role: input.role ?? "participant",
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  };
+  snapshot.eventParticipants = [
+    row,
+    ...snapshot.eventParticipants.filter(
+      (item) =>
+        !(item.eventId === input.eventId && item.personId === input.personId),
+    ),
+  ];
+  await persistSnapshot(slug, snapshot, input.scope);
+  return row;
+}
+
+export async function listGroupMembershipsServer(
+  tenantId: string,
+  groupId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityGroupMembershipRecord[]> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return snapshot.groupMemberships.filter((item) => item.groupId === groupId);
+}
+
+export async function addGroupMemberServer(input: {
+  tenantId: string;
+  groupId: string;
+  personId: string;
+  createdBy: string;
+  status?: GroupMembershipStatus;
+  role?: string;
+  scope?: CommunityWriteScope;
+}): Promise<CommunityGroupMembershipRecord> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const snapshot = await loadSnapshot(slug, input.scope);
+  const group = snapshot.groups.find((item) => item.id === input.groupId);
+  if (!group) throw new Error("not_found");
+  const existing = snapshot.groupMemberships.find(
+    (item) =>
+      item.groupId === input.groupId && item.personId === input.personId,
+  );
+  if (existing && existing.status === "active") {
+    throw new Error("already_joined");
+  }
+  const now = new Date().toISOString();
+  const row: CommunityGroupMembershipRecord = {
+    id: existing?.id ?? randomUUID(),
+    tenantId: slug,
+    groupId: input.groupId,
+    personId: input.personId,
+    createdBy: input.createdBy,
+    status: input.status ?? "active",
+    role: input.role ?? "member",
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  };
+  snapshot.groupMemberships = [
+    row,
+    ...snapshot.groupMemberships.filter(
+      (item) =>
+        !(item.groupId === input.groupId && item.personId === input.personId),
+    ),
+  ];
+  await persistSnapshot(slug, snapshot, input.scope);
+  return row;
+}
+
+export async function getParticipationPrivacyServer(
+  tenantId: string,
+  personId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityParticipationPrivacyRecord | null> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return (
+    snapshot.participationPrivacy.find((item) => item.personId === personId) ??
+    null
+  );
+}
+
+export async function setParticipationPrivacyServer(input: {
+  tenantId: string;
+  personId: string;
+  privacy: CommunityParticipationPrivacy;
+  scope?: CommunityWriteScope;
+}): Promise<CommunityParticipationPrivacyRecord> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const snapshot = await loadSnapshot(slug, input.scope);
+  const now = new Date().toISOString();
+  const row: CommunityParticipationPrivacyRecord = {
+    tenantId: slug,
+    personId: input.personId,
+    appearInParticipants: input.privacy.appearInParticipants,
+    receiveInvitations: input.privacy.receiveInvitations,
+    showActivity: input.privacy.showActivity,
+    updatedAt: now,
+  };
+  snapshot.participationPrivacy = [
+    row,
+    ...snapshot.participationPrivacy.filter(
+      (item) => item.personId !== input.personId,
+    ),
+  ];
+  await persistSnapshot(slug, snapshot, input.scope);
+  return row;
+}
+
+export async function listParticipationPrivacyServer(
+  tenantId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityParticipationPrivacyRecord[]> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return snapshot.participationPrivacy;
+}
+
 /**
  * Development / demo-pack fixture only. Never runs on the production data plane.
  */
@@ -806,6 +1008,9 @@ export async function seedCommunityFixtureIfEmpty(
     reactions: fixture.reactions ?? [],
     saves: fixture.saves ?? [],
     notifications: fixture.notifications ?? [],
+    eventParticipants: fixture.eventParticipants ?? [],
+    groupMemberships: fixture.groupMemberships ?? [],
+    participationPrivacy: fixture.participationPrivacy ?? [],
   };
   await persistSnapshot(slug, next, scope);
   return true;

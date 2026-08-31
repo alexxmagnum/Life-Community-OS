@@ -3,7 +3,9 @@ import type {
   CommunityGroupStatus,
   CommunityGroupType,
   CommunityGroupVisibility,
+  GroupMembershipStatus,
 } from "./community-group";
+import type { CommunityParticipationPrivacy } from "../community/participation";
 
 /**
  * Community Core — tenant-owned social domain.
@@ -28,14 +30,60 @@ export type CommunityCommentStatus = "published" | "hidden" | "archived";
 
 export type CommunityReactionKind = "acknowledge" | "support";
 
-export type CommunityTargetType = "post" | "event" | "comment" | "experience";
+export type CommunityTargetType =
+  | "post"
+  | "event"
+  | "comment"
+  | "experience"
+  | "group"
+  | "help";
 
 export type CommunityNotificationKind =
   | "post_published"
   | "event_created"
   | "experience_published"
+  | "experience_joined"
+  | "experience_invited"
+  | "event_joined"
+  | "group_member_added"
+  | "help_response"
   | "mention"
   | "official_alert";
+
+export type CommunityEventParticipantRole =
+  | "organizer"
+  | "participant"
+  | "invited";
+
+export type CommunityEventParticipation = {
+  id: DomainId;
+  tenantId: DomainId;
+  eventId: DomainId;
+  personId: DomainId;
+  createdBy: DomainId;
+  role: CommunityEventParticipantRole;
+  createdAt: IsoDateTimeString;
+  updatedAt: IsoDateTimeString;
+};
+
+export type CommunityGroupMembershipRecord = {
+  id: DomainId;
+  tenantId: DomainId;
+  groupId: DomainId;
+  personId: DomainId;
+  createdBy: DomainId;
+  status: GroupMembershipStatus;
+  role: string;
+  createdAt: IsoDateTimeString;
+  updatedAt: IsoDateTimeString;
+};
+
+export type CommunityParticipationPrivacyRecord =
+  CommunityParticipationPrivacy & {
+    tenantId: DomainId;
+    personId: DomainId;
+    updatedAt: IsoDateTimeString;
+  };
 
 export type CommunityGroupRecord = {
   id: DomainId;
@@ -146,6 +194,9 @@ export type CommunityDomainSnapshot = {
   reactions: CommunityReaction[];
   saves: CommunitySave[];
   notifications: CommunityNotificationRecord[];
+  eventParticipants: CommunityEventParticipation[];
+  groupMemberships: CommunityGroupMembershipRecord[];
+  participationPrivacy: CommunityParticipationPrivacyRecord[];
 };
 
 export function emptyCommunityDomain(): CommunityDomainSnapshot {
@@ -157,5 +208,8 @@ export function emptyCommunityDomain(): CommunityDomainSnapshot {
     reactions: [],
     saves: [],
     notifications: [],
+    eventParticipants: [],
+    groupMemberships: [],
+    participationPrivacy: [],
   };
 }

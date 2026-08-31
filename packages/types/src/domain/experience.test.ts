@@ -56,5 +56,6 @@ describe("Experience domain contract", () => {
     assert.equal(participationOccupiesSeat("participant"), true);
     assert.equal(participationOccupiesSeat("waitlist"), false);
     assert.equal(participationOccupiesSeat("cancelled"), false);
+    assert.equal(participationOccupiesSeat("invited"), false);
   });
 });

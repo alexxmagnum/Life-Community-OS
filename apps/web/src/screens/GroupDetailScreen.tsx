@@ -1,34 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
 } from "@life-community-os/ui";
-import type { CommunityGroupRecord } from "@life-community-os/types";
-import { canOpenGroupConversation } from "@/lib/group-conversation-access";
-import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import type {
+  CommunityGroupRecord,
+  CommunityParticipationContext,
+} from "@life-community-os/types";
+import { CommunityParticipationBar } from "@/components/community/CommunityParticipationBar";
+import { fetchParticipationContext } from "@/lib/community/participation-client";
+import { useTenant } from "@/providers/TenantProvider";
 
-/**
- * Group entry — opens Conversation Experience directly when allowed.
- */
 export function GroupDetailScreen({ groupId }: { groupId: string }) {
   const router = useRouter();
-  const {
-    configuration,
-    isFeatureEnabled,
-    isModuleEnabled,
-    hasCapability,
-    tenantSlug,
-  } = useTenant();
+  const { isFeatureEnabled, isModuleEnabled, tenantSlug } = useTenant();
   const [group, setGroup] = useState<CommunityGroupRecord | null | undefined>(
     undefined,
   );
+  const [loop, setLoop] = useState<CommunityParticipationContext | null>(null);
 
   const groupsOn =
     isModuleEnabled("community.groups") && isFeatureEnabled("groups");
+
+  const loadLoop = useCallback(() => {
+    void fetchParticipationContext({
+      tenantId: tenantSlug,
+      entityType: "group",
+      entityId: groupId,
+    }).then((result) => setLoop(result?.context ?? null));
+  }, [tenantSlug, groupId]);
 
   useEffect(() => {
     if (!groupsOn) {
@@ -54,35 +58,9 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
     };
   }, [groupId, groupsOn, tenantSlug]);
 
-  const hubGroup = group
-    ? {
-        id: group.id,
-        name: group.name,
-        description: group.description,
-        memberCount: 0,
-        imageUrl: group.imageUrl ?? "",
-        categoryLabel: group.categoryLabel ?? "Grupo",
-        tenantId: group.tenantId,
-        ownerPersonId: group.createdBy,
-        status: group.status,
-      }
-    : undefined;
-
-  const canChat =
-    Boolean(hubGroup) &&
-    hasCapability(CAPABILITIES.contentView) &&
-    canOpenGroupConversation({
-      group: hubGroup!,
-      configuration,
-      isModuleEnabled,
-      hasCapability,
-    });
-
   useEffect(() => {
-    if (canChat) {
-      router.replace(`/community/groups/${groupId}/conversation`);
-    }
-  }, [canChat, groupId, router]);
+    if (group?.id) loadLoop();
+  }, [group?.id, loadLoop]);
 
   if (!groupsOn) {
     return (
@@ -139,12 +117,16 @@ export function GroupDetailScreen({ groupId }: { groupId: string }) {
         onBack={() => router.push("/community?tab=grupos")}
         onExit={() => router.push("/community")}
       />
-      <EmptyState
-        title={group.name}
-        description={group.description || "Abre la conversación del grupo."}
-        actionLabel="Volver a grupos"
-        onAction={() => router.push("/community?tab=grupos")}
-      />
+      <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
+        {group.description || "Forma parte de este grupo de vecinos."}
+      </p>
+      {loop ? (
+        <CommunityParticipationBar
+          tenantId={tenantSlug}
+          context={loop}
+          onChanged={loadLoop}
+        />
+      ) : null}
     </MobileScreen>
   );
 }

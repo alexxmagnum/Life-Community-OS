@@ -63,6 +63,40 @@ export {
   CommunityActionRegistry,
 } from "./community/action-composer";
 
+/** Community Social Loop — participation around real life, not a social network. */
+export type {
+  CommunityParticipationEntityType,
+  CommunityParticipationViewerStatus,
+  CommunityParticipationActionKind,
+  CommunityParticipationAction,
+  CommunityParticipationRoleCount,
+  CommunityParticipationContext,
+  CommunityParticipationPrivacy,
+  CommunityOwnActivityItem,
+  CommunityOwnActivity,
+  CommunityParticipationRow,
+} from "./community/participation";
+export {
+  COMMUNITY_PARTICIPATION_ENTITY_TYPES,
+  COMMUNITY_PARTICIPATION_VIEWER_STATUSES,
+  COMMUNITY_PARTICIPATION_ACTION_KINDS,
+  DEFAULT_COMMUNITY_PARTICIPATION_PRIVACY,
+  FORBIDDEN_SOCIAL_NETWORK_TYPES,
+  isCommunityParticipationEntityType,
+  isCommunityParticipationViewerStatus,
+  participationContextId,
+  aggregateParticipantRoles,
+  occupyingParticipationCount,
+  viewerStatusFromRole,
+  conversationHrefForParticipation,
+  entityHrefForParticipation,
+  buildParticipationActions,
+  createParticipationContext,
+  visibleParticipantIds,
+  aggregatedSocialLabel,
+  mergeParticipationPrivacy,
+} from "./community/participation";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,

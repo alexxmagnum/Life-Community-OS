@@ -120,6 +120,10 @@ export function moduleIdForCommunicationContext(
       return "marketplace";
     case "administration":
       return "official";
+    case "experience":
+      return "experiences";
+    case "group":
+      return "community.groups";
     default:
       return "community";
   }
@@ -328,6 +332,12 @@ export function conversationHref(conversation: Conversation): string {
       return type === "group"
         ? `/community/groups/${contextId}/conversation`
         : `/messages/${conversation.id}`;
+    case "experience":
+      return `/experiences/${contextId}/conversation`;
+    case "event":
+      return `/community`;
+    case "group":
+      return `/community/groups/${contextId}/conversation`;
     default:
       return `/messages/${conversation.id}`;
   }

@@ -346,6 +346,7 @@ export type ProjectEventFeedInput = {
   endsAt?: string;
   locationLabel?: string;
   locationId?: string;
+  occupied?: number;
 };
 
 export function projectEventToFeedItem(
@@ -370,6 +371,7 @@ export function projectEventToFeedItem(
       domain: "event",
       locationLabel: input.locationLabel,
       href: "/community",
+      occupied: input.occupied ?? 0,
     },
   };
 }

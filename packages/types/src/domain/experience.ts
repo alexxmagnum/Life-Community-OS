@@ -62,6 +62,7 @@ export type ExperienceParticipant = {
 export const EXPERIENCE_PARTICIPANT_ROLES = [
   "creator",
   "participant",
+  "invited",
   "waitlist",
   "cancelled",
 ] as const;

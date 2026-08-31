@@ -22,6 +22,11 @@ export const NOTIFICATION_EVENT_TYPES = [
   // Experience
   "experience_updated",
   "experience_reminder",
+  "experience_joined",
+  "experience_invited",
+  "event_joined",
+  "group_member_added",
+  "help_response",
   // Reservation
   "reservation_created",
   "reservation_cancelled",
@@ -41,6 +46,11 @@ export const NOTIFICATION_EVENT_CATEGORY: Record<
   listing_interest_created: "marketplace",
   experience_updated: "experience",
   experience_reminder: "experience",
+  experience_joined: "experience",
+  experience_invited: "experience",
+  event_joined: "experience",
+  group_member_added: "communication",
+  help_response: "communication",
   reservation_created: "reservation",
   reservation_cancelled: "reservation",
   announcement_published: "official",

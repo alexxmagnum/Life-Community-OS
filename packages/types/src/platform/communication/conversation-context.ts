@@ -23,6 +23,7 @@ export const KNOWN_CONVERSATION_CONTEXT_TYPES = [
   "help",
   "administration",
   "experience",
+  "event",
   "group",
   "service",
   "community_discussion",

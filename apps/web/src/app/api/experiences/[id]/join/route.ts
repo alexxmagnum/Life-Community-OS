@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import { actorCanJoinExperience } from "@/lib/experiences/permissions";
-import {
-  getExperienceServer,
-  joinExperienceServer,
-} from "@/lib/experiences/server-experience-repository";
+import { CommunityParticipationService } from "@/lib/community/community-participation-service";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
-import { resolveActiveTerritoryContext } from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
@@ -41,33 +37,19 @@ export async function POST(request: Request, { params }: Params) {
     actorTenantSlug: gated.actor.tenantSlug,
   });
   if ("error" in bound) return bound.error;
-  const territory = resolveActiveTerritoryContext({
-    tenantId: bound.tenantId,
-    actorTerritoryId: gated.actor.territoryId,
-  });
-  if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, gated.actor.personId);
-  const existing = await getExperienceServer(bound.tenantId, id, scope);
-  if (!existing) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
-  }
-  if (
-    territory.context.territoryId &&
-    existing.territoryId !== territory.context.territoryId
-  ) {
-    return NextResponse.json({ error: "cross_territory_forbidden" }, { status: 403 });
-  }
   try {
-    const participation = await joinExperienceServer({
+    const result = await CommunityParticipationService.join({
       tenantId: bound.tenantId,
-      experienceId: id,
-      personId: gated.actor.personId,
+      entityType: "experience",
+      entityId: id,
+      actor: gated.actor,
       scope,
     });
-    return NextResponse.json({ participation }, { status: 201 });
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
     return joinError(error);
   }

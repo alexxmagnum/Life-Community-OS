@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
@@ -24,6 +24,10 @@ import { useTenantLocations } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { CommunityParticipationBar } from "@/components/community/CommunityParticipationBar";
+import { fetchParticipationContext } from "@/lib/community/participation-client";
+import type { CommunityParticipationContext } from "@life-community-os/types";
+import { occupyingParticipationCount } from "@life-community-os/types";
 
 export function ExperienceDetailScreen({
   experienceId,
@@ -31,18 +35,25 @@ export function ExperienceDetailScreen({
   experienceId: string;
 }) {
   const router = useRouter();
-  const {
-    configuration,
-    isFeatureEnabled,
-    isModuleEnabled,
-    hasCapability,
-  } = useTenant();
+  const { configuration, isFeatureEnabled, isModuleEnabled, hasCapability, tenantSlug } =
+    useTenant();
   const { getExperience, ready } = useReservations();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
   const [shareNote, setShareNote] = useState<string | null>(null);
+  const [loop, setLoop] = useState<CommunityParticipationContext | null>(null);
 
   const experience = getExperience(experienceId);
+
+  const loadLoop = useCallback(() => {
+    void fetchParticipationContext({
+      tenantId: tenantSlug,
+      entityType: "experience",
+      entityId: experienceId,
+    }).then((result) => {
+      setLoop(result?.context ?? null);
+    });
+  }, [tenantSlug, experienceId]);
 
   const venueLocationId = useMemo(() => {
     if (!experience?.location) return null;
@@ -56,6 +67,10 @@ export function ExperienceDetailScreen({
     );
     return hit?.id ?? null;
   }, [experience, allLocations]);
+
+  useEffect(() => {
+    loadLoop();
+  }, [loadLoop]);
 
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
@@ -217,12 +232,26 @@ export function ExperienceDetailScreen({
         avatarUrl={experience.organizer.avatarUrl}
       />
 
+      {loop ? (
+        <CommunityParticipationBar
+          tenantId={tenantSlug}
+          context={loop}
+          onChanged={loadLoop}
+        />
+      ) : null}
+
       <ParticipantList
-        participants={experience.participants ?? []}
+        participants={
+          loop && loop.viewerParticipation.status === "joined"
+            ? experience.participants ?? []
+            : []
+        }
         totalCount={
-          viewer === "joined"
-            ? experience.participantCount + 1
-            : experience.participantCount
+          loop
+            ? occupyingParticipationCount(loop.participants)
+            : viewer === "joined"
+              ? experience.participantCount + 1
+              : experience.participantCount
         }
       />
 

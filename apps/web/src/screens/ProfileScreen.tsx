@@ -26,6 +26,7 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import type { CommunityOwnActivity } from "@life-community-os/types";
 
 /**
  * Mi perfil — identity, preferences, personal context.
@@ -44,6 +45,9 @@ export function ProfileScreen() {
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
   const [homes, setHomes] = useState<PropertyPublicView[]>([]);
+  const [ownActivity, setOwnActivity] = useState<CommunityOwnActivity | null>(
+    null,
+  );
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
 
@@ -65,6 +69,29 @@ export function ProfileScreen() {
     }).then((rows) => {
       if (!cancelled) setHomes(rows);
     });
+    return () => {
+      cancelled = true;
+    };
+  }, [personId, configuration.tenantId]);
+
+  useEffect(() => {
+    if (!personId) {
+      setOwnActivity(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch(
+      `/api/community/activity?tenantId=${encodeURIComponent(configuration.tenantId)}`,
+      {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { "x-tenant-slug": configuration.tenantId },
+      },
+    )
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { activity?: CommunityOwnActivity } | null) => {
+        if (!cancelled) setOwnActivity(data?.activity ?? null);
+      });
     return () => {
       cancelled = true;
     };
@@ -206,6 +233,30 @@ export function ProfileScreen() {
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           Mi actividad
         </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Solo tú ves esto. No es un muro público.
+        </p>
+        {ownActivity?.experiencesCreated[0] ? (
+          <ExploreLink
+            label="Experiencias creadas"
+            hint={ownActivity.experiencesCreated[0].title}
+            onClick={() => router.push(ownActivity.experiencesCreated[0]!.href)}
+          />
+        ) : null}
+        {ownActivity?.upcomingEvents[0] ? (
+          <ExploreLink
+            label="Próximos eventos"
+            hint={ownActivity.upcomingEvents[0].title}
+            onClick={() => router.push("/community")}
+          />
+        ) : null}
+        {ownActivity?.helpOffered[0] ? (
+          <ExploreLink
+            label="Ayudas ofrecidas"
+            hint={ownActivity.helpOffered[0].title}
+            onClick={() => router.push(ownActivity.helpOffered[0]!.href)}
+          />
+        ) : null}
         {isFeatureEnabled("experiences") ? (
           <ExploreLink
             label="Experiencias"
@@ -270,6 +321,10 @@ export function ProfileScreen() {
           hint="Lo que necesita tu atención"
           onClick={() => router.push("/notifications")}
         />
+        <p className="pt-2 text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Privacidad: puedes ocultar tu nombre en listas, rechazar invitaciones
+          y no mostrar tu actividad.
+        </p>
         {isFeatureEnabled("localLife") || isFeatureEnabled("localEntities") ? (
           <ExploreLink
             label="Lugares cerca"

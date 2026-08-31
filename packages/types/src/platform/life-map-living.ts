@@ -38,6 +38,8 @@ export type LifeMapLocationView = {
   imageUrl?: string;
   address?: string;
   summary?: string;
+  /** Aggregated participation — never person identities. */
+  socialLabel?: string;
 };
 
 export type LifeMapContext = {
@@ -179,17 +181,32 @@ export function createLifeMapContext(input: {
 }): LifeMapContext {
   const tenantId = input.tenantId.trim();
   const territoryId = input.territoryId.trim();
+  const feedItems = input.feedItems.filter(
+    (item) =>
+      item.tenantId === tenantId && item.territoryId === territoryId,
+  );
   const locations = input.locations.flatMap((location) => {
     const view = projectLocationToLifeMapView(location);
     if (!view) return [];
     if (view.tenantId !== tenantId) return [];
     if (view.territoryId !== territoryId) return [];
-    return [view];
+    const live = feedItems.filter((item) => item.locationId === view.id);
+    const participating = live.reduce((sum, item) => {
+      const occupied = item.metadata?.occupied;
+      if (typeof occupied === "number") return sum + occupied;
+      if (item.capacity) {
+        return sum + Math.max(0, item.capacity.total - item.capacity.available);
+      }
+      return sum;
+    }, 0);
+    const socialLabel =
+      participating > 0
+        ? participating === 1
+          ? "1 persona participando"
+          : `${participating} personas participando`
+        : undefined;
+    return [{ ...view, ...(socialLabel ? { socialLabel } : {}) }];
   });
-  const feedItems = input.feedItems.filter(
-    (item) =>
-      item.tenantId === tenantId && item.territoryId === territoryId,
-  );
   const territoryObjects = input.territoryObjects.filter(
     (object) =>
       object.tenantId === tenantId && object.territoryId === territoryId,

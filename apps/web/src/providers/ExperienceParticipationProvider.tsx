@@ -10,10 +10,7 @@ import {
 } from "react";
 import {
   deriveExperienceViewerState,
-  minutesToHhmm,
-  hhmmToMinutes,
   reservationIsActive,
-  splitIsoToDateTime,
   type Experience,
   type ExperienceViewerState,
 } from "@life-community-os/types";
@@ -52,7 +49,7 @@ export function ExperienceParticipationProvider({
 }: {
   children: ReactNode;
 }) {
-  const { experiences, reservations, reserve, cancel, getExperience } =
+  const { experiences, reservations, cancel, getExperience } =
     useReservations();
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
@@ -105,28 +102,24 @@ export function ExperienceParticipationProvider({
       void options;
       const experience = getExperience(experienceId);
       if (!experience) return null;
-      const startParts = splitIsoToDateTime(experience.startsAt);
-      const endParts = experience.endsAt
-        ? splitIsoToDateTime(experience.endsAt)
-        : {
-            date: startParts.date,
-            start: minutesToHhmm(hhmmToMinutes(startParts.start) + 60),
-          };
-      const created = await reserve({
-        resourceId: experience.id,
-        date: startParts.date,
-        start: startParts.start,
-        end: endParts.start,
+      const created = await fetch("/api/community/participation", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entityType: "experience",
+          entityId: experienceId,
+        }),
       });
-      if (!created) return null;
+      if (!created.ok) return null;
       return {
         experienceId,
-        state: created.status === "pending" ? "waitlisted" : "registered",
-        joinedAt: created.createdAt ?? new Date().toISOString(),
+        state: "registered",
+        joinedAt: new Date().toISOString(),
         reminders: options?.reminders ?? true,
       } satisfies ParticipationRecord;
     },
-    [getExperience, reserve],
+    [getExperience],
   );
 
   const leave = useCallback(

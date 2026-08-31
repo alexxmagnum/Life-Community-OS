@@ -650,6 +650,58 @@ export async function joinExperienceServer(input: {
   return participation;
 }
 
+export async function inviteExperienceParticipantServer(input: {
+  tenantId: string;
+  experienceId: string;
+  inviteePersonId: string;
+  createdBy: string;
+  scope?: ExperienceWriteScope;
+}): Promise<ExperienceParticipation> {
+  const slug = resolveTenantPublicId(input.tenantId);
+  const store = await loadStore(slug, input.scope);
+  const experience = store.experiences.find(
+    (item) => item.id === input.experienceId,
+  );
+  if (!experience) throw new Error("not_found");
+  if (experience.status !== "published") {
+    throw new Error("not_joinable");
+  }
+  const existing = store.participants.find(
+    (item) =>
+      item.experienceId === experience.id &&
+      item.personId === input.inviteePersonId,
+  );
+  if (existing && participationOccupiesSeat(existing.role)) {
+    throw new Error("already_joined");
+  }
+  if (existing?.role === "invited") {
+    return existing;
+  }
+  const participation = createExperienceParticipationRecord({
+    tenantId: slug,
+    experienceId: experience.id,
+    personId: input.inviteePersonId,
+    createdBy: input.createdBy,
+    role: "invited",
+    id: existing?.id,
+  });
+  if (existing) {
+    participation.createdAt = existing.createdAt;
+  }
+  store.participants = [
+    participation,
+    ...store.participants.filter(
+      (item) =>
+        !(
+          item.experienceId === experience.id &&
+          item.personId === input.inviteePersonId
+        ),
+    ),
+  ];
+  await persistStore(slug, store, input.scope);
+  return participation;
+}
+
 export async function leaveExperienceServer(input: {
   tenantId: string;
   experienceId: string;

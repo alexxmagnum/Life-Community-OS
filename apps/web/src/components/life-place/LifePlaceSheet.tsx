@@ -159,7 +159,7 @@ export function LifePlaceSheet({
         {context.community ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-              Comunidad
+              Personas participando
             </h3>
             <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
               {context.community.label}

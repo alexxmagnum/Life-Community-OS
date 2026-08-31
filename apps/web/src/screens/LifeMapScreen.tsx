@@ -538,7 +538,11 @@ export function LifeMapScreen() {
           </p>
         ) : (
           <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
-            {filteredLocations.map((location) => (
+            {filteredLocations.map((location) => {
+              const socialLabel = livingContext.locations.find(
+                (item) => item.id === location.id,
+              )?.socialLabel;
+              return (
               <li key={location.id}>
                 <button
                   type="button"
@@ -551,12 +555,14 @@ export function LifeMapScreen() {
                     {location.name}
                   </p>
                   <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
-                    {locationCategoryLabel(location.category)} ·{" "}
-                    {location.address}
+                    {locationCategoryLabel(location.category)}
+                    {socialLabel ? ` · ${socialLabel}` : ""}
+                    {location.address ? ` · ${location.address}` : ""}
                   </p>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

@@ -170,6 +170,22 @@ export async function POST(request: Request) {
       ownerPersonIdFromClient: body.ownerId ?? body.ownerPersonId,
       scope,
     });
+    try {
+      const { CommunityParticipationService } = await import(
+        "@/lib/community/community-participation-service"
+      );
+      await CommunityParticipationService.ensureConversation({
+        tenantId: bound.tenantId,
+        actor: gated.actor,
+        entityType: "experience",
+        entityId: experience.id,
+        title: experience.title,
+        territoryId: experience.territoryId,
+        scope,
+      });
+    } catch {
+      /* Conversation is optional after publish. */
+    }
     return NextResponse.json({ experience }, { status: 201 });
   } catch (error) {
     return experienceError(error);
