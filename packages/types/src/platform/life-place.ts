@@ -20,6 +20,8 @@ export const LIFE_PLACE_ACTION_KINDS = [
   "contact",
   "participate",
   "create_activity",
+  "hire_service",
+  "ask_help",
 ] as const;
 
 export type LifePlaceActionKind = (typeof LIFE_PLACE_ACTION_KINDS)[number];
@@ -79,6 +81,12 @@ export type LifePlaceCommunityView = {
   label: string;
 };
 
+export type LifePlaceHelpSummary = {
+  id: string;
+  title: string;
+  href: string;
+};
+
 export type LifePlaceContext = {
   id: string;
   tenantId: string;
@@ -89,6 +97,8 @@ export type LifePlaceContext = {
   experiences: LifePlaceExperienceSummary[];
   reservations: LifePlaceReservationAvailability[];
   business?: LifePlaceBusinessSummary;
+  nearbyProfessionals?: LifePlaceBusinessSummary[];
+  nearbyHelp?: LifePlaceHelpSummary[];
   actions: LifePlaceAction[];
   community?: LifePlaceCommunityView;
   cover?: MediaReference;
@@ -120,6 +130,10 @@ export function lifePlaceActionLabel(kind: LifePlaceActionKind): string {
       return "Participar";
     case "create_activity":
       return "Proponer un plan";
+    case "hire_service":
+      return "Contratar";
+    case "ask_help":
+      return "Pedir ayuda";
   }
 }
 
@@ -209,7 +223,8 @@ export function buildLifePlaceActions(input: {
       label: "Reservar",
       href: reservation.href,
       resourceId:
-        reservation.context.type === "resource"
+        reservation.context.type === "resource" ||
+        reservation.context.type === "service"
           ? reservation.context.id
           : undefined,
     });
@@ -222,12 +237,36 @@ export function buildLifePlaceActions(input: {
       href: input.business.href,
       businessId: input.business.id,
     });
+    const professional =
+      input.location.type === "service" ||
+      [
+        "electrician",
+        "plumber",
+        "gardening",
+        "cleaning",
+        "maintenance",
+        "service",
+      ].includes(input.business.category);
+    if (professional) {
+      push({
+        kind: "hire_service",
+        label: "Contratar",
+        href: input.business.href,
+        businessId: input.business.id,
+      });
+    }
   }
 
   const contact = contactHref(input.location.contact ?? "");
   if (contact) {
     push({ kind: "contact", label: "Contactar", href: contact });
   }
+
+  push({
+    kind: "ask_help",
+    label: "Pedir ayuda",
+    href: `/help/create?type=need_help&locationId=${encodeURIComponent(input.location.id)}`,
+  });
 
   if (input.canCreateActivity) {
     push({
@@ -249,6 +288,8 @@ export function createLifePlaceContext(input: {
   experiences?: readonly LifePlaceExperienceSummary[];
   reservations?: readonly LifePlaceReservationAvailability[];
   business?: LifePlaceBusinessSummary;
+  nearbyProfessionals?: LifePlaceBusinessSummary[];
+  nearbyHelp?: LifePlaceHelpSummary[];
   community?: LifePlaceCommunityView;
   cover?: MediaReference;
   canCreateActivity?: boolean;
@@ -275,6 +316,10 @@ export function createLifePlaceContext(input: {
     experiences: [...experiences],
     reservations: [...reservations],
     ...(input.business ? { business: input.business } : {}),
+    ...(input.nearbyProfessionals?.length
+      ? { nearbyProfessionals: [...input.nearbyProfessionals] }
+      : {}),
+    ...(input.nearbyHelp?.length ? { nearbyHelp: [...input.nearbyHelp] } : {}),
     actions: buildLifePlaceActions({
       location: locationView,
       currentActivity,

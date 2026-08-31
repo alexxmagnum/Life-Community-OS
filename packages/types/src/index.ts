@@ -233,6 +233,38 @@ export {
   hasGovernanceKarma,
 } from "./governance/governance-context";
 
+/** Local Services — territorial economy projection, not a commerce domain. */
+export type {
+  ProfessionalCategory,
+  LocalServiceActionKind,
+  LocalServiceAction,
+  LocalServicesCounts,
+  LocalServicesPrivacy,
+  LocalServicesContext,
+  ProfessionalCapabilities,
+  LocalServiceCard,
+} from "./economy/local-services";
+export {
+  PROFESSIONAL_CATEGORIES,
+  LOCAL_SERVICE_ACTION_KINDS,
+  DEFAULT_LOCAL_SERVICES_PRIVACY,
+  isProfessionalCategory,
+  isProfessionalBusiness,
+  professionalCapabilitiesFrom,
+  mergeLocalServicesPrivacy,
+  emptyLocalServicesContext,
+  projectLocalServicesContext,
+  localServiceActionLabel,
+  helpEconomyLabel,
+  neighborExchangeIsMarketplace,
+  compareLocalServiceCards,
+  sortLocalServiceCards,
+  businessToLocalServiceCard,
+  boostRelevantServiceFeed,
+  isOpaqueEconomyEntity,
+  hasEconomyCurrency,
+} from "./economy/local-services";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,
@@ -271,6 +303,7 @@ export type {
   LifePlaceExperienceSummary,
   LifePlaceReservationAvailability,
   LifePlaceBusinessSummary,
+  LifePlaceHelpSummary,
   LifePlaceCommunityView,
   LifePlaceContext,
   LifePlaceQueryInput,

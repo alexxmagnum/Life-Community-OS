@@ -4,6 +4,7 @@
  * Rule-based first. AI provider is an interface only.
  */
 
+import { boostRelevantServiceFeed } from "../economy/local-services";
 import type { CommunityCreationAction } from "../community/action-composer";
 import type { CommunityFeedItem } from "../community/community-feed";
 import { communityFeedItemHref } from "../community/community-feed";
@@ -84,7 +85,21 @@ const INTEREST_KEYWORDS: Record<PersonalInterestId, readonly string[]> = {
     "gym",
     "sport",
   ],
-  help: ["ayuda", "ayudar", "colabor", "mano", "vecino"],
+  help: [
+    "ayuda",
+    "ayudar",
+    "colabor",
+    "mano",
+    "vecino",
+    "electricista",
+    "electrician",
+    "fontanero",
+    "plumber",
+    "jardin",
+    "jardín",
+    "limpieza",
+    "mantenimiento",
+  ],
 };
 
 const ADULT_NIGHT_KEYWORDS = [
@@ -103,8 +118,8 @@ const COMPOSER_INTEREST: Partial<
   pool: ["experience_create"],
   sports: ["experience_create", "event_create"],
   family: ["event_create", "experience_create"],
-  help: ["help_request"],
-  restaurants: ["business_create", "experience_create"],
+  help: ["help_request", "help_offer", "offer_service"],
+  restaurants: ["business_create", "experience_create", "offer_service"],
 };
 
 function normalize(value: string): string {
@@ -263,11 +278,15 @@ export function personalizeCommunityFeed(
     ),
   }));
   ranked.sort((left, right) => right.score - left.score);
+  const labeled = ranked.map(({ item }) => {
+    const reason = personalizationReason(item, input.context, favorites);
+    return reason ? { ...item, reason } : { ...item };
+  });
   return {
-    items: ranked.map(({ item }) => {
-      const reason = personalizationReason(item, input.context, favorites);
-      return reason ? { ...item, reason } : { ...item };
-    }),
+    items: boostRelevantServiceFeed(
+      labeled,
+      input.context.preferences.interests,
+    ),
     enabled: true,
     providerId: "rules",
   };
@@ -359,10 +378,37 @@ export function personalizeLifePlaceContext(
   const experiences = [...place.experiences].sort(
     (left, right) => rankIndex(left) - rankIndex(right),
   );
+  const interestBlob = (value: string) => value.toLowerCase();
+  const interestHit = (blob: string) =>
+    context.preferences.interests.some((interest) =>
+      blob.includes(interest.toLowerCase()),
+    );
+  const nearbyProfessionals = place.nearbyProfessionals
+    ? [...place.nearbyProfessionals].sort((left, right) => {
+        const leftHit = interestHit(
+          interestBlob(`${left.name} ${left.category}`),
+        );
+        const rightHit = interestHit(
+          interestBlob(`${right.name} ${right.category}`),
+        );
+        if (leftHit !== rightHit) return leftHit ? -1 : 1;
+        return 0;
+      })
+    : undefined;
+  const nearbyHelp = place.nearbyHelp
+    ? [...place.nearbyHelp].sort((left, right) => {
+        const leftHit = interestHit(interestBlob(left.title));
+        const rightHit = interestHit(interestBlob(right.title));
+        if (leftHit !== rightHit) return leftHit ? -1 : 1;
+        return 0;
+      })
+    : undefined;
   return {
     ...place,
     currentActivity: ranked.items,
     experiences,
+    ...(nearbyProfessionals ? { nearbyProfessionals } : {}),
+    ...(nearbyHelp ? { nearbyHelp } : {}),
     id: place.id,
   };
 }

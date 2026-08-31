@@ -94,6 +94,26 @@ describe("Action Composer contract", () => {
     assert.equal(/source=/.test(href), false);
   });
 
+  it("routes help offer and local service without inventing a marketplace type", () => {
+    const offer = COMMUNITY_CREATION_ACTIONS.find(
+      (item) => item.type === "help_offer",
+    );
+    const service = COMMUNITY_CREATION_ACTIONS.find(
+      (item) => item.type === "offer_service",
+    );
+    assert.ok(offer);
+    assert.ok(service);
+    assert.equal(
+      communityCreationRoute(offer).includes("type=offer_help"),
+      true,
+    );
+    assert.equal(
+      communityCreationRoute(service).includes("intent=service"),
+      true,
+    );
+    assert.equal(communityCreationRoute(offer).includes("type=sale"), false);
+  });
+
   it("does not invent a universal creation entity", () => {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const source = readFileSync(path.join(here, "action-composer.ts"), "utf8");

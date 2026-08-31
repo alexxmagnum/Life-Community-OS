@@ -7,12 +7,15 @@ import {
   CAPABILITIES,
   createLifePlaceContext,
   dateOffsetIso,
+  isProfessionalBusiness,
   participationOccupiesSeat,
   recordMatchesTerritoryScope,
   resourceIsBookable,
   type CommunityFeedItem,
+  type LifePlaceBusinessSummary,
   type LifePlaceContext,
   type LifePlaceExperienceSummary,
+  type LifePlaceHelpSummary,
   type LifePlaceReservationAvailability,
   type LifePlaceResourceSummary,
   type ProductCapabilityMap,
@@ -21,12 +24,16 @@ import {
 } from "@life-community-os/types";
 import type { RequestActor } from "@/lib/auth/request-actor";
 import { actorHasCapability } from "@/lib/auth/permissions";
-import { getBusinessByLocationServer } from "@/lib/business/server-business-repository";
+import {
+  getBusinessByLocationServer,
+  listBusinessesServer,
+} from "@/lib/business/server-business-repository";
 import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
 import {
   listExperienceParticipantsServer,
   listExperiencesServer,
 } from "@/lib/experiences/server-experience-repository";
+import { listHelpRequestsServer } from "@/lib/help/server-help-repository";
 import { getLocationServer } from "@/lib/location/server-location-repository";
 import {
   listAvailabilityServer,
@@ -199,7 +206,10 @@ export async function resolveLifePlace(
       const slot = await firstAvailable(tenantId, resource.id, input.scope);
       if (!slot) continue;
       reservations.push({
-        context: { type: "resource", id: resource.id },
+        context: {
+          type: location.type === "service" ? "service" : "resource",
+          id: resource.id,
+        },
         available: slot.available,
         label: resource.name,
         href: `/resources/${encodeURIComponent(resource.id)}/reserve`,
@@ -239,6 +249,43 @@ export async function resolveLifePlace(
           }).join(" · "),
         }
       : undefined;
+
+  let nearbyProfessionals: LifePlaceBusinessSummary[] | undefined;
+  let nearbyHelp: LifePlaceHelpSummary[] | undefined;
+  if (includeLife) {
+    const professionalRows: LifePlaceBusinessSummary[] = [];
+    const businesses = await listBusinessesServer(tenantId, input.scope);
+    for (const row of businesses) {
+      if (row.status !== "published") continue;
+      if (row.locationId === locationId) continue;
+      if (!recordMatchesTerritoryScope(row.territoryId, territoryId)) continue;
+      if (!isProfessionalBusiness(row)) continue;
+      professionalRows.push({
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        href: `/locations/${encodeURIComponent(row.locationId)}`,
+        trustLabel: businessTrustLabels({
+          registered: true,
+          locationConfirmed: Boolean(row.locationId),
+          published: true,
+        }).join(" · "),
+      });
+    }
+    if (professionalRows.length > 0) nearbyProfessionals = professionalRows;
+
+    const helpRows: LifePlaceHelpSummary[] = [];
+    for (const offer of await listHelpRequestsServer(tenantId, input.scope)) {
+      if (offer.type !== "offer_help" || offer.status !== "open") continue;
+      if (!recordMatchesTerritoryScope(offer.territoryId, territoryId)) continue;
+      helpRows.push({
+        id: offer.id,
+        title: offer.title,
+        href: `/help/${encodeURIComponent(offer.id)}`,
+      });
+    }
+    if (helpRows.length > 0) nearbyHelp = helpRows;
+  }
 
   let participantCount = 0;
   if (includeLife) {
@@ -282,6 +329,8 @@ export async function resolveLifePlace(
     experiences,
     reservations,
     business,
+    nearbyProfessionals,
+    nearbyHelp,
     community:
       includeLife && (participantCount > 0 || feedItems.length > 0)
         ? {

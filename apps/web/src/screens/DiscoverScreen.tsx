@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   discoverExperienceQuery,
   discoverQueryFromActive,
+  isProfessionalBusiness,
   LIVING_EMPTY_CTA,
   LIVING_EMPTY_DESCRIPTION,
   LIVING_EMPTY_TITLE,
   partitionLivingCommunityFeed,
+  sortLocalServiceCards,
+  businessToLocalServiceCard,
   type CommunityFeedItem,
   type CommunityGroupRecord,
 } from "@life-community-os/types";
@@ -66,7 +69,8 @@ export function DiscoverScreen() {
   const [query, setQuery] = useState("");
 
   const [neighbourTips, setNeighbourTips] = useState<HelpRequest[]>([]);
-  const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
+  const [localProfessionals, setLocalProfessionals] = useState<BusinessProfile[]>([]);
+  const [localBusinesses, setLocalBusinesses] = useState<BusinessProfile[]>([]);
   const [persistedGroups, setPersistedGroups] = useState<CommunityGroupRecord[]>([]);
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
@@ -95,7 +99,8 @@ export function DiscoverScreen() {
       if (!canLocal) {
         if (!cancelled) {
           setNeighbourTips([]);
-          setTrustedHelp([]);
+          setLocalProfessionals([]);
+          setLocalBusinesses([]);
         }
         return;
       }
@@ -129,18 +134,33 @@ export function DiscoverScreen() {
         });
         if (!cancelled) {
           const q = query.trim().toLowerCase();
-          setTrustedHelp(
-            rows.filter((item) => {
-              if (!q) return true;
-              return (
-                item.name.toLowerCase().includes(q) ||
-                item.category.toLowerCase().includes(q)
-              );
-            }),
+          const filtered = rows.filter((item) => {
+            if (!q) return true;
+            return (
+              item.name.toLowerCase().includes(q) ||
+              item.category.toLowerCase().includes(q)
+            );
+          });
+          const ordered = sortLocalServiceCards(
+            filtered.map((item) => businessToLocalServiceCard(item)),
           );
+          const professionals: BusinessProfile[] = [];
+          const businesses: BusinessProfile[] = [];
+          for (const card of ordered) {
+            const row = filtered.find((item) => item.id === card.id);
+            if (!row) continue;
+            if (card.kind === "professional" || isProfessionalBusiness(row)) {
+              professionals.push(row);
+            } else {
+              businesses.push(row);
+            }
+          }
+          setLocalProfessionals(professionals);
+          setLocalBusinesses(businesses);
         }
       } else {
-        setTrustedHelp([]);
+        setLocalProfessionals([]);
+        setLocalBusinesses([]);
       }
     })();
     return () => {
@@ -237,7 +257,8 @@ export function DiscoverScreen() {
     nearYou.length > 0 ||
     neighbourTips.length > 0 ||
     hasPlans ||
-    trustedHelp.length > 0 ||
+    localProfessionals.length > 0 ||
+    localBusinesses.length > 0 ||
     living.help.length > 0;
 
   return (
@@ -348,8 +369,8 @@ export function DiscoverScreen() {
 
           {neighbourTips.length > 0 ? (
             <CommunityLifeSection
-              title="Recomendado por vecinos"
-              subtitle="Consejos y opiniones de gente en la que puedes confiar."
+              title="Ayuda entre vecinos"
+              subtitle="Ofertas de ayuda del territorio, no un marketplace."
             >
               <div className="space-y-3">
                 {neighbourTips.map((tip) => (
@@ -383,13 +404,13 @@ export function DiscoverScreen() {
             </CommunityLifeSection>
           ) : null}
 
-          {trustedHelp.length > 0 ? (
+          {localProfessionals.length > 0 ? (
             <CommunityLifeSection
-              title="Servicios"
-              subtitle="Negocios y ayuda de confianza cerca."
+              title="Profesionales"
+              subtitle="Oficios locales del territorio."
             >
               <LocalLifeRail>
-                {trustedHelp.map((place) => (
+                {localProfessionals.map((place) => (
                   <LocalPlaceCard
                     key={place.id}
                     name={place.name}
@@ -397,9 +418,28 @@ export function DiscoverScreen() {
                     areaLabel={configuration.branding.name}
                     blurb={place.description}
                     imageUrl={place.imageUrl ?? ""}
-                    onClick={() =>
-                      setPlaceLocationId(place.locationId)
-                    }
+                    onClick={() => setPlaceLocationId(place.locationId)}
+                  />
+                ))}
+              </LocalLifeRail>
+            </CommunityLifeSection>
+          ) : null}
+
+          {localBusinesses.length > 0 ? (
+            <CommunityLifeSection
+              title="Negocios locales"
+              subtitle="Comercios del territorio, no un ranking."
+            >
+              <LocalLifeRail>
+                {localBusinesses.map((place) => (
+                  <LocalPlaceCard
+                    key={place.id}
+                    name={place.name}
+                    categoryLabel={place.category}
+                    areaLabel={configuration.branding.name}
+                    blurb={place.description}
+                    imageUrl={place.imageUrl ?? ""}
+                    onClick={() => setPlaceLocationId(place.locationId)}
                   />
                 ))}
               </LocalLifeRail>

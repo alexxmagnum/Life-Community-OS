@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { HelpRequestType } from "@life-community-os/types";
 import {
   EmptyState,
@@ -14,8 +14,14 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
 export function HelpComposerScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { hasCapability, configuration } = useTenant();
-  const [type, setType] = useState<HelpRequestType>("need_help");
+  const requestedType = searchParams.get("type");
+  const [type, setType] = useState<HelpRequestType>(
+    requestedType === "offer_help" || requestedType === "need_help"
+      ? requestedType
+      : "need_help",
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("neighbour");
@@ -62,7 +68,7 @@ export function HelpComposerScreen() {
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Pedir o ofrecer ayuda"
+        title={type === "offer_help" ? "Ofrecer ayuda" : "Pedir ayuda"}
         onBack={() => router.push("/services/neighbour-help")}
         onExit={() => router.push("/services")}
       />

@@ -15,9 +15,11 @@ export const COMMUNITY_CREATION_ACTION_TYPES = [
   "experience_create",
   "event_create",
   "help_request",
+  "help_offer",
   "marketplace_listing",
   "group_create",
   "business_create",
+  "offer_service",
 ] as const;
 
 export type CommunityCreationActionType =
@@ -91,6 +93,16 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     territoryRequired: true,
   },
   {
+    id: "help_offer",
+    type: "help_offer",
+    title: "Ofrecer ayuda",
+    description: "Echa una mano a un vecino",
+    icon: "🌿",
+    requiredCapability: CAPABILITIES.localView,
+    route: "/help/create",
+    territoryRequired: true,
+  },
+  {
     id: "marketplace_listing",
     type: "marketplace_listing",
     title: "Vender o regalar",
@@ -116,6 +128,16 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     title: "Registrar negocio",
     description: "Tu negocio en el mapa",
     icon: "🏢",
+    requiredCapability: CAPABILITIES.localView,
+    route: "/business/register",
+    territoryRequired: true,
+  },
+  {
+    id: "offer_service",
+    type: "offer_service",
+    title: "Ofrecer un servicio",
+    description: "Registra tu oficio en el territorio",
+    icon: "🔧",
     requiredCapability: CAPABILITIES.localView,
     route: "/business/register",
     territoryRequired: true,
@@ -165,8 +187,10 @@ function productKeyForCreation(
     case "marketplace_listing":
       return "marketplace";
     case "business_create":
+    case "offer_service":
       return "lifeMap";
     case "help_request":
+    case "help_offer":
       return null;
   }
 }
@@ -178,8 +202,19 @@ export function communityCreationRoute(
   const parts: string[] = [];
   const locationId = context?.locationId?.trim();
   const locationName = context?.locationName?.trim();
+  if (action.type === "help_offer") {
+    parts.push("type=offer_help");
+  }
+  if (action.type === "help_request") {
+    parts.push("type=need_help");
+  }
+  if (action.type === "offer_service") {
+    parts.push("intent=service");
+  }
   if (
-    (action.type === "experience_create" || action.type === "event_create") &&
+    (action.type === "experience_create" ||
+      action.type === "event_create" ||
+      action.type === "offer_service") &&
     locationId
   ) {
     parts.push(`locationId=${encodeURIComponent(locationId)}`);

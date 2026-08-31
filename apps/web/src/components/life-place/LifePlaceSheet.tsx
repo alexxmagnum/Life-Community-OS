@@ -249,6 +249,35 @@ export function LifePlaceSheet({
           </section>
         ) : null}
 
+        {context.nearbyProfessionals && context.nearbyProfessionals.length > 0 ? (
+          <section className="mt-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+              Profesionales cerca
+            </h3>
+            <ul className="mt-2 space-y-1 text-[14px] text-[var(--color-text-secondary)]">
+              {context.nearbyProfessionals.map((item) => (
+                <li key={item.id}>
+                  {item.name}
+                  {item.trustLabel ? ` · ${item.trustLabel}` : ""}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {context.nearbyHelp && context.nearbyHelp.length > 0 ? (
+          <section className="mt-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+              Ayuda entre vecinos
+            </h3>
+            <ul className="mt-2 space-y-1 text-[14px] text-[var(--color-text-secondary)]">
+              {context.nearbyHelp.map((item) => (
+                <li key={item.id}>{item.title}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         {facilities.length > 0 ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">

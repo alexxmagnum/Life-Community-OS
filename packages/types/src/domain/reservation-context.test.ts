@@ -47,4 +47,25 @@ describe("Reservation Context", () => {
       true,
     );
   });
+
+  it("creates a service Reservation Context without a new commerce type", () => {
+    const reservation = createReservationRecord({
+      tenantId: "life-panoramica",
+      createdBy: "person-alex",
+      resourceId: "massage-1",
+      date: "2026-09-06",
+      start: "11:00",
+      end: "12:00",
+      contextType: "service",
+      contextId: "massage-1",
+      territoryId: "10000000-0000-4000-8000-000000000002",
+    });
+    assert.equal(reservation.contextType, "service");
+    assert.equal(reservation.contextId, "massage-1");
+    assert.equal(reservation.resourceId, "massage-1");
+    assert.equal(
+      createReservationContext({ type: "service", id: "massage-1" }).type,
+      "service",
+    );
+  });
 });

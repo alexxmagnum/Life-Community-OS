@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   LOCATION_TYPES,
   type AddressGeocodeResult,
@@ -49,12 +49,18 @@ function defaultTypeForCategory(category: string): LocationType {
 
 export function BusinessRegistrationScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { configuration } = useTenant();
   const tenantId = configuration.tenantId;
+  const intentService = searchParams.get("intent") === "service";
 
   const [name, setName] = useState("");
-  const [type, setType] = useState<LocationType>("business");
-  const [category, setCategory] = useState<string>("restaurant");
+  const [type, setType] = useState<LocationType>(
+    intentService ? "service" : "business",
+  );
+  const [category, setCategory] = useState<string>(
+    intentService ? "electrician" : "restaurant",
+  );
   const [address, setAddress] = useState("");
   const [contact, setContact] = useState("");
   const [summary, setSummary] = useState("");
@@ -158,7 +164,7 @@ export function BusinessRegistrationScreen() {
   return (
     <MobileScreen>
       <FlowScreenHeader
-        title="Registrar negocio"
+        title={intentService ? "Ofrecer un servicio" : "Registrar negocio"}
         subtitle="Quedará en borrador hasta que un administrador lo publique"
         onBack={() => router.push("/map")}
         onExit={() => router.push("/map")}

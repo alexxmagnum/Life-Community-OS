@@ -117,7 +117,11 @@ describe("Action Composer isolation", () => {
       true,
     );
     assert.equal(
-      actions.some((item) => item.route.includes("register") && item.type !== "business_create"),
+      actions.some((item) => item.type === "offer_service"),
+      true,
+    );
+    assert.equal(
+      actions.some((item) => item.route === "/register"),
       false,
     );
   });
