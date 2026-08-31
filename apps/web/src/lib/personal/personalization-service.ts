@@ -130,9 +130,18 @@ export async function personalizeFeedForActor(input: {
     territoryId: input.territoryId,
     items: input.items,
   });
+  const { CommunityGovernanceService } = await import(
+    "@/lib/governance/community-governance-service"
+  );
+  const safe = await CommunityGovernanceService.annotateFeed({
+    tenantId: input.tenantId,
+    territoryId: input.territoryId,
+    items: labeled,
+    viewerPersonId: personId,
+  });
   return RuleBasedPersonalizationProvider.personalize({
     context,
-    feed: labeled,
+    feed: safe,
     favorites,
     trustedOrganizerIds,
   });

@@ -29,6 +29,7 @@ import { fetchParticipationContext } from "@/lib/community/participation-client"
 import type { CommunityParticipationContext } from "@life-community-os/types";
 import { occupyingParticipationCount } from "@life-community-os/types";
 import { fetchPublicTrustLabels } from "@/lib/trust/trust-client";
+import { createGovernanceReport } from "@/lib/governance/governance-client";
 
 export function ExperienceDetailScreen({
   experienceId,
@@ -44,6 +45,7 @@ export function ExperienceDetailScreen({
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [loop, setLoop] = useState<CommunityParticipationContext | null>(null);
   const [organizerTrust, setOrganizerTrust] = useState<string | undefined>();
+  const [reportNote, setReportNote] = useState<string | null>(null);
 
   const experience = getExperience(experienceId);
 
@@ -308,6 +310,33 @@ export function ExperienceDetailScreen({
               Compartir
             </Button>
           </div>
+          {hasCapability(CAPABILITIES.interactionReport) ? (
+            <button
+              type="button"
+              className="min-h-[32px] w-full text-center text-[12px] font-medium text-[var(--color-text-tertiary)]"
+              onClick={() => {
+                void createGovernanceReport({
+                  tenantId: tenantSlug,
+                  entityType: "experience",
+                  entityId: experience.id,
+                  reason: "other",
+                }).then((created) => {
+                  setReportNote(
+                    created
+                      ? "Gracias. Hemos recibido tu aviso."
+                      : "No se pudo enviar el aviso.",
+                  );
+                });
+              }}
+            >
+              Avisar
+            </button>
+          ) : null}
+          {reportNote ? (
+            <p className="text-center text-[12px] text-[var(--color-text-tertiary)]">
+              {reportNote}
+            </p>
+          ) : null}
         </div>
       </div>
     </MobileScreen>

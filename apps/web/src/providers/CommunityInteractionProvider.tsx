@@ -31,6 +31,7 @@ import {
   fetchCommunityFeed,
   toggleCommunityReactionRequest,
 } from "@/lib/community/community-client";
+import { createGovernanceReport } from "@/lib/governance/governance-client";
 
 type CommunityInteractionContextValue = {
   feedItems: CommunityContent[];
@@ -41,7 +42,7 @@ type CommunityInteractionContextValue = {
   toggleReaction: (contentId: string, kind: ReactionKind) => void;
   addComment: (contentId: string, body: string) => void;
   toggleSave: (contentId: string) => void;
-  reportContent: (contentId: string) => void;
+  reportContent: (contentId: string, entityType?: string) => void;
   createPublication: (input: {
     title: string;
     body: string;
@@ -222,11 +223,20 @@ export function CommunityInteractionProvider({
     );
   }, []);
 
-  const reportContent = useCallback((contentId: string) => {
-    setReportedIds((prev) =>
-      prev.includes(contentId) ? prev : [...prev, contentId],
-    );
-  }, []);
+  const reportContent = useCallback(
+    (contentId: string, entityType = "event") => {
+      setReportedIds((prev) =>
+        prev.includes(contentId) ? prev : [...prev, contentId],
+      );
+      void createGovernanceReport({
+        tenantId: tenantSlug,
+        entityType,
+        entityId: contentId,
+        reason: "other",
+      });
+    },
+    [tenantSlug],
+  );
 
   const createPublication = useCallback(
     async (input: {

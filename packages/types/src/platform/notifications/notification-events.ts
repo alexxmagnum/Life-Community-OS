@@ -28,6 +28,7 @@ export const NOTIFICATION_EVENT_TYPES = [
   "group_member_added",
   "help_response",
   "community_thanks",
+  "community_governance",
   // Reservation
   "reservation_created",
   "reservation_cancelled",
@@ -53,6 +54,7 @@ export const NOTIFICATION_EVENT_CATEGORY: Record<
   group_member_added: "communication",
   help_response: "communication",
   community_thanks: "communication",
+  community_governance: "communication",
   reservation_created: "reservation",
   reservation_cancelled: "reservation",
   announcement_published: "official",

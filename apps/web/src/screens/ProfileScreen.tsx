@@ -40,6 +40,11 @@ import {
   fetchTrustContext,
   patchTrustPrivacy,
 } from "@/lib/trust/trust-client";
+import { fetchOwnGovernance } from "@/lib/governance/governance-client";
+import type {
+  GovernancePersonBlock,
+  PublicGovernanceReport,
+} from "@life-community-os/types";
 
 /**
  * Mi perfil — identity, preferences, personal context.
@@ -64,6 +69,8 @@ export function ProfileScreen() {
   );
   const [personal, setPersonal] = useState<PersonalContext | null>(null);
   const [trust, setTrust] = useState<TrustContext | null>(null);
+  const [ownReports, setOwnReports] = useState<PublicGovernanceReport[]>([]);
+  const [ownBlocks, setOwnBlocks] = useState<GovernancePersonBlock[]>([]);
   const [favorites, setFavorites] = useState<PersonalFavorite[]>([]);
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
@@ -119,6 +126,8 @@ export function ProfileScreen() {
       setPersonal(null);
       setFavorites([]);
       setTrust(null);
+      setOwnReports([]);
+      setOwnBlocks([]);
       return;
     }
     let cancelled = false;
@@ -135,6 +144,14 @@ export function ProfileScreen() {
       territoryId: activeTerritory.territoryId,
     }).then((context) => {
       if (!cancelled) setTrust(context);
+    });
+    void fetchOwnGovernance({
+      tenantId: configuration.tenantId,
+      territoryId: activeTerritory.territoryId,
+    }).then((mine) => {
+      if (cancelled) return;
+      setOwnReports(mine.reports);
+      setOwnBlocks(mine.blocks);
     });
     return () => {
       cancelled = true;
@@ -436,6 +453,49 @@ export function ProfileScreen() {
           />
           Mostrar señales de confianza
         </label>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+          Cuidado de la comunidad
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Privado. No hay historial público de conflictos.
+        </p>
+        <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Mis reportes enviados
+        </p>
+        {ownReports.length === 0 ? (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            No has enviado avisos en este territorio.
+          </p>
+        ) : (
+          ownReports.map((item) => (
+            <p
+              key={item.id}
+              className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 text-[13px] shadow-[var(--shadow-elev-1)]"
+            >
+              {item.entityType} · {item.reason} · {item.status}
+            </p>
+          ))
+        )}
+        <p className="pt-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Mis bloqueos
+        </p>
+        {ownBlocks.length === 0 ? (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            No has bloqueado a nadie en este territorio.
+          </p>
+        ) : (
+          ownBlocks.map((item) => (
+            <p
+              key={item.id}
+              className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 text-[13px] shadow-[var(--shadow-elev-1)]"
+            >
+              Bloqueo territorial
+            </p>
+          ))
+        )}
       </section>
 
       <section className="space-y-2">

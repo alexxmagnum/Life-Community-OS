@@ -17,6 +17,8 @@ export const ADMIN_AUDIT_ACTIONS = [
   "content.hide",
   "content.archive",
   "content.restore",
+  "governance.review",
+  "governance.safety",
   "territory.assign_asset",
   "settings.update",
 ] as const;
@@ -33,6 +35,8 @@ export type AdminAuditEntityType =
   | "comment"
   | "listing"
   | "help_request"
+  | "governance_report"
+  | "safety_action"
   | "territory_object"
   | "tenant_settings";
 

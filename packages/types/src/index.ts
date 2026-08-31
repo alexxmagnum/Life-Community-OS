@@ -193,6 +193,46 @@ export {
 } from "./trust/trust-context";
 export { applyTrustedOrganizerBoost } from "./trust/trust-projection";
 
+/** Community Governance — territorial care over existing domains. */
+export type {
+  GovernanceReportEntityType,
+  GovernanceReportReason,
+  GovernanceReportStatus,
+  GovernanceSafetyActionType,
+  CommunityRule,
+  CommunityContentReport,
+  PublicGovernanceReport,
+  GovernanceSafetyAction,
+  GovernancePersonBlock,
+  CommunityGovernanceRoles,
+  CommunityGovernancePermissions,
+  CommunityGovernanceContext,
+  TerritoryGovernanceRoleName,
+} from "./governance/governance-context";
+export {
+  GOVERNANCE_REPORT_ENTITY_TYPES,
+  GOVERNANCE_REPORT_REASONS,
+  GOVERNANCE_REPORT_STATUSES,
+  GOVERNANCE_SAFETY_ACTION_TYPES,
+  TERRITORY_GOVERNANCE_ROLE_NAMES,
+  TRUST_REVIEW_REPORT_THRESHOLD,
+  isGovernanceReportEntityType,
+  isGovernanceReportReason,
+  isGovernanceReportStatus,
+  isGovernanceSafetyActionType,
+  territoryRolesFromMembership,
+  governancePermissionsFromRoles,
+  emptyGovernanceContext,
+  projectGovernanceContext,
+  redactReporter,
+  ownReportView,
+  trustReviewRequired,
+  hiddenContentIdsFromActions,
+  filterModeratedFeedItems,
+  isOpaqueGovernanceEntity,
+  hasGovernanceKarma,
+} from "./governance/governance-context";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,

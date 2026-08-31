@@ -361,7 +361,16 @@ export async function listCommunityExperienceFeed(
       scope: input.scope,
     })),
   ];
-  return sortCommunityFeedItems(items, input.now ?? Date.now());
+  const sorted = sortCommunityFeedItems(items, input.now ?? Date.now());
+  const { CommunityGovernanceService } = await import(
+    "@/lib/governance/community-governance-service"
+  );
+  return CommunityGovernanceService.annotateFeed({
+    tenantId: query.tenantId,
+    territoryId: query.territoryId,
+    items: sorted,
+    viewerPersonId: input.scope?.personId,
+  });
 }
 
 export const CommunityExperienceFeedService = {
