@@ -107,6 +107,41 @@ export {
   isOpaqueDailyLifeEntity,
 } from "./community/operations";
 
+/** Tenant Factory — SaaS community deployment, not a customer fork. */
+export type {
+  TenantPlan,
+  CommunityOnboardingStep,
+  TenantBrandingSlice,
+  ProvisionedTenant,
+  TerritoryProvisionInput,
+  TenantProvisionRequest,
+  TenantProvisionResult,
+  TenantConfigurationContext,
+  PlatformOperator,
+  TenantAdministratorSeed,
+  TenantFactorySnapshot,
+  ClientAuthoritySpoof,
+} from "./tenant/factory";
+export {
+  TENANT_PLANS,
+  COMMUNITY_ONBOARDING_STEPS,
+  PACK_MAY_PROVIDE,
+  PACK_MUST_NOT_PROVIDE,
+  emptyTenantFactorySnapshot,
+  isTenantPlan,
+  featuresForPlan,
+  tenantFeatureFlagsFromProduct,
+  enabledModulesFromFeatures,
+  featureOnDoesNotGrantPermissions,
+  packCannotControlAuthz,
+  canAccessPlatformAdmin,
+  rejectClientAuthoritySpoof,
+  TerritoryProvisionService,
+  TenantFactoryService,
+  adoptConfiguredTenant,
+  isOpaqueTenantFactoryEntity,
+} from "./tenant/factory";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,
