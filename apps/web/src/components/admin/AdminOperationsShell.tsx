@@ -13,6 +13,7 @@ import { useTenant } from "@/providers/TenantProvider";
 
 const NAV: { href: string; label: string; section: AdminOperationsSection }[] = [
   { href: "/admin", label: "Dashboard", section: "dashboard" },
+  { href: "/admin/operations", label: "Operaciones", section: "operations" },
   { href: "/admin/community", label: "Comunidad", section: "community" },
   { href: "/admin/members", label: "Members", section: "members" },
   { href: "/admin/businesses", label: "Businesses", section: "businesses" },

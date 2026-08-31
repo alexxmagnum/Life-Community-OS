@@ -6,7 +6,6 @@ import {
   homeHeroIndexForHour,
   homeSkyMood,
   listHomeHeroSlideUrls,
-  listHomeIntents,
 } from "@life-community-os/tenant-life-panoramica";
 import {
   communityFeedLivingLabel,
@@ -21,11 +20,12 @@ import {
   territoryHomeQuery,
   type CommunityFeedItem,
   type CommunityInsight,
+  type TerritoryAnnouncement,
+  type TerritoryDailyPulse,
 } from "@life-community-os/types";
 import {
   EmptyState,
   HomeHeroStage,
-  HomeIntentCard,
   HomeMomentCard,
   HomeMoveCard,
   HomeNearbyCard,
@@ -36,6 +36,7 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { getCommunityExperienceFeed } from "@/lib/community/community-client";
+import { fetchCommunityOperations } from "@/lib/community/community-operations-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import {
@@ -85,9 +86,7 @@ export function HomeScreen() {
     theme,
     isFeatureEnabled,
     hasCapability,
-    tenantSlug,
     configuration,
-    homeMode,
     authenticated,
     hasMembership,
   } = useTenant();
@@ -97,7 +96,6 @@ export function HomeScreen() {
     configuration.tenantId,
     activeTerritory.territoryId,
   );
-  const premiumHome = homeMode === "premium";
   const homeQuery = territoryHomeQuery(activeTerritory);
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [feedReady, setFeedReady] = useState(false);
@@ -106,6 +104,8 @@ export function HomeScreen() {
   const [personalizationEnabled, setPersonalizationEnabled] = useState(false);
   const [favoriteLocations, setFavoriteLocations] = useState<string[]>([]);
   const [insights, setInsights] = useState<CommunityInsight[]>([]);
+  const [pulse, setPulse] = useState<TerritoryDailyPulse | null>(null);
+  const [announcements, setAnnouncements] = useState<TerritoryAnnouncement[]>([]);
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
@@ -163,6 +163,14 @@ export function HomeScreen() {
       setPersonalizationEnabled(data.personalizationEnabled);
       setFeedReady(true);
     });
+    void fetchCommunityOperations({
+      tenantId: configuration.tenantId,
+      territoryId,
+    }).then((data) => {
+      if (cancelled) return;
+      setPulse(data.pulse);
+      setAnnouncements(data.pulse?.important ?? []);
+    });
     void fetchPersonalContext({
       tenantId: configuration.tenantId,
       territoryId,
@@ -197,9 +205,11 @@ export function HomeScreen() {
   const moments = useMemo(() => {
     if (!feedReady) return [];
     const source =
-      personalizationEnabled && living.now.length > 0
-        ? living.now
-        : feedItems.filter(isLivingMomentFeedItem);
+      pulse?.now && pulse.now.length > 0
+        ? pulse.now
+        : personalizationEnabled && living.now.length > 0
+          ? living.now
+          : feedItems.filter(isLivingMomentFeedItem);
     return source.slice(0, MOMENT_LIMIT).map((item) => ({
       item,
       presentation: {
@@ -221,6 +231,7 @@ export function HomeScreen() {
     feedReady,
     feedItems,
     living.now,
+    pulse,
     personalizationEnabled,
     placeName,
     reasons,
@@ -228,8 +239,11 @@ export function HomeScreen() {
 
   const upcomingMoments = useMemo(() => {
     if (!feedReady) return [];
+    if (pulse?.next && pulse.next.length > 0) {
+      return pulse.next.slice(0, MOMENT_LIMIT);
+    }
     return living.upcoming.slice(0, MOMENT_LIMIT);
-  }, [feedReady, living.upcoming]);
+  }, [feedReady, living.upcoming, pulse]);
 
   const favoritePlaces = useMemo(() => {
     if (favoriteLocations.length === 0) return [];
@@ -258,43 +272,6 @@ export function HomeScreen() {
         })),
     [feedItems],
   );
-  const intents = useMemo(() => {
-    if (premiumHome) return listHomeIntents();
-    return [
-      {
-        id: `${tenantSlug}-map`,
-        title: "Mapa",
-        subtitle: theme.identity?.homeCallout ?? theme.tagline ?? placeName,
-        tone: "discover" as const,
-        glyph: "compass" as const,
-        href: "/map",
-        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
-        bgImageUrl: undefined as string | undefined,
-      },
-      {
-        id: `${tenantSlug}-plans`,
-        title: "Planes",
-        subtitle: theme.identity?.pulseTitleTemplate
-          ? theme.identity.pulseTitleTemplate.replaceAll("{territory}", placeName)
-          : placeName,
-        tone: "plans" as const,
-        glyph: "calendar" as const,
-        href: "/experiences",
-        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
-        bgImageUrl: undefined as string | undefined,
-      },
-      {
-        id: `${tenantSlug}-discover`,
-        title: "Descubrir",
-        subtitle: placeName,
-        tone: "discover" as const,
-        glyph: "compass" as const,
-        href: "/discover",
-        imageUrl: LOCATION_NEARBY_FALLBACK_IMAGE,
-        bgImageUrl: undefined as string | undefined,
-      },
-    ];
-  }, [premiumHome, tenantSlug, theme, placeName]);
   const nearby = useMemo(() => {
     if (!canLocal) return [];
     return allLocations
@@ -370,21 +347,26 @@ export function HomeScreen() {
       <div className="space-y-7 px-4 md:px-0">
       {/* ── HOY — Territory first, then the life happening in it ── */}
       <section ref={todaySectionRef} className="scroll-mt-[64px]">
-        <HomeSectionHead
-          title={personalizationEnabled ? "Ahora para ti" : todayTitle}
-          sparkle
-          actionLabel={moments.length > 0 ? "Ver todas" : undefined}
-          onAction={
-            moments.length > 0 ? () => router.push("/experiences") : undefined
-          }
-        />
-        {moments.length > 0 ? (
-          <p className="-mt-2 mb-3 text-[14px] text-white/55">
-            {personalizationEnabled
-              ? "Qué te interesa hoy, con el motivo a la vista."
-              : "Qué ocurre ahora"}
-          </p>
+        <HomeSectionHead title={todayTitle} sparkle />
+        {announcements.length > 0 ? (
+          <div className="mb-4 space-y-2">
+            {announcements.slice(0, 3).map((item) => (
+              <p
+                key={item.id}
+                className="rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-primary)]"
+              >
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+                  Aviso del territorio
+                </span>
+                <span className="mt-1 block font-semibold">{item.title}</span>
+                <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
+                  {item.body}
+                </span>
+              </p>
+            ))}
+          </div>
         ) : null}
+        <p className="mb-3 text-[14px] text-white/55">Ahora mismo</p>
         {moments.length === 0 ? (
           <div>
             <EmptyState
@@ -493,7 +475,7 @@ export function HomeScreen() {
 
       {favoritePlaces.length > 0 ? (
         <section>
-          <HomeSectionHead title="Tus lugares" actionLabel="Mapa" actionGlyph="map" onAction={() => router.push("/map")} />
+          <HomeSectionHead title="Mis lugares" actionLabel="Mapa" actionGlyph="map" onAction={() => router.push("/map")} />
           <HomeRail>
             {favoritePlaces.map((place) => (
               <HomeNearbyCard
@@ -512,11 +494,28 @@ export function HomeScreen() {
         </section>
       ) : null}
 
-      {/* ── LA COMUNIDAD SE MUEVE — human activity, not a social feed ── */}
+      {authenticated && hasMembership ? (
+        <section>
+          <HomeSectionHead title="Cómo puedo aportar" />
+          <button
+            type="button"
+            onClick={() => openActionComposer({ source: "home" })}
+            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
+          >
+            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
+              Crear para hoy
+            </span>
+            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
+              {LIVING_EMPTY_CTA}
+            </span>
+          </button>
+        </section>
+      ) : null}
+
       {moves.length > 0 ? (
       <section>
         <HomeSectionHead
-          title="La comunidad se mueve"
+          title="La comunidad"
           actionLabel="Ver más"
           onAction={() => router.push("/community")}
         />
@@ -539,44 +538,6 @@ export function HomeScreen() {
       </section>
       ) : null}
 
-      {/* ── QUÉ TE APETECE HACER — four intent doors, horizontal rail ── */}
-      <section>
-        <HomeSectionHead title="Qué puedo hacer" />
-        <HomeRail>
-          {intents.map((intent) => (
-            <HomeIntentCard
-              key={intent.id}
-              tone={intent.tone}
-              glyph={intent.glyph}
-              title={intent.title}
-              subtitle={intent.subtitle}
-              imageUrl={intent.imageUrl}
-              bgImageUrl={intent.bgImageUrl}
-              onClick={() => router.push(intent.href)}
-            />
-          ))}
-        </HomeRail>
-      </section>
-
-      {authenticated && hasMembership ? (
-        <section>
-          <HomeSectionHead title="Qué puedo aportar" />
-          <button
-            type="button"
-            onClick={() => openActionComposer({ source: "home" })}
-            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
-          >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              Comparte algo con tu comunidad
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              {LIVING_EMPTY_CTA}
-            </span>
-          </button>
-        </section>
-      ) : null}
-
-      {/* ── CERCA DE TI — places the community points at ── */}
       {canLocal && nearby.length > 0 ? (
         <section>
           <HomeSectionHead

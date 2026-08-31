@@ -41,11 +41,12 @@ export async function POST(request: Request) {
   );
   const scope = persistenceScopeFromRequest(request, gated.actor.personId);
   const kind =
-    body.kind === "discussion" ||
-    body.kind === "announcement" ||
-    body.kind === "proposal"
+    body.kind === "discussion" || body.kind === "proposal"
       ? body.kind
       : "member_update";
+  if (body.kind === "announcement") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   const post = await createCommunityPost({
     tenantId: bound.tenantId,
     authorPersonId: gated.actor.personId,

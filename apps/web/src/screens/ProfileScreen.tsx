@@ -500,7 +500,7 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Mis actividades
+          Mi vida aquí
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
           Solo tú ves esto. No es un muro público.
@@ -570,9 +570,31 @@ export function ProfileScreen() {
           />
         ) : (
           <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Cuando ofrezcas una mano, aparecerá aquí.
+            Todavía no has ofrecido ayuda.
           </p>
         )}
+        <p className="pt-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Mis reservas
+        </p>
+        {ownActivity?.upcomingReservations[0] ? (
+          <ExploreLink
+            label="Reservas"
+            hint={ownActivity.upcomingReservations[0].title}
+            onClick={() => router.push("/reservations")}
+          />
+        ) : (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            No tienes reservas próximas.
+          </p>
+        )}
+        <p className="pt-2 text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+          Mis lugares
+        </p>
+        <ExploreLink
+          label="Lugares guardados"
+          hint="Solo tú ves esta lista"
+          onClick={() => router.push("/map")}
+        />
         {isFeatureEnabled("feed") || isFeatureEnabled("decide") ? (
           <ExploreLink
             label="Comunidad"

@@ -5,6 +5,10 @@
  */
 
 import {
+  composerTitleForSource,
+  type CommunityCreationSource,
+} from "@life-community-os/types";
+import {
   CreateSheet,
   type CreateAction,
   type CreateActionSection,
@@ -16,6 +20,7 @@ export type ActionComposerProps = {
   actions?: CreateAction[];
   sections?: CreateActionSection[];
   locationName?: string;
+  source?: CommunityCreationSource;
 };
 
 export function ActionComposer({
@@ -24,6 +29,7 @@ export function ActionComposer({
   actions,
   sections,
   locationName,
+  source,
 }: ActionComposerProps) {
   const place = locationName?.trim();
   return (
@@ -32,8 +38,16 @@ export function ActionComposer({
       onClose={onClose}
       actions={actions}
       sections={sections}
-      title="¿Qué quieres aportar?"
-      contextLine={place ? `En ${place}` : undefined}
+      title={composerTitleForSource(source)}
+      contextLine={
+        source === "life_place" && place
+          ? `En ${place}`
+          : source === "home"
+            ? "Para hoy, en tu territorio"
+            : place
+              ? `En ${place}`
+              : undefined
+      }
       subtitle="Comparte algo que haga mejor tu comunidad"
     />
   );

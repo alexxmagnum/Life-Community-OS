@@ -68,4 +68,20 @@ describe("Reservation Context", () => {
       "service",
     );
   });
+
+  it("keeps a service Reservation valid without a physical resource", () => {
+    const reservation = createReservationRecord({
+      tenantId: "life-panoramica",
+      createdBy: "person-alex",
+      date: "2026-09-06",
+      start: "11:00",
+      end: "12:00",
+      contextType: "service",
+      contextId: "massage-visit",
+      territoryId: "10000000-0000-4000-8000-000000000002",
+    });
+    assert.equal(reservation.contextType, "service");
+    assert.equal(reservation.resourceId, undefined);
+    assert.equal(reservation.contextId, "massage-visit");
+  });
 });

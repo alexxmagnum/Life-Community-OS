@@ -28,6 +28,7 @@ import {
   getBusinessByLocationServer,
   listBusinessesServer,
 } from "@/lib/business/server-business-repository";
+import { CommunityOperationsService } from "@/lib/community/community-operations-service";
 import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
 import {
   listExperienceParticipantsServer,
@@ -349,6 +350,17 @@ export async function resolveLifePlace(
         : undefined,
     cover: cover?.reference,
     canCreateActivity,
+    importantNotice: includeLife
+      ? (
+          await CommunityOperationsService.announcements({
+            tenantId,
+            territoryId,
+          })
+        ).find((item) => {
+          const blob = `${item.title} ${item.body}`.toLowerCase();
+          return blob.includes(location.name.toLowerCase());
+        })?.title
+      : undefined,
   });
 
   return { ok: true, context };

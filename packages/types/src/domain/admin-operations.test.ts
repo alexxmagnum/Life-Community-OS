@@ -45,6 +45,13 @@ describe("Admin operations policy", () => {
     );
   });
 
+  it("operations section is staff-only", () => {
+    assert.equal(canAccessAdminSection("administrator", "operations"), true);
+    assert.equal(canAccessAdminSection("moderator", "operations"), true);
+    assert.equal(canAccessAdminSection("member", "operations"), false);
+    assert.equal(canAccessAdminSection("group_manager", "operations"), false);
+  });
+
   it("group_manager can operate resources, not members", () => {
     assert.equal(canAccessAdminSection("group_manager", "resources"), true);
     assert.equal(canAccessAdminSection("group_manager", "members"), false);

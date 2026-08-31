@@ -469,6 +469,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         }}
         actions={createActions}
         locationName={composeContext.locationName}
+        source={composeContext.source}
       />
       <CreatePostSheet
         open={postOpen}

@@ -842,10 +842,7 @@ export function createReservationRecord(input: CreateReservationInput): Reservat
   if (!contextId) {
     throw new Error("Invalid Reservation: missing_context");
   }
-  if (
-    (contextType === "resource" || contextType === "service") &&
-    !resourceId
-  ) {
+  if (contextType === "resource" && !resourceId) {
     throw new Error("Invalid Reservation: missing_resource");
   }
   const participantCount =

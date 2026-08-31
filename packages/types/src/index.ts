@@ -82,6 +82,31 @@ export {
   CommunityActionRegistry,
 } from "./community/action-composer";
 
+/** Community Operations — daily territorial projection, not a life domain. */
+export type {
+  CommunityOperationActionKind,
+  CommunityOperationAction,
+  CommunityOperationsToday,
+  CommunityOperationsContext,
+  TerritoryAnnouncement,
+  TerritoryDailyPulse,
+  LifePlaceOperationsStatus,
+  LifePlaceOperations,
+} from "./community/operations";
+export {
+  COMMUNITY_OPERATION_ACTION_KINDS,
+  LIFE_PLACE_OPERATIONS_STATUSES,
+  emptyCommunityOperationsContext,
+  projectCommunityOperationsContext,
+  communityOperationActionLabel,
+  announcementFromPost,
+  projectTerritoryDailyPulse,
+  personalizeTerritoryDailyPulse,
+  deriveLifePlaceOperations,
+  composerTitleForSource,
+  isOpaqueDailyLifeEntity,
+} from "./community/operations";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

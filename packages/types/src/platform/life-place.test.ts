@@ -55,6 +55,7 @@ describe("Life Place Experience Layer", () => {
     assert.equal(context.id, "loc-pool");
     assert.equal(context.location.name, "Piscina");
     assert.equal(context.currentActivity.length, 0);
+    assert.equal(context.operations?.status, "available");
   });
 
   it("shows live Experience activity and Join", () => {
@@ -80,6 +81,8 @@ describe("Life Place Experience Layer", () => {
       ],
     });
     assert.equal(lifePlaceNowLabel(context), "Aquagym");
+    assert.equal(context.operations?.status, "activity_now");
+    assert.equal(context.operations?.label, "Aquagym");
     assert.equal(lifePlaceAvailabilityLabel(context), "8 plazas disponibles");
     assert.equal(context.actions[0]?.kind, "join_experience");
     assert.equal(context.actions[0]?.href, "/experiences/exp-1");

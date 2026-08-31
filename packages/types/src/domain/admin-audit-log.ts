@@ -17,6 +17,7 @@ export const ADMIN_AUDIT_ACTIONS = [
   "content.hide",
   "content.archive",
   "content.restore",
+  "content.publish",
   "governance.review",
   "governance.safety",
   "territory.assign_asset",

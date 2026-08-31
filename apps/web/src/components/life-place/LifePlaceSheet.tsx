@@ -139,8 +139,19 @@ export function LifePlaceSheet({
 
         <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted)] px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-            Ahora
+            {context.operations?.status === "important_notice"
+              ? "Aviso"
+              : context.operations?.status === "reservation_open"
+                ? "Reserva abierta"
+                : context.operations?.status === "upcoming"
+                  ? "Próximo"
+                  : "Ahora"}
           </p>
+          {context.operations?.status === "important_notice" ? (
+            <p className="mt-1 text-[14px] text-[var(--color-text-secondary)]">
+              {context.operations.label}
+            </p>
+          ) : null}
           {now ? (
             <>
               <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
@@ -169,18 +180,27 @@ export function LifePlaceSheet({
             </>
           ) : (
             <>
-              <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-primary)]">
-                {LIVING_PLACE_EMPTY_TITLE}
-              </p>
-              {onCompose ? (
-                <button
-                  type="button"
-                  onClick={onCompose}
-                  className="ui-press mt-3 rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-on-action)]"
-                >
-                  {LIVING_PLACE_EMPTY_CTA}
-                </button>
-              ) : null}
+              {context.operations &&
+              context.operations.status !== "available" ? (
+                <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
+                  {context.operations.label}
+                </p>
+              ) : (
+                <>
+                  <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-primary)]">
+                    {LIVING_PLACE_EMPTY_TITLE}
+                  </p>
+                  {onCompose ? (
+                    <button
+                      type="button"
+                      onClick={onCompose}
+                      className="ui-press mt-3 rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-on-action)]"
+                    >
+                      {LIVING_PLACE_EMPTY_CTA}
+                    </button>
+                  ) : null}
+                </>
+              )}
             </>
           )}
         </section>

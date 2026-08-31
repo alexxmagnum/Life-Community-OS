@@ -6,6 +6,8 @@ import {
 import type { Location } from "../domain/location";
 import type { ReservationContext } from "../domain/reservation-context";
 import type { MediaReference } from "./files";
+import type { LifePlaceOperations } from "../community/operations";
+import { deriveLifePlaceOperations } from "../community/operations";
 
 /**
  * Life Place Experience Layer — read projection over a Location.
@@ -99,6 +101,7 @@ export type LifePlaceContext = {
   business?: LifePlaceBusinessSummary;
   nearbyProfessionals?: LifePlaceBusinessSummary[];
   nearbyHelp?: LifePlaceHelpSummary[];
+  operations?: LifePlaceOperations;
   actions: LifePlaceAction[];
   community?: LifePlaceCommunityView;
   cover?: MediaReference;
@@ -293,6 +296,7 @@ export function createLifePlaceContext(input: {
   community?: LifePlaceCommunityView;
   cover?: MediaReference;
   canCreateActivity?: boolean;
+  importantNotice?: string;
 }): LifePlaceContext {
   const tenantId = input.tenantId.trim();
   const territoryId = input.territoryId.trim();
@@ -320,6 +324,12 @@ export function createLifePlaceContext(input: {
       ? { nearbyProfessionals: [...input.nearbyProfessionals] }
       : {}),
     ...(input.nearbyHelp?.length ? { nearbyHelp: [...input.nearbyHelp] } : {}),
+    operations: deriveLifePlaceOperations({
+      currentActivity,
+      experiences,
+      reservations,
+      importantNotice: input.importantNotice,
+    }),
     actions: buildLifePlaceActions({
       location: locationView,
       currentActivity,

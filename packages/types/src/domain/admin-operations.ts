@@ -23,12 +23,14 @@ export type AdminOperationsSection =
   | "marketplace"
   | "moderation"
   | "territory"
-  | "settings";
+  | "settings"
+  | "operations";
 
 export const ADMIN_SECTION_ROLES: Readonly<
   Record<AdminOperationsSection, readonly MembershipRole[]>
 > = {
   dashboard: ["group_manager", "moderator", "administrator"],
+  operations: ["moderator", "administrator"],
   community: ["moderator", "administrator"],
   members: ["administrator"],
   businesses: ["moderator", "administrator"],

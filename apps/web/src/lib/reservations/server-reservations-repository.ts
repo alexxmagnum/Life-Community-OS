@@ -1045,7 +1045,7 @@ export async function createReservationServer(input: {
   let capacity = 1;
   let requiresApproval = false;
 
-  if (context.type === "resource" || context.type === "service") {
+  if (context.type === "resource") {
     resource = store.resources.find((item) => item.id === context.id);
     if (!resource || resource.tenantId !== slug) {
       throw new Error("resource_not_found");
@@ -1095,6 +1095,38 @@ export async function createReservationServer(input: {
           throw new Error("slot_unavailable");
         }
       }
+    }
+  } else if (context.type === "service") {
+    resource = store.resources.find((item) => item.id === context.id);
+    if (resource && resource.tenantId === slug) {
+      assertSameTerritory(stampTerritory, resource.territoryId);
+      if (!resourceIsBookable(resource)) {
+        throw new Error("resource_not_bookable");
+      }
+      inheritedTerritory = resource.territoryId ?? stampTerritory;
+      displayName = resource.name;
+      location = resource.location;
+      areaLabel = resource.areaLabel;
+      imageUrl = resource.images?.[0] ?? resource.imageUrl;
+      requiresApproval = Boolean(resource.requiresApproval);
+      if (!date || !start || !end) {
+        throw new Error("invalid_input");
+      }
+      capacity = slotCapacity(store, resource, date, start, end);
+      const used = usedCapacity(store, resource.id, date, start, end);
+      const count =
+        typeof input.participantCount === "number" && input.participantCount > 0
+          ? input.participantCount
+          : 1;
+      if (used + count > capacity) {
+        throw new Error("slot_unavailable");
+      }
+    } else {
+      if (!date || !start || !end) {
+        throw new Error("invalid_input");
+      }
+      displayName = "Servicio local";
+      inheritedTerritory = stampTerritory;
     }
   } else if (context.type === "experience") {
     const { getExperienceServer } = await import(
