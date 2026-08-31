@@ -7,24 +7,30 @@ import {
   AppMenuSheet,
   CommunityAppHeader,
   CreatePostSheet,
-  CreateSheet,
   EmptyState,
   type AppMenuCategory,
   type CreateAction,
-  type CreateActionSection,
   type NavItem,
   type NavItemId,
 } from "@life-community-os/ui";
 import {
   bindProjectedNavigation,
+  CommunityActionRegistry,
+  communityCreationRoute,
   projectPlatformNavigation,
+  type CommunityCreationContext,
 } from "@life-community-os/types";
 import { requireTenantPack } from "@/lib/tenant/registry";
-import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { BrandSplash } from "@/components/BrandSplash";
+import { ActionComposer } from "@/components/community/ActionComposer";
+import {
+  ACTION_COMPOSER_EVENT,
+  type ActionComposerDetail,
+} from "@/lib/community/action-composer-client";
 import { useNotifications } from "@/providers/NotificationProvider";
 
 function IconHome() {
@@ -175,12 +181,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
     isModuleEnabled,
     isProductCapabilityEnabled,
     configuration,
+    productCapabilities,
   } = useTenant();
   const { currentUser, sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const { unreadCount } = useNotifications();
   const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
+  const [composeContext, setComposeContext] = useState<CommunityCreationContext>(
+    {},
+  );
   const [postOpen, setPostOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -251,137 +261,34 @@ export function MemberShell({ children }: { children: ReactNode }) {
   ]);
 
   /**
-   * Contribution entry (+) — only actions that complete a real flow.
-   * Fake / toast-only actions are omitted (trust foundation).
+   * Contribution entry (+) — domain create actions only.
+   * Register / onboarding / reserve / report stay on their own screens.
    */
-  const createSections = useMemo((): CreateActionSection[] => {
-    const life: CreateAction[] = [];
-    const share: CreateAction[] = [];
-    const practical: CreateAction[] = [];
+  const createActions = useMemo((): CreateAction[] => {
+    if (!currentUser.hasMembership) return [];
+    return CommunityActionRegistry.list({
+      hasMembership: currentUser.hasMembership,
+      capabilities: currentUser.permissions,
+      productCapabilities,
+      territoryId: activeTerritory.territoryId,
+    }).map((action) => ({
+      id: action.id,
+      title: action.title,
+      description: action.description,
+      icon: action.icon,
+      onSelect: () =>
+        router.push(communityCreationRoute(action, composeContext)),
+    }));
+  }, [
+    activeTerritory.territoryId,
+    composeContext,
+    currentUser.hasMembership,
+    currentUser.permissions,
+    productCapabilities,
+    router,
+  ]);
 
-    if (
-      isModuleEnabled("experiences") &&
-      hasCapability(CAPABILITIES.experienceCreate)
-    ) {
-      life.push({
-        id: "experience",
-        title: "Crear experiencia",
-        description: "Organiza un paseo, clase o encuentro",
-        icon: "✨",
-        onSelect: () => router.push("/experiences/create"),
-      });
-    }
-
-    if (
-      isFeatureEnabled("feed") &&
-      hasCapability(CAPABILITIES.contentCreate)
-    ) {
-      share.push({
-        id: "post",
-        title: "Compartir en la comunidad",
-        description: "Información útil para tus vecinos",
-        icon: "📢",
-        onSelect: () => setPostOpen(true),
-      });
-    }
-
-    if (isModuleEnabled("services") && isFeatureEnabled("work")) {
-      share.push({
-        id: "work-post",
-        title: "Publicar en Trabajo",
-        description: "Busco trabajo u ofrezco un trabajo cerca",
-        icon: "💼",
-        onSelect: () => router.push("/services/work/create"),
-      });
-    }
-
-    if (
-      isModuleEnabled("marketplace") &&
-      isProductCapabilityEnabled("marketplace") &&
-      isFeatureEnabled("marketplace") &&
-      hasCapability(CAPABILITIES.marketplaceCreate)
-    ) {
-      share.push({
-        id: "neighbour-help",
-        title: "Pedir u ofrecer ayuda",
-        description: "Una mano entre vecinos",
-        icon: "🤝",
-        onSelect: () => router.push("/marketplace/create?kind=request"),
-      });
-      practical.push({
-        id: "marketplace",
-        title: "Compra y venta",
-        description: "Vende, regala o pide entre vecinos",
-        icon: "🛒",
-        onSelect: () => router.push("/marketplace/create"),
-      });
-    }
-
-    if (
-      isModuleEnabled("reservations") &&
-      hasCapability(CAPABILITIES.resourceReserve)
-    ) {
-      practical.push({
-        id: "reserve",
-        title: "Reservar un espacio",
-        description: "Pistas, salas y zonas compartidas",
-        icon: "📅",
-        onSelect: () => router.push("/resources"),
-      });
-    }
-
-    if (
-      isFeatureEnabled("incidents") &&
-      hasCapability(CAPABILITIES.incidentCreate)
-    ) {
-      practical.push({
-        id: "report",
-        title: "Avisar de un problema",
-        description: "Haz una foto y cuéntanos",
-        icon: "⚠️",
-        onSelect: () => router.push("/report"),
-      });
-    }
-
-    if (
-      isModuleEnabled("lifeMap") &&
-      isFeatureEnabled("lifeMap") &&
-      isProductCapabilityEnabled("lifeMap")
-    ) {
-      practical.push({
-        id: "register-business",
-        title: "Registrar negocio",
-        description: "Dirección real → aparece en el mapa",
-        icon: "📍",
-        onSelect: () => router.push("/business/register"),
-      });
-    }
-
-    const sections: CreateActionSection[] = [];
-    if (life.length) {
-      sections.push({
-        id: "life",
-        title: "Crear vida de comunidad",
-        actions: life,
-      });
-    }
-    if (share.length) {
-      sections.push({ id: "share", title: "Compartir valor", actions: share });
-    }
-    if (practical.length) {
-      sections.push({
-        id: "practical",
-        title: "Acciones prácticas",
-        actions: practical,
-      });
-    }
-    return sections;
-  }, [hasCapability, isFeatureEnabled, isModuleEnabled, isProductCapabilityEnabled, router]);
-
-  const createActionCount = createSections.reduce(
-    (n, s) => n + s.actions.length,
-    0,
-  );
+  const createActionCount = createActions.length;
 
   const navItems = useMemo(
     () =>
@@ -397,12 +304,19 @@ export function MemberShell({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    const openCreate = () => setCreateOpen(true);
+    const openCreate = (event: Event) => {
+      const detail = (event as CustomEvent<ActionComposerDetail>).detail;
+      setComposeContext({
+        locationId: detail?.locationId,
+        locationName: detail?.locationName,
+      });
+      setCreateOpen(true);
+    };
     const openPost = () => setPostOpen(true);
-    window.addEventListener("lcos:open-create", openCreate);
+    window.addEventListener(ACTION_COMPOSER_EVENT, openCreate);
     window.addEventListener("lcos:open-post", openPost);
     return () => {
-      window.removeEventListener("lcos:open-create", openCreate);
+      window.removeEventListener(ACTION_COMPOSER_EVENT, openCreate);
       window.removeEventListener("lcos:open-post", openPost);
     };
   }, []);
@@ -425,12 +339,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
         flushTop={isHome}
         onNavigate={(item) => {
           if (item.id === "create") {
+            setComposeContext({});
             setCreateOpen(true);
             return;
           }
           router.push(item.href);
         }}
-        onCreate={() => setCreateOpen(true)}
+        onCreate={() => {
+          setComposeContext({});
+          setCreateOpen(true);
+        }}
         showCreateFab={false}
         navNotice={
           navAlert ? (
@@ -506,10 +424,13 @@ export function MemberShell({ children }: { children: ReactNode }) {
         categories={menuCategories}
         searchPlaceholder={`Buscar en ${brandName}`}
       />
-      <CreateSheet
+      <ActionComposer
         open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        sections={createSections}
+        onClose={() => {
+          setCreateOpen(false);
+          setComposeContext({});
+        }}
+        actions={createActions}
       />
       <CreatePostSheet
         open={postOpen}

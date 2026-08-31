@@ -46,6 +46,23 @@ export {
   lifeMapContextsFromFeed,
 } from "./community/community-feed";
 
+/** Action Composer — intention layer, not a creation domain. */
+export type {
+  CommunityCreationActionType,
+  CommunityCreationAction,
+  CommunityCreationContext,
+  CommunityActionRegistryInput,
+} from "./community/action-composer";
+export {
+  COMMUNITY_CREATION_ACTION_TYPES,
+  COMMUNITY_CREATION_ACTIONS,
+  isCommunityCreationActionType,
+  communityCreationRoute,
+  isCommunityCreationActionAvailable,
+  listCommunityCreationActions,
+  CommunityActionRegistry,
+} from "./community/action-composer";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,

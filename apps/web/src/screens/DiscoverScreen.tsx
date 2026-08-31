@@ -32,6 +32,7 @@ import {
 import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import { fetchCommunityFeed } from "@/lib/community/community-client";
+import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -387,6 +388,20 @@ export function DiscoverScreen() {
           ) : null}
         </div>
       )}
+      {authenticated && hasMembership ? (
+        <button
+          type="button"
+          onClick={() => openActionComposer()}
+          className="mt-8 w-full rounded-[16px] border border-[var(--color-border-subtle)] px-4 py-3 text-left"
+        >
+          <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+            ¿Quieres crear algo aquí?
+          </span>
+          <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
+            Organiza, pide ayuda o comparte con tu comunidad.
+          </span>
+        </button>
+      ) : null}
       <LifePlaceHost
         tenantId={configuration.tenantId}
         locationId={placeLocationId}

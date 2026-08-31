@@ -34,7 +34,7 @@ export function CreateSheet({
   onClose,
   actions = [],
   sections,
-  title = "¿Qué aportas?",
+  title = "Crear en comunidad",
 }: CreateSheetProps) {
   if (!open) return null;
 
@@ -71,7 +71,7 @@ export function CreateSheet({
           {title}
         </h2>
         <p className="mt-1 px-1 text-[14px] leading-snug text-[var(--color-text-secondary)]">
-          Comparte algo útil con tu comunidad
+          ¿Qué quieres aportar a tu comunidad?
         </p>
 
         {totalActions === 0 ? (

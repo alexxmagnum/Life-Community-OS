@@ -17,12 +17,14 @@ export type LifePlaceSheetProps = {
   context: LifePlaceContext;
   onAction: (action: LifePlaceAction) => void;
   onClose: () => void;
+  onCompose?: () => void;
 };
 
 export function LifePlaceSheet({
   context,
   onAction,
   onClose,
+  onCompose,
 }: LifePlaceSheetProps) {
   const now = lifePlaceNowLabel(context);
   const availability = lifePlaceAvailabilityLabel(context);
@@ -85,6 +87,16 @@ export function LifePlaceSheet({
               </p>
             ) : null}
           </div>
+        ) : null}
+
+        {onCompose ? (
+          <button
+            type="button"
+            onClick={onCompose}
+            className="mt-4 text-[13px] font-medium text-[var(--color-action-primary)] underline-offset-2 hover:underline"
+          >
+            Crear algo aquí
+          </button>
         ) : null}
 
         {context.actions.length > 0 ? (

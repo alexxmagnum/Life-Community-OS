@@ -99,7 +99,6 @@ export async function POST(request: Request) {
 
   let body: {
     tenantId?: string;
-    territoryId?: string;
     title?: string;
     description?: string;
     category?: string;
@@ -139,7 +138,6 @@ export async function POST(request: Request) {
   const territory = resolveActiveTerritoryContext({
     tenantId: bound.tenantId,
     actorTerritoryId: gated.actor.territoryId,
-    queryTerritoryId: body.territoryId,
   });
   if ("error" in territory) return territory.error;
   const { persistenceScopeFromRequest } = await import(

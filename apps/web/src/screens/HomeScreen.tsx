@@ -28,6 +28,7 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { getCommunityExperienceFeed } from "@/lib/community/community-client";
+import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
@@ -338,7 +339,7 @@ export function HomeScreen() {
               }
               onAction={
                 canExperiences && hasCapability(CAPABILITIES.experienceCreate)
-                  ? () => router.push("/experiences/create")
+                  ? () => openActionComposer()
                   : undefined
               }
             />

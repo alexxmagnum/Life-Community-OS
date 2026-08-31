@@ -1,21 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  getExplorerActivityBySlug,
-  listExplorerActivityHubs,
-} from "@life-community-os/tenant-life-panoramica";
+import { listExplorerActivityHubs } from "@life-community-os/tenant-life-panoramica";
 import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
-import { createResourceRequest } from "@/lib/reservations/reservations-client";
+import { createExperienceRequest } from "@/lib/experiences/experience-client";
+import { getLocation } from "@/lib/location";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
-import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 
 function toDateInputValue(d = new Date()): string {
@@ -31,19 +28,20 @@ function combineLocalDateTime(date: string, time: string): string {
 }
 
 /**
- * Resident create-experience flow — activity Resource + Reservation join.
+ * Resident create-experience flow — Experience Domain.
+ * Location may be preselected from Life Place / Life Map. Territory is server-stamped.
  */
 export function CreateExperienceScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, isFeatureEnabled, hasCapability, tenantSlug } =
-    useTenant();
+  const { isFeatureEnabled, hasCapability, tenantSlug } = useTenant();
   const { currentUser } = useCurrentUser();
-  const { join } = useExperienceParticipation();
-  const { resources, refresh } = useReservations();
+  const { resources } = useReservations();
 
   const hubs = listExplorerActivityHubs();
   const initialActivity = searchParams.get("activity") ?? "";
+  const locationId = searchParams.get("locationId")?.trim() ?? "";
+  const locationNameParam = searchParams.get("locationName")?.trim() ?? "";
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -53,15 +51,29 @@ export function CreateExperienceScreen() {
   const [date, setDate] = useState(toDateInputValue());
   const [startTime, setStartTime] = useState("10:00");
   const [endTime, setEndTime] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState(locationNameParam);
   const [resourceId, setResourceId] = useState("");
   const [capacity, setCapacity] = useState("8");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const linkedResources = useMemo(() => {
-    return resources.filter((item) => item.category !== "activity");
-  }, [resources]);
+    const rows = resources.filter((item) => item.category !== "activity");
+    if (!locationId) return rows;
+    const atPlace = rows.filter((item) => item.locationId === locationId);
+    return atPlace.length > 0 ? atPlace : rows;
+  }, [resources, locationId]);
+
+  useEffect(() => {
+    if (!locationId) return;
+    const loc = getLocation(tenantSlug, locationId);
+    if (loc?.name && !location.trim()) setLocation(loc.name);
+    const match = linkedResources.find((item) => item.locationId === locationId);
+    if (match && !resourceId) {
+      setResourceId(match.id);
+      if (!location.trim()) setLocation(match.location);
+    }
+  }, [locationId, tenantSlug, linkedResources, location, resourceId]);
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -129,25 +141,22 @@ export function CreateExperienceScreen() {
     }
 
     const hub = activitySlug
-      ? getExplorerActivityBySlug(activitySlug)
+      ? hubs.find((item) => item.slug === activitySlug)
       : undefined;
 
     setSubmitting(true);
     void (async () => {
-      const result = await createResourceRequest({
+      const result = await createExperienceRequest({
         tenantId: tenantSlug,
-        name: trimmedTitle,
+        title: trimmedTitle,
         description: trimmedDescription,
-        category: "activity",
+        category: hub?.slug || activitySlug || undefined,
+        startsAt,
+        endsAt,
         location: trimmedLocation,
-        areaLabel: theme.identity?.defaultAreaName,
-        images: hub?.imageUrl ? [hub.imageUrl] : [],
+        resourceId: resourceId || undefined,
         capacity: cap,
-        linkedResourceId: resourceId || undefined,
-        scheduleStartsAt: startsAt,
-        scheduleEndsAt: endsAt,
-        organizerName:
-          currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino",
+        publishToCommunity: true,
       });
       if ("error" in result) {
         setError(
@@ -158,9 +167,7 @@ export function CreateExperienceScreen() {
         setSubmitting(false);
         return;
       }
-      await refresh();
-      await join(result.resource.id, { reminders: true });
-      router.push(`/experiences/${result.resource.id}`);
+      router.push(`/experiences/${result.experience.id}`);
     })();
   };
 

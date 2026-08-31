@@ -232,7 +232,7 @@ export function buildLifePlaceActions(input: {
     push({
       kind: "create_activity",
       label: "Proponer un plan",
-      href: "/experiences/create",
+      href: `/experiences/create?locationId=${encodeURIComponent(input.location.id)}`,
     });
   }
 

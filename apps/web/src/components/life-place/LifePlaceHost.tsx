@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LifePlaceAction, LifePlaceContext } from "@life-community-os/types";
 import { fetchLifePlace } from "@/lib/life-place/life-place-client";
+import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LifePlaceSheet } from "./LifePlaceSheet";
 
 export type LifePlaceHostProps = {
@@ -47,6 +48,16 @@ export function LifePlaceHost({
   };
 
   return (
-    <LifePlaceSheet context={context} onAction={onAction} onClose={onClose} />
+    <LifePlaceSheet
+      context={context}
+      onAction={onAction}
+      onClose={onClose}
+      onCompose={() =>
+        openActionComposer({
+          locationId: context.location.id,
+          locationName: context.location.name,
+        })
+      }
+    />
   );
 }
