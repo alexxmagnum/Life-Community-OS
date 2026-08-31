@@ -260,10 +260,13 @@ const BAND_ORDER: Record<CommunityFeedRankBand, number> = {
  * Never sort by id, seed, or pack priority.
  */
 /** Empty community copy — invitation, never a catalog gap. */
-export const LIVING_EMPTY_TITLE = "Todavía no hay planes aquí";
+export const LIVING_EMPTY_TITLE = "Todavía no ocurre nada aquí";
 export const LIVING_EMPTY_DESCRIPTION =
   "Sé el primero en aportar algo a tu comunidad.";
-export const LIVING_EMPTY_CTA = "Crear el primero";
+export const LIVING_EMPTY_CTA = "Crear el primer plan";
+export const LIVING_PLACE_EMPTY_TITLE =
+  "Este lugar está esperando su primera historia.";
+export const LIVING_PLACE_EMPTY_CTA = "Crear algo aquí";
 
 export function isHelpFeedItem(item: CommunityFeedItem): boolean {
   return item.metadata?.domain === "help";
@@ -347,6 +350,40 @@ export function partitionLivingCommunityFeed(
     (item) => communityFeedRankBand(item, now) !== "now",
   );
   return { now: nowItems, upcoming, help, moments };
+}
+
+export const LIVING_FEED_CARD_STATES = [
+  "upcoming",
+  "active",
+  "full",
+  "ended",
+] as const;
+
+export type LivingFeedCardState = (typeof LIVING_FEED_CARD_STATES)[number];
+
+export function livingFeedCardState(
+  item: CommunityFeedItem,
+  now = Date.now(),
+): LivingFeedCardState {
+  const end = endMs(item);
+  if (Number.isFinite(end) && end < now) return "ended";
+  if (item.capacity && item.capacity.available <= 0) return "full";
+  const band = communityFeedRankBand(item, now);
+  if (band === "now") return "active";
+  return "upcoming";
+}
+
+export function livingFeedCardStateLabel(state: LivingFeedCardState): string {
+  switch (state) {
+    case "active":
+      return "Ahora";
+    case "full":
+      return "Completo";
+    case "ended":
+      return "Finalizado";
+    default:
+      return "Próximo";
+  }
 }
 
 export function sortCommunityFeedItems(

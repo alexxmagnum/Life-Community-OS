@@ -34,6 +34,7 @@ export function ActionComposer({
       sections={sections}
       title="¿Qué quieres aportar?"
       contextLine={place ? `En ${place}` : undefined}
+      subtitle="Comparte algo que haga mejor tu comunidad"
     />
   );
 }

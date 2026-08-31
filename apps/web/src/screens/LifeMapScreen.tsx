@@ -537,7 +537,7 @@ export function LifeMapScreen() {
               : "Prueba otro filtro o búsqueda."}
           </p>
         ) : (
-          <ul className="mt-2 divide-y divide-[var(--color-border-subtle)]">
+          <ul className="mt-2 space-y-2">
             {filteredLocations.map((location) => {
               const live = livingContext.locations.find(
                 (item) => item.id === location.id,
@@ -550,12 +550,12 @@ export function LifeMapScreen() {
               <li key={location.id}>
                 <button
                   type="button"
-                  className="ui-press w-full py-3 text-left"
+                  className="ui-press ui-lift w-full rounded-[18px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-3.5 py-3 text-left shadow-[var(--shadow-elev-1)]"
                   onClick={() => {
                     setSelectedObjectId(location.id);
                   }}
                 >
-                  <p className="text-[15px] font-medium text-[var(--color-text-primary)]">
+                  <p className="text-[15px] font-semibold text-[var(--color-text-primary)]">
                     {location.name}
                   </p>
                   {lead ? (
@@ -566,8 +566,8 @@ export function LifeMapScreen() {
                   <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
                     {socialLabel || locationCategoryLabel(location.category)}
                   </p>
-                  <span className="mt-1 inline-block text-[13px] font-semibold text-[var(--color-action-primary)]">
-                    Ver
+                  <span className="mt-1.5 inline-block text-[13px] font-semibold text-[var(--color-action-primary)]">
+                    Abrir lugar
                   </span>
                 </button>
               </li>

@@ -8,12 +8,14 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  imageUrl,
   className,
 }: {
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  imageUrl?: string;
   className?: string;
 }) {
   return (
@@ -23,6 +25,13 @@ export function EmptyState({
         className,
       )}
     >
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className="mb-4 h-20 w-20 object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.18)]"
+        />
+      ) : null}
       <p className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
         {title}
       </p>

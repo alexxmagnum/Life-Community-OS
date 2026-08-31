@@ -29,6 +29,7 @@ export function LifePlaceHost({
       return;
     }
     let cancelled = false;
+    setContext(null);
     void fetchLifePlace({ tenantId, locationId, territoryId }).then((data) => {
       if (!cancelled) setContext(data);
     });
@@ -37,7 +38,7 @@ export function LifePlaceHost({
     };
   }, [tenantId, locationId, territoryId]);
 
-  if (!locationId || !context) return null;
+  if (!locationId) return null;
 
   const onAction = (action: LifePlaceAction) => {
     if (action.kind === "contact") {
@@ -48,17 +49,40 @@ export function LifePlaceHost({
   };
 
   return (
-    <LifePlaceSheet
-      context={context}
-      onAction={onAction}
-      onClose={onClose}
-      onCompose={() =>
-        openActionComposer({
-          source: "life_place",
-          locationId: context.location.id,
-          locationName: context.location.name,
-        })
-      }
-    />
+    <div className="fixed inset-0 z-[45] flex items-end justify-center md:items-center">
+      <button
+        type="button"
+        className="ui-fade ui-backdrop absolute inset-0"
+        aria-label="Cerrar"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-md px-3 pb-[calc(88px+env(safe-area-inset-bottom))] md:pb-6">
+        {context ? (
+          <LifePlaceSheet
+            context={context}
+            onAction={onAction}
+            onClose={onClose}
+            onCompose={() =>
+              openActionComposer({
+                source: "life_place",
+                locationId: context.location.id,
+                locationName: context.location.name,
+              })
+            }
+          />
+        ) : (
+          <div
+            className="ui-sheet overflow-hidden rounded-[20px] bg-[var(--color-surface-elevated)] p-4 shadow-[var(--shadow-elev-2)]"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="sr-only">Cargando el lugar</span>
+            <div className="h-28 animate-pulse rounded-[16px] bg-[var(--color-surface-muted)]" />
+            <div className="mt-3 h-4 w-1/2 animate-pulse rounded bg-[var(--color-surface-muted)]" />
+            <div className="mt-2 h-4 w-2/3 animate-pulse rounded bg-[var(--color-surface-muted)]" />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

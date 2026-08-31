@@ -13,8 +13,66 @@
   outline-offset: 2px;
 }
 
-.ui-press:active:not(:disabled):not([aria-disabled="true"]) {
+  .ui-press:active:not(:disabled):not([aria-disabled="true"]) {
   transform: scale(0.98);
+}
+
+/* ── FAB: Magic Plus — 140–220ms, hover lift, press 0.96 ────────────── */
+.ui-fab {
+  transition:
+    transform var(--motion-base) var(--motion-easing),
+    box-shadow var(--motion-base) var(--motion-easing);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ui-fab:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(8, 12, 16, 0.46);
+  }
+}
+
+.ui-fab:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.ui-fab:focus-visible {
+  outline: 2px solid var(--color-action-primary);
+  outline-offset: 3px;
+}
+
+/* ── Sheet: invitation panel, not a menu ─────────────────────────── */
+@keyframes ui-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ui-sheet {
+  animation: ui-sheet-in var(--motion-base) var(--motion-easing) both;
+}
+
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.ui-fade {
+  animation: ui-fade-in var(--motion-base) var(--motion-easing) both;
+}
+
+.ui-backdrop {
+  background: rgba(6, 10, 14, 0.46);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* ── Lift: subtle elevate (shared fast timing with press) ──────────── */
@@ -110,15 +168,25 @@
   .ui-lift:active:not(:disabled):not([aria-disabled="true"]),
   .ui-press:hover .ui-lift,
   .ui-press:focus-visible .ui-lift,
-  .ui-press:active .ui-lift {
+  .ui-press:active .ui-lift,
+  .ui-fab:hover,
+  .ui-fab:active:not(:disabled) {
     transform: none;
+    box-shadow: none;
   }
 
   .ui-pop,
-  .ui-stagger-item {
+  .ui-stagger-item,
+  .ui-sheet,
+  .ui-fade {
     animation: none !important;
     animation-delay: 0ms !important;
     opacity: 1;
     transform: none;
+  }
+
+  .ui-backdrop {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }

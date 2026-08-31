@@ -33,6 +33,7 @@ import {
   inferCreationSource,
   type ActionComposerDetail,
 } from "@/lib/community/action-composer-client";
+import { COMPOSER_GLYPH_BY_ACTION } from "@/lib/community/composer-glyphs";
 import { useNotifications } from "@/providers/NotificationProvider";
 
 function IconHome() {
@@ -265,7 +266,15 @@ export function MemberShell({ children }: { children: ReactNode }) {
       id: action.id,
       title: action.title,
       description: action.description,
-      icon: action.icon,
+      icon: COMPOSER_GLYPH_BY_ACTION[action.id] ? (
+        <img
+          src={COMPOSER_GLYPH_BY_ACTION[action.id]}
+          alt=""
+          className="h-10 w-10 object-contain"
+        />
+      ) : (
+        action.icon
+      ),
       onSelect: () =>
         router.push(communityCreationRoute(action, composeContext)),
     }));

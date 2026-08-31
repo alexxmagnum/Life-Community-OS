@@ -6,14 +6,15 @@
  */
 
 import {
-  LIVING_EMPTY_CTA,
-  LIVING_EMPTY_TITLE,
+  LIVING_PLACE_EMPTY_CTA,
+  LIVING_PLACE_EMPTY_TITLE,
   lifePlaceActionLabel,
   lifePlaceAvailabilityLabel,
   lifePlaceNowLabel,
   type LifePlaceAction,
   type LifePlaceContext,
 } from "@life-community-os/types";
+import { LIVING_PLACE_GLYPH } from "@/lib/community/composer-glyphs";
 
 export type LifePlaceSheetProps = {
   context: LifePlaceContext;
@@ -30,7 +31,9 @@ export function LifePlaceSheet({
 }: LifePlaceSheetProps) {
   const now = lifePlaceNowLabel(context);
   const availability = lifePlaceAvailabilityLabel(context);
-  const when = formatLifePlaceWhen(context.currentActivity[0]?.startsAt);
+  const lead = context.currentActivity[0];
+  const when = formatLifePlaceWhen(lead?.startsAt);
+  const identityImage = lead?.metadata?.imageUrl?.trim();
   const facilities = context.resources.map((item) => item.name);
   const upcoming = context.experiences.slice(0, 6);
   const joinOrReserve = context.actions.filter(
@@ -49,41 +52,46 @@ export function LifePlaceSheet({
 
   return (
     <aside
-      className="ui-pop mt-4 overflow-hidden rounded-[20px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] shadow-[0_16px_48px_rgba(28,24,18,0.12)]"
+      className="ui-sheet overflow-hidden rounded-[22px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-2)]"
       aria-label="Qué puedo hacer aquí"
     >
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
-              {context.location.category}
-            </p>
-            <h2 className="mt-1 text-[20px] font-semibold leading-tight text-[var(--color-text-primary)]">
-              {context.location.name}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 text-[13px] text-[var(--color-text-tertiary)] underline-offset-2 hover:underline"
-          >
-            Cerrar
-          </button>
-        </div>
-
-        {context.location.address ? (
-          <p className="mt-2 text-[13px] leading-snug text-[var(--color-text-tertiary)]">
-            {context.location.address}
-          </p>
+      <div className="relative h-36 overflow-hidden bg-[var(--color-surface-muted)]">
+        <img
+          src={identityImage || LIVING_PLACE_GLYPH}
+          alt=""
+          className={
+            identityImage
+              ? "h-full w-full object-cover"
+              : "absolute bottom-3 right-4 h-20 w-20 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.25)]"
+          }
+        />
+        {identityImage ? (
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-surface-elevated)] via-transparent to-black/20" />
         ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 rounded-full bg-black/35 px-3 py-1 text-[13px] font-medium text-white backdrop-blur-[6px]"
+        >
+          Cerrar
+        </button>
+      </div>
 
-        <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted,rgba(28,24,18,0.04))] px-3 py-2.5">
+      <div className="p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
+          {context.location.category}
+        </p>
+        <h2 className="mt-1 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-tight text-[var(--color-text-primary)]">
+          {context.location.name}
+        </h2>
+
+        <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted)] px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
             Ahora
           </p>
           {now ? (
             <>
-              <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
+              <p className="mt-1 text-[17px] font-semibold text-[var(--color-text-primary)]">
                 {now}
               </p>
               {when ? (
@@ -92,27 +100,27 @@ export function LifePlaceSheet({
                 </p>
               ) : null}
               {context.community ? (
-                <p className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
+                <p className="mt-1 text-[14px] text-[var(--color-text-secondary)]">
                   {context.community.label}
                 </p>
               ) : availability ? (
-                <p className="mt-0.5 text-[13px] text-[var(--color-text-tertiary)]">
+                <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                   {availability}
                 </p>
               ) : null}
             </>
           ) : (
             <>
-              <p className="mt-1 text-[15px] font-medium text-[var(--color-text-primary)]">
-                {LIVING_EMPTY_TITLE}
+              <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-primary)]">
+                {LIVING_PLACE_EMPTY_TITLE}
               </p>
               {onCompose ? (
                 <button
                   type="button"
                   onClick={onCompose}
-                  className="mt-2 text-[13px] font-semibold text-[var(--color-action-primary)]"
+                  className="ui-press mt-3 rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-on-action)]"
                 >
-                  {LIVING_EMPTY_CTA}
+                  {LIVING_PLACE_EMPTY_CTA}
                 </button>
               ) : null}
             </>
@@ -121,7 +129,7 @@ export function LifePlaceSheet({
 
         <section className="mt-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-            Qué puedo hacer
+            Acciones
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {joinOrReserve.map((action) => (
@@ -129,16 +137,16 @@ export function LifePlaceSheet({
                 key={`${action.kind}:${action.href}`}
                 type="button"
                 onClick={() => onAction(action)}
-                className="rounded-full bg-[var(--color-action-primary,#1a5c56)] px-3.5 py-1.5 text-[13px] font-medium text-white"
+                className="ui-press rounded-full bg-[var(--color-action-primary)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-on-action)]"
               >
                 {action.label || lifePlaceActionLabel(action.kind)}
               </button>
             ))}
-            {onCompose ? (
+            {onCompose && now ? (
               <button
                 type="button"
                 onClick={onCompose}
-                className="rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-on-action)]"
+                className="ui-press rounded-full border border-[var(--color-border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-primary)]"
               >
                 Crear algo aquí
               </button>
@@ -148,7 +156,7 @@ export function LifePlaceSheet({
                 key={`${action.kind}:${action.href}`}
                 type="button"
                 onClick={() => onAction(action)}
-                className="rounded-full border border-[var(--color-border-subtle)] px-3.5 py-1.5 text-[13px] font-medium text-[var(--color-text-primary)]"
+                className="ui-press rounded-full border border-[var(--color-border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-primary)]"
               >
                 {action.label || lifePlaceActionLabel(action.kind)}
               </button>

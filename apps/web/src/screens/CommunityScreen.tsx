@@ -52,6 +52,7 @@ import {
 import { groupToHubCard } from "@/lib/community/map-to-ui";
 import { LivingFeedCard } from "@/components/community/LivingFeedCard";
 import { openActionComposer } from "@/lib/community/action-composer-client";
+import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 
 const PLAZA_PEEK = 4;
@@ -364,8 +365,8 @@ export function CommunityHubScreen() {
           .filter(Boolean)
           .join(" · ")
       : living.moments.length > 0
-        ? `Hoy en ${communityName}`
-        : `Hoy en ${communityName}`;
+        ? "Lo que está pasando"
+        : LIVING_EMPTY_TITLE;
 
   const visibleChannels = expandChannels
     ? accessibleChannels
@@ -418,7 +419,7 @@ export function CommunityHubScreen() {
             { id: "proximamente", label: "Próximamente" },
             { id: "grupos", label: "Grupos" },
             { id: "ayudas", label: "Ayudas" },
-            { id: "yo", label: "Mis participaciones" },
+            { id: "yo", label: "Mis actividades" },
           ]}
           activeId={
             activeBelongLayer === "grupos"
@@ -487,6 +488,7 @@ export function CommunityHubScreen() {
             <EmptyState
               title={LIVING_EMPTY_TITLE}
               description={LIVING_EMPTY_DESCRIPTION}
+              imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -497,7 +499,6 @@ export function CommunityHubScreen() {
                   key={item.id}
                   item={item}
                   index={index}
-                  fallbackImage=""
                   onOpenPlace={setPlaceLocationId}
                   onOpenHref={(href) => router.push(href)}
                 />
@@ -680,8 +681,9 @@ export function CommunityHubScreen() {
         >
           {groupItems.length === 0 ? (
             <EmptyState
-              title={LIVING_EMPTY_TITLE}
-              description="Crea el primer grupo de tu comunidad."
+              title="Todavía no hay grupos aquí"
+              description="Crea el primero y da un lugar a quienes viven cerca."
+              imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -727,6 +729,7 @@ export function CommunityHubScreen() {
             <EmptyState
               title={LIVING_EMPTY_TITLE}
               description={LIVING_EMPTY_DESCRIPTION}
+              imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -737,7 +740,6 @@ export function CommunityHubScreen() {
                   key={item.id}
                   item={item}
                   index={index}
-                  fallbackImage=""
                   onOpenPlace={setPlaceLocationId}
                   onOpenHref={(href) => router.push(href)}
                 />
@@ -768,6 +770,7 @@ export function CommunityHubScreen() {
             <EmptyState
               title="Todavía no hay ayudas aquí"
               description="Si alguien necesita una mano, aparecerá aquí."
+              imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -778,7 +781,6 @@ export function CommunityHubScreen() {
                   key={item.id}
                   item={item}
                   index={index}
-                  fallbackImage=""
                   onOpenPlace={setPlaceLocationId}
                   onOpenHref={(href) => router.push(href)}
                 />
@@ -790,7 +792,7 @@ export function CommunityHubScreen() {
 
       <section id="plaza-mine" className="scroll-mt-3">
         <HomeSection
-          title="Mis participaciones"
+          title="Mis actividades"
           subtitle="Solo tú ves esto."
         >
           {!ownActivity ||
@@ -801,6 +803,7 @@ export function CommunityHubScreen() {
             <EmptyState
               title="Aún no has participado"
               description="Únete a un plan o crea el primero."
+              imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />

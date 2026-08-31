@@ -122,8 +122,8 @@ export function ProfileScreen() {
   return (
     <MobileScreen dense>
       <ScreenHeader
-        title="Mi perfil"
-        subtitle="Quién eres en la comunidad."
+        title="Mi vida aquí"
+        subtitle="Lo que has creado, en lo que has participado y dónde has ayudado."
       />
 
       <ProfileCard
@@ -166,7 +166,7 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Mis viviendas
+          Mis lugares
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
           Tu relación con el hogar. No mostramos viviendas de otros vecinos.
@@ -231,7 +231,7 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Mi vida comunitaria
+          Lo que has hecho
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
           Solo tú ves esto. No es un muro público.

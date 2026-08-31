@@ -30,6 +30,7 @@ import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import { fetchCommunityFeed } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
+import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { LivingFeedCard } from "@/components/community/LivingFeedCard";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
@@ -193,17 +194,28 @@ export function DiscoverScreen() {
     () => partitionLivingCommunityFeed(feedItems),
     [feedItems],
   );
-  const happening = useMemo(() => {
+  const nowNear = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const rows = [...living.now, ...living.upcoming];
-    if (!q) return rows;
-    return rows.filter(
-      (item) =>
+    return living.now.filter((item) => {
+      if (!q) return true;
+      return (
         item.title.toLowerCase().includes(q) ||
         (item.description ?? "").toLowerCase().includes(q) ||
-        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q),
-    );
-  }, [query, living.now, living.upcoming]);
+        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [living.now, query]);
+  const upcomingPlans = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return living.upcoming.filter((item) => {
+      if (!q) return true;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        (item.description ?? "").toLowerCase().includes(q) ||
+        (item.metadata?.locationLabel ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [living.upcoming, query]);
 
   const groups = useMemo(() => {
     if (!isFeatureEnabled("groups")) return [];
@@ -218,7 +230,7 @@ export function DiscoverScreen() {
     });
   }, [query, isFeatureEnabled, homeMode, persistedGroups]);
 
-  const hasPlans = happening.length > 0 || groups.length > 0;
+  const hasPlans = nowNear.length > 0 || upcomingPlans.length > 0 || groups.length > 0;
   const hasAnything =
     nearYou.length > 0 ||
     neighbourTips.length > 0 ||
@@ -248,6 +260,7 @@ export function DiscoverScreen() {
           description={
             query ? "Prueba con otras palabras." : LIVING_EMPTY_DESCRIPTION
           }
+          imageUrl={query ? undefined : LIVING_EMPTY_GLYPH}
           actionLabel={
             query
               ? "Limpiar búsqueda"
@@ -265,18 +278,36 @@ export function DiscoverScreen() {
         />
       ) : (
         <div className="space-y-10">
-          {happening.length > 0 ? (
+          {nowNear.length > 0 ? (
             <CommunityLifeSection
-              title="Qué ocurre cerca"
-              subtitle="La misma vida que ves en Inicio y en el mapa."
+              title="Ahora cerca"
+              subtitle="Lo que está ocurriendo a tu alrededor."
             >
               <div className="space-y-4">
-                {happening.map((item, index) => (
+                {nowNear.map((item, index) => (
                   <LivingFeedCard
                     key={item.id}
                     item={item}
                     index={index}
-                    fallbackImage=""
+                    onOpenPlace={setPlaceLocationId}
+                    onOpenHref={(href) => router.push(href)}
+                  />
+                ))}
+              </div>
+            </CommunityLifeSection>
+          ) : null}
+
+          {upcomingPlans.length > 0 ? (
+            <CommunityLifeSection
+              title="Planes próximos"
+              subtitle="Momentos que vienen."
+            >
+              <div className="space-y-4">
+                {upcomingPlans.map((item, index) => (
+                  <LivingFeedCard
+                    key={item.id}
+                    item={item}
+                    index={index}
                     onOpenPlace={setPlaceLocationId}
                     onOpenHref={(href) => router.push(href)}
                   />
@@ -287,8 +318,8 @@ export function DiscoverScreen() {
 
           {nearYou.length > 0 ? (
             <CommunityLifeSection
-              title="Qué puedo hacer"
-              subtitle="Lugares de tu territorio. Abre cada uno como Life Place."
+              title="Lugares vivos"
+              subtitle="Abre cada lugar y mira qué ocurre."
             >
               <LocalLifeRail>
                 {nearYou.map((place) => (
@@ -331,8 +362,8 @@ export function DiscoverScreen() {
 
           {groups.length > 0 ? (
             <CommunityLifeSection
-              title="Grupos abiertos"
-              subtitle="Entra y participa."
+              title="Comunidades"
+              subtitle="Grupos donde ya hay vida."
             >
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {groups.map((g) => (
@@ -350,8 +381,8 @@ export function DiscoverScreen() {
 
           {trustedHelp.length > 0 ? (
             <CommunityLifeSection
-              title="Ayuda de confianza"
-              subtitle="Profesionales y negocios locales recomendados."
+              title="Servicios"
+              subtitle="Negocios y ayuda de confianza cerca."
             >
               <LocalLifeRail>
                 {trustedHelp.map((place) => (
@@ -376,7 +407,7 @@ export function DiscoverScreen() {
         <button
           type="button"
           onClick={() => openActionComposer({ source: "discover" })}
-          className="mt-8 w-full rounded-[16px] border border-[var(--color-border-subtle)] px-4 py-3 text-left"
+          className="ui-press ui-lift mt-8 w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
         >
           <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
             Qué puedo aportar

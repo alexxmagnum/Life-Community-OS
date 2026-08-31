@@ -12,6 +12,8 @@ import {
   lifeMapContextFromFeedItem,
   communityFeedLivingLabel,
   communityFeedTimeLabel,
+  livingFeedCardState,
+  livingFeedCardStateLabel,
   partitionLivingCommunityFeed,
   projectExperienceToFeedItem,
   projectResourceToFeedItem,
@@ -212,5 +214,54 @@ describe("Community Experience Feed contract", () => {
     assert.equal(partition.now.some((row) => row.id === yoga.id), true);
     assert.equal(partition.upcoming.some((row) => row.id === padel.id), true);
     assert.equal(partition.help.length, 1);
+  });
+
+  it("living feed card states: upcoming, active, full, ended", () => {
+    const now = Date.parse("2026-08-31T16:30:00.000Z");
+    const active = projectExperienceToFeedItem({
+      id: "exp-aqua",
+      tenantId: PANO,
+      territoryId: PANO_TERRITORY,
+      title: "Aquagym",
+      description: "Piscina",
+      status: "published",
+      startsAt: "2026-08-31T16:00:00.000Z",
+      location: "Piscina",
+      capacity: 10,
+      occupied: 8,
+    });
+    assert.ok(active);
+    assert.equal(livingFeedCardState(active, now), "active");
+    assert.equal(livingFeedCardStateLabel("active"), "Ahora");
+    const upcoming = item({
+      id: "exp-later",
+      title: "Pádel",
+      type: "experience",
+      startsAt: "2026-08-31T18:00:00.000Z",
+      capacity: { total: 4, available: 2 },
+      actions: { primary: "join" },
+    });
+    assert.equal(livingFeedCardState(upcoming, now), "upcoming");
+    assert.equal(livingFeedCardStateLabel("upcoming"), "Próximo");
+    const full = item({
+      id: "exp-full",
+      title: "Yoga",
+      type: "experience",
+      startsAt: "2026-08-31T18:00:00.000Z",
+      capacity: { total: 8, available: 0 },
+      actions: { primary: "join" },
+    });
+    assert.equal(livingFeedCardState(full, now), "full");
+    assert.equal(livingFeedCardStateLabel("full"), "Completo");
+    const ended = item({
+      id: "exp-ended",
+      title: "Natación",
+      type: "experience",
+      startsAt: "2026-08-31T10:00:00.000Z",
+      endsAt: "2026-08-31T11:00:00.000Z",
+      actions: { primary: "view" },
+    });
+    assert.equal(livingFeedCardState(ended, now), "ended");
+    assert.equal(livingFeedCardStateLabel("ended"), "Finalizado");
   });
 });
