@@ -38,6 +38,7 @@ export const MEDIA_ENTITY_TYPES = [
   "profile",
   "resource",
   "experience",
+  "location",
 ] as const;
 
 export type MediaEntityType = (typeof MEDIA_ENTITY_TYPES)[number];

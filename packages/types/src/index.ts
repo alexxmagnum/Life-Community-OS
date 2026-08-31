@@ -75,6 +75,31 @@ export {
   isPackOnlyMapMarker,
 } from "./platform/life-map-living";
 
+/** Life Place Experience Layer — projection over Location, not a domain. */
+export type {
+  LifePlaceActionKind,
+  LifePlaceAction,
+  LifePlaceLocationView,
+  LifePlaceResourceSummary,
+  LifePlaceExperienceSummary,
+  LifePlaceReservationAvailability,
+  LifePlaceBusinessSummary,
+  LifePlaceCommunityView,
+  LifePlaceContext,
+  LifePlaceQueryInput,
+} from "./platform/life-place";
+export {
+  LIFE_PLACE_ACTION_KINDS,
+  isLifePlaceActionKind,
+  lifePlaceActionLabel,
+  contactHref,
+  projectLocationToLifePlaceView,
+  buildLifePlaceActions,
+  createLifePlaceContext,
+  lifePlaceNowLabel,
+  lifePlaceAvailabilityLabel,
+} from "./platform/life-place";
+
 /** Runtime helpers for Location (map SoT). */
 export {
   LOCATION_TYPES,

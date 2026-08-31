@@ -33,6 +33,7 @@ export async function fetchCommunityFeed(
   }
   const res = await fetch(`/api/community/feed?${params.toString()}`, {
     cache: "no-store",
+    credentials: "same-origin",
     headers: { "x-tenant-slug": tenantId },
   });
   if (!res.ok) {

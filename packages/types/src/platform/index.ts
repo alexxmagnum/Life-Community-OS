@@ -452,3 +452,27 @@ export {
   buildLifeMapPlaceSheet,
   isPackOnlyMapMarker,
 } from "./life-map-living";
+
+export type {
+  LifePlaceActionKind,
+  LifePlaceAction,
+  LifePlaceLocationView,
+  LifePlaceResourceSummary,
+  LifePlaceExperienceSummary,
+  LifePlaceReservationAvailability,
+  LifePlaceBusinessSummary,
+  LifePlaceCommunityView,
+  LifePlaceContext,
+  LifePlaceQueryInput,
+} from "./life-place";
+export {
+  LIFE_PLACE_ACTION_KINDS,
+  isLifePlaceActionKind,
+  lifePlaceActionLabel,
+  contactHref,
+  projectLocationToLifePlaceView,
+  buildLifePlaceActions,
+  createLifePlaceContext,
+  lifePlaceNowLabel,
+  lifePlaceAvailabilityLabel,
+} from "./life-place";

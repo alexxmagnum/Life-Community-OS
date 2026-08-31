@@ -27,15 +27,15 @@ import {
   ScreenSearch,
 } from "@life-community-os/ui";
 import {
-  locationFichaHref,
-  resolvePlaceHref,
   useTenantLocations,
 } from "@/lib/location";
 import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
 import { fetchCommunityFeed } from "@/lib/community/community-client";
+import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile, HelpRequest } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 
 /**
@@ -49,7 +49,10 @@ export function DiscoverScreen() {
     hasCapability,
     configuration,
     homeMode,
+    authenticated,
+    hasMembership,
   } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const discoverQuery = discoverQueryFromActive(activeTerritory);
   const experienceQuery = discoverExperienceQuery({
@@ -66,6 +69,7 @@ export function DiscoverScreen() {
   const [trustedHelp, setTrustedHelp] = useState<BusinessProfile[]>([]);
   const [persistedGroups, setPersistedGroups] = useState<CommunityGroupRecord[]>([]);
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
+  const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
@@ -73,12 +77,18 @@ export function DiscoverScreen() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const community = await fetchCommunityFeed(configuration.tenantId, {
-        territoryId: experienceQuery?.territoryId ?? discoverQuery.territoryId,
-      });
-      if (!cancelled) {
-        setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
-        setFeedItems(community.items ?? []);
+      if (!sessionReady) return;
+      if (authenticated && hasMembership) {
+        const community = await fetchCommunityFeed(configuration.tenantId, {
+          territoryId: experienceQuery?.territoryId ?? discoverQuery.territoryId,
+        });
+        if (!cancelled) {
+          setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
+          setFeedItems(community.items ?? []);
+        }
+      } else if (!cancelled) {
+        setPersistedGroups([]);
+        setFeedItems([]);
       }
       if (!canLocal) {
         if (!cancelled) {
@@ -135,6 +145,9 @@ export function DiscoverScreen() {
       cancelled = true;
     };
   }, [
+    sessionReady,
+    authenticated,
+    hasMembership,
     canLocal,
     isFeatureEnabled,
     configuration.tenantId,
@@ -267,15 +280,9 @@ export function DiscoverScreen() {
                     recommendedBy={place.recommendedBy}
                     verified={place.verified}
                     trustNote={place.trustNote}
-                    onClick={() =>
-                      router.push(
-                        place.href ??
-                          resolvePlaceHref({
-                            entityOrLocationId: place.id,
-                            tenantId: configuration.tenantId,
-                          }),
-                      )
-                    }
+                    onClick={() => {
+                      if (place.id) setPlaceLocationId(place.id);
+                    }}
                   />
                 ))}
               </LocalLifeRail>
@@ -326,7 +333,13 @@ export function DiscoverScreen() {
                       }
                       imageUrl={item.metadata?.imageUrl ?? ""}
                       ctaLabel={communityFeedPrimaryLabel(item)}
-                      onClick={() => router.push(lifeMapHrefForFeedItem(item))}
+                      onClick={() => {
+                        if (item.locationId) {
+                          setPlaceLocationId(item.locationId);
+                          return;
+                        }
+                        router.push(lifeMapHrefForFeedItem(item));
+                      }}
                       onCta={() => router.push(communityFeedItemHref(item))}
                     />
                   );
@@ -365,7 +378,7 @@ export function DiscoverScreen() {
                     blurb={place.description}
                     imageUrl={place.imageUrl ?? ""}
                     onClick={() =>
-                      router.push(locationFichaHref(place.locationId))
+                      setPlaceLocationId(place.locationId)
                     }
                   />
                 ))}
@@ -374,6 +387,12 @@ export function DiscoverScreen() {
           ) : null}
         </div>
       )}
+      <LifePlaceHost
+        tenantId={configuration.tenantId}
+        locationId={placeLocationId}
+        territoryId={activeTerritory.territoryId}
+        onClose={() => setPlaceLocationId(null)}
+      />
     </MobileScreen>
   );
 }

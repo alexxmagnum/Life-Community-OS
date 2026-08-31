@@ -28,6 +28,7 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { getCommunityExperienceFeed } from "@/lib/community/community-client";
+import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
@@ -81,8 +82,10 @@ export function HomeScreen() {
     tenantSlug,
     configuration,
     homeMode,
+    authenticated,
+    hasMembership,
   } = useTenant();
-  const { currentUser } = useCurrentUser();
+  const { currentUser, sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const { allLocations } = useTenantLocations(
     configuration.tenantId,
@@ -92,6 +95,7 @@ export function HomeScreen() {
   const homeQuery = territoryHomeQuery(activeTerritory);
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [feedReady, setFeedReady] = useState(false);
+  const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
@@ -130,7 +134,8 @@ export function HomeScreen() {
   useEffect(() => {
     let cancelled = false;
     const territoryId = homeQuery.territoryId;
-    if (!territoryId) {
+    if (!sessionReady) return;
+    if (!authenticated || !hasMembership || !territoryId) {
       setFeedItems([]);
       setFeedReady(true);
       return;
@@ -147,7 +152,13 @@ export function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [configuration.tenantId, homeQuery.territoryId]);
+  }, [
+    sessionReady,
+    authenticated,
+    hasMembership,
+    configuration.tenantId,
+    homeQuery.territoryId,
+  ]);
 
   /** Open moments — Territory feed projection of existing domains. */
   const moments = useMemo(() => {
@@ -353,7 +364,13 @@ export function HomeScreen() {
                 }
                 statusLabel={presentation.statusLabel}
                 ctaLabel={presentation.ctaLabel}
-                onClick={() => router.push(lifeMapHrefForFeedItem(item))}
+                onClick={() => {
+                  if (item.locationId) {
+                    setPlaceLocationId(item.locationId);
+                    return;
+                  }
+                  router.push(lifeMapHrefForFeedItem(item));
+                }}
               />
             ))}
           </HomeRail>
@@ -426,13 +443,19 @@ export function HomeScreen() {
                 ratingLabel={place.ratingLabel}
                 ratingCountLabel={place.ratingCountLabel}
                 badgeLabel={place.badgeLabel}
-                onClick={() => router.push(place.href)}
+                onClick={() => setPlaceLocationId(place.id)}
               />
             ))}
           </HomeRail>
         </section>
       ) : null}
       </div>
+      <LifePlaceHost
+        tenantId={configuration.tenantId}
+        locationId={placeLocationId}
+        territoryId={activeTerritory.territoryId}
+        onClose={() => setPlaceLocationId(null)}
+      />
     </div>
   );
 }

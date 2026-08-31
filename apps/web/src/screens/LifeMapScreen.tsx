@@ -32,6 +32,7 @@ import {
   projectLocationToLifeMapView,
 } from "@life-community-os/types";
 import { LifeMapContextPanel } from "@/components/life-map/LifeMapContextPanel";
+import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { LifeMapViewport } from "@/components/life-map/LifeMapViewport";
 import { isLifeMapExperienceUnlocked } from "@/lib/life-map-dev";
 import { getCommunityExperienceFeed } from "@/lib/community/community-client";
@@ -55,6 +56,7 @@ import {
   locationCategoryLabel,
   cameraPoseFromLocations,
 } from "@/lib/location";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 
@@ -69,7 +71,10 @@ export function LifeMapScreen() {
     hasCapability,
     isProductCapabilityEnabled,
     configuration,
+    authenticated,
+    hasMembership,
   } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
 
   const featureOn =
@@ -176,11 +181,29 @@ export function LifeMapScreen() {
   }, [pack, focusLocation, filteredLocations, locations, selectedObjectId, activeTerritory]);
 
   useEffect(() => {
+    if (!sessionReady) return;
+    const territoryId = activeTerritory.territoryId;
+    if (!authenticated || !hasMembership || !territoryId) {
+      setFeedItems([]);
+      return;
+    }
+    let cancelled = false;
     void getCommunityExperienceFeed({
       tenantId: configuration.tenantId,
-      territoryId: activeTerritory.territoryId,
-    }).then((data) => setFeedItems(data.items));
-  }, [configuration.tenantId, activeTerritory.territoryId]);
+      territoryId,
+    }).then((data) => {
+      if (!cancelled) setFeedItems(data.items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    sessionReady,
+    authenticated,
+    hasMembership,
+    configuration.tenantId,
+    activeTerritory.territoryId,
+  ]);
 
   const livingContext = useMemo(
     () =>
@@ -418,6 +441,10 @@ export function LifeMapScreen() {
     );
   }
 
+  const selectedLocation = selectedObject
+    ? resolveLocationForObject(selectedObject)
+    : null;
+
   return (
     <MobileScreen>
       <FlowScreenHeader
@@ -458,7 +485,14 @@ export function LifeMapScreen() {
         territoryPoints={territoryPoints}
       />
 
-      {contextModel ? (
+      {authenticated && hasMembership && selectedLocation ? (
+        <LifePlaceHost
+          tenantId={configuration.tenantId}
+          locationId={selectedLocation.id}
+          territoryId={activeTerritory.territoryId}
+          onClose={() => setSelectedObjectId(null)}
+        />
+      ) : contextModel ? (
         <LifeMapContextPanel
           model={contextModel}
           onAction={onContextAction}
