@@ -367,6 +367,16 @@ export async function joinParticipation(input: {
         createdBy: personId,
         scope: input.scope,
       });
+      void import("@/lib/trust/trust-signal-service").then(({ TrustSignalService }) =>
+        TrustSignalService.thank({
+          tenantId: input.tenantId,
+          recipientPersonId: experience.ownerPersonId,
+          key: `thanks:host:${experience.id}`,
+          title: "Gracias por organizar esta actividad.",
+          body: experience.title,
+          createdBy: personId,
+        }),
+      );
       await ensureContextualConversation({
         tenantId: input.tenantId,
         actor: input.actor,
@@ -631,6 +641,17 @@ export async function respondToHelp(input: {
     createdBy: personId,
     scope: input.scope,
   });
+  const helperId = help.type === "offer_help" ? help.createdBy : personId;
+  void import("@/lib/trust/trust-signal-service").then(({ TrustSignalService }) =>
+    TrustSignalService.thank({
+      tenantId: input.tenantId,
+      recipientPersonId: helperId,
+      key: `thanks:help:${help.id}`,
+      title: "Tu ayuda ha sido valorada por la comunidad.",
+      body: help.title,
+      createdBy: personId,
+    }),
+  );
   return resolveParticipation({
     tenantId: input.tenantId,
     entityType: "help",

@@ -222,7 +222,7 @@ export function LifePlaceSheet({
           </div>
         </section>
 
-        {context.community && now ? (
+        {context.community ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
               Quién participa
@@ -230,6 +230,22 @@ export function LifePlaceSheet({
             <p className="mt-2 text-[14px] text-[var(--color-text-secondary)]">
               {context.community.label}
             </p>
+          </section>
+        ) : null}
+
+        {context.business ? (
+          <section className="mt-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
+              Negocio
+            </h3>
+            <p className="mt-2 text-[14px] font-semibold text-[var(--color-text-primary)]">
+              {context.business.name}
+            </p>
+            {context.business.trustLabel ? (
+              <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+                {context.business.trustLabel}
+              </p>
+            ) : null}
           </section>
         ) : null}
 

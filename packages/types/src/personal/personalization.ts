@@ -44,6 +44,7 @@ export type PersonalizationInput = {
   context: PersonalContext;
   feed: readonly CommunityFeedItem[];
   favorites?: readonly PersonalFavorite[];
+  trustedOrganizerIds?: readonly string[];
 };
 
 export type PersonalizationProvider = {
@@ -181,6 +182,7 @@ function scoreItem(
   index: number,
   context: PersonalContext,
   favorites: readonly PersonalFavorite[],
+  trustedOrganizerIds: readonly string[] = [],
 ): number {
   let score = 0;
   const blob = itemBlob(item);
@@ -227,6 +229,12 @@ function scoreItem(
       (row.type === "event" && item.type === "event"),
   );
   if (historyBoost && historyBoost.count > 0) score += 8;
+  if (
+    item.metadata?.organizerPersonId &&
+    trustedOrganizerIds.includes(item.metadata.organizerPersonId)
+  ) {
+    score += 10;
+  }
   return score * 1000 - index;
 }
 
@@ -235,6 +243,7 @@ export function personalizeCommunityFeed(
 ): PersonalizedCommunityFeed {
   const enabled = input.context.privacy.receiveRecommendations;
   const favorites = input.favorites ?? [];
+  const trustedOrganizerIds = input.trustedOrganizerIds ?? [];
   if (!enabled) {
     return {
       items: input.feed.map((item) => ({ ...item })),
@@ -245,7 +254,13 @@ export function personalizeCommunityFeed(
   const ranked = input.feed.map((item, index) => ({
     item,
     index,
-    score: scoreItem(item, index, input.context, favorites),
+    score: scoreItem(
+      item,
+      index,
+      input.context,
+      favorites,
+      trustedOrganizerIds,
+    ),
   }));
   ranked.sort((left, right) => right.score - left.score);
   return {

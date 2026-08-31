@@ -415,6 +415,16 @@ export async function listExperienceParticipantsServer(
   return store.participants.filter((item) => item.experienceId === experienceId);
 }
 
+export async function listExperienceParticipationsByPersonServer(
+  tenantId: string,
+  personId: string,
+  scope?: ExperienceWriteScope,
+): Promise<ExperienceParticipation[]> {
+  const slug = resolveTenantPublicId(tenantId);
+  const store = await loadStore(slug, scope);
+  return store.participants.filter((item) => item.personId === personId);
+}
+
 export async function createExperienceServer(input: {
   tenantId: string;
   ownerPersonId: string;

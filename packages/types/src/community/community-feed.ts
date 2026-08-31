@@ -54,6 +54,8 @@ export type CommunityFeedItemMetadata = {
   imageUrl?: string;
   href?: string;
   occupied?: number;
+  organizerPersonId?: string;
+  trustLabel?: string;
 };
 
 export type CommunityFeedItem = {
@@ -422,6 +424,7 @@ export type ProjectExperienceFeedInput = {
   capacity?: number;
   occupied?: number;
   imageUrl?: string;
+  ownerPersonId?: string;
 };
 
 export function projectExperienceToFeedItem(
@@ -458,6 +461,9 @@ export function projectExperienceToFeedItem(
       imageUrl: input.imageUrl,
       href: `/experiences/${encodeURIComponent(input.id)}`,
       occupied,
+      ...(input.ownerPersonId?.trim()
+        ? { organizerPersonId: input.ownerPersonId.trim() }
+        : {}),
     },
   };
 }
@@ -474,6 +480,7 @@ export type ProjectEventFeedInput = {
   locationLabel?: string;
   locationId?: string;
   occupied?: number;
+  ownerPersonId?: string;
 };
 
 export function projectEventToFeedItem(
@@ -499,6 +506,9 @@ export function projectEventToFeedItem(
       locationLabel: input.locationLabel,
       href: "/community",
       occupied: input.occupied ?? 0,
+      ...(input.ownerPersonId?.trim()
+        ? { organizerPersonId: input.ownerPersonId.trim() }
+        : {}),
     },
   };
 }
@@ -571,6 +581,7 @@ export type ProjectBusinessFeedInput = {
   status: string;
   locationId?: string;
   imageUrl?: string;
+  ownerPersonId?: string;
 };
 
 export function projectBusinessToFeedItem(
@@ -595,6 +606,12 @@ export function projectBusinessToFeedItem(
       href: input.locationId
         ? `/locations/${encodeURIComponent(input.locationId)}`
         : "/discover",
+      ...(input.ownerPersonId?.trim()
+        ? { organizerPersonId: input.ownerPersonId.trim() }
+        : {}),
+      trustLabel: input.locationId
+        ? "Negocio registrado · Ubicación confirmada"
+        : "Negocio registrado",
     },
   };
 }
@@ -606,6 +623,7 @@ export type ProjectHelpFeedInput = {
   title: string;
   description?: string;
   status: string;
+  ownerPersonId?: string;
 };
 
 export function projectHelpToFeedItem(
@@ -626,6 +644,9 @@ export function projectHelpToFeedItem(
     metadata: {
       domain: "help",
       href: "/help",
+      ...(input.ownerPersonId?.trim()
+        ? { organizerPersonId: input.ownerPersonId.trim() }
+        : {}),
     },
   };
 }

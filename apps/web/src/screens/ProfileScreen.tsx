@@ -30,11 +30,16 @@ import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-import type { CommunityOwnActivity } from "@life-community-os/types";
+import type { CommunityOwnActivity, TrustContext } from "@life-community-os/types";
+import { ownTrustContribution } from "@life-community-os/types";
 import {
   fetchPersonalContext,
   patchPersonalContext,
 } from "@/lib/personal/personal-client";
+import {
+  fetchTrustContext,
+  patchTrustPrivacy,
+} from "@/lib/trust/trust-client";
 
 /**
  * Mi perfil — identity, preferences, personal context.
@@ -58,6 +63,7 @@ export function ProfileScreen() {
     null,
   );
   const [personal, setPersonal] = useState<PersonalContext | null>(null);
+  const [trust, setTrust] = useState<TrustContext | null>(null);
   const [favorites, setFavorites] = useState<PersonalFavorite[]>([]);
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
@@ -112,6 +118,7 @@ export function ProfileScreen() {
     if (!personId) {
       setPersonal(null);
       setFavorites([]);
+      setTrust(null);
       return;
     }
     let cancelled = false;
@@ -122,6 +129,12 @@ export function ProfileScreen() {
       if (cancelled) return;
       setPersonal(data.context);
       setFavorites(data.favorites);
+    });
+    void fetchTrustContext({
+      tenantId: configuration.tenantId,
+      territoryId: activeTerritory.territoryId,
+    }).then((context) => {
+      if (!cancelled) setTrust(context);
     });
     return () => {
       cancelled = true;
@@ -366,6 +379,64 @@ export function ProfileScreen() {
       </section>
 
       <TerritoryBelongingCard access={territoryAccess} />
+
+      <section className="space-y-2">
+        <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+          Mi contribución
+        </h2>
+        <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+          Privado por defecto. No es un muro público ni un ranking.
+        </p>
+        {(trust ? ownTrustContribution(trust.signals) : []).length === 0 ? (
+          <p className="text-[13px] text-[var(--color-text-secondary)]">
+            Todavía no hay aportaciones en este territorio.
+          </p>
+        ) : (
+          (trust ? ownTrustContribution(trust.signals) : []).map((line) => (
+            <p
+              key={line.title}
+              className="rounded-[14px] bg-[var(--color-surface-elevated)] p-3.5 shadow-[var(--shadow-elev-1)]"
+            >
+              <span className="block text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                {line.title}
+              </span>
+              <span className="mt-1 block text-[16px] font-semibold text-[var(--color-text-primary)]">
+                {line.detail}
+              </span>
+            </p>
+          ))
+        )}
+        <label className="flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+          <input
+            type="checkbox"
+            checked={trust?.privacy.visible === true}
+            onChange={(event) => {
+              void patchTrustPrivacy({
+                tenantId: configuration.tenantId,
+                privacy: { visible: event.target.checked },
+              }).then((context) => {
+                if (context) setTrust(context);
+              });
+            }}
+          />
+          Dejar ver que participo
+        </label>
+        <label className="flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+          <input
+            type="checkbox"
+            checked={trust?.privacy.showSignals === true}
+            onChange={(event) => {
+              void patchTrustPrivacy({
+                tenantId: configuration.tenantId,
+                privacy: { showSignals: event.target.checked },
+              }).then((context) => {
+                if (context) setTrust(context);
+              });
+            }}
+          />
+          Mostrar señales de confianza
+        </label>
+      </section>
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">

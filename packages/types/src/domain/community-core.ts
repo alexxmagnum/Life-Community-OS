@@ -48,6 +48,7 @@ export type CommunityNotificationKind =
   | "event_joined"
   | "group_member_added"
   | "help_response"
+  | "community_thanks"
   | "mention"
   | "official_alert";
 

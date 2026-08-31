@@ -125,6 +125,7 @@ async function projectExperiences(input: {
       resourceId: experience.resourceId,
       capacity: experience.capacity,
       occupied,
+      ownerPersonId: experience.ownerPersonId,
     });
     if (projected) items.push(projected);
   }
@@ -156,6 +157,7 @@ async function projectEvents(input: {
       startsAt: event.startsAt,
       endsAt: event.endsAt,
       locationLabel: event.locationLabel,
+      ownerPersonId: event.authorPersonId,
     });
     return projected ? [projected] : [];
   });
@@ -256,6 +258,7 @@ async function projectBusinesses(input: {
       status: business.status,
       locationId: business.locationId,
       imageUrl: business.imageUrl,
+      ownerPersonId: business.ownerPersonId,
     });
     return projected ? [projected] : [];
   });
@@ -299,6 +302,7 @@ async function projectHelp(input: {
       title: help.title,
       description: help.description,
       status: help.status,
+      ownerPersonId: help.createdBy,
     });
     return projected ? [projected] : [];
   });

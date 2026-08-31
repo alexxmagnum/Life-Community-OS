@@ -5,6 +5,7 @@ export type OrganizerCardProps = {
   name: string;
   roleLabel?: string;
   avatarUrl?: string;
+  trustLabel?: string;
   className?: string;
 };
 
@@ -12,6 +13,7 @@ export function OrganizerCard({
   name,
   roleLabel = "Organizador",
   avatarUrl,
+  trustLabel,
   className,
 }: OrganizerCardProps) {
   return (
@@ -29,6 +31,11 @@ export function OrganizerCard({
         <p className="text-[17px] font-semibold text-[var(--color-text-primary)]">
           {name}
         </p>
+        {trustLabel ? (
+          <p className="mt-0.5 text-[14px] text-[var(--color-text-secondary)]">
+            {trustLabel}
+          </p>
+        ) : null}
       </div>
     </div>
   );

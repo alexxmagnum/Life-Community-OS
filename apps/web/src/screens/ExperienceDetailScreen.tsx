@@ -28,6 +28,7 @@ import { CommunityParticipationBar } from "@/components/community/CommunityParti
 import { fetchParticipationContext } from "@/lib/community/participation-client";
 import type { CommunityParticipationContext } from "@life-community-os/types";
 import { occupyingParticipationCount } from "@life-community-os/types";
+import { fetchPublicTrustLabels } from "@/lib/trust/trust-client";
 
 export function ExperienceDetailScreen({
   experienceId,
@@ -42,6 +43,7 @@ export function ExperienceDetailScreen({
   const { getViewerState, isSaved, toggleSave } = useExperienceParticipation();
   const [shareNote, setShareNote] = useState<string | null>(null);
   const [loop, setLoop] = useState<CommunityParticipationContext | null>(null);
+  const [organizerTrust, setOrganizerTrust] = useState<string | undefined>();
 
   const experience = getExperience(experienceId);
 
@@ -71,6 +73,24 @@ export function ExperienceDetailScreen({
   useEffect(() => {
     loadLoop();
   }, [loadLoop]);
+
+  useEffect(() => {
+    const organizerId = experience?.organizer.id;
+    if (!organizerId) {
+      setOrganizerTrust(undefined);
+      return;
+    }
+    let cancelled = false;
+    void fetchPublicTrustLabels({
+      tenantId: tenantSlug,
+      personId: organizerId,
+    }).then((labels) => {
+      if (!cancelled) setOrganizerTrust(labels[0]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantSlug, experience?.organizer.id]);
 
   if (!isFeatureEnabled("experiences") || !isModuleEnabled("experiences")) {
     return (
@@ -230,6 +250,7 @@ export function ExperienceDetailScreen({
         name={experience.organizer.name}
         roleLabel={experience.organizer.roleLabel}
         avatarUrl={experience.organizer.avatarUrl}
+        trustLabel={organizerTrust}
       />
 
       {loop ? (

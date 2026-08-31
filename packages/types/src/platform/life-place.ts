@@ -71,6 +71,7 @@ export type LifePlaceBusinessSummary = {
   name: string;
   category: string;
   href: string;
+  trustLabel?: string;
 };
 
 export type LifePlaceCommunityView = {

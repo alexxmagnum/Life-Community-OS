@@ -16,6 +16,8 @@ import {
   type LifePlaceReservationAvailability,
   type LifePlaceResourceSummary,
   type ProductCapabilityMap,
+  placeTrustLabel,
+  businessTrustLabels,
 } from "@life-community-os/types";
 import type { RequestActor } from "@/lib/auth/request-actor";
 import { actorHasCapability } from "@/lib/auth/permissions";
@@ -230,6 +232,11 @@ export async function resolveLifePlace(
           name: businessRow.name,
           category: businessRow.category,
           href: `/locations/${encodeURIComponent(locationId)}`,
+          trustLabel: businessTrustLabels({
+            registered: true,
+            locationConfirmed: Boolean(businessRow.locationId),
+            published: businessRow.status === "published",
+          }).join(" · "),
         }
       : undefined;
 
@@ -276,12 +283,19 @@ export async function resolveLifePlace(
     reservations,
     business,
     community:
-      includeLife && participantCount > 0
+      includeLife && (participantCount > 0 || feedItems.length > 0)
         ? {
             participantCount,
-            label: `${participantCount} ${
-              participantCount === 1 ? "vecino participando" : "vecinos participando"
-            }`,
+            label:
+              placeTrustLabel({
+                participantCount,
+                activityCount: feedItems.length,
+              }) ??
+              `${participantCount} ${
+                participantCount === 1
+                  ? "vecino participando"
+                  : "vecinos participando"
+              }`,
           }
         : undefined,
     cover: cover?.reference,

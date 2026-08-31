@@ -167,6 +167,32 @@ export {
   hasContinuousLocationTracking,
 } from "./personal/personalization";
 
+/** Community Trust — projection of real actions, not a reputation domain. */
+export type {
+  TrustSignals,
+  TrustPrivacy,
+  TrustContext,
+  TrustContributionLine,
+  BusinessTrustInput,
+} from "./trust/trust-context";
+export {
+  EMPTY_TRUST_SIGNALS,
+  DEFAULT_TRUST_PRIVACY,
+  emptyTrustContext,
+  mergeTrustPrivacy,
+  countTrustSignals,
+  projectTrustContext,
+  personTrustLabels,
+  publicPersonTrustLabels,
+  ownTrustContribution,
+  businessTrustLabels,
+  placeTrustLabel,
+  hasPositiveTrustHistory,
+  isOpaqueTrustEntity,
+  hasPublicTrustScoring,
+} from "./trust/trust-context";
+export { applyTrustedOrganizerBoost } from "./trust/trust-projection";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,

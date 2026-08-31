@@ -117,10 +117,24 @@ export async function personalizeFeedForActor(input: {
     tenantId: input.tenantId,
     personId,
   });
+  const { TrustSignalService } = await import("@/lib/trust/trust-signal-service");
+  const trustedOrganizerIds = await TrustSignalService.trustedOrganizers({
+    tenantId: input.tenantId,
+    territoryId: input.territoryId,
+    personIds: input.items
+      .map((item) => item.metadata?.organizerPersonId)
+      .filter((id): id is string => Boolean(id)),
+  });
+  const labeled = await TrustSignalService.annotateFeed({
+    tenantId: input.tenantId,
+    territoryId: input.territoryId,
+    items: input.items,
+  });
   return RuleBasedPersonalizationProvider.personalize({
     context,
-    feed: input.items,
+    feed: labeled,
     favorites,
+    trustedOrganizerIds,
   });
 }
 

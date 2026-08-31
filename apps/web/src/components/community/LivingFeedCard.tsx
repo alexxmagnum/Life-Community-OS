@@ -54,7 +54,11 @@ export function LivingFeedCard({
         when={communityFeedTimeLabel(item) ?? communityFeedPrimaryLabel(item)}
         where={item.metadata?.locationLabel || item.description || ""}
         peopleLabel={
-          [communityFeedLivingLabel(item), reason ? `Porque: ${reason}` : null]
+          [
+            communityFeedLivingLabel(item),
+            item.metadata?.trustLabel,
+            reason ? `Porque: ${reason}` : null,
+          ]
             .filter(Boolean)
             .join(" · ") || undefined
         }
