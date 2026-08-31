@@ -42,6 +42,7 @@ export type CommunityNotificationKind =
   | "post_published"
   | "event_created"
   | "experience_published"
+  | "experience_reminder"
   | "experience_joined"
   | "experience_invited"
   | "event_joined"

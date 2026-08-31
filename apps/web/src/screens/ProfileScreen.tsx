@@ -7,7 +7,10 @@ import {
 import {
   housingAvailabilityLabel,
   housingPropertyTypeLabel,
+  PERSONAL_INTEREST_OPTIONS,
   propertyMembershipRoleLabel,
+  type PersonalContext,
+  type PersonalFavorite,
   type PropertyPublicView,
 } from "@life-community-os/types";
 import {
@@ -26,7 +29,12 @@ import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useExperienceParticipation } from "@/providers/ExperienceParticipationProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { useTerritory } from "@/providers/TerritoryProvider";
 import type { CommunityOwnActivity } from "@life-community-os/types";
+import {
+  fetchPersonalContext,
+  patchPersonalContext,
+} from "@/lib/personal/personal-client";
 
 /**
  * Mi perfil — identity, preferences, personal context.
@@ -44,10 +52,13 @@ export function ProfileScreen() {
   } = useTenant();
   const { joinedExperiences, savedExperiences } = useExperienceParticipation();
   const { upcoming: upcomingReservations } = useReservations();
+  const { context: activeTerritory } = useTerritory();
   const [homes, setHomes] = useState<PropertyPublicView[]>([]);
   const [ownActivity, setOwnActivity] = useState<CommunityOwnActivity | null>(
     null,
   );
+  const [personal, setPersonal] = useState<PersonalContext | null>(null);
+  const [favorites, setFavorites] = useState<PersonalFavorite[]>([]);
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
 
@@ -97,6 +108,26 @@ export function ProfileScreen() {
     };
   }, [personId, configuration.tenantId]);
 
+  useEffect(() => {
+    if (!personId) {
+      setPersonal(null);
+      setFavorites([]);
+      return;
+    }
+    let cancelled = false;
+    void fetchPersonalContext({
+      tenantId: configuration.tenantId,
+      territoryId: activeTerritory.territoryId,
+    }).then((data) => {
+      if (cancelled) return;
+      setPersonal(data.context);
+      setFavorites(data.favorites);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [personId, configuration.tenantId, activeTerritory.territoryId]);
+
   const territoryAccess = useMemo(
     () => getTerritoryAccessContext(personId ?? ""),
     [personId],
@@ -134,7 +165,11 @@ export function ProfileScreen() {
           theme.identity?.defaultAreaName ||
           placeName
         }
-        interests={[]}
+        interests={(personal?.preferences.interests ?? []).map(
+          (id) =>
+            PERSONAL_INTEREST_OPTIONS.find((option) => option.id === id)
+              ?.label ?? id,
+        )}
         avatarUrl={
           uploadedAvatar ||
           preferEntityMediaUrl(avatarMediaUrl, undefined)
@@ -152,6 +187,107 @@ export function ProfileScreen() {
         />
       ) : null}
 
+      {personId ? (
+        <section className="space-y-3">
+          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+            Mis intereses
+          </h2>
+          <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
+            Tú eliges. Esto solo ordena lo que ya ocurre en tu territorio.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {PERSONAL_INTEREST_OPTIONS.map((option) => {
+              const selected = personal?.preferences.interests.includes(
+                option.id,
+              );
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={
+                    selected
+                      ? "rounded-full bg-[var(--color-action-primary)] px-3 py-1.5 text-[13px] font-medium text-[var(--color-text-on-action)]"
+                      : "rounded-full border border-[var(--color-border-subtle)] px-3 py-1.5 text-[13px] text-[var(--color-text-secondary)]"
+                  }
+                  onClick={() => {
+                    const current = personal?.preferences.interests ?? [];
+                    const next = selected
+                      ? current.filter((id) => id !== option.id)
+                      : [...current, option.id];
+                    void patchPersonalContext({
+                      tenantId: configuration.tenantId,
+                      interests: next,
+                    }).then((context) => {
+                      if (context) setPersonal(context);
+                    });
+                  }}
+                >
+                  {option.emoji} {option.label}
+                </button>
+              );
+            })}
+          </div>
+          <label className="flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <input
+              type="checkbox"
+              checked={personal?.privacy.receiveRecommendations !== false}
+              onChange={(event) => {
+                void patchPersonalContext({
+                  tenantId: configuration.tenantId,
+                  privacy: {
+                    receiveRecommendations: event.target.checked,
+                  },
+                }).then((context) => {
+                  if (context) setPersonal(context);
+                });
+              }}
+            />
+            Recibir recomendaciones
+          </label>
+          <label className="flex items-center gap-2 text-[13px] text-[var(--color-text-secondary)]">
+            <input
+              type="checkbox"
+              checked={personal?.privacy.shareActivity !== false}
+              onChange={(event) => {
+                void patchPersonalContext({
+                  tenantId: configuration.tenantId,
+                  privacy: { shareActivity: event.target.checked },
+                }).then((context) => {
+                  if (context) setPersonal(context);
+                });
+              }}
+            />
+            Aparecer en actividad
+          </label>
+        </section>
+      ) : null}
+
+      {favorites.length > 0 ? (
+        <section className="space-y-2">
+          <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+            Mis favoritos
+          </h2>
+          <p className="text-[13px] text-[var(--color-text-tertiary)]">
+            Privados. No son seguidores.
+          </p>
+          {favorites.map((item) => (
+            <p
+              key={item.id}
+              className="text-[14px] text-[var(--color-text-secondary)]"
+            >
+              {item.kind === "location"
+                ? "Lugar"
+                : item.kind === "experience"
+                  ? "Actividad"
+                  : item.kind === "business"
+                    ? "Negocio"
+                    : "Recurso"}
+              : guardado
+            </p>
+          ))}
+        </section>
+      ) : null}
+
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
           Mi identidad
@@ -160,7 +296,9 @@ export function ProfileScreen() {
           {currentUser.displayName || currentUser.email?.split("@")[0] || "Invitado"} · Español
         </p>
         <p className="text-[13px] text-[var(--color-text-secondary)]">
-          Aún no has marcado intereses.
+          {(personal?.preferences.interests.length ?? 0) > 0
+            ? "Tus intereses son privados. Solo ordenan lo que ves."
+            : "Aún no has marcado intereses."}
         </p>
       </section>
 
@@ -231,7 +369,7 @@ export function ProfileScreen() {
 
       <section className="space-y-2">
         <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-          Lo que has hecho
+          Mis actividades
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
           Solo tú ves esto. No es un muro público.

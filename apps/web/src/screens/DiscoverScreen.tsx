@@ -70,6 +70,7 @@ export function DiscoverScreen() {
   const [persistedGroups, setPersistedGroups] = useState<CommunityGroupRecord[]>([]);
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
@@ -85,6 +86,7 @@ export function DiscoverScreen() {
         if (!cancelled) {
           setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
           setFeedItems(community.items ?? []);
+          setReasons(community.personalization?.reasons ?? {});
         }
       } else if (!cancelled) {
         setPersistedGroups([]);
@@ -242,7 +244,7 @@ export function DiscoverScreen() {
     <MobileScreen>
       <FlowScreenHeader
         title="Descubrir"
-        subtitle="Explora la vida a tu alrededor."
+        subtitle="Territorio, intereses, disponibilidad y momento."
         onBack={() => router.push("/")}
         onExit={() => router.push("/community")}
       />
@@ -281,7 +283,7 @@ export function DiscoverScreen() {
           {nowNear.length > 0 ? (
             <CommunityLifeSection
               title="Ahora cerca"
-              subtitle="Lo que está ocurriendo a tu alrededor."
+              subtitle="Territorio, tus intereses y el momento. Siempre verás por qué."
             >
               <div className="space-y-4">
                 {nowNear.map((item, index) => (
@@ -289,6 +291,7 @@ export function DiscoverScreen() {
                     key={item.id}
                     item={item}
                     index={index}
+                    reason={reasons[item.id]}
                     onOpenPlace={setPlaceLocationId}
                     onOpenHref={(href) => router.push(href)}
                   />
@@ -308,6 +311,7 @@ export function DiscoverScreen() {
                     key={item.id}
                     item={item}
                     index={index}
+                    reason={reasons[item.id]}
                     onOpenPlace={setPlaceLocationId}
                     onOpenHref={(href) => router.push(href)}
                   />

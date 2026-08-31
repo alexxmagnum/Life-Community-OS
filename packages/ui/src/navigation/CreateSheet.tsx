@@ -11,6 +11,7 @@ export type CreateAction = {
   description: string;
   icon: ReactNode;
   onSelect: () => void;
+  hint?: string;
 };
 
 /** Optional grouping for contribution hierarchy (D.0.3.1). */
@@ -130,6 +131,11 @@ export function CreateSheet({
                           <span className="mt-0.5 block text-[14px] text-[var(--color-text-secondary)]">
                             {action.description}
                           </span>
+                          {action.hint ? (
+                            <span className="mt-1 block text-[12px] text-[var(--color-text-tertiary)]">
+                              {action.hint}
+                            </span>
+                          ) : null}
                         </span>
                       </button>
                     </li>

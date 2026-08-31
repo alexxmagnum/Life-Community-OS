@@ -49,6 +49,7 @@ function toInboxItem(
         ? "official"
         : item.kind === "event_created" ||
             item.kind === "experience_published" ||
+            item.kind === "experience_reminder" ||
             item.kind === "experience_joined" ||
             item.kind === "experience_invited" ||
             item.kind === "event_joined"

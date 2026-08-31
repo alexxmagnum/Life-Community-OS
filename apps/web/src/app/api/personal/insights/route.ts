@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { LifePlaceQueryService } from "@/lib/life-place/life-place-query";
-import { actorCanOpenLifePlace } from "@/lib/life-place/permissions";
+import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
+import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
 import { PersonalizationService } from "@/lib/personal/personalization-service";
 import { getTenantPack } from "@/lib/tenant/registry";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
@@ -8,13 +8,10 @@ import { resolveActiveTerritoryContext } from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
 
-type Params = { params: Promise<{ locationId: string }> };
-
-export async function GET(request: Request, { params }: Params) {
-  const { locationId } = await params;
+export async function GET(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
-  if (!actorCanOpenLifePlace(actor)) {
+  if (!actorCanReadCommunityExperienceFeed(actor)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const url = new URL(request.url);
@@ -32,39 +29,26 @@ export async function GET(request: Request, { params }: Params) {
   if ("error" in territory) return territory.error;
   const territoryId = territory.context.territoryId;
   if (!territoryId) {
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ insights: [] });
   }
   const { persistenceScopeFromRequest } = await import(
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
   const pack = getTenantPack(bound.tenantId);
-  const result = await LifePlaceQueryService.get({
+  const items = await CommunityExperienceFeedService.list({
     tenantId: bound.tenantId,
     territoryId,
-    locationId,
-    actor,
     productCapabilities: pack?.productCapabilities,
     permissions: actor.permissions,
     scope,
   });
-  if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
-  }
-  const context = await PersonalizationService.place({
+  const insights = await PersonalizationService.insights({
     tenantId: bound.tenantId,
     actor,
     territoryId,
-    place: result.context,
+    items,
+    publish: url.searchParams.get("publish") === "1",
   });
-  return NextResponse.json({
-    ...context,
-    location: context.location,
-    activity: context.currentActivity,
-    experiences: context.experiences,
-    resources: context.resources,
-    reservations: context.reservations,
-    business: context.business,
-    actions: context.actions,
-  });
+  return NextResponse.json({ insights });
 }

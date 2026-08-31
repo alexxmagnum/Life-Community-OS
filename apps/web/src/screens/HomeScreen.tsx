@@ -17,8 +17,10 @@ import {
   LIVING_EMPTY_DESCRIPTION,
   LIVING_EMPTY_TITLE,
   lifeMapHrefForFeedItem,
+  partitionLivingCommunityFeed,
   territoryHomeQuery,
   type CommunityFeedItem,
+  type CommunityInsight,
 } from "@life-community-os/types";
 import {
   EmptyState,
@@ -36,6 +38,10 @@ import {
 import { getCommunityExperienceFeed } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import {
+  fetchPersonalContext,
+  fetchPersonalInsights,
+} from "@/lib/personal/personal-client";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
@@ -96,6 +102,10 @@ export function HomeScreen() {
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [feedReady, setFeedReady] = useState(false);
   const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [personalizationEnabled, setPersonalizationEnabled] = useState(false);
+  const [favoriteLocations, setFavoriteLocations] = useState<string[]>([]);
+  const [insights, setInsights] = useState<CommunityInsight[]>([]);
 
   const [hour, setHour] = useState(18);
   const [greeting, setGreeting] = useState(
@@ -137,6 +147,8 @@ export function HomeScreen() {
     if (!sessionReady) return;
     if (!authenticated || !hasMembership || !territoryId) {
       setFeedItems([]);
+      setReasons({});
+      setPersonalizationEnabled(false);
       setFeedReady(true);
       return;
     }
@@ -147,7 +159,23 @@ export function HomeScreen() {
     }).then((data) => {
       if (cancelled) return;
       setFeedItems(data.items);
+      setReasons(data.reasons);
+      setPersonalizationEnabled(data.personalizationEnabled);
       setFeedReady(true);
+    });
+    void fetchPersonalContext({
+      tenantId: configuration.tenantId,
+      territoryId,
+    }).then((data) => {
+      if (cancelled) return;
+      setFavoriteLocations(data.context?.favoriteLocations ?? []);
+    });
+    void fetchPersonalInsights({
+      tenantId: configuration.tenantId,
+      territoryId,
+      publish: true,
+    }).then((rows) => {
+      if (!cancelled) setInsights(rows);
     });
     return () => {
       cancelled = true;
@@ -160,29 +188,53 @@ export function HomeScreen() {
     homeQuery.territoryId,
   ]);
 
+  const living = useMemo(
+    () => partitionLivingCommunityFeed(feedItems),
+    [feedItems],
+  );
+
   /** Open moments — Territory feed projection of existing domains. */
   const moments = useMemo(() => {
     if (!feedReady) return [];
-    return feedItems
-      .filter(isLivingMomentFeedItem)
-      .slice(0, MOMENT_LIMIT)
-      .map((item) => ({
-        item,
-        presentation: {
-          tone: "open" as const,
-          glyph: "people" as const,
-          whereLabel:
-            item.metadata?.locationLabel || item.description || placeName,
-          statusLabel:
-            communityFeedLivingLabel(item) ||
-            (item.capacity
-              ? `${item.capacity.available} plazas disponibles`
-              : "Abierto"),
-          ctaLabel: communityFeedPrimaryLabel(item),
-          badgeLabel: communityFeedTimeLabel(item) || "Hoy",
-        },
-      }));
-  }, [feedReady, feedItems, placeName]);
+    const source =
+      personalizationEnabled && living.now.length > 0
+        ? living.now
+        : feedItems.filter(isLivingMomentFeedItem);
+    return source.slice(0, MOMENT_LIMIT).map((item) => ({
+      item,
+      presentation: {
+        tone: "open" as const,
+        glyph: "people" as const,
+        whereLabel:
+          item.metadata?.locationLabel || item.description || placeName,
+        statusLabel:
+          reasons[item.id] ||
+          communityFeedLivingLabel(item) ||
+          (item.capacity
+            ? `${item.capacity.available} plazas disponibles`
+            : "Abierto"),
+        ctaLabel: communityFeedPrimaryLabel(item),
+        badgeLabel: communityFeedTimeLabel(item) || "Hoy",
+      },
+    }));
+  }, [
+    feedReady,
+    feedItems,
+    living.now,
+    personalizationEnabled,
+    placeName,
+    reasons,
+  ]);
+
+  const upcomingMoments = useMemo(() => {
+    if (!feedReady) return [];
+    return living.upcoming.slice(0, MOMENT_LIMIT);
+  }, [feedReady, living.upcoming]);
+
+  const favoritePlaces = useMemo(() => {
+    if (favoriteLocations.length === 0) return [];
+    return allLocations.filter((loc) => favoriteLocations.includes(loc.id));
+  }, [allLocations, favoriteLocations]);
 
   const moves = useMemo(
     () =>
@@ -319,7 +371,7 @@ export function HomeScreen() {
       {/* ── HOY — Territory first, then the life happening in it ── */}
       <section ref={todaySectionRef} className="scroll-mt-[64px]">
         <HomeSectionHead
-          title={todayTitle}
+          title={personalizationEnabled ? "Ahora para ti" : todayTitle}
           sparkle
           actionLabel={moments.length > 0 ? "Ver todas" : undefined}
           onAction={
@@ -327,7 +379,11 @@ export function HomeScreen() {
           }
         />
         {moments.length > 0 ? (
-          <p className="-mt-2 mb-3 text-[14px] text-white/55">Qué ocurre ahora</p>
+          <p className="-mt-2 mb-3 text-[14px] text-white/55">
+            {personalizationEnabled
+              ? "Qué te interesa hoy, con el motivo a la vista."
+              : "Qué ocurre ahora"}
+          </p>
         ) : null}
         {moments.length === 0 ? (
           <div>
@@ -381,6 +437,80 @@ export function HomeScreen() {
           </HomeRail>
         )}
       </section>
+
+      {insights.length > 0 ? (
+        <section className="space-y-2">
+          {insights.map((insight) => (
+            <button
+              key={insight.id}
+              type="button"
+              onClick={() => insight.href && router.push(insight.href)}
+              className="ui-press w-full rounded-[18px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)]"
+            >
+              <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+                {insight.title}
+              </span>
+              <span className="mt-1 block text-[13px] text-[var(--color-text-secondary)]">
+                {insight.body}
+              </span>
+              <span className="mt-1 block text-[12px] text-[var(--color-text-tertiary)]">
+                Porque: {insight.reason}
+              </span>
+            </button>
+          ))}
+        </section>
+      ) : null}
+
+      {upcomingMoments.length > 0 ? (
+        <section>
+          <HomeSectionHead title="Próximamente" />
+          <HomeRail>
+            {upcomingMoments.map((item) => (
+              <HomeMomentCard
+                key={item.id}
+                tone="soon"
+                badgeLabel={communityFeedTimeLabel(item) || "Pronto"}
+                glyph="calendar"
+                title={item.title}
+                where={item.metadata?.locationLabel || placeName}
+                imageUrl={
+                  item.metadata?.imageUrl?.trim() ||
+                  LOCATION_NEARBY_FALLBACK_IMAGE
+                }
+                peopleLabel={communityFeedLivingLabel(item)}
+                statusLabel={reasons[item.id]}
+                ctaLabel={communityFeedPrimaryLabel(item)}
+                onClick={() => {
+                  if (item.locationId) setPlaceLocationId(item.locationId);
+                  else router.push(lifeMapHrefForFeedItem(item));
+                }}
+                onCta={() => router.push(lifeMapHrefForFeedItem(item))}
+              />
+            ))}
+          </HomeRail>
+        </section>
+      ) : null}
+
+      {favoritePlaces.length > 0 ? (
+        <section>
+          <HomeSectionHead title="Tus lugares" actionLabel="Mapa" actionGlyph="map" onAction={() => router.push("/map")} />
+          <HomeRail>
+            {favoritePlaces.map((place) => (
+              <HomeNearbyCard
+                key={place.id}
+                name={place.name}
+                imageUrl={
+                  preferEntityMediaUrl(undefined, place.imageUrl) ||
+                  LOCATION_NEARBY_FALLBACK_IMAGE
+                }
+                distanceLabel={place.areaLabel ?? configuration.branding.name}
+                statusLabel="Favorito"
+                onClick={() => setPlaceLocationId(place.id)}
+              />
+            ))}
+          </HomeRail>
+        </section>
+      ) : null}
 
       {/* ── LA COMUNIDAD SE MUEVE — human activity, not a social feed ── */}
       {moves.length > 0 ? (
@@ -450,7 +580,7 @@ export function HomeScreen() {
       {canLocal && nearby.length > 0 ? (
         <section>
           <HomeSectionHead
-            title="Vida cerca de mí"
+            title="Cerca de ti"
             actionLabel="Ver mapa"
             actionGlyph="map"
             onAction={() => router.push("/map")}

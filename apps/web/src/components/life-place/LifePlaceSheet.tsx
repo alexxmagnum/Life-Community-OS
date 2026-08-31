@@ -5,6 +5,7 @@
  * Reused from Life Map, Home and Discover. Does not own domain data.
  */
 
+import { useEffect, useState } from "react";
 import {
   LIVING_PLACE_EMPTY_CTA,
   LIVING_PLACE_EMPTY_TITLE,
@@ -15,6 +16,12 @@ import {
   type LifePlaceContext,
 } from "@life-community-os/types";
 import { LIVING_PLACE_GLYPH } from "@/lib/community/composer-glyphs";
+import {
+  fetchPersonalContext,
+  togglePersonalFavorite,
+} from "@/lib/personal/personal-client";
+import { useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
 export type LifePlaceSheetProps = {
   context: LifePlaceContext;
@@ -29,6 +36,9 @@ export function LifePlaceSheet({
   onClose,
   onCompose,
 }: LifePlaceSheetProps) {
+  const { configuration } = useTenant();
+  const { currentUser } = useCurrentUser();
+  const [favorite, setFavorite] = useState(false);
   const now = lifePlaceNowLabel(context);
   const availability = lifePlaceAvailabilityLabel(context);
   const lead = context.currentActivity[0];
@@ -36,6 +46,31 @@ export function LifePlaceSheet({
   const identityImage = lead?.metadata?.imageUrl?.trim();
   const facilities = context.resources.map((item) => item.name);
   const upcoming = context.experiences.slice(0, 6);
+
+  useEffect(() => {
+    if (!currentUser.hasMembership) {
+      setFavorite(false);
+      return;
+    }
+    let cancelled = false;
+    void fetchPersonalContext({
+      tenantId: configuration.tenantId,
+      territoryId: context.territoryId,
+    }).then((data) => {
+      if (cancelled) return;
+      setFavorite(
+        (data.context?.favoriteLocations ?? []).includes(context.location.id),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    configuration.tenantId,
+    context.location.id,
+    context.territoryId,
+    currentUser.hasMembership,
+  ]);
   const joinOrReserve = context.actions.filter(
     (action) =>
       action.kind === "join_experience" ||
@@ -81,9 +116,26 @@ export function LifePlaceSheet({
         <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--color-text-tertiary)]">
           {context.location.category}
         </p>
-        <h2 className="mt-1 font-[family-name:var(--font-display)] text-[22px] font-semibold leading-tight text-[var(--color-text-primary)]">
-          {context.location.name}
-        </h2>
+        <div className="mt-1 flex items-start justify-between gap-3">
+          <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold leading-tight text-[var(--color-text-primary)]">
+            {context.location.name}
+          </h2>
+          {currentUser.hasMembership ? (
+            <button
+              type="button"
+              onClick={() => {
+                void togglePersonalFavorite({
+                  tenantId: configuration.tenantId,
+                  kind: "location",
+                  targetId: context.location.id,
+                }).then((result) => setFavorite(result.saved));
+              }}
+              className="ui-press shrink-0 rounded-full border border-[var(--color-border-subtle)] px-3 py-1 text-[12px] font-medium text-[var(--color-text-secondary)]"
+            >
+              {favorite ? "En tus lugares" : "Guardar lugar"}
+            </button>
+          ) : null}
+        </div>
 
         <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted)] px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
@@ -106,6 +158,12 @@ export function LifePlaceSheet({
               ) : availability ? (
                 <p className="mt-1 text-[14px] text-[var(--color-text-tertiary)]">
                   {availability}
+                </p>
+              ) : null}
+              {typeof (lead as { reason?: string } | undefined)?.reason ===
+              "string" ? (
+                <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
+                  Porque: {(lead as { reason?: string }).reason}
                 </p>
               ) : null}
             </>

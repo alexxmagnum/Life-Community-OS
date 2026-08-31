@@ -23,6 +23,7 @@ export type LivingFeedCardProps = {
   item: CommunityFeedItem;
   index?: number;
   fallbackImage?: string;
+  reason?: string;
   onOpenPlace?: (locationId: string) => void;
   onOpenHref?: (href: string) => void;
 };
@@ -33,6 +34,7 @@ export function LivingFeedCard({
   fallbackImage = FALLBACK_IMAGE,
   onOpenPlace,
   onOpenHref,
+  reason,
 }: LivingFeedCardProps) {
   const stagger = staggerItemProps(index);
   const href = communityFeedItemHref(item);
@@ -51,7 +53,11 @@ export function LivingFeedCard({
         title={item.title}
         when={communityFeedTimeLabel(item) ?? communityFeedPrimaryLabel(item)}
         where={item.metadata?.locationLabel || item.description || ""}
-        peopleLabel={communityFeedLivingLabel(item)}
+        peopleLabel={
+          [communityFeedLivingLabel(item), reason ? `Porque: ${reason}` : null]
+            .filter(Boolean)
+            .join(" · ") || undefined
+        }
         imageUrl={item.metadata?.imageUrl?.trim() || fallbackImage}
         badgeLabel={livingFeedCardStateLabel(state)}
         ctaLabel={communityFeedPrimaryLabel(item)}

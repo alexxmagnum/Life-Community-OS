@@ -17,9 +17,12 @@ import {
   bindProjectedNavigation,
   CommunityActionRegistry,
   communityCreationRoute,
+  composerSuggestionReason,
+  personalizeComposerActions,
   projectPlatformNavigation,
   sanitizeCommunityCreationContext,
   type CommunityCreationContext,
+  type PersonalContext,
 } from "@life-community-os/types";
 import { requireTenantPack } from "@/lib/tenant/registry";
 import { useTenant } from "@/providers/TenantProvider";
@@ -34,6 +37,7 @@ import {
   type ActionComposerDetail,
 } from "@/lib/community/action-composer-client";
 import { COMPOSER_GLYPH_BY_ACTION } from "@/lib/community/composer-glyphs";
+import { fetchPersonalContext } from "@/lib/personal/personal-client";
 import { useNotifications } from "@/providers/NotificationProvider";
 
 function IconHome() {
@@ -182,6 +186,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const [composeContext, setComposeContext] = useState<CommunityCreationContext>(
     {},
   );
+  const [personalContext, setPersonalContext] = useState<PersonalContext | null>(
+    null,
+  );
   const [postOpen, setPostOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -212,6 +219,27 @@ export function MemberShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     setNavAlert(pack.getNavAlert?.(Date.now()) ?? null);
   }, [pack]);
+
+  useEffect(() => {
+    if (!currentUser.hasMembership || !activeTerritory.territoryId) {
+      setPersonalContext(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchPersonalContext({
+      tenantId: configuration.tenantId,
+      territoryId: activeTerritory.territoryId,
+    }).then((data) => {
+      if (!cancelled) setPersonalContext(data.context);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    currentUser.hasMembership,
+    configuration.tenantId,
+    activeTerritory.territoryId,
+  ]);
   /**
    * Night chrome needs a light mark. Prefer logoLight; fall back to logo
    * (the Panorámica icon is transparent and reads on dark surfaces).
@@ -257,15 +285,22 @@ export function MemberShell({ children }: { children: ReactNode }) {
    */
   const createActions = useMemo((): CreateAction[] => {
     if (!currentUser.hasMembership) return [];
-    return CommunityActionRegistry.list({
+    const listed = CommunityActionRegistry.list({
       hasMembership: currentUser.hasMembership,
       capabilities: currentUser.permissions,
       productCapabilities,
       territoryId: activeTerritory.territoryId,
-    }).map((action) => ({
+    });
+    const ordered = personalContext
+      ? personalizeComposerActions(listed, personalContext)
+      : listed;
+    return ordered.map((action) => ({
       id: action.id,
       title: action.title,
       description: action.description,
+      hint: personalContext
+        ? composerSuggestionReason(action, personalContext)
+        : undefined,
       icon: COMPOSER_GLYPH_BY_ACTION[action.id] ? (
         <img
           src={COMPOSER_GLYPH_BY_ACTION[action.id]}
@@ -281,6 +316,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   }, [
     activeTerritory.territoryId,
     composeContext,
+    personalContext,
     currentUser.hasMembership,
     currentUser.permissions,
     productCapabilities,

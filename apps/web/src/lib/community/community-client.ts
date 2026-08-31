@@ -11,6 +11,11 @@ export type CommunityFeedPayload = {
   events: unknown[];
   comments: unknown[];
   reactions: unknown[];
+  personalization?: {
+    enabled: boolean;
+    providerId?: string;
+    reasons: Record<string, string>;
+  };
 };
 
 const EMPTY_FEED: CommunityFeedPayload = {
@@ -49,17 +54,28 @@ export async function fetchCommunityFeed(
     events: data.events ?? [],
     comments: data.comments ?? [],
     reactions: data.reactions ?? [],
+    personalization: data.personalization,
   };
 }
 
 export async function getCommunityExperienceFeed(input: {
   tenantId: string;
   territoryId?: string | null;
-}): Promise<{ territoryId: string | null; items: CommunityFeedItem[] }> {
+}): Promise<{
+  territoryId: string | null;
+  items: CommunityFeedItem[];
+  reasons: Record<string, string>;
+  personalizationEnabled: boolean;
+}> {
   const data = await fetchCommunityFeed(input.tenantId, {
     territoryId: input.territoryId,
   });
-  return { territoryId: data.territoryId, items: data.items };
+  return {
+    territoryId: data.territoryId,
+    items: data.items,
+    reasons: data.personalization?.reasons ?? {},
+    personalizationEnabled: data.personalization?.enabled === true,
+  };
 }
 
 export async function createCommunityPostRequest(input: {

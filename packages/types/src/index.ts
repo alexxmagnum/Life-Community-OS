@@ -116,6 +116,57 @@ export {
   mergeParticipationPrivacy,
 } from "./community/participation";
 
+/** Personal Community Intelligence — projection, not a recommendation domain. */
+export type {
+  PersonalInterestId,
+  PersonalInterestOption,
+  PersonalFavoriteKind,
+  PersonalFavorite,
+  PersonalParticipationHistoryItem,
+  PersonalPrivacy,
+  PersonalPreferences,
+  PersonalContext,
+} from "./personal/personal-context";
+export type {
+  PersonalizationProviderId,
+  PersonalizedCommunityFeedItem,
+  PersonalizedCommunityFeed,
+  CommunityInsight,
+  PersonalizationInput,
+  PersonalizationProvider,
+  CommunityInsightProvider,
+  AIRecommendationProvider,
+} from "./personal/personalization";
+export {
+  PERSONAL_INTEREST_IDS,
+  PERSONAL_INTEREST_OPTIONS,
+  PERSONAL_FAVORITE_KINDS,
+  DEFAULT_PERSONAL_PRIVACY,
+  EMPTY_PERSONAL_PREFERENCES,
+  isPersonalInterestId,
+  isPersonalFavoriteKind,
+  personalInterestLabel,
+  sanitizeInterestIds,
+  emptyPersonalContext,
+  mergePersonalPrivacy,
+  favoriteLocationsFrom,
+  personalFavoriteId,
+} from "./personal/personal-context";
+export {
+  PERSONALIZATION_PROVIDER_IDS,
+  matchingInterestsForItem,
+  personalizationReason,
+  personalizeCommunityFeed,
+  listCommunityInsights,
+  personalizeComposerActions,
+  composerSuggestionReason,
+  personalizeLifePlaceContext,
+  RuleBasedPersonalizationProvider,
+  RuleBasedCommunityInsightProvider,
+  isOpaqueRecommendationEntity,
+  hasContinuousLocationTracking,
+} from "./personal/personalization";
+
 /** Life Map living Territory — Territory + Location + Feed projection. */
 export type {
   LifeMapLivingLodBand,
