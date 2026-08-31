@@ -22,6 +22,11 @@ export const ADMIN_AUDIT_ACTIONS = [
   "governance.safety",
   "territory.assign_asset",
   "settings.update",
+  "platform.tenant.created",
+  "platform.territory.created",
+  "platform.feature.changed",
+  "platform.admin.action",
+  "security.permission.changed",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];
@@ -39,11 +44,31 @@ export type AdminAuditEntityType =
   | "governance_report"
   | "safety_action"
   | "territory_object"
-  | "tenant_settings";
+  | "tenant_settings"
+  | "tenant"
+  | "territory"
+  | "platform"
+  | "security";
+
+const SENSITIVE_METADATA_KEY =
+  /secret|token|password|authorization|cookie|api[_-]?key|private/i;
+
+export function sanitizeAuditMetadata(
+  metadata?: Record<string, string | number | boolean | null>,
+): Record<string, string | number | boolean | null> | undefined {
+  if (!metadata) return undefined;
+  const next: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (SENSITIVE_METADATA_KEY.test(key)) continue;
+    next[key] = value;
+  }
+  return Object.keys(next).length ? next : undefined;
+}
 
 export type AdminAuditLog = {
   id: DomainId;
   tenantId: DomainId;
+  territoryId?: DomainId;
   actorPersonId: DomainId;
   actorRole: string;
   action: AdminAuditAction | (string & {});
@@ -60,6 +85,7 @@ export function isAdminAuditAction(value: string): value is AdminAuditAction {
 
 export function createAdminAuditLog(input: {
   tenantId: string;
+  territoryId?: string;
   actorPersonId: string;
   actorRole: string;
   action: AdminAuditLog["action"];
@@ -80,13 +106,14 @@ export function createAdminAuditLog(input: {
   return {
     id,
     tenantId: input.tenantId,
+    territoryId: input.territoryId?.trim() || undefined,
     actorPersonId: input.actorPersonId,
     actorRole: input.actorRole,
     action: input.action,
     entityType: input.entityType,
     entityId: input.entityId,
     reason: input.reason,
-    metadata: input.metadata,
+    metadata: sanitizeAuditMetadata(input.metadata),
     createdAt: now,
   };
 }

@@ -82,6 +82,16 @@ export function canAccessAdminOperations(
   return (ADMIN_OPERATIONS_ROLES as readonly string[]).includes(role);
 }
 
+/**
+ * Community Admin operates a Territory.
+ * It cannot create tenants, change plans, or activate global features.
+ */
+export function canMutateSaasControlPlane(
+  isPlatformOperator: boolean,
+): boolean {
+  return isPlatformOperator === true;
+}
+
 export function canAccessAdminSection(
   role: MembershipRole | null | undefined,
   section: AdminOperationsSection,

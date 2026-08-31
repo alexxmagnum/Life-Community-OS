@@ -411,6 +411,28 @@ export const TenantFactoryService = {
     };
   },
 
+  markReady(
+    snapshot: TenantFactorySnapshot,
+    tenantId: string,
+  ): TenantFactorySnapshot {
+    return TenantFactoryService.setStatus(snapshot, tenantId, "active");
+  },
+
+  setStatus(
+    snapshot: TenantFactorySnapshot,
+    tenantId: string,
+    status: TenantStatus,
+  ): TenantFactorySnapshot {
+    const tenant = snapshot.tenants.find((row) => row.id === tenantId);
+    if (!tenant) throw new Error("tenant_not_found");
+    return {
+      ...snapshot,
+      tenants: snapshot.tenants.map((row) =>
+        row.id === tenantId ? { ...row, status } : row,
+      ),
+    };
+  },
+
   seedAdministrator(
     snapshot: TenantFactorySnapshot,
     input: { tenantId: string; personId: string },

@@ -142,6 +142,47 @@ export {
   isOpaqueTenantFactoryEntity,
 } from "./tenant/factory";
 
+/** Platform Operations — SaaS control plane, not community life. */
+export type {
+  TenantHealthStatus,
+  TenantProvisioningStatus,
+  TenantProvisioningStep,
+  PlatformAdminSurface,
+  PlatformSecurityEventKind,
+  PlatformAlertKind,
+  PlatformAlert,
+  SystemHealth,
+  FeatureUsageMap,
+  PlatformOperationsContext,
+  TenantHealthContext,
+  TenantPlanLimits,
+  TenantSubscription,
+  PlatformSecurityEvent,
+  PlatformAuditRecord,
+  PlatformOperationsInput,
+} from "./platform/operations";
+export {
+  TENANT_HEALTH_STATUSES,
+  TENANT_PROVISIONING_STATUSES,
+  TENANT_PROVISIONING_STEPS,
+  PLATFORM_ADMIN_SURFACES,
+  PLATFORM_SECURITY_EVENT_KINDS,
+  tenantHealthStatusFromTenant,
+  provisioningStatusFromTenant,
+  limitsForPlan,
+  projectTenantSubscription,
+  billingPlanDoesNotGrantPermissions,
+  communityAdminCannotMutateSaas,
+  emptyFeatureUsage,
+  projectFeatureUsage,
+  projectTenantHealth,
+  projectPlatformAudit,
+  detectCrossTenantSecurityEvent,
+  detectInvalidPermissionEvent,
+  projectPlatformOperationsContext,
+  isOpaquePlatformOperationsEntity,
+} from "./platform/operations";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,
@@ -989,10 +1030,12 @@ export type {
 export {
   ADMIN_AUDIT_ACTIONS,
   isAdminAuditAction,
+  sanitizeAuditMetadata,
   createAdminAuditLog,
   ADMIN_OPERATIONS_ROLES,
   ADMIN_SECTION_ROLES,
   canAccessAdminOperations,
+  canMutateSaasControlPlane,
   canAccessAdminSection,
   canAssignMembershipRole,
 } from "./domain";

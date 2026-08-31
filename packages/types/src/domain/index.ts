@@ -616,6 +616,7 @@ export type {
 export {
   ADMIN_AUDIT_ACTIONS,
   isAdminAuditAction,
+  sanitizeAuditMetadata,
   createAdminAuditLog,
 } from "./admin-audit-log";
 export type {
@@ -628,6 +629,7 @@ export {
   ADMIN_OPERATIONS_ROLES,
   ADMIN_SECTION_ROLES,
   canAccessAdminOperations,
+  canMutateSaasControlPlane,
   canAccessAdminSection,
   canAssignMembershipRole,
 } from "./admin-operations";

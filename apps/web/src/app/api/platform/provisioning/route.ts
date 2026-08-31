@@ -1,41 +1,17 @@
 import { NextResponse } from "next/server";
-import { canAccessPlatformAdmin } from "@life-community-os/types";
 import {
   TenantFactoryDeniedError,
   TenantFactoryRuntime,
 } from "@/lib/tenant/tenant-factory-service";
-import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
 
 export const runtime = "nodejs";
-
-export async function GET(request: Request) {
-  const { resolveRequestActor } = await import("@/lib/auth/request-actor");
-  const actor = await resolveRequestActor(request);
-  if (!actor.authenticated || !actor.personId) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  if (
-    !canAccessPlatformAdmin({
-      personId: actor.personId,
-      operators: TenantFactoryRuntime.snapshot().operators,
-    })
-  ) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
-  return NextResponse.json({
-    territories: PlatformOperationsRuntime.territories(),
-  });
-}
 
 export async function POST(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
   let body: {
-    name?: string;
-    slug?: string;
-    locale?: string;
-    timezone?: string;
     communitySlug?: string;
+    action?: string;
     tenantId?: string;
     territoryId?: string;
     role?: string;
@@ -55,8 +31,21 @@ export async function POST(request: Request) {
     if (!community) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
-    const territory = TenantFactoryRuntime.addTerritory({
+    const status =
+      body.action === "suspend"
+        ? "suspended"
+        : body.action === "archive"
+          ? "archived"
+          : body.action === "mark_ready"
+            ? "active"
+            : null;
+    if (!status) {
+      return NextResponse.json({ error: "invalid" }, { status: 400 });
+    }
+    const tenant = TenantFactoryRuntime.setStatus({
       actor,
+      tenantId: community.id,
+      status,
       spoof: {
         tenantId: body.tenantId,
         territoryId: body.territoryId,
@@ -64,15 +53,8 @@ export async function POST(request: Request) {
         plan: body.plan,
         features: body.features,
       },
-      territory: {
-        tenantId: community.id,
-        name: body.name ?? "",
-        slug: body.slug,
-        locale: body.locale,
-        timezone: body.timezone,
-      },
     });
-    return NextResponse.json({ territory }, { status: 201 });
+    return NextResponse.json({ tenant });
   } catch (error) {
     if (error instanceof TenantFactoryDeniedError) {
       const status = error.message === "unauthorized" ? 401 : 403;

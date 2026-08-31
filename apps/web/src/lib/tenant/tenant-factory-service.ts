@@ -15,8 +15,14 @@ import {
   type TenantPlan,
   type TenantProvisionRequest,
   type TenantProvisionResult,
+  type TenantStatus,
   type TerritoryProvisionInput,
 } from "@life-community-os/types";
+import {
+  recordPlatformAudit,
+  recordSpoofSecurityEvent,
+  replacePlatformOperationsStoreForTests,
+} from "@/lib/platform/platform-operations-store";
 
 export class TenantFactoryDeniedError extends Error {
   constructor(message = "forbidden") {
@@ -31,6 +37,7 @@ export function replaceTenantFactoryStoreForTests(
   next: TenantFactorySnapshot = emptyTenantFactorySnapshot(),
 ): void {
   snapshot = next;
+  replacePlatformOperationsStoreForTests();
 }
 
 export function listPlatformOperators(): PlatformOperator[] {
@@ -82,9 +89,15 @@ export const TenantFactoryRuntime = {
     plan?: TenantPlan;
     administratorPersonId?: string;
   }): TenantProvisionResult {
-    requirePlatformOperator(input.actor);
+    const personId = requirePlatformOperator(input.actor);
     const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) throw new TenantFactoryDeniedError("forbidden");
+    if (spoofed) {
+      recordSpoofSecurityEvent({
+        field: spoofed,
+        actorPersonId: personId,
+      });
+      throw new TenantFactoryDeniedError("forbidden");
+    }
     const provisioned = TenantFactoryService.provision(
       snapshot,
       input.request,
@@ -97,6 +110,15 @@ export const TenantFactoryRuntime = {
         personId: input.administratorPersonId,
       });
     }
+    recordPlatformAudit({
+      tenantId: provisioned.result.tenantId,
+      territoryId: provisioned.result.territories[0]?.id,
+      actorPersonId: personId,
+      action: "platform.tenant.created",
+      entityType: "tenant",
+      entityId: provisioned.result.tenantId,
+      metadata: { slug: input.request.slug },
+    });
     return provisioned.result;
   },
 
@@ -105,11 +127,59 @@ export const TenantFactoryRuntime = {
     territory: TerritoryProvisionInput;
     spoof?: ClientAuthoritySpoof | null;
   }) {
-    requirePlatformOperator(input.actor);
+    const personId = requirePlatformOperator(input.actor);
     const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) throw new TenantFactoryDeniedError("forbidden");
+    if (spoofed) {
+      recordSpoofSecurityEvent({
+        field: spoofed,
+        actorPersonId: personId,
+        tenantId: input.territory.tenantId,
+      });
+      throw new TenantFactoryDeniedError("forbidden");
+    }
     const next = TenantFactoryService.addTerritory(snapshot, input.territory);
     snapshot = next.snapshot;
+    recordPlatformAudit({
+      tenantId: next.territory.tenantId,
+      territoryId: next.territory.id,
+      actorPersonId: personId,
+      action: "platform.territory.created",
+      entityType: "territory",
+      entityId: next.territory.id,
+      metadata: { slug: next.territory.slug },
+    });
     return next.territory;
+  },
+
+  setStatus(input: {
+    actor: RequestActor;
+    tenantId: string;
+    status: TenantStatus;
+    spoof?: ClientAuthoritySpoof | null;
+  }) {
+    const personId = requirePlatformOperator(input.actor);
+    const spoofed = rejectClientAuthoritySpoof(input.spoof);
+    if (spoofed) {
+      recordSpoofSecurityEvent({
+        field: spoofed,
+        actorPersonId: personId,
+        tenantId: input.tenantId,
+      });
+      throw new TenantFactoryDeniedError("forbidden");
+    }
+    snapshot = TenantFactoryService.setStatus(
+      snapshot,
+      input.tenantId,
+      input.status,
+    );
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.admin.action",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { status: input.status },
+    });
+    return snapshot.tenants.find((row) => row.id === input.tenantId) ?? null;
   },
 };
