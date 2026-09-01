@@ -32,7 +32,7 @@ export type StoredMembership = {
   tenantSlug: string;
   territoryId: string;
   role: MembershipRole;
-  status: "active" | "inactive" | "ended";
+  status: "pending" | "active" | "invited" | "suspended" | "removed" | "inactive" | "ended";
   createdAt: string;
   updatedAt: string;
 };

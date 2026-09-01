@@ -9,7 +9,21 @@ import type { DomainId, IsoDateTimeString } from "./ids";
  * Community Area resource eligibility is NOT stored here —
  * derive from PropertyPersonRelationship (ADR-037).
  */
-export type MembershipStatus = "active" | "inactive" | "ended";
+export type MembershipStatus =
+  | "pending"
+  | "active"
+  | "invited"
+  | "suspended"
+  | "removed"
+  | "inactive"
+  | "ended";
+
+/** Active membership grants community participation. Guest ≠ Member. */
+export function membershipGrantsCommunityAccess(
+  status: MembershipStatus,
+): boolean {
+  return status === "active";
+}
 
 export interface Membership {
   id: DomainId;

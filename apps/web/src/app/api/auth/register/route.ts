@@ -31,15 +31,27 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { email?: string; password?: string; displayName?: string };
+  let body: { email?: string; password?: string; displayName?: string; role?: string; tenantId?: string; territoryId?: string; membershipId?: string };
   try {
     body = (await request.json()) as {
       email?: string;
       password?: string;
       displayName?: string;
+      role?: string;
+      tenantId?: string;
+      territoryId?: string;
+      membershipId?: string;
     };
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const { assertClientCannotSupplyAuthority, ROLE_SPOOF_FORBIDDEN } =
+    await import("@life-community-os/types");
+  try {
+    assertClientCannotSupplyAuthority(body as Record<string, unknown>);
+  } catch {
+    return NextResponse.json({ error: ROLE_SPOOF_FORBIDDEN }, { status: 403 });
   }
 
   const email = body.email?.trim();

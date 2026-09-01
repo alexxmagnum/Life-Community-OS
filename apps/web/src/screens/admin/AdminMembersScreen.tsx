@@ -26,6 +26,7 @@ export function AdminMembersScreen() {
   const [query, setQuery] = useState("");
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [email, setEmail] = useState("");
+  const [communityCode, setCommunityCode] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -123,6 +124,45 @@ export function AdminMembersScreen() {
               </div>
             </li>
           ))}
+        </ul>
+      </AdminCard>
+      <AdminCard title="Solicitudes pendientes">
+        <p className="text-[13px] text-[var(--color-text-secondary)]">
+          Aprueba membresías pendientes sin cambiar tenant ni plan SaaS.
+        </p>
+        <ul className="mt-2 space-y-2">
+          {members
+            .filter((member) => member.status === "pending")
+            .map((member) => (
+              <li
+                key={member.membershipId}
+                className="flex items-center justify-between rounded-[12px] border px-3 py-2 text-[13px]"
+              >
+                <span>{member.displayName || member.email || member.personId}</span>
+                <button
+                  type="button"
+                  className="rounded-full bg-[var(--color-action-primary)] px-3 py-1 text-[12px] font-semibold text-white"
+                  onClick={() =>
+                    void (async () => {
+                      const res = await fetch("/api/admin/memberships/approve", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "x-tenant-slug": tenantSlug,
+                        },
+                        body: JSON.stringify({ membershipId: member.membershipId }),
+                      });
+                      setMessage(
+                        res.ok ? "Membresía aprobada." : "No se pudo aprobar.",
+                      );
+                      await refresh();
+                    })()
+                  }
+                >
+                  Aprobar
+                </button>
+              </li>
+            ))}
         </ul>
       </AdminCard>
       <AdminCard title="Invitar">

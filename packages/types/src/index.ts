@@ -330,6 +330,43 @@ export {
   mergeTrustPrivacyForExport,
 } from "./privacy/privacy-context";
 
+/** Membership onboarding — Person vs Membership, codes, invitations, guest access. */
+export type {
+  MembershipLifecycleStatus,
+  OnboardingPerson,
+  OnboardingMembership,
+  CommunityAccessCode,
+  CommunityInvitation,
+  MembershipOnboardingPlane,
+  RegistrationPersonInput,
+} from "./membership/onboarding-context";
+export {
+  ROLE_SPOOF_FORBIDDEN,
+  COMMUNITY_CODE_INVALID,
+  COMMUNITY_CODE_TERRITORY_DENIED,
+  DUPLICATE_IDENTITY,
+  GUEST_ACCESS_DENIED,
+  INVITATION_INVALID,
+  MEMBERSHIP_LIFECYCLE_STATUSES,
+  normalizeIdentityEmail,
+  emptyMembershipOnboardingPlane,
+  assertClientCannotSupplyAuthority,
+  projectRegistrationPerson,
+  resolveCommunityCode,
+  assertCommunityCodeTerritory,
+  isDuplicateIdentity,
+  invitationIsValid,
+  guestCanAccess,
+  magicPlusEligible,
+  projectOnboardingMembership,
+  MembershipOnboardingService,
+  onboardingRespectsPrivacy,
+  onboardingDoesNotOwnDomainData,
+  isOpaqueOnboardingEntity,
+  onboardingAuditMetadata,
+} from "./membership/onboarding-context";
+export { membershipGrantsCommunityAccess } from "./domain/membership";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

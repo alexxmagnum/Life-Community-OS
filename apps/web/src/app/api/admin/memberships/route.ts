@@ -104,7 +104,15 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ membership: updated });
   }
 
-  if (body.status === "inactive" || body.status === "ended" || body.status === "active") {
+  if (
+    body.status === "inactive" ||
+    body.status === "ended" ||
+    body.status === "active" ||
+    body.status === "pending" ||
+    body.status === "invited" ||
+    body.status === "suspended" ||
+    body.status === "removed"
+  ) {
     const updated = await updateMembershipStatus({
       tenantSlug: actor.tenantSlug,
       personId,

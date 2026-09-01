@@ -162,6 +162,7 @@ export {
 export type { Person } from "./person";
 export type { Identity } from "./identity";
 export type { Membership, MembershipStatus } from "./membership";
+export { membershipGrantsCommunityAccess } from "./membership";
 export type { Entity } from "./entity";
 export type { Place } from "./place";
 export type {

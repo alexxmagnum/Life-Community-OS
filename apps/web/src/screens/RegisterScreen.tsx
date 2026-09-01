@@ -9,6 +9,7 @@ export function RegisterScreen() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [communityCode, setCommunityCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,13 @@ export function RegisterScreen() {
       if (data.needsEmailConfirmation) {
         setInfo("Revisa tu email para confirmar la cuenta.");
         return;
+      }
+      if (communityCode.trim()) {
+        await fetch("/api/auth/community-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: communityCode.trim() }),
+        });
       }
       router.replace("/");
       router.refresh();
@@ -98,6 +106,18 @@ export function RegisterScreen() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">
+            Código de comunidad (opcional)
+          </span>
+          <input
+            className={fieldClass}
+            type="text"
+            placeholder="Ej. PANORAMICA-2026"
+            value={communityCode}
+            onChange={(e) => setCommunityCode(e.target.value)}
           />
         </label>
         {error ? (
