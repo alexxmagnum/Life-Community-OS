@@ -402,6 +402,48 @@ export {
   saasControlPlaneForbiddenForCommunityAdmin,
 } from "./platform/customer-context";
 
+/** Customer Success — continuous SaaS operations, health and support. */
+export type {
+  CustomerSuccessHealthStatus,
+  CustomerSuccessTenantHealth,
+  OnboardingChecklistKey,
+  OnboardingChecklistItemStatus,
+  TenantOnboardingChecklistItem,
+  TenantOnboardingChecklist,
+  TenantOperationalAlertType,
+  TenantOperationalAlert,
+  CustomerSupportNoteStatus,
+  CustomerSupportNote,
+  CustomerSupportContext,
+  SubscriptionHealthStatus,
+  SubscriptionHealth,
+  CustomerSuccessContext,
+  CustomerSuccessPlane,
+} from "./platform/customer-success";
+export {
+  CUSTOMER_SUCCESS_HEALTH_STATUSES,
+  ONBOARDING_CHECKLIST_KEYS,
+  OPERATIONAL_ALERT_TYPES,
+  SUPPORT_NOTE_STATUSES,
+  SUBSCRIPTION_HEALTH_STATUSES,
+  emptyCustomerSuccessPlane,
+  isOpaqueCustomerSuccessEntity,
+  successDoesNotMeasureEngagement,
+  personalDataExcludedFromSuccess,
+  subscriptionHealthFromContract,
+  buildOnboardingChecklist,
+  resolveOperationalAlerts,
+  resolveCustomerHealth,
+  projectCustomerSupportContext,
+  projectCustomerSuccessContext,
+  communityAdminBlockedFromCustomerSuccess,
+  rejectCustomerSuccessClientSpoof,
+  assertCustomerSuccessTenantBoundary,
+  customerSuccessAuditMetadata,
+  CustomerSuccessService,
+  saasControlPlaneForbiddenMessage,
+} from "./platform/customer-success";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

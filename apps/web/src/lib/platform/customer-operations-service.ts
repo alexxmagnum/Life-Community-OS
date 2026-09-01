@@ -13,6 +13,13 @@ import {
   type CustomerOperationsPlane,
   type ProductCapabilityMap,
   type TenantPlan,
+  CustomerSuccessService,
+  emptyCustomerSuccessPlane,
+  projectCustomerSuccessContext,
+  rejectCustomerSuccessClientSpoof,
+  type CustomerSuccessPlane,
+  type OnboardingChecklistKey,
+  type TenantOperationalAlertType,
 } from "@life-community-os/types";
 import {
   recordInvalidPermission,
@@ -24,6 +31,7 @@ import {
 } from "@/lib/tenant/tenant-factory-service";
 
 let plane: CustomerOperationsPlane = emptyCustomerOperationsPlane();
+let successPlane: CustomerSuccessPlane = emptyCustomerSuccessPlane();
 
 function requireOperator(actor: RequestActor): string {
   if (!actor.authenticated || !actor.personId) {
@@ -49,6 +57,16 @@ export function replaceCustomerOperationsStoreForTests(
   next: CustomerOperationsPlane = emptyCustomerOperationsPlane(),
 ): void {
   plane = next;
+}
+
+export function replaceCustomerSuccessStoreForTests(
+  next: CustomerSuccessPlane = emptyCustomerSuccessPlane(),
+): void {
+  successPlane = next;
+}
+
+export function customerSuccessSnapshot(): CustomerSuccessPlane {
+  return successPlane;
 }
 
 export function customerOperationsSnapshot(): CustomerOperationsPlane {
@@ -225,5 +243,138 @@ export const CustomerOperationsRuntime = {
       metadata: { plan: input.plan },
     });
     return this.get(input.actor, input.tenantId);
+  },
+
+  resolveCustomerHealth(actor: RequestActor, tenantId: string) {
+    const personId = requireOperator(actor);
+    const snapshot = TenantFactoryRuntime.snapshot();
+    const customer = projectCustomerOperationsContext(snapshot, plane, tenantId);
+    if (!customer) return null;
+    recordPlatformAudit({
+      tenantId,
+      actorPersonId: personId,
+      action: "platform.customer.health.viewed",
+      entityType: "tenant",
+      entityId: tenantId,
+    });
+    return projectCustomerSuccessContext(snapshot, plane, successPlane, tenantId);
+  },
+
+  getOnboardingStatus(actor: RequestActor, tenantId: string) {
+    requireOperator(actor);
+    const snapshot = TenantFactoryRuntime.snapshot();
+    const ctx = projectCustomerSuccessContext(snapshot, plane, successPlane, tenantId);
+    return ctx?.onboardingProgress ?? null;
+  },
+
+  createSupportNote(input: {
+    actor: RequestActor;
+    tenantId: string;
+    summary: string;
+    body?: Record<string, unknown>;
+  }) {
+    const personId = requireOperator(input.actor);
+    if (input.body) {
+      const spoof = rejectCustomerSuccessClientSpoof(input.body);
+      if (spoof) throw new TenantFactoryDeniedError("owner_immutable");
+    }
+    const result = CustomerSuccessService.createSupportNote(successPlane, {
+      tenantId: input.tenantId,
+      summary: input.summary,
+      createdBy: personId,
+    });
+    successPlane = result.plane;
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.customer.support.created",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { summary: input.summary },
+    });
+    return result.note;
+  },
+
+  resolveOperationalAlerts(actor: RequestActor, tenantId: string) {
+    requireOperator(actor);
+    const snapshot = TenantFactoryRuntime.snapshot();
+    const ctx = projectCustomerSuccessContext(snapshot, plane, successPlane, tenantId);
+    return ctx?.operationalAlerts ?? [];
+  },
+
+  completeChecklist(input: {
+    actor: RequestActor;
+    tenantId: string;
+    key: OnboardingChecklistKey;
+    body?: Record<string, unknown>;
+  }) {
+    const personId = requireOperator(input.actor);
+    if (input.body) {
+      const spoof = rejectCustomerSuccessClientSpoof(input.body);
+      if (spoof) throw new TenantFactoryDeniedError("owner_immutable");
+    }
+    successPlane = CustomerSuccessService.completeChecklistItem(successPlane, {
+      tenantId: input.tenantId,
+      key: input.key,
+    });
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.customer.onboarding.updated",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { checklistKey: input.key },
+    });
+    return this.getOnboardingStatus(input.actor, input.tenantId);
+  },
+
+  createAlert(input: {
+    actor: RequestActor;
+    tenantId: string;
+    type: TenantOperationalAlertType;
+    summary: string;
+  }) {
+    const personId = requireOperator(input.actor);
+    const result = CustomerSuccessService.createAlert(successPlane, {
+      tenantId: input.tenantId,
+      type: input.type,
+      summary: input.summary,
+    });
+    successPlane = result.plane;
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.customer.alert.created",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { type: input.type },
+    });
+    return result.alert;
+  },
+
+  resolveAlert(input: { actor: RequestActor; alertId: string; tenantId: string }) {
+    const personId = requireOperator(input.actor);
+    successPlane = CustomerSuccessService.resolveAlert(successPlane, {
+      alertId: input.alertId,
+    });
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.customer.alert.resolved",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { alertId: input.alertId },
+    });
+    return this.resolveOperationalAlerts(input.actor, input.tenantId);
+  },
+
+  listSuccess(actor: RequestActor) {
+    requireOperator(actor);
+    const snapshot = TenantFactoryRuntime.snapshot();
+    return snapshot.tenants
+      .map((tenant) =>
+        projectCustomerSuccessContext(snapshot, plane, successPlane, tenant.id),
+      )
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
   },
 };
