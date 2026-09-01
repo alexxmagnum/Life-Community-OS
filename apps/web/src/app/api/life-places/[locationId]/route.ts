@@ -18,7 +18,7 @@ export async function GET(request: Request, { params }: Params) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
   if (!actorCanOpenLifePlace(actor)) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const bound = resolveReadTenantId({

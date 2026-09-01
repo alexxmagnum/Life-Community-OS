@@ -54,6 +54,9 @@ import { LivingFeedCard } from "@/components/community/LivingFeedCard";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
+import { CommunityPreviewPanel } from "@/components/community/CommunityPreviewPanel";
+import { resolveMembershipAccessScope } from "@/lib/membership/membership-experience-scope";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
 const PLAZA_PEEK = 4;
 const OFFICIAL_CHANNEL_PEEK = 3;
@@ -112,6 +115,23 @@ export function CommunityHubScreen() {
   const [expandActualidad, setExpandActualidad] = useState(false);
   const [expandChannels, setExpandChannels] = useState(false);
   const [petsOpen, setPetsOpen] = useState(false);
+
+  const { currentUser } = useCurrentUser();
+  const accessScope = useMemo(
+    () =>
+      resolveMembershipAccessScope({
+        authenticated: currentUser.authenticated,
+        hasMembership: currentUser.hasMembership,
+        membershipStatus: currentUser.membershipStatus,
+        role: currentUser.role,
+      }),
+    [
+      currentUser.authenticated,
+      currentUser.hasMembership,
+      currentUser.membershipStatus,
+      currentUser.role,
+    ],
+  );
 
   const canView = hasCapability(CAPABILITIES.contentView);
   const canChannels = hasCapability(CAPABILITIES.channelView);
@@ -296,6 +316,21 @@ export function CommunityHubScreen() {
   }
 
   if (!canView) {
+    const previewHint =
+      accessScope.scope === "pending"
+        ? "pending"
+        : accessScope.scope === "registered"
+          ? "registered"
+          : accessScope.scope === "visitor"
+            ? "visitor"
+            : null;
+    if (previewHint) {
+      return (
+        <MobileScreen dense>
+          <CommunityPreviewPanel membershipHint={previewHint} />
+        </MobileScreen>
+      );
+    }
     return (
       <EmptyState
         title="Sin acceso"

@@ -30,6 +30,7 @@ const PILOT_PUBLIC_API_PREFIXES = [
   "/api/businesses",
   "/api/marketplace",
   "/api/help",
+  "/api/life-places",
   "/api/resources",
   "/api/reservations",
   "/api/conversations",

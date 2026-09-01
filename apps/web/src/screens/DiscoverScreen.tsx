@@ -485,10 +485,23 @@ export function DiscoverScreen() {
           className="ui-press ui-lift mt-8 w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
         >
           <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
-            Qué puedo aportar
+            Crear algo cerca
           </span>
           <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
-            Organiza, pide ayuda o comparte con tu comunidad.
+            Organiza un plan, actividad o encuentro en el territorio.
+          </span>
+        </button>
+      ) : authenticated ? (
+        <button
+          type="button"
+          onClick={() => router.push("/me")}
+          className="ui-press ui-lift mt-8 w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
+        >
+          <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
+            Únete para crear experiencias
+          </span>
+          <span className="mt-0.5 block text-[13px] text-[var(--color-text-tertiary)]">
+            Completa tu membresía y empieza a organizar planes cerca de ti.
           </span>
         </button>
       ) : null}

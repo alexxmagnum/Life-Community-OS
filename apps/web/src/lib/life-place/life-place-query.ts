@@ -47,6 +47,7 @@ import {
 } from "@/lib/media/server-media-repository";
 import {
   actorCanReadLifePlaceLife,
+  actorCanReadLifePlaceCommunityPreview,
   actorCanSeeLocation,
 } from "./permissions";
 
@@ -131,13 +132,14 @@ export async function resolveLifePlace(
   }
 
   const includeLife = actorCanReadLifePlaceLife(input.actor);
+  const includePreview = actorCanReadLifePlaceCommunityPreview(input.actor);
   const pack = getTenantPack(tenantId);
   const product =
     input.productCapabilities ?? pack?.productCapabilities;
   const permissions = input.permissions ?? input.actor.permissions;
 
   let feedItems: CommunityFeedItem[] = [];
-  if (includeLife) {
+  if (includeLife || includePreview) {
     feedItems = (
       await CommunityExperienceFeedService.list({
         tenantId,

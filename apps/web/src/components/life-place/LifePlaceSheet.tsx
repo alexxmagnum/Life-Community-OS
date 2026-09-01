@@ -7,7 +7,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  LIVING_PLACE_EMPTY_CTA,
   LIVING_PLACE_EMPTY_TITLE,
   lifePlaceActionLabel,
   lifePlaceAvailabilityLabel,
@@ -28,6 +27,8 @@ export type LifePlaceSheetProps = {
   onAction: (action: LifePlaceAction) => void;
   onClose: () => void;
   onCompose?: () => void;
+  canCreateExperience?: boolean;
+  onExploreExperiences?: () => void;
 };
 
 export function LifePlaceSheet({
@@ -35,6 +36,8 @@ export function LifePlaceSheet({
   onAction,
   onClose,
   onCompose,
+  canCreateExperience = false,
+  onExploreExperiences,
 }: LifePlaceSheetProps) {
   const { configuration } = useTenant();
   const { currentUser } = useCurrentUser();
@@ -190,13 +193,21 @@ export function LifePlaceSheet({
                   <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-primary)]">
                     {LIVING_PLACE_EMPTY_TITLE}
                   </p>
-                  {onCompose ? (
+                  {canCreateExperience && onCompose ? (
                     <button
                       type="button"
                       onClick={onCompose}
                       className="ui-press mt-3 rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-on-action)]"
                     >
-                      {LIVING_PLACE_EMPTY_CTA}
+                      Crear experiencia aquí
+                    </button>
+                  ) : onExploreExperiences ? (
+                    <button
+                      type="button"
+                      onClick={onExploreExperiences}
+                      className="ui-press mt-3 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-primary)]"
+                    >
+                      Explorar experiencias
                     </button>
                   ) : null}
                 </>

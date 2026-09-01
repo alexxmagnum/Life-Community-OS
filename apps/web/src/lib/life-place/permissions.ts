@@ -3,11 +3,24 @@
  */
 
 import type { RequestActor } from "@/lib/auth/request-actor";
-import type { Location } from "@life-community-os/types";
+import { guestCanAccess, type Location } from "@life-community-os/types";
 
 export function actorCanOpenLifePlace(actor: RequestActor): boolean {
   if (actor.tenantDenied) return false;
-  return actor.authenticated;
+  if (actor.authenticated) return true;
+  return guestCanAccess({
+    resource: "public_place",
+    hasActiveMembership: actor.hasMembership,
+  });
+}
+
+export function actorCanReadLifePlaceCommunityPreview(
+  actor: RequestActor,
+): boolean {
+  if (actor.tenantDenied) return false;
+  if (actor.hasMembership) return false;
+  const status = actor.membershipStatus;
+  return status === "pending" || status === "invited";
 }
 
 export function actorCanReadLifePlaceLife(actor: RequestActor): boolean {

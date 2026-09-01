@@ -32,6 +32,7 @@ export type CreateSheetProps = {
   /** Optional place line, e.g. "En Piscina". */
   contextLine?: string;
   subtitle?: string;
+  emptyMessage?: string;
 };
 
 export function CreateSheet({
@@ -42,6 +43,7 @@ export function CreateSheet({
   title = "¿Qué quieres aportar?",
   contextLine,
   subtitle = "Comparte algo que haga mejor tu comunidad",
+  emptyMessage = "Ahora no hay nada que aportar",
 }: CreateSheetProps) {
   if (!open) return null;
 
@@ -90,7 +92,7 @@ export function CreateSheet({
 
         {totalActions === 0 ? (
           <p className="px-2 py-8 text-center text-[16px] text-[var(--color-text-secondary)]">
-            Ahora no hay nada que aportar
+            {emptyMessage}
           </p>
         ) : (
           <div className="mt-5 space-y-5">

@@ -25,7 +25,10 @@ import {
 import { replaceHelpStoreForTests } from "@/lib/help/server-help-repository";
 import { replaceLocationsForTests } from "@/lib/location/server-location-repository";
 import { LifePlaceQueryService } from "@/lib/life-place/life-place-query";
-import { actorCanReadLifePlaceLife } from "@/lib/life-place/permissions";
+import {
+  actorCanOpenLifePlace,
+  actorCanReadLifePlaceLife,
+} from "@/lib/life-place/permissions";
 import {
   createResourceServer,
   replaceReservationsStoreForTests,
@@ -66,6 +69,26 @@ function memberActor(tenantSlug: string): RequestActor {
       personId: "person-alex",
       tenantId: tenantSlug,
       role: "member",
+    },
+  };
+}
+
+function visitorActor(tenantSlug: string): RequestActor {
+  return {
+    authenticated: false,
+    hasMembership: false,
+    providerReference: null,
+    personId: null,
+    role: null,
+    tenantSlug,
+    membershipId: null,
+    permissions: [],
+    tenantDenied: false,
+    currentUser: {
+      ...EMPTY_CURRENT_USER,
+      authenticated: false,
+      hasMembership: false,
+      tenantId: tenantSlug,
     },
   };
 }
@@ -325,6 +348,8 @@ describe("Life Place Experience Layer isolation", () => {
 
   it("TEST 9 — without membership private life is DENIED", async () => {
     const guest = guestActor(PANO);
+    const visitor = visitorActor(PANO);
+    assert.equal(actorCanOpenLifePlace(visitor), true);
     assert.equal(actorCanReadLifePlaceLife(guest), false);
     const membersOnly = createLocation({
       id: "loc-members-place",
@@ -347,6 +372,8 @@ describe("Life Place Experience Layer isolation", () => {
     assert.equal(publicPlace.ok, true);
     if (!publicPlace.ok) return;
     assert.equal(publicPlace.context.currentActivity.length, 0);
+    const visitorPlace = await panoPlace("loc-pool-place", visitor);
+    assert.equal(visitorPlace.ok, true);
     assert.equal(publicPlace.context.experiences.length, 0);
   });
 

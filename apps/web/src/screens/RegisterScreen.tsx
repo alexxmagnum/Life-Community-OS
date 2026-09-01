@@ -115,7 +115,7 @@ export function RegisterScreen() {
           <input
             className={fieldClass}
             type="text"
-            placeholder="Ej. PANORAMICA-2026"
+            placeholder="Ej. PANORAMICA"
             value={communityCode}
             onChange={(e) => setCommunityCode(e.target.value)}
           />
@@ -134,6 +134,9 @@ export function RegisterScreen() {
           {loading ? "Creando…" : "Crear cuenta"}
         </button>
       </form>
+      <p className="mt-4 text-[13px] text-[var(--color-text-tertiary)]">
+        ¿Ya tienes cuenta? Inicia sesión y únete desde tu perfil.
+      </p>
     </MobileScreen>
   );
 }

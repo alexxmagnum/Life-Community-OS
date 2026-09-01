@@ -10,10 +10,17 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
-  if (!actor.authenticated) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (
+    !actor.authenticated &&
+    !guestCanAccess({
+      resource: "open_content",
+      hasActiveMembership: false,
+    })
+  ) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   if (
+    actor.authenticated &&
     !actorCanReadCommunityExperienceFeed(actor) &&
     !guestCanAccess({
       resource: "public_place",

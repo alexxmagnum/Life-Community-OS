@@ -7,7 +7,6 @@ import {
   AppMenuSheet,
   CommunityAppHeader,
   CreatePostSheet,
-  EmptyState,
   type AppMenuCategory,
   type CreateAction,
   type NavItem,
@@ -16,7 +15,6 @@ import {
 import {
   bindProjectedNavigation,
   CommunityActionRegistry,
-  COMMUNITY_CREATION_ACTIONS,
   communityCreationRoute,
   composerSuggestionReason,
   personalizeComposerActions,
@@ -118,9 +116,30 @@ function IconMap() {
   );
 }
 
+function IconDiscover() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="m16.5 16.5 4 4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M11 8.5v5M8.5 11h5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function buildNav(flags: {
   services: boolean;
   showMap: boolean;
+  showDiscover: boolean;
 }): NavItem[] {
   /** Magic Plus is the FAB — destinations only. */
   const items: NavItem[] = [
@@ -132,6 +151,14 @@ function buildNav(flags: {
       label: "Mapa",
       href: "/map",
       icon: <IconMap />,
+    });
+  }
+  if (flags.showDiscover) {
+    items.push({
+      id: "discover",
+      label: "Descubrir",
+      href: "/discover",
+      icon: <IconDiscover />,
     });
   }
   items.push({
@@ -153,6 +180,7 @@ function buildNav(flags: {
 }
 
 function activeFromPath(pathname: string): NavItemId {
+  if (pathname.startsWith("/discover")) return "discover";
   if (pathname.startsWith("/map")) return "map";
   if (pathname.startsWith("/locations")) return "map";
   if (pathname.startsWith("/business")) return "map";
@@ -193,6 +221,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   );
   const [postOpen, setPostOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [magicPlusPreviewOpen, setMagicPlusPreviewOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (message: string) => {
@@ -298,14 +327,21 @@ export function MemberShell({ children }: { children: ReactNode }) {
   );
 
   /**
-   * Magic Plus visibility — membership + creation capability.
-   * Not Tenant Plan, Feature Management, or Platform Admin.
+   * Magic Plus — experience creation engine for active members.
+   * Pending users see a join preview; visitors never see the FAB.
    */
-  const canShowMagicPlus =
-    currentUser.hasMembership &&
-    COMMUNITY_CREATION_ACTIONS.some((action) =>
-      currentUser.permissions.includes(action.requiredCapability),
-    );
+  const magicPlusMode = useMemo(() => {
+    if (currentUser.hasMembership) return "active" as const;
+    if (
+      accessScope.scope === "pending" ||
+      accessScope.scope === "registered"
+    ) {
+      return "preview" as const;
+    }
+    return "hidden" as const;
+  }, [accessScope.scope, currentUser.hasMembership]);
+
+  const canShowMagicPlusFab = magicPlusMode !== "hidden";
 
   /**
    * Contribution entry (+) — domain create actions only.
@@ -361,9 +397,31 @@ export function MemberShell({ children }: { children: ReactNode }) {
           isModuleEnabled("lifeMap") &&
           isFeatureEnabled("lifeMap") &&
           isProductCapabilityEnabled("lifeMap"),
+        showDiscover:
+          isFeatureEnabled("localLife") || isFeatureEnabled("experiences"),
       }),
     [isModuleEnabled, isFeatureEnabled, isProductCapabilityEnabled],
   );
+
+  const magicPlusEmptyActions = useMemo((): CreateAction[] => {
+    if (magicPlusMode !== "active" || createActions.length > 0) return [];
+    return [
+      {
+        id: "discover_experiences",
+        title: "Explorar experiencias",
+        description: "Mira qué está pasando cerca y únete",
+        icon: "🧭",
+        onSelect: () => router.push("/discover"),
+      },
+      {
+        id: "create_experience",
+        title: "Crear plan o actividad",
+        description: "Organiza un encuentro en el territorio",
+        icon: "✨",
+        onSelect: () => router.push("/experiences/create"),
+      },
+    ];
+  }, [createActions.length, magicPlusMode, router]);
 
   const openComposer = useCallback(
     (detail?: ActionComposerDetail) => {
@@ -413,12 +471,22 @@ export function MemberShell({ children }: { children: ReactNode }) {
           router.push(item.href);
         }}
         onCreate={
-          canShowMagicPlus
-            ? () => openComposer({ source: inferCreationSource(pathname) })
+          canShowMagicPlusFab
+            ? () => {
+                if (magicPlusMode === "preview") {
+                  setMagicPlusPreviewOpen(true);
+                  return;
+                }
+                openComposer({ source: inferCreationSource(pathname) });
+              }
             : undefined
         }
-        showCreateFab={canShowMagicPlus}
-        createFabLabel="Crear en comunidad"
+        showCreateFab={canShowMagicPlusFab}
+        createFabLabel={
+          magicPlusMode === "preview"
+            ? "Crear experiencias"
+            : "Crear experiencia"
+        }
         navNotice={
           navAlert ? (
             <button
@@ -475,26 +543,27 @@ export function MemberShell({ children }: { children: ReactNode }) {
         currentUser.authenticated &&
         accessScope.scope === "registered" &&
         pathname !== "/me" ? (
-          <EmptyState
-            title="No perteneces todavía a esta comunidad"
-            description="Únete con tu código de acceso o pide una invitación a un administrador."
-            actionLabel="Unirme a comunidad"
-            onAction={() => router.push("/me")}
-          />
-        ) : (
-          <>
-            {sessionReady &&
-            currentUser.authenticated &&
-            accessScope.scope === "pending" &&
-            pathname !== "/me" ? (
-              <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
-                Tu solicitud está pendiente de aprobación. Mientras tanto puedes
-                explorar el territorio.
-              </div>
-            ) : null}
-            {children}
-          </>
-        )}
+          <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
+            Aún no perteneces a esta comunidad.{" "}
+            <button
+              type="button"
+              className="font-semibold text-[var(--color-action-primary)]"
+              onClick={() => router.push("/me")}
+            >
+              Unirme a comunidad
+            </button>
+          </div>
+        ) : null}
+        {sessionReady &&
+        currentUser.authenticated &&
+        accessScope.scope === "pending" &&
+        pathname !== "/me" ? (
+          <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
+            Tu solicitud está pendiente de aprobación. Mientras tanto puedes
+            explorar el territorio.
+          </div>
+        ) : null}
+        {children}
       </AppShell>
       <AppMenuSheet
         open={menuOpen}
@@ -510,10 +579,44 @@ export function MemberShell({ children }: { children: ReactNode }) {
           setCreateOpen(false);
           setComposeContext({});
         }}
-        actions={createActions}
+        actions={
+          createActions.length > 0 ? createActions : magicPlusEmptyActions
+        }
         locationName={composeContext.locationName}
         source={composeContext.source}
+        title="Crear experiencia"
+        subtitle="Organiza planes, actividades y encuentros en el territorio"
+        emptyMessage="Descubre qué puedes crear en tu comunidad"
       />
+      {magicPlusPreviewOpen ? (
+        <div className="fixed inset-0 z-[70] flex items-end justify-center md:items-center">
+          <button
+            type="button"
+            className="ui-fade ui-backdrop absolute inset-0"
+            aria-label="Cerrar"
+            onClick={() => setMagicPlusPreviewOpen(false)}
+          />
+          <div className="relative z-10 m-4 w-full max-w-md rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-elev-2)]">
+            <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
+              Únete para crear experiencias
+            </h2>
+            <p className="mt-2 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+              Magic Plus es el motor para organizar planes, actividades y
+              encuentros. Completa tu membresía para empezar a crear.
+            </p>
+            <button
+              type="button"
+              className="ui-press mt-4 min-h-[44px] w-full rounded-full bg-[var(--color-action-primary)] px-4 text-[14px] font-semibold text-white"
+              onClick={() => {
+                setMagicPlusPreviewOpen(false);
+                router.push("/me");
+              }}
+            >
+              Unirme a la comunidad
+            </button>
+          </div>
+        </div>
+      ) : null}
       <CreatePostSheet
         open={postOpen}
         onClose={() => setPostOpen(false)}

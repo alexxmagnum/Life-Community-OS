@@ -5,7 +5,6 @@
  */
 
 import {
-  composerTitleForSource,
   type CommunityCreationSource,
 } from "@life-community-os/types";
 import {
@@ -21,6 +20,9 @@ export type ActionComposerProps = {
   sections?: CreateActionSection[];
   locationName?: string;
   source?: CommunityCreationSource;
+  title?: string;
+  subtitle?: string;
+  emptyMessage?: string;
 };
 
 export function ActionComposer({
@@ -30,6 +32,9 @@ export function ActionComposer({
   sections,
   locationName,
   source,
+  title = "Crear experiencia",
+  subtitle = "Organiza planes, actividades y encuentros en el territorio",
+  emptyMessage = "Descubre qué puedes crear",
 }: ActionComposerProps) {
   const place = locationName?.trim();
   return (
@@ -38,7 +43,7 @@ export function ActionComposer({
       onClose={onClose}
       actions={actions}
       sections={sections}
-      title={composerTitleForSource(source)}
+      title={title}
       contextLine={
         source === "life_place" && place
           ? `En ${place}`
@@ -48,7 +53,8 @@ export function ActionComposer({
               ? `En ${place}`
               : undefined
       }
-      subtitle="Comparte algo que haga mejor tu comunidad"
+      subtitle={subtitle}
+      emptyMessage={emptyMessage}
     />
   );
 }

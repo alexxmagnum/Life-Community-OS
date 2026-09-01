@@ -21,6 +21,8 @@ import {
 } from "@life-community-os/ui";
 import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
+import { JoinCommunityPanel } from "@/components/membership/JoinCommunityPanel";
+import { profileMembershipLabel } from "@/lib/membership/join-community-experience";
 import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { fetchHousingProperties } from "@/lib/housing/housing-client";
 import { useEntityMedia } from "@/lib/media/use-entity-media";
@@ -189,7 +191,12 @@ export function ProfileScreen() {
 
       <ProfileCard
         name={currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino"}
-        membershipLabel={currentUser.role || "Sin membresía"}
+        membershipLabel={profileMembershipLabel({
+          authenticated: currentUser.authenticated,
+          hasMembership: currentUser.hasMembership,
+          membershipStatus: currentUser.membershipStatus,
+          role: currentUser.role,
+        })}
         areaLabel={
           homes[0]?.areaLabel ||
           theme.identity?.defaultAreaName ||
@@ -216,6 +223,8 @@ export function ProfileScreen() {
           onUploaded={(_id, url) => setUploadedAvatar(url)}
         />
       ) : null}
+
+      <JoinCommunityPanel onJoined={() => void refreshSession()} />
 
       {personId ? (
         <section className="space-y-3">
@@ -667,12 +676,24 @@ export function ProfileScreen() {
             </p>
             {!currentUser.hasMembership ? (
               <p className="mt-2 text-[13px] text-[var(--color-warning)]">
-                Tu cuenta no pertenece a esta comunidad. El registro o la
-                invitación de un administrador te dan acceso.
+                {profileMembershipLabel({
+                  authenticated: currentUser.authenticated,
+                  hasMembership: currentUser.hasMembership,
+                  membershipStatus: currentUser.membershipStatus,
+                  role: currentUser.role,
+                })}
+                . Únete con tu código desde el panel superior o pide una
+                invitación a un administrador.
               </p>
             ) : (
               <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
-                Comunidad · {currentUser.tenantId} · {currentUser.role}
+                Comunidad · {currentUser.tenantId} ·{" "}
+                {profileMembershipLabel({
+                  authenticated: currentUser.authenticated,
+                  hasMembership: currentUser.hasMembership,
+                  membershipStatus: currentUser.membershipStatus,
+                  role: currentUser.role,
+                })}
               </p>
             )}
             <button
