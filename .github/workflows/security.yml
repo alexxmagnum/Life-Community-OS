@@ -1,0 +1,39 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Scan for secret patterns
+        run: |
+          ! rg -n "BEGIN PRIVATE KEY|sk_live_|sk_test_|password\s*=\s*['\"][^'\"]+['\"]" \
+            --glob '!.github/**' \
+            --glob '!**/.env*' \
+            --glob '!**/node_modules/**' \
+            apps packages tenants || (echo "Potential secret exposure detected" && exit 1)

@@ -201,8 +201,14 @@ export function PlatformAdminScreen() {
       <p className="mt-2 text-[12px] text-[var(--color-text-tertiary)]">
         {PLATFORM_ADMIN_SURFACES.join(" · ")}
       </p>
-      <Link
-        href="/platform/privacy"
+        <Link
+          href="/platform/operations"
+          className="rounded-lg border border-neutral-200 px-3 py-2 text-sm font-medium"
+        >
+          Operations
+        </Link>
+        <Link
+          href="/platform/privacy"
         className="mt-2 inline-block text-[13px] font-semibold text-[var(--color-action-primary)]"
       >
         Privacy Governance →

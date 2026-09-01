@@ -75,6 +75,15 @@ export const ADMIN_AUDIT_ACTIONS = [
   "community.communication.message.reported",
   "community.communication.announcement.published",
   "community.communication.moderated",
+  "platform.environment.checked",
+  "platform.database.migration.checked",
+  "platform.database.health.checked",
+  "platform.deployment.reviewed",
+  "platform.incident.created",
+  "platform.incident.updated",
+  "platform.incident.resolved",
+  "platform.backup.verification.completed",
+  "platform.launch.completed",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];
