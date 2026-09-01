@@ -367,6 +367,41 @@ export {
 } from "./membership/onboarding-context";
 export { membershipGrantsCommunityAccess } from "./domain/membership";
 
+/** Commercial SaaS customer operations — onboarding, activation, support. */
+export type {
+  CustomerOnboardingStatus,
+  ProductFeatureCatalogKey,
+  ProductFeatureCatalogEntry,
+  TenantCustomerContext,
+  CustomerAdministratorInvitation,
+  CustomerOperationsPlane,
+  CustomerOperationsContext,
+  CustomerActivationStep,
+} from "./platform/customer-context";
+export {
+  CUSTOMER_ONBOARDING_STATUSES,
+  PRODUCT_FEATURE_CATALOG_KEYS,
+  emptyCustomerOperationsPlane,
+  productFeatureCatalog,
+  catalogKeyToCapability,
+  projectTenantCustomerContext,
+  projectCustomerOperationsContext,
+  planDoesNotGrantPermissions,
+  featureDoesNotGrantCapability,
+  limitsAreProductNotSecurity,
+  memberLimitReached,
+  communityAdminBlockedFromControlPlane,
+  isOpaqueCustomerEntity,
+  customerAuditMetadata,
+  TenantActivationService,
+  assertCustomerTenantBoundary,
+  rejectCustomerClientSpoof,
+  customerDoesNotOwnCommunityData,
+  billingReadinessContract,
+  provisioningMapsToOnboarding,
+  saasControlPlaneForbiddenForCommunityAdmin,
+} from "./platform/customer-context";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

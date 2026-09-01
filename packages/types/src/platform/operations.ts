@@ -63,6 +63,7 @@ export type TenantProvisioningStep =
 
 export const PLATFORM_ADMIN_SURFACES = [
   "tenants",
+  "customers",
   "territories",
   "features",
   "plans",
