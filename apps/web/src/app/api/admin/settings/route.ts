@@ -85,7 +85,19 @@ export async function PATCH(request: Request) {
 
   if (body.capabilities) {
     return NextResponse.json(
-      { error: "saas_features_forbidden" },
+      { error: "saas_control_plane_forbidden" },
+      { status: 403 },
+    );
+  }
+
+  if (
+    "plan" in body ||
+    "limits" in body ||
+    "status" in body ||
+    "permissions" in body
+  ) {
+    return NextResponse.json(
+      { error: "saas_control_plane_forbidden" },
       { status: 403 },
     );
   }

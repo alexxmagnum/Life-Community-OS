@@ -84,13 +84,15 @@ export function canAccessAdminOperations(
 
 /**
  * Community Admin operates a Territory.
- * It cannot create tenants, change plans, or activate global features.
+ * It cannot create tenants, change plans, limits, or SaaS contracts.
  */
 export function canMutateSaasControlPlane(
   isPlatformOperator: boolean,
 ): boolean {
   return isPlatformOperator === true;
 }
+
+export const SAAS_CONTROL_PLANE_FORBIDDEN = "saas_control_plane_forbidden";
 
 export function canAccessAdminSection(
   role: MembershipRole | null | undefined,

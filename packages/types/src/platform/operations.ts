@@ -25,6 +25,11 @@ import {
   type ProvisionedTenant,
 } from "../tenant/factory";
 import { filterTerritoriesForTenant as territoriesOfTenant } from "../domain/territory";
+import {
+  lifecycleStatusFromTenant,
+  productLimitsForPlan,
+  subscriptionStatusForLifecycle,
+} from "./tenant-lifecycle";
 
 export const TENANT_HEALTH_STATUSES = [
   "active",
@@ -61,6 +66,7 @@ export const PLATFORM_ADMIN_SURFACES = [
   "territories",
   "features",
   "plans",
+  "lifecycle",
   "security",
   "audit",
 ] as const;
@@ -121,15 +127,24 @@ export type TenantHealthContext = {
 };
 
 export type TenantPlanLimits = {
-  territories: number;
+  territories: number | null;
   members: number | null;
+  storage: number | null;
+  resources: number | null;
 };
+
+export type SubscriptionStatus =
+  | "trial"
+  | "active"
+  | "past_due"
+  | "cancelled";
 
 export type TenantSubscription = {
   tenantId: string;
   plan: TenantPlan;
   features: ProductCapabilityMap;
   limits: TenantPlanLimits;
+  subscriptionStatus: SubscriptionStatus;
   billingProvider: "none";
 };
 
@@ -176,16 +191,7 @@ export function provisioningStatusFromTenant(
 }
 
 export function limitsForPlan(plan: TenantPlan): TenantPlanLimits {
-  switch (plan) {
-    case "starter":
-      return { territories: 1, members: 50 };
-    case "community":
-      return { territories: 5, members: 500 };
-    case "premium":
-      return { territories: 25, members: 5000 };
-    case "enterprise":
-      return { territories: 100, members: null };
-  }
+  return productLimitsForPlan(plan);
 }
 
 export function projectTenantSubscription(
@@ -196,11 +202,16 @@ export function projectTenantSubscription(
   if (!tenant) return null;
   const features =
     snapshot.featuresByTenant[tenantId] ?? featuresForPlan(tenant.plan);
+  const lifecycle = lifecycleStatusFromTenant(tenant.status);
   return {
     tenantId: tenant.id,
     plan: tenant.plan,
     features,
-    limits: limitsForPlan(tenant.plan),
+    limits: snapshot.limitsByTenant?.[tenantId] ?? limitsForPlan(tenant.plan),
+    subscriptionStatus: subscriptionStatusForLifecycle(
+      lifecycle,
+      snapshot.subscriptionStatusByTenant?.[tenantId],
+    ),
     billingProvider: "none",
   };
 }

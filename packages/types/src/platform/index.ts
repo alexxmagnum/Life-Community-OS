@@ -522,3 +522,30 @@ export {
   projectPlatformOperationsContext,
   isOpaquePlatformOperationsEntity,
 } from "./operations";
+
+export type {
+  TenantLifecycleStatus,
+  SubscriptionStatus as TenantSubscriptionBillingStatus,
+  TenantLimits,
+  TenantSaaSContract,
+  TenantLifecycleContext,
+} from "./tenant-lifecycle";
+export {
+  TENANT_LIFECYCLE_STATUSES,
+  SUBSCRIPTION_STATUSES,
+  TENANT_LIFECYCLE_TRANSITIONS,
+  lifecycleStatusFromTenant,
+  tenantStatusFromLifecycle,
+  productLimitsForPlan,
+  canTransitionLifecycle,
+  subscriptionStatusForLifecycle,
+  tenantLifecycleBlocksAuth,
+  tenantLifecycleBlocksMutations,
+  productLimitsDoNotGrantPermissions,
+  saasPlanDoesNotGrantPermissions,
+  projectTenantLifecycleContext,
+  projectTenantSaaSContract,
+  wouldExceedTerritoryLimit,
+  TenantLifecycleService,
+  isOpaqueTenantLifecycleEntity,
+} from "./tenant-lifecycle";

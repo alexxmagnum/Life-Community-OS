@@ -26,6 +26,12 @@ export const ADMIN_AUDIT_ACTIONS = [
   "platform.territory.created",
   "platform.feature.changed",
   "platform.admin.action",
+  "platform.tenant.activated",
+  "platform.tenant.suspended",
+  "platform.tenant.restored",
+  "platform.tenant.archived",
+  "platform.contract.changed",
+  "platform.limit.changed",
   "security.permission.changed",
 ] as const;
 

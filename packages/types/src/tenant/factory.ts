@@ -142,6 +142,36 @@ export type TenantFactorySnapshot = {
   administrators: TenantAdministratorSeed[];
   operators: PlatformOperator[];
   featuresByTenant: Record<string, ProductCapabilityMap>;
+  limitsByTenant?: Record<
+    string,
+    {
+      territories: number | null;
+      members: number | null;
+      storage: number | null;
+      resources: number | null;
+    }
+  >;
+  contractsByTenant?: Record<
+    string,
+    {
+      tenantId: string;
+      plan: TenantPlan;
+      features: ProductCapabilityMap;
+      limits: {
+        territories: number | null;
+        members: number | null;
+        storage: number | null;
+        resources: number | null;
+      };
+      status: string;
+      effectiveFrom: string;
+      effectiveUntil: string | null;
+    }
+  >;
+  subscriptionStatusByTenant?: Record<
+    string,
+    "trial" | "active" | "past_due" | "cancelled"
+  >;
 };
 
 export type ClientAuthoritySpoof = {
@@ -150,6 +180,9 @@ export type ClientAuthoritySpoof = {
   role?: unknown;
   plan?: unknown;
   features?: unknown;
+  status?: unknown;
+  limits?: unknown;
+  permissions?: unknown;
 };
 
 export function emptyTenantFactorySnapshot(): TenantFactorySnapshot {
@@ -159,6 +192,9 @@ export function emptyTenantFactorySnapshot(): TenantFactorySnapshot {
     administrators: [],
     operators: [],
     featuresByTenant: {},
+    limitsByTenant: {},
+    contractsByTenant: {},
+    subscriptionStatusByTenant: {},
   };
 }
 
@@ -288,6 +324,9 @@ export function rejectClientAuthoritySpoof(
   if (body.role != null) return "role";
   if (body.plan != null) return "plan";
   if (body.features != null) return "features";
+  if (body.status != null) return "status";
+  if (body.limits != null) return "limits";
+  if (body.permissions != null) return "permissions";
   return null;
 }
 
@@ -379,6 +418,10 @@ export const TenantFactoryService = {
       featuresByTenant: {
         ...snapshot.featuresByTenant,
         [tenantId]: features,
+      },
+      subscriptionStatusByTenant: {
+        ...(snapshot.subscriptionStatusByTenant ?? {}),
+        [tenantId]: "trial",
       },
     };
     return {
@@ -562,6 +605,10 @@ export function adoptConfiguredTenant(input: {
       featuresByTenant: {
         ...input.snapshot.featuresByTenant,
         [tenant.id]: { ...input.features, community: true },
+      },
+      subscriptionStatusByTenant: {
+        ...(input.snapshot.subscriptionStatusByTenant ?? {}),
+        [tenant.id]: "active",
       },
     },
     result: {

@@ -630,6 +630,7 @@ export {
   ADMIN_SECTION_ROLES,
   canAccessAdminOperations,
   canMutateSaasControlPlane,
+  SAAS_CONTROL_PLANE_FORBIDDEN,
   canAccessAdminSection,
   canAssignMembershipRole,
 } from "./admin-operations";

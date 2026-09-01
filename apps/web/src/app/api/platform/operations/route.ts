@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { canAccessPlatformAdmin } from "@life-community-os/types";
 import { TenantFactoryRuntime } from "@/lib/tenant/tenant-factory-service";
 import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
+import { TenantLifecycleRuntime } from "@/lib/platform/tenant-lifecycle-service";
 import { ensurePlatformControlPlane } from "@/lib/platform/ensure-control-plane";
 
 export const runtime = "nodejs";
@@ -27,5 +28,7 @@ export async function GET(request: Request) {
     features: PlatformOperationsRuntime.features(),
     provisioning: PlatformOperationsRuntime.provisioningList(),
     subscriptions: PlatformOperationsRuntime.subscriptions(),
+    lifecycle: TenantLifecycleRuntime.list(),
+    contracts: TenantLifecycleRuntime.contracts(),
   });
 }

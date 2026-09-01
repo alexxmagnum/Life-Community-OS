@@ -9,6 +9,7 @@ import {
   resolveRequestActor,
   type RequestActor,
 } from "@/lib/auth/request-actor";
+import { communityTenantBlocksMutations } from "@/lib/platform/tenant-lifecycle-service";
 
 function deny(
   error: string,
@@ -25,6 +26,9 @@ export function mutationDenial(
   }
   if (!actor.authenticated || !actor.personId || !actor.hasMembership) {
     return { error: "unauthorized", status: 401 };
+  }
+  if (communityTenantBlocksMutations(actor.tenantSlug)) {
+    return { error: "tenant_suspended", status: 403 };
   }
   return null;
 }

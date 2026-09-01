@@ -241,6 +241,7 @@ describe("Platform Operations Context", () => {
     );
     assert.equal(subscription?.billingProvider, "none");
     assert.equal(subscription?.plan, "community");
+    assert.equal(subscription?.subscriptionStatus, "trial");
   });
 
   it("TEST 9 — Valley stays separated from Panorámica", () => {

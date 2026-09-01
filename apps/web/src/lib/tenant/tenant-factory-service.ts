@@ -72,7 +72,7 @@ function requirePlatformOperator(actor: RequestActor): string {
       actorPersonId: actor.personId,
       action: "security.permission.changed",
     });
-    throw new TenantFactoryDeniedError("forbidden");
+    throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
   }
   return actor.personId;
 }
@@ -80,6 +80,10 @@ function requirePlatformOperator(actor: RequestActor): string {
 export const TenantFactoryRuntime = {
   snapshot(): TenantFactorySnapshot {
     return snapshot;
+  },
+
+  replaceSnapshot(next: TenantFactorySnapshot): void {
+    snapshot = next;
   },
 
   assertOperator(actor: RequestActor): string {
@@ -108,7 +112,7 @@ export const TenantFactoryRuntime = {
         field: spoofed,
         actorPersonId: personId,
       });
-      throw new TenantFactoryDeniedError("forbidden");
+      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
     }
     const provisioned = TenantFactoryService.provision(
       snapshot,
@@ -147,7 +151,7 @@ export const TenantFactoryRuntime = {
         actorPersonId: personId,
         tenantId: input.territory.tenantId,
       });
-      throw new TenantFactoryDeniedError("forbidden");
+      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
     }
     const next = TenantFactoryService.addTerritory(snapshot, input.territory);
     snapshot = next.snapshot;
@@ -177,7 +181,7 @@ export const TenantFactoryRuntime = {
         actorPersonId: personId,
         tenantId: input.tenantId,
       });
-      throw new TenantFactoryDeniedError("forbidden");
+      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
     }
     snapshot = TenantFactoryService.setStatus(
       snapshot,
@@ -214,7 +218,7 @@ export const TenantFactoryRuntime = {
         actorPersonId: personId,
         tenantId: input.tenantId,
       });
-      throw new TenantFactoryDeniedError("forbidden");
+      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
     }
     snapshot = TenantFactoryService.setFeatures(
       snapshot,

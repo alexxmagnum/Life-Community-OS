@@ -14,7 +14,9 @@ import {
   type TenantFeatureObservability,
   type TenantHealthContext,
   type TenantProvisioningStatus,
+  type TenantSaaSContract,
   type TenantSubscription,
+  type TenantLifecycleContext,
 } from "@life-community-os/types";
 import { EmptyState, FlowScreenHeader, MobileScreen } from "@life-community-os/ui";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
@@ -42,6 +44,8 @@ export function PlatformAdminScreen() {
     Array<{ tenantId: string; status: TenantProvisioningStatus }>
   >([]);
   const [subscriptions, setSubscriptions] = useState<TenantSubscription[]>([]);
+  const [lifecycle, setLifecycle] = useState<TenantLifecycleContext[]>([]);
+  const [contracts, setContracts] = useState<TenantSaaSContract[]>([]);
   const [audit, setAudit] = useState<PlatformAuditRecord[]>([]);
   const [security, setSecurity] = useState<PlatformSecurityEvent[]>([]);
   const [forbidden, setForbidden] = useState(false);
@@ -82,12 +86,16 @@ export function PlatformAdminScreen() {
           status: TenantProvisioningStatus;
         }>;
         subscriptions?: TenantSubscription[];
+        lifecycle?: TenantLifecycleContext[];
+        contracts?: TenantSaaSContract[];
       };
       setContext(data.context ?? null);
       setHealth(data.health ?? []);
       setFeatures(data.features ?? []);
       setProvisioning(data.provisioning ?? []);
       setSubscriptions(data.subscriptions ?? []);
+      setLifecycle((data.lifecycle ?? []).filter((row): row is TenantLifecycleContext => Boolean(row)));
+      setContracts(data.contracts ?? []);
     }
     if (territoriesRes.ok) {
       const data = (await territoriesRes.json()) as {
@@ -220,6 +228,27 @@ export function PlatformAdminScreen() {
             const rowHealth = health.find((row) => row.tenantId === tenant.id);
             const rowFeatures = features.find((row) => row.tenantId === tenant.id);
             const rowStage = provisioning.find((row) => row.tenantId === tenant.id);
+            const rowLife = lifecycle.find((row) => row.tenantId === tenant.id);
+            const rowContract = contracts.find((row) => row.tenantId === tenant.id);
+            const rowSub = subscriptions.find((row) => row.tenantId === tenant.id);
+            const runLifecycle = (action: string) => {
+              void fetch("/api/platform/lifecycle", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                  communitySlug: tenant.slug,
+                  action,
+                  reason: action,
+                }),
+              }).then((res) => {
+                if (!res.ok) {
+                  setError("Operación de ciclo de vida no permitida.");
+                  return;
+                }
+                setError(null);
+                void refresh();
+              });
+            };
             return (
               <li
                 key={tenant.id}
@@ -228,9 +257,18 @@ export function PlatformAdminScreen() {
                 <span className="font-semibold">{tenant.name}</span>
                 <span className="mt-0.5 block text-[12px] text-[var(--color-text-tertiary)]">
                   {tenant.slug} · {tenant.plan} · {tenant.status}
+                  {rowLife ? ` · lifecycle ${rowLife.status}` : ""}
                   {rowHealth ? ` · ${rowHealth.configurationStatus}` : ""}
                   {rowStage ? ` · ${rowStage.status}` : ""}
+                  {rowSub ? ` · sub ${rowSub.subscriptionStatus}` : ""}
                 </span>
+                {rowContract ? (
+                  <span className="mt-1 block text-[12px] text-[var(--color-text-secondary)]">
+                    contrato {rowContract.plan} · territories{" "}
+                    {rowContract.limits.territories ?? "unlimited"} · members{" "}
+                    {rowContract.limits.members ?? "unlimited"}
+                  </span>
+                ) : null}
                 {rowFeatures ? (
                   <span className="mt-1 block text-[12px] text-[var(--color-text-secondary)]">
                     Marketplace {featureLabel(rowFeatures.marketplace)} · Life
@@ -238,6 +276,36 @@ export function PlatformAdminScreen() {
                     {featureLabel(rowFeatures.reservations)}
                   </span>
                 ) : null}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runLifecycle("activate")}
+                  >
+                    Activate
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runLifecycle("suspend")}
+                  >
+                    Suspend
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runLifecycle("restore")}
+                  >
+                    Restore
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runLifecycle("archive")}
+                  >
+                    Archive
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -310,7 +378,8 @@ export function PlatformAdminScreen() {
               .length;
             return (
               <li key={plan}>
-                {plan} · territories {limits.territories}
+                {plan} · territories{" "}
+                {limits.territories ?? "unlimited"}
                 {limits.members == null ? "" : ` · members ${limits.members}`}
                 {subscribed ? ` · ${subscribed} tenants` : ""}
               </li>

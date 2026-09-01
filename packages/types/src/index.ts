@@ -189,6 +189,33 @@ export {
   isOpaquePlatformOperationsEntity,
 } from "./platform/operations";
 
+/** Tenant Lifecycle — SaaS maturity, not community life. */
+export type {
+  TenantLifecycleStatus,
+  TenantLimits,
+  TenantSaaSContract,
+  TenantLifecycleContext,
+} from "./platform/tenant-lifecycle";
+export {
+  TENANT_LIFECYCLE_STATUSES,
+  SUBSCRIPTION_STATUSES,
+  TENANT_LIFECYCLE_TRANSITIONS,
+  lifecycleStatusFromTenant,
+  tenantStatusFromLifecycle,
+  productLimitsForPlan,
+  canTransitionLifecycle,
+  subscriptionStatusForLifecycle,
+  tenantLifecycleBlocksAuth,
+  tenantLifecycleBlocksMutations,
+  productLimitsDoNotGrantPermissions,
+  saasPlanDoesNotGrantPermissions,
+  projectTenantLifecycleContext,
+  projectTenantSaaSContract,
+  wouldExceedTerritoryLimit,
+  TenantLifecycleService,
+  isOpaqueTenantLifecycleEntity,
+} from "./platform/tenant-lifecycle";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,
@@ -1042,6 +1069,7 @@ export {
   ADMIN_SECTION_ROLES,
   canAccessAdminOperations,
   canMutateSaasControlPlane,
+  SAAS_CONTROL_PLANE_FORBIDDEN,
   canAccessAdminSection,
   canAssignMembershipRole,
 } from "./domain";

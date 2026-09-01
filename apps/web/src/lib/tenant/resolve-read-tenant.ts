@@ -8,6 +8,7 @@ import type { RequestActor } from "@/lib/auth/request-actor";
 import { resolveTenantPublicId } from "./ids";
 import { resolveRequestTenantSlug } from "./resolve-request-tenant";
 import { recordCrossTenantDenied } from "@/lib/platform/platform-operations-store";
+import { communityTenantBlocksAuth } from "@/lib/platform/tenant-lifecycle-service";
 
 export function resolveReadTenantId(input: {
   request: Request;
@@ -38,6 +39,14 @@ export function resolveReadTenantId(input: {
       return {
         error: NextResponse.json(
           { error: "tenant_forbidden" },
+          { status: 403 },
+        ),
+      };
+    }
+    if (communityTenantBlocksAuth(input.actor.tenantSlug)) {
+      return {
+        error: NextResponse.json(
+          { error: "tenant_suspended" },
           { status: 403 },
         ),
       };
