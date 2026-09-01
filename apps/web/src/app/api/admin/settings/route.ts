@@ -94,7 +94,10 @@ export async function PATCH(request: Request) {
     "plan" in body ||
     "limits" in body ||
     "status" in body ||
-    "permissions" in body
+    "permissions" in body ||
+    "backupId" in body ||
+    "restoreTarget" in body ||
+    "exportScope" in body
   ) {
     return NextResponse.json(
       { error: "saas_control_plane_forbidden" },

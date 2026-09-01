@@ -3,6 +3,7 @@ import { canAccessPlatformAdmin } from "@life-community-os/types";
 import { TenantFactoryRuntime } from "@/lib/tenant/tenant-factory-service";
 import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
 import { TenantLifecycleRuntime } from "@/lib/platform/tenant-lifecycle-service";
+import { TenantDataOpsRuntime } from "@/lib/platform/tenant-data-ops-service";
 import { ensurePlatformControlPlane } from "@/lib/platform/ensure-control-plane";
 
 export const runtime = "nodejs";
@@ -30,5 +31,7 @@ export async function GET(request: Request) {
     subscriptions: PlatformOperationsRuntime.subscriptions(),
     lifecycle: TenantLifecycleRuntime.list(),
     contracts: TenantLifecycleRuntime.contracts(),
+    backups: TenantDataOpsRuntime.listBackups(),
+    recovery: TenantDataOpsRuntime.recovery(),
   });
 }

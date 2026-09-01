@@ -216,6 +216,46 @@ export {
   isOpaqueTenantLifecycleEntity,
 } from "./platform/tenant-lifecycle";
 
+/** Tenant Data Operations — export, backup, restore, DR readiness. */
+export type {
+  DataOperationClass,
+  TenantBackupType,
+  TenantBackupStatus,
+  TenantRestoreStatus,
+  DisasterRecoveryScenario,
+  TenantMembershipReference,
+  TenantOwnedRecord,
+  TenantOwnedMedia,
+  TenantBackupContext,
+  TenantBackupPayload,
+  TenantRestoreContext,
+  TenantDataExport,
+  RecoveryObjectives,
+  DisasterRecoveryReadiness,
+  TenantDataPlane,
+} from "./platform/data-export";
+export {
+  DATA_OPERATION_CLASSES,
+  TENANT_BACKUP_TYPES,
+  TENANT_BACKUP_STATUSES,
+  TENANT_RESTORE_STATUSES,
+  DISASTER_RECOVERY_SCENARIOS,
+  DEFAULT_RECOVERY_OBJECTIVES,
+  classifyDataOperations,
+  emptyTenantDataPlane,
+  projectDisasterRecoveryReadiness,
+  mediaStorageBelongsToTenant,
+  mediaOwnedByTenant,
+  isOrphanMediaOwnership,
+  backupIsNotContentDuplication,
+  dataOpsPlanDoesNotGrantPermissions,
+  isOpaqueTenantDataOpsEntity,
+  assertBackupIsolated,
+  TenantDataExportService,
+  TenantBackupService,
+  TenantRestoreService,
+} from "./platform/data-export";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

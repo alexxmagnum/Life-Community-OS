@@ -17,6 +17,10 @@ import {
   type TenantSaaSContract,
   type TenantSubscription,
   type TenantLifecycleContext,
+  type TenantBackupContext,
+  type TenantRestoreContext,
+  type TenantDataExport,
+  type DisasterRecoveryReadiness,
 } from "@life-community-os/types";
 import { EmptyState, FlowScreenHeader, MobileScreen } from "@life-community-os/ui";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
@@ -46,6 +50,12 @@ export function PlatformAdminScreen() {
   const [subscriptions, setSubscriptions] = useState<TenantSubscription[]>([]);
   const [lifecycle, setLifecycle] = useState<TenantLifecycleContext[]>([]);
   const [contracts, setContracts] = useState<TenantSaaSContract[]>([]);
+  const [backups, setBackups] = useState<TenantBackupContext[]>([]);
+  const [restores, setRestores] = useState<TenantRestoreContext[]>([]);
+  const [exports, setExports] = useState<TenantDataExport[]>([]);
+  const [recovery, setRecovery] = useState<DisasterRecoveryReadiness | null>(
+    null,
+  );
   const [audit, setAudit] = useState<PlatformAuditRecord[]>([]);
   const [security, setSecurity] = useState<PlatformSecurityEvent[]>([]);
   const [forbidden, setForbidden] = useState(false);
@@ -57,13 +67,14 @@ export function PlatformAdminScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [tenantsRes, operationsRes, territoriesRes, auditRes, securityRes] =
+    const [tenantsRes, operationsRes, territoriesRes, auditRes, securityRes, dataRes] =
       await Promise.all([
         fetch("/api/platform/tenants", { cache: "no-store" }),
         fetch("/api/platform/operations", { cache: "no-store" }),
         fetch("/api/platform/territories", { cache: "no-store" }),
         fetch("/api/platform/audit", { cache: "no-store" }),
         fetch("/api/platform/security", { cache: "no-store" }),
+        fetch("/api/platform/data-export", { cache: "no-store" }),
       ]);
     if (tenantsRes.status === 401 || tenantsRes.status === 403) {
       setForbidden(true);
@@ -88,6 +99,8 @@ export function PlatformAdminScreen() {
         subscriptions?: TenantSubscription[];
         lifecycle?: TenantLifecycleContext[];
         contracts?: TenantSaaSContract[];
+        backups?: TenantBackupContext[];
+        recovery?: DisasterRecoveryReadiness;
       };
       setContext(data.context ?? null);
       setHealth(data.health ?? []);
@@ -96,6 +109,8 @@ export function PlatformAdminScreen() {
       setSubscriptions(data.subscriptions ?? []);
       setLifecycle((data.lifecycle ?? []).filter((row): row is TenantLifecycleContext => Boolean(row)));
       setContracts(data.contracts ?? []);
+      if (data.backups) setBackups(data.backups);
+      if (data.recovery) setRecovery(data.recovery);
     }
     if (territoriesRes.ok) {
       const data = (await territoriesRes.json()) as {
@@ -112,6 +127,18 @@ export function PlatformAdminScreen() {
         events?: PlatformSecurityEvent[];
       };
       setSecurity(data.events ?? []);
+    }
+    if (dataRes.ok) {
+      const data = (await dataRes.json()) as {
+        exports?: TenantDataExport[];
+        backups?: TenantBackupContext[];
+        restores?: TenantRestoreContext[];
+        recovery?: DisasterRecoveryReadiness;
+      };
+      setExports(data.exports ?? []);
+      setBackups(data.backups ?? []);
+      setRestores(data.restores ?? []);
+      if (data.recovery) setRecovery(data.recovery);
     }
   }, []);
 
@@ -249,6 +276,26 @@ export function PlatformAdminScreen() {
                 void refresh();
               });
             };
+            const runDataOp = (action: string) => {
+              void fetch("/api/platform/data-export", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                  communitySlug: tenant.slug,
+                  action,
+                  type: "manual",
+                  explicitConfirmation: action === "restore",
+                  reason: action,
+                }),
+              }).then((res) => {
+                if (!res.ok) {
+                  setError("Operación de datos no permitida.");
+                  return;
+                }
+                setError(null);
+                void refresh();
+              });
+            };
             return (
               <li
                 key={tenant.id}
@@ -304,6 +351,27 @@ export function PlatformAdminScreen() {
                     onClick={() => runLifecycle("archive")}
                   >
                     Archive
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runDataOp("export")}
+                  >
+                    Export
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runDataOp("backup")}
+                  >
+                    Backup
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-[var(--color-surface-muted)] px-3 py-1 text-[12px] font-semibold"
+                    onClick={() => runDataOp("restore")}
+                  >
+                    Restore data
                   </button>
                 </div>
               </li>
@@ -385,6 +453,33 @@ export function PlatformAdminScreen() {
               </li>
             );
           })}
+        </ul>
+      </section>
+      <section className="mt-6">
+        <p className="text-[13px] font-semibold">Data Operations</p>
+        {recovery ? (
+          <p className="mt-1 text-[12px] text-[var(--color-text-secondary)]">
+            Recovery RPO {recovery.objectives.rpoMinutes}m · RTO{" "}
+            {recovery.objectives.rtoMinutes}m · provider {recovery.cloudProvider}
+          </p>
+        ) : null}
+        <ul className="mt-2 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
+          {backups.length === 0 ? <li>Sin backups</li> : null}
+          {backups.map((row) => (
+            <li key={row.backupId}>
+              backup {row.status} · {row.type} · {row.tenantId}
+            </li>
+          ))}
+          {exports.map((row) => (
+            <li key={`${row.tenantId}-${row.generatedAt}`}>
+              export {row.tenant.slug} · territories {row.territories.length}
+            </li>
+          ))}
+          {restores.map((row) => (
+            <li key={row.restoreId}>
+              restore {row.status} · {row.tenantId}
+            </li>
+          ))}
         </ul>
       </section>
       <section className="mt-6">

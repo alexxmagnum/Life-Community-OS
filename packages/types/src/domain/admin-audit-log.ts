@@ -32,6 +32,11 @@ export const ADMIN_AUDIT_ACTIONS = [
   "platform.tenant.archived",
   "platform.contract.changed",
   "platform.limit.changed",
+  "platform.backup.created",
+  "platform.backup.restored",
+  "platform.export.started",
+  "platform.export.completed",
+  "platform.restore.failed",
   "security.permission.changed",
 ] as const;
 
@@ -54,7 +59,10 @@ export type AdminAuditEntityType =
   | "tenant"
   | "territory"
   | "platform"
-  | "security";
+  | "security"
+  | "backup"
+  | "export"
+  | "restore";
 
 const SENSITIVE_METADATA_KEY =
   /secret|token|password|authorization|cookie|api[_-]?key|private/i;

@@ -183,6 +183,9 @@ export type ClientAuthoritySpoof = {
   status?: unknown;
   limits?: unknown;
   permissions?: unknown;
+  backupId?: unknown;
+  restoreTarget?: unknown;
+  exportScope?: unknown;
 };
 
 export function emptyTenantFactorySnapshot(): TenantFactorySnapshot {
@@ -327,6 +330,9 @@ export function rejectClientAuthoritySpoof(
   if (body.status != null) return "status";
   if (body.limits != null) return "limits";
   if (body.permissions != null) return "permissions";
+  if (body.backupId != null) return "backupId";
+  if (body.restoreTarget != null) return "restoreTarget";
+  if (body.exportScope != null) return "exportScope";
   return null;
 }
 
