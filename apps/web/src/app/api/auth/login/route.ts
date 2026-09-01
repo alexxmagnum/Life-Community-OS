@@ -54,6 +54,17 @@ export async function POST(request: Request) {
     password,
   });
   if (error || !data.session) {
+    const { recordPlatformAudit } = await import(
+      "@/lib/platform/platform-operations-store"
+    );
+    recordPlatformAudit({
+      tenantId: resolveRequestTenantSlug(request),
+      actorPersonId: "anonymous",
+      action: "security.login.failed",
+      entityType: "security",
+      entityId: "login",
+      metadata: { outcome: "failed" },
+    });
     return NextResponse.json(
       { error: error?.message ?? "sign_in_failed" },
       { status: 401 },

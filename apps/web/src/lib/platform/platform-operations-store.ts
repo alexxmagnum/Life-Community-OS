@@ -66,7 +66,7 @@ export function recordSpoofSecurityEvent(input: {
           actorTenantId: input.tenantId ?? "unknown",
           requestedTenantId: "spoofed",
           actorPersonId: input.actorPersonId,
-          action: "security.cross_tenant",
+          action: "security.cross_tenant.blocked",
         })
       : input.field === "territoryId"
         ? detectTerritoryMismatchEvent({
@@ -79,19 +79,24 @@ export function recordSpoofSecurityEvent(input: {
         : detectInvalidPermissionEvent({
             tenantId: input.tenantId,
             actorPersonId: input.actorPersonId,
-            action: "security.permission.changed",
+            action: "security.permission.denied",
           });
   const row =
     event ??
     detectInvalidPermissionEvent({
       tenantId: input.tenantId,
       actorPersonId: input.actorPersonId,
+      action: "security.permission.denied",
     });
   pushSecurity(row);
+  const action =
+    input.field === "tenantId"
+      ? "security.cross_tenant.blocked"
+      : "security.permission.denied";
   recordPlatformAudit({
     tenantId: input.tenantId ?? "unknown",
     actorPersonId: input.actorPersonId ?? "unknown",
-    action: "security.permission.changed",
+    action,
     entityType: "security",
     entityId: input.field,
     metadata: { field: input.field },
@@ -114,7 +119,7 @@ export function recordCrossTenantDenied(input: {
   recordPlatformAudit({
     tenantId: input.actorTenantId,
     actorPersonId: input.actorPersonId ?? "unknown",
-    action: "security.permission.changed",
+    action: "security.cross_tenant.blocked",
     entityType: "security",
     entityId: input.requestedTenantId,
     metadata: { kind: "cross_tenant" },
@@ -134,7 +139,7 @@ export function recordTerritoryMismatch(input: {
   recordPlatformAudit({
     tenantId: input.tenantId ?? "unknown",
     actorPersonId: input.actorPersonId ?? "unknown",
-    action: "security.permission.changed",
+    action: "security.permission.denied",
     entityType: "security",
     entityId: input.requestedTerritoryId,
     metadata: { kind: "territory_mismatch" },
@@ -147,8 +152,19 @@ export function recordInvalidPermission(input: {
   actorPersonId?: string;
   action?: string;
 }): PlatformSecurityEvent {
-  const event = detectInvalidPermissionEvent(input);
+  const event = detectInvalidPermissionEvent({
+    ...input,
+    action: input.action ?? "security.permission.denied",
+  });
   pushSecurity(event);
+  recordPlatformAudit({
+    tenantId: input.tenantId ?? "unknown",
+    actorPersonId: input.actorPersonId ?? "unknown",
+    action: "security.permission.denied",
+    entityType: "security",
+    entityId: input.actorPersonId ?? "unknown",
+    metadata: { action: input.action ?? "denied" },
+  });
   return event;
 }
 

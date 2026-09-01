@@ -42,6 +42,9 @@ export async function POST(request: Request) {
     role?: string;
     plan?: string;
     features?: unknown;
+    permission?: unknown;
+    capability?: unknown;
+    capabilities?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -57,6 +60,9 @@ export async function POST(request: Request) {
         role: body.role,
         plan: body.plan,
         features: body.features,
+        permission: body.permission,
+        capability: body.capability,
+        capabilities: body.capabilities,
       },
       request: {
         name: body.name ?? "",

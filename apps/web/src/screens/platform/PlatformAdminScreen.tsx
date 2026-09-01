@@ -21,6 +21,7 @@ import {
   type TenantRestoreContext,
   type TenantDataExport,
   type DisasterRecoveryReadiness,
+  type SecurityCenterProjection,
 } from "@life-community-os/types";
 import { EmptyState, FlowScreenHeader, MobileScreen } from "@life-community-os/ui";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
@@ -58,6 +59,8 @@ export function PlatformAdminScreen() {
   );
   const [audit, setAudit] = useState<PlatformAuditRecord[]>([]);
   const [security, setSecurity] = useState<PlatformSecurityEvent[]>([]);
+  const [securityCenter, setSecurityCenter] =
+    useState<SecurityCenterProjection | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -67,7 +70,15 @@ export function PlatformAdminScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const [tenantsRes, operationsRes, territoriesRes, auditRes, securityRes, dataRes] =
+    const [
+      tenantsRes,
+      operationsRes,
+      territoriesRes,
+      auditRes,
+      securityRes,
+      dataRes,
+      eventsRes,
+    ] =
       await Promise.all([
         fetch("/api/platform/tenants", { cache: "no-store" }),
         fetch("/api/platform/operations", { cache: "no-store" }),
@@ -75,6 +86,7 @@ export function PlatformAdminScreen() {
         fetch("/api/platform/audit", { cache: "no-store" }),
         fetch("/api/platform/security", { cache: "no-store" }),
         fetch("/api/platform/data-export", { cache: "no-store" }),
+        fetch("/api/platform/security/events", { cache: "no-store" }),
       ]);
     if (tenantsRes.status === 401 || tenantsRes.status === 403) {
       setForbidden(true);
@@ -127,6 +139,18 @@ export function PlatformAdminScreen() {
         events?: PlatformSecurityEvent[];
       };
       setSecurity(data.events ?? []);
+    }
+    if (eventsRes.ok) {
+      const data = (await eventsRes.json()) as SecurityCenterProjection & {
+        events?: PlatformSecurityEvent[];
+      };
+      setSecurityCenter({
+        boundaryEvents: data.boundaryEvents ?? [],
+        permissionDenials: data.permissionDenials ?? [],
+        auditSecurity: data.auditSecurity ?? [],
+        configurationRisks: data.configurationRisks ?? [],
+      });
+      if (data.events?.length) setSecurity(data.events);
     }
     if (dataRes.ok) {
       const data = (await dataRes.json()) as {
@@ -266,6 +290,7 @@ export function PlatformAdminScreen() {
                   communitySlug: tenant.slug,
                   action,
                   reason: action,
+                  explicitConfirmation: action === "suspend",
                 }),
               }).then((res) => {
                 if (!res.ok) {
@@ -483,12 +508,77 @@ export function PlatformAdminScreen() {
         </ul>
       </section>
       <section className="mt-6">
-        <p className="text-[13px] font-semibold">Security Events</p>
-        <ul className="mt-2 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
-          {security.length === 0 ? <li>Sin eventos</li> : null}
-          {security.map((event) => (
-            <li key={`${event.kind}-${event.timestamp}`}>
+        <p className="text-[13px] font-semibold">Security Center</p>
+        <p className="mt-1 text-[12px] text-[var(--color-text-tertiary)]">
+          Control operativo SaaS. No es un SIEM ni un ranking.
+        </p>
+        <p className="mt-3 text-[12px] font-semibold">Boundary Events</p>
+        <ul className="mt-1 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
+          {(securityCenter?.boundaryEvents.length
+            ? securityCenter.boundaryEvents
+            : security.filter(
+                (event) =>
+                  event.kind === "cross_tenant" ||
+                  event.kind === "territory_mismatch",
+              )
+          ).length === 0 ? (
+            <li>Sin violaciones de frontera</li>
+          ) : null}
+          {(securityCenter?.boundaryEvents.length
+            ? securityCenter.boundaryEvents
+            : security.filter(
+                (event) =>
+                  event.kind === "cross_tenant" ||
+                  event.kind === "territory_mismatch",
+              )
+          ).map((event) => (
+            <li key={`${event.kind}-${event.timestamp}-${event.action}`}>
               {event.kind} · {event.action}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[12px] font-semibold">Permission Denials</p>
+        <ul className="mt-1 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
+          {(securityCenter?.permissionDenials.length
+            ? securityCenter.permissionDenials
+            : security.filter((event) => event.kind === "invalid_permission")
+          ).length === 0 ? (
+            <li>Sin denegaciones</li>
+          ) : null}
+          {(securityCenter?.permissionDenials.length
+            ? securityCenter.permissionDenials
+            : security.filter((event) => event.kind === "invalid_permission")
+          ).map((event) => (
+            <li key={`${event.kind}-${event.timestamp}-deny`}>
+              {event.kind} · {event.action}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[12px] font-semibold">Audit Security</p>
+        <ul className="mt-1 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
+          {(securityCenter?.auditSecurity.length
+            ? securityCenter.auditSecurity
+            : audit.filter((row) => row.action.startsWith("security."))
+          ).length === 0 ? (
+            <li>Sin auditoría de seguridad</li>
+          ) : null}
+          {(securityCenter?.auditSecurity.length
+            ? securityCenter.auditSecurity
+            : audit.filter((row) => row.action.startsWith("security."))
+          ).map((row) => (
+            <li key={`${row.action}-${row.timestamp}-${row.tenantId}`}>
+              {row.action} · {row.tenantId}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-[12px] font-semibold">Configuration Risks</p>
+        <ul className="mt-1 space-y-1 text-[12px] text-[var(--color-text-tertiary)]">
+          {(securityCenter?.configurationRisks.length ?? 0) === 0 ? (
+            <li>Sin riesgos de configuración</li>
+          ) : null}
+          {securityCenter?.configurationRisks.map((risk) => (
+            <li key={`${risk.kind}-${risk.detail}`}>
+              {risk.kind}: {risk.detail}
             </li>
           ))}
         </ul>

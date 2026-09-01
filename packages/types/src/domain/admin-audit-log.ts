@@ -38,6 +38,12 @@ export const ADMIN_AUDIT_ACTIONS = [
   "platform.export.completed",
   "platform.restore.failed",
   "security.permission.changed",
+  "security.login.failed",
+  "security.permission.denied",
+  "security.cross_tenant.blocked",
+  "security.export.requested",
+  "security.restore.requested",
+  "security.admin.action",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];

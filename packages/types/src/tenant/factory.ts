@@ -183,6 +183,9 @@ export type ClientAuthoritySpoof = {
   status?: unknown;
   limits?: unknown;
   permissions?: unknown;
+  permission?: unknown;
+  capability?: unknown;
+  capabilities?: unknown;
   backupId?: unknown;
   restoreTarget?: unknown;
   exportScope?: unknown;
@@ -330,6 +333,9 @@ export function rejectClientAuthoritySpoof(
   if (body.status != null) return "status";
   if (body.limits != null) return "limits";
   if (body.permissions != null) return "permissions";
+  if (body.permission != null) return "permission";
+  if (body.capability != null) return "capability";
+  if (body.capabilities != null) return "capabilities";
   if (body.backupId != null) return "backupId";
   if (body.restoreTarget != null) return "restoreTarget";
   if (body.exportScope != null) return "exportScope";

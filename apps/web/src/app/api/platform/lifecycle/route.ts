@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { canAccessPlatformAdmin } from "@life-community-os/types";
+import {
+  canAccessPlatformAdmin,
+  requirePrivilegedConfirmation,
+} from "@life-community-os/types";
 import {
   TenantFactoryDeniedError,
   TenantFactoryRuntime,
@@ -49,6 +52,10 @@ export async function POST(request: Request) {
     status?: unknown;
     limits?: unknown;
     permissions?: unknown;
+    permission?: unknown;
+    capability?: unknown;
+    capabilities?: unknown;
+    explicitConfirmation?: boolean;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -71,6 +78,9 @@ export async function POST(request: Request) {
       status: body.status,
       limits: body.limits,
       permissions: body.permissions,
+      permission: body.permission,
+      capability: body.capability,
+      capabilities: body.capabilities,
     };
     const input = {
       actor,
@@ -82,6 +92,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ lifecycle: TenantLifecycleRuntime.activate(input) });
     }
     if (body.action === "suspend") {
+      requirePrivilegedConfirmation({
+        action: "tenantSuspend",
+        explicitConfirmation: body.explicitConfirmation === true,
+      });
       return NextResponse.json({ lifecycle: TenantLifecycleRuntime.suspend(input) });
     }
     if (body.action === "restore") {
@@ -98,6 +112,12 @@ export async function POST(request: Request) {
     }
     if (error instanceof Error && error.message === "invalid_transition") {
       return NextResponse.json({ error: "invalid_transition" }, { status: 400 });
+    }
+    if (
+      error instanceof Error &&
+      error.message === "privileged_confirmation_required"
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     throw error;
   }

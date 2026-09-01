@@ -53,6 +53,9 @@ export async function POST(request: Request) {
     status?: unknown;
     limits?: unknown;
     permissions?: unknown;
+    permission?: unknown;
+    capability?: unknown;
+    capabilities?: unknown;
     backupId?: unknown;
     restoreTarget?: unknown;
     exportScope?: unknown;
@@ -78,6 +81,9 @@ export async function POST(request: Request) {
       status: body.status,
       limits: body.limits,
       permissions: body.permissions,
+      permission: body.permission,
+      capability: body.capability,
+      capabilities: body.capabilities,
       backupId: body.backupId,
       restoreTarget: body.restoreTarget,
       exportScope: body.exportScope,

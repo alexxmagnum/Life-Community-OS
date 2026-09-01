@@ -9,6 +9,7 @@ import {
   TenantLifecycleService,
   canAccessPlatformAdmin,
   lifecycleStatusFromTenant,
+  spoofDenialCode,
   projectTenantLifecycleContext,
   projectTenantSaaSContract,
   rejectClientAuthoritySpoof,
@@ -41,7 +42,7 @@ function requireOperator(actor: RequestActor): string {
     recordInvalidPermission({
       tenantId: actor.tenantSlug,
       actorPersonId: actor.personId,
-      action: "security.permission.changed",
+      action: "security.permission.denied",
     });
     throw new TenantFactoryDeniedError(SAAS_CONTROL_PLANE_FORBIDDEN);
   }
@@ -60,7 +61,7 @@ function rejectSpoof(
       actorPersonId: personId,
       tenantId,
     });
-    throw new TenantFactoryDeniedError(SAAS_CONTROL_PLANE_FORBIDDEN);
+    throw new TenantFactoryDeniedError(spoofDenialCode(spoofed));
   }
 }
 
@@ -158,6 +159,14 @@ export const TenantLifecycleRuntime = {
         input.tenantId,
       ),
     );
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "security.admin.action",
+      entityType: "tenant",
+      entityId: input.tenantId,
+      metadata: { reason: input.reason ?? "suspended" },
+    });
     recordPlatformAudit({
       tenantId: input.tenantId,
       actorPersonId: personId,

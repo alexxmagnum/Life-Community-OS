@@ -337,7 +337,7 @@ export function detectInvalidPermissionEvent(input: {
     tenantId: input.tenantId,
     actorPersonId: input.actorPersonId,
     timestamp: new Date().toISOString(),
-    action: input.action ?? "security.permission.changed",
+    action: input.action ?? "security.permission.denied",
   };
 }
 

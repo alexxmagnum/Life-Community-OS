@@ -256,6 +256,45 @@ export {
   TenantRestoreService,
 } from "./platform/data-export";
 
+/** SaaS security hardening — policy, authorization, privacy foundation. */
+export type {
+  RequestSecurityPipelineStep,
+  SecurityPolicyContext,
+  AuthorizationActorKind,
+  AuthorizationAction,
+  AuthorizationDecisionResult,
+  AuthorizationRequest,
+  PrivacyControlContext,
+  SecurityCenterProjection,
+  ConfigurationRisk,
+} from "./platform/security-context";
+export {
+  CROSS_TENANT_ACCESS_DENIED,
+  TERRITORY_BOUNDARY_VIOLATION,
+  CLIENT_CAPABILITY_SPOOF,
+  PRIVILEGED_CONFIRMATION_REQUIRED,
+  CROSS_TENANT_MEDIA_FORBIDDEN,
+  REQUEST_SECURITY_PIPELINE,
+  PRIVILEGED_ACTIONS,
+  projectSecurityPolicyContext,
+  assertTenantBoundary,
+  assertMediaOwnership,
+  requirePrivilegedConfirmation,
+  isCapabilitySpoofField,
+  spoofDenialCode,
+  clientCannotSupplyAuthority,
+  requestSecurityPipelineOrder,
+  AuthorizationService,
+  projectPrivacyControlContext,
+  isOpaqueSecurityEntity,
+  isForbiddenFrontendSecretKey,
+  frontendMustNotExposeSecrets,
+  auditMetadataIsSanitized,
+  projectConfigurationRisks,
+  projectSecurityCenter,
+  securityDoesNotOwnDomainData,
+} from "./platform/security-context";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

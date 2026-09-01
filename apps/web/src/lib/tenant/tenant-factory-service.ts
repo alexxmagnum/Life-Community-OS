@@ -10,6 +10,7 @@ import {
   canAccessPlatformAdmin,
   emptyTenantFactorySnapshot,
   rejectClientAuthoritySpoof,
+  spoofDenialCode,
   type ClientAuthoritySpoof,
   type PlatformOperator,
   type ProductCapabilityMap,
@@ -70,11 +71,26 @@ function requirePlatformOperator(actor: RequestActor): string {
     recordInvalidPermission({
       tenantId: actor.tenantSlug,
       actorPersonId: actor.personId,
-      action: "security.permission.changed",
+      action: "security.permission.denied",
     });
     throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
   }
   return actor.personId;
+}
+
+function denySpoof(
+  personId: string,
+  spoof?: ClientAuthoritySpoof | null,
+  tenantId?: string,
+): void {
+  const spoofed = rejectClientAuthoritySpoof(spoof);
+  if (!spoofed) return;
+  recordSpoofSecurityEvent({
+    field: spoofed,
+    actorPersonId: personId,
+    tenantId,
+  });
+  throw new TenantFactoryDeniedError(spoofDenialCode(spoofed));
 }
 
 export const TenantFactoryRuntime = {
@@ -106,14 +122,7 @@ export const TenantFactoryRuntime = {
     administratorPersonId?: string;
   }): TenantProvisionResult {
     const personId = requirePlatformOperator(input.actor);
-    const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) {
-      recordSpoofSecurityEvent({
-        field: spoofed,
-        actorPersonId: personId,
-      });
-      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
-    }
+    denySpoof(personId, input.spoof);
     const provisioned = TenantFactoryService.provision(
       snapshot,
       input.request,
@@ -144,15 +153,7 @@ export const TenantFactoryRuntime = {
     spoof?: ClientAuthoritySpoof | null;
   }) {
     const personId = requirePlatformOperator(input.actor);
-    const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) {
-      recordSpoofSecurityEvent({
-        field: spoofed,
-        actorPersonId: personId,
-        tenantId: input.territory.tenantId,
-      });
-      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
-    }
+    denySpoof(personId, input.spoof, input.territory.tenantId);
     const next = TenantFactoryService.addTerritory(snapshot, input.territory);
     snapshot = next.snapshot;
     recordPlatformAudit({
@@ -174,15 +175,7 @@ export const TenantFactoryRuntime = {
     spoof?: ClientAuthoritySpoof | null;
   }) {
     const personId = requirePlatformOperator(input.actor);
-    const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) {
-      recordSpoofSecurityEvent({
-        field: spoofed,
-        actorPersonId: personId,
-        tenantId: input.tenantId,
-      });
-      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
-    }
+    denySpoof(personId, input.spoof, input.tenantId);
     snapshot = TenantFactoryService.setStatus(
       snapshot,
       input.tenantId,
@@ -211,15 +204,7 @@ export const TenantFactoryRuntime = {
     spoof?: ClientAuthoritySpoof | null;
   }) {
     const personId = requirePlatformOperator(input.actor);
-    const spoofed = rejectClientAuthoritySpoof(input.spoof);
-    if (spoofed) {
-      recordSpoofSecurityEvent({
-        field: spoofed,
-        actorPersonId: personId,
-        tenantId: input.tenantId,
-      });
-      throw new TenantFactoryDeniedError("saas_control_plane_forbidden");
-    }
+    denySpoof(personId, input.spoof, input.tenantId);
     snapshot = TenantFactoryService.setFeatures(
       snapshot,
       input.tenantId,

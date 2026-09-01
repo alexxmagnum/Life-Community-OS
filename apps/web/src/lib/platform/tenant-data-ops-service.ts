@@ -13,6 +13,7 @@ import {
   emptyTenantDataPlane,
   projectDisasterRecoveryReadiness,
   rejectClientAuthoritySpoof,
+  spoofDenialCode,
   type ClientAuthoritySpoof,
   type TenantBackupType,
   type TenantDataExport,
@@ -47,7 +48,7 @@ function requireOperator(actor: RequestActor): string {
     recordInvalidPermission({
       tenantId: actor.tenantSlug,
       actorPersonId: actor.personId,
-      action: "security.permission.changed",
+      action: "security.permission.denied",
     });
     throw new TenantFactoryDeniedError(SAAS_CONTROL_PLANE_FORBIDDEN);
   }
@@ -66,7 +67,7 @@ function rejectSpoof(
       actorPersonId: personId,
       tenantId,
     });
-    throw new TenantFactoryDeniedError(SAAS_CONTROL_PLANE_FORBIDDEN);
+    throw new TenantFactoryDeniedError(spoofDenialCode(spoofed));
   }
 }
 
@@ -128,6 +129,14 @@ export const TenantDataOpsRuntime = {
   }): TenantDataExport {
     const personId = requireOperator(input.actor);
     rejectSpoof(personId, input.tenantId, input.spoof);
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "security.export.requested",
+      entityType: "export",
+      entityId: input.tenantId,
+      metadata: input.reason ? { reason: input.reason } : undefined,
+    });
     recordPlatformAudit({
       tenantId: input.tenantId,
       actorPersonId: personId,
@@ -204,6 +213,14 @@ export const TenantDataOpsRuntime = {
   }) {
     const personId = requireOperator(input.actor);
     rejectSpoof(personId, input.tenantId, input.spoof);
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "security.restore.requested",
+      entityType: "restore",
+      entityId: input.backupId ?? input.tenantId,
+      metadata: input.reason ? { reason: input.reason } : undefined,
+    });
     try {
       const next = TenantRestoreService.restoreTenant(currentPlane(), {
         tenantId: input.tenantId,
