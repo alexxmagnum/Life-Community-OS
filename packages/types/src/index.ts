@@ -107,6 +107,36 @@ export {
   isOpaqueDailyLifeEntity,
 } from "./community/operations";
 
+/** Territory Home & resident experience evolution — projection only. */
+export type {
+  LifeHomeTerritoryHero,
+  LifeHomePlace,
+  LifeHomeAction,
+  LifeHomeEmptyState,
+  LifeHomeMembershipScope,
+  LifeHomeContext,
+  ProfileLifeContext,
+} from "./community/life-home";
+export {
+  resolveLifeHomeMembershipScope,
+  projectLifeHomeContext,
+  projectProfileLifeContext,
+  isOpaqueCommunityExperienceEntity,
+  personalizationDoesNotInventContent,
+  homeShowsTerritoryLife,
+} from "./community/life-home";
+
+/** Discover Experience — territorial exploration, not a catalog. */
+export type {
+  DiscoverServiceSummary,
+  DiscoverHelpSummary,
+  DiscoverExperienceContext,
+} from "./community/discover-experience";
+export {
+  projectDiscoverExperienceContext,
+  discoverUsesRealDomainData,
+} from "./community/discover-experience";
+
 /** Tenant Factory — SaaS community deployment, not a customer fork. */
 export type {
   TenantPlan,
@@ -718,6 +748,14 @@ export {
   lifePlaceNowLabel,
   lifePlaceAvailabilityLabel,
 } from "./platform/life-place";
+
+/** Life Place Experience View — presentation over LifePlaceContext. */
+export type { LifePlaceExperienceView } from "./platform/life-place-experience-view";
+export {
+  projectLifePlaceExperienceView,
+  lifePlaceMaintainsLocationSoT,
+  lifePlaceViewIsNotSocialProfile,
+} from "./platform/life-place-experience-view";
 
 /** Runtime helpers for Location (map SoT). */
 export {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { projectLifePlaceExperienceView } from "@life-community-os/types";
 import { LifePlaceQueryService } from "@/lib/life-place/life-place-query";
 import { actorCanOpenLifePlace } from "@/lib/life-place/permissions";
 import { PersonalizationService } from "@/lib/personal/personalization-service";
@@ -59,6 +60,7 @@ export async function GET(request: Request, { params }: Params) {
   });
   return NextResponse.json({
     ...context,
+    experienceView: projectLifePlaceExperienceView(context),
     location: context.location,
     activity: context.currentActivity,
     experiences: context.experiences,

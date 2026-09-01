@@ -91,16 +91,6 @@ export function AppShell({
         >
           {children}
         </main>
-        {!immersive && showCreateFab && onCreate ? (
-          <button
-            type="button"
-            onClick={onCreate}
-            className="ui-fab fixed bottom-[calc(64px+env(safe-area-inset-bottom))] left-1/2 z-50 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-[image:var(--gradient-brand)] text-[28px] font-light leading-none text-[var(--color-text-on-action)] shadow-[0_10px_28px_rgba(8,12,16,0.42)] ring-[2px] ring-white/12 md:hidden"
-            aria-label={createFabLabel}
-          >
-            <span aria-hidden>+</span>
-          </button>
-        ) : null}
         {!immersive ? (
           <BottomNavigation
             items={items}
@@ -110,6 +100,16 @@ export function AppShell({
           />
         ) : null}
       </div>
+      {!immersive && showCreateFab && onCreate ? (
+        <button
+          type="button"
+          onClick={onCreate}
+          className="ui-fab ui-pop fixed bottom-[calc(64px+env(safe-area-inset-bottom))] left-1/2 z-[55] flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full bg-[image:var(--gradient-brand)] text-[28px] font-light leading-none text-[var(--color-text-on-action)] shadow-[0_0_28px_rgba(0,212,229,0.55),0_8px_20px_rgba(0,0,0,0.45)] ring-[3px] ring-[var(--color-surface-app)]/70 md:hidden"
+          aria-label={createFabLabel}
+        >
+          <span aria-hidden>+</span>
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -262,10 +262,10 @@ const BAND_ORDER: Record<CommunityFeedRankBand, number> = {
  * Never sort by id, seed, or pack priority.
  */
 /** Empty community copy — invitation, never a catalog gap. */
-export const LIVING_EMPTY_TITLE = "Todavía no ocurre nada aquí";
+export const LIVING_EMPTY_TITLE = "La comunidad está despertando";
 export const LIVING_EMPTY_DESCRIPTION =
-  "Sé el primero en aportar algo a tu comunidad.";
-export const LIVING_EMPTY_CTA = "Crear el primer plan";
+  "Este territorio está esperando su primera historia.";
+export const LIVING_EMPTY_CTA = "Crear plan";
 export const LIVING_PLACE_EMPTY_TITLE =
   "Este lugar está esperando su primera historia.";
 export const LIVING_PLACE_EMPTY_CTA = "Crear algo aquí";

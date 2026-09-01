@@ -16,6 +16,7 @@ import {
 import {
   bindProjectedNavigation,
   CommunityActionRegistry,
+  COMMUNITY_CREATION_ACTIONS,
   communityCreationRoute,
   composerSuggestionReason,
   personalizeComposerActions,
@@ -280,6 +281,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
   ]);
 
   /**
+   * Magic Plus visibility — membership + creation capability.
+   * Not Tenant Plan, Feature Management, or Platform Admin.
+   */
+  const canShowMagicPlus =
+    currentUser.hasMembership &&
+    COMMUNITY_CREATION_ACTIONS.some((action) =>
+      currentUser.permissions.includes(action.requiredCapability),
+    );
+
+  /**
    * Contribution entry (+) — domain create actions only.
    * Register / onboarding / reserve / report stay on their own screens.
    */
@@ -289,7 +300,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
       hasMembership: currentUser.hasMembership,
       capabilities: currentUser.permissions,
       productCapabilities,
-      territoryId: activeTerritory.territoryId,
+      territoryId:
+        activeTerritory.territoryId ?? currentUser.territoryId ?? undefined,
     });
     const ordered = personalContext
       ? personalizeComposerActions(listed, personalContext)
@@ -319,11 +331,10 @@ export function MemberShell({ children }: { children: ReactNode }) {
     personalContext,
     currentUser.hasMembership,
     currentUser.permissions,
+    currentUser.territoryId,
     productCapabilities,
     router,
   ]);
-
-  const createActionCount = createActions.length;
 
   const navItems = useMemo(
     () =>
@@ -384,8 +395,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
         onNavigate={(item) => {
           router.push(item.href);
         }}
-        onCreate={() => openComposer({ source: inferCreationSource(pathname) })}
-        showCreateFab={createActionCount > 0}
+        onCreate={
+          canShowMagicPlus
+            ? () => openComposer({ source: inferCreationSource(pathname) })
+            : undefined
+        }
+        showCreateFab={canShowMagicPlus}
         createFabLabel="Crear en comunidad"
         navNotice={
           navAlert ? (

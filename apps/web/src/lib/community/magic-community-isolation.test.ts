@@ -212,8 +212,8 @@ describe("Magic Community Experience isolation", () => {
   it("TEST 7 — empty activity invites to create", () => {
     const living = partitionLivingCommunityFeed([]);
     assert.equal(living.moments.length, 0);
-    assert.equal(LIVING_EMPTY_TITLE, "Todavía no ocurre nada aquí");
-    assert.equal(LIVING_EMPTY_CTA, "Crear el primer plan");
+    assert.equal(LIVING_EMPTY_TITLE, "La comunidad está despertando");
+    assert.equal(LIVING_EMPTY_CTA, "Crear plan");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
       "Este lugar está esperando su primera historia.",
