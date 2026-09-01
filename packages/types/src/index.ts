@@ -295,6 +295,41 @@ export {
   securityDoesNotOwnDomainData,
 } from "./platform/security-context";
 
+/** GDPR privacy governance — personal data controls and consent. */
+export type {
+  PersonalDataClass,
+  PrivacyRetentionDomain,
+  PrivacyContext,
+  PrivacyConfiguration,
+  PrivacyRetentionRule,
+  PrivacyRetentionPolicy,
+  PersonalDataExport,
+  PersonalAnonymizationResult,
+  PersonalDataPlane,
+  PrivacyConsentInput,
+} from "./privacy/privacy-context";
+export {
+  PRIVACY_ACCESS_DENIED,
+  EXPORT_OTHER_PERSON_DATA,
+  PERSONAL_DATA_CLASSES,
+  PRIVACY_RETENTION_DOMAINS,
+  defaultPrivacyRetentionPolicy,
+  emptyPersonalDataPlane,
+  projectPrivacyContext,
+  projectPrivacyConfiguration,
+  assertSelfPersonAccess,
+  assertPrivacyTenantBoundary,
+  personalMediaPolicy,
+  privateMessageVisible,
+  PrivacyConsentService,
+  PersonalDataExportService,
+  PersonalAnonymizationService,
+  privacyIntegratesWithSecurity,
+  gdprDoesNotOwnDomainData,
+  isOpaquePrivacyEntity,
+  mergeTrustPrivacyForExport,
+} from "./privacy/privacy-context";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

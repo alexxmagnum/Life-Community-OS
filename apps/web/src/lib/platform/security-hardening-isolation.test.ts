@@ -469,11 +469,11 @@ describe("SaaS security hardening isolation", () => {
 
   it("TEST 12 — Privacy contract only", () => {
     const privacy = projectPrivacyControlContext("luxury-communities");
-    assert.equal(privacy.implemented, false);
-    assert.equal(privacy.capabilities.exportPersonalData, false);
-    assert.equal(privacy.capabilities.deleteAccount, false);
-    assert.equal(privacy.capabilities.anonymizeIdentity, false);
-    assert.equal(privacy.capabilities.retentionPolicies, false);
+    assert.equal(privacy.implemented, true);
+    assert.equal(privacy.capabilities.exportPersonalData, true);
+    assert.equal(privacy.capabilities.deleteAccount, true);
+    assert.equal(privacy.capabilities.anonymizeIdentity, true);
+    assert.equal(privacy.capabilities.retentionPolicies, true);
   });
 
   it("TEST 13 — Opaque entities absent and pipeline intact", () => {

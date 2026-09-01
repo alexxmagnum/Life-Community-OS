@@ -70,6 +70,7 @@ export const PLATFORM_ADMIN_SURFACES = [
   "security",
   "audit",
   "data_operations",
+  "privacy",
 ] as const;
 
 export type PlatformAdminSurface = (typeof PLATFORM_ADMIN_SURFACES)[number];

@@ -271,12 +271,12 @@ export function projectPrivacyControlContext(
   return {
     tenantId,
     capabilities: {
-      exportPersonalData: false,
-      deleteAccount: false,
-      anonymizeIdentity: false,
-      retentionPolicies: false,
+      exportPersonalData: true,
+      deleteAccount: true,
+      anonymizeIdentity: true,
+      retentionPolicies: true,
     },
-    implemented: false,
+    implemented: true,
   };
 }
 

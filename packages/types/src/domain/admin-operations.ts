@@ -24,7 +24,8 @@ export type AdminOperationsSection =
   | "moderation"
   | "territory"
   | "settings"
-  | "operations";
+  | "operations"
+  | "privacy";
 
 export const ADMIN_SECTION_ROLES: Readonly<
   Record<AdminOperationsSection, readonly MembershipRole[]>
@@ -41,6 +42,7 @@ export const ADMIN_SECTION_ROLES: Readonly<
   moderation: ["moderator", "administrator"],
   territory: ["administrator"],
   settings: ["administrator"],
+  privacy: ["administrator"],
 };
 
 export type TenantOperationsSettings = {

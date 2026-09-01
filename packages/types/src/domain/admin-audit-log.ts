@@ -44,6 +44,12 @@ export const ADMIN_AUDIT_ACTIONS = [
   "security.export.requested",
   "security.restore.requested",
   "security.admin.action",
+  "privacy.export.requested",
+  "privacy.export.completed",
+  "privacy.delete.requested",
+  "privacy.delete.completed",
+  "privacy.consent.changed",
+  "privacy.access.denied",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];
@@ -68,10 +74,11 @@ export type AdminAuditEntityType =
   | "security"
   | "backup"
   | "export"
-  | "restore";
+  | "restore"
+  | "privacy";
 
 const SENSITIVE_METADATA_KEY =
-  /secret|token|password|authorization|cookie|api[_-]?key|private/i;
+  /secret|token|password|authorization|cookie|api[_-]?key|private|message[_-]?content/i;
 
 export function sanitizeAuditMetadata(
   metadata?: Record<string, string | number | boolean | null>,

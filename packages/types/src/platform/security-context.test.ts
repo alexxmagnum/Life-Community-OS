@@ -335,8 +335,9 @@ describe("SaaS security control plane", () => {
         error instanceof Error && error.message === TERRITORY_BOUNDARY_VIOLATION,
     );
     const privacy = projectPrivacyControlContext(luxuryId);
-    assert.equal(privacy.implemented, false);
-    assert.equal(privacy.capabilities.deleteAccount, false);
+    assert.equal(privacy.implemented, true);
+    assert.equal(privacy.capabilities.exportPersonalData, true);
+    assert.equal(privacy.capabilities.deleteAccount, true);
     assert.equal(securityDoesNotOwnDomainData(), true);
     assert.equal(isOpaqueSecurityEntity("GlobalSecurityEntity"), true);
     assert.equal(isOpaqueSecurityEntity("UniversalPermissionEntity"), true);
