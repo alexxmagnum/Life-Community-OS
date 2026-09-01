@@ -93,6 +93,15 @@ export type SystemHealth = {
 
 export type FeatureUsageMap = Record<ProductCapabilityKey, number>;
 
+/** Per-tenant ON/OFF. Not a score, ranking, or FeatureScore. */
+export type TenantFeatureObservability = {
+  tenantId: string;
+  marketplace: boolean;
+  lifeMap: boolean;
+  reservations: boolean;
+  enabledFeatures: ProductCapabilityKey[];
+};
+
 export type PlatformOperationsContext = {
   tenantsCount: number;
   activeTenants: number;
@@ -318,6 +327,77 @@ export function detectInvalidPermissionEvent(input: {
     timestamp: new Date().toISOString(),
     action: input.action ?? "security.permission.changed",
   };
+}
+
+export function detectTerritoryMismatchEvent(input: {
+  actorTerritoryId: string;
+  requestedTerritoryId: string;
+  tenantId?: string;
+  actorPersonId?: string;
+  action?: string;
+}): PlatformSecurityEvent | null {
+  if (
+    !input.requestedTerritoryId ||
+    input.actorTerritoryId === input.requestedTerritoryId
+  ) {
+    return null;
+  }
+  return {
+    kind: "territory_mismatch",
+    tenantId: input.tenantId,
+    actorPersonId: input.actorPersonId,
+    timestamp: new Date().toISOString(),
+    action: input.action ?? "security.territory_mismatch",
+  };
+}
+
+export function detectAdminChangeEvent(input: {
+  tenantId?: string;
+  actorPersonId?: string;
+  action?: string;
+}): PlatformSecurityEvent {
+  return {
+    kind: "admin_change",
+    tenantId: input.tenantId,
+    actorPersonId: input.actorPersonId,
+    timestamp: new Date().toISOString(),
+    action: input.action ?? "platform.admin.action",
+  };
+}
+
+export function projectTenantFeatureObservability(
+  snapshot: TenantFactorySnapshot,
+  tenantId: string,
+): TenantFeatureObservability | null {
+  const tenant = snapshot.tenants.find((row) => row.id === tenantId);
+  if (!tenant) return null;
+  const features =
+    snapshot.featuresByTenant[tenantId] ?? featuresForPlan(tenant.plan);
+  return {
+    tenantId,
+    marketplace: features.marketplace,
+    lifeMap: features.lifeMap,
+    reservations: features.reservations,
+    enabledFeatures: PRODUCT_CAPABILITY_KEYS.filter((key) => features[key]),
+  };
+}
+
+export function projectTenantHealthList(
+  snapshot: TenantFactorySnapshot,
+  audit: readonly AdminAuditLog[] = [],
+): TenantHealthContext[] {
+  return snapshot.tenants.map((tenant) =>
+    projectTenantHealth(snapshot, tenant, audit),
+  );
+}
+
+export function projectTenantFeatureObservabilityList(
+  snapshot: TenantFactorySnapshot,
+): TenantFeatureObservability[] {
+  return snapshot.tenants.flatMap((tenant) => {
+    const row = projectTenantFeatureObservability(snapshot, tenant.id);
+    return row ? [row] : [];
+  });
 }
 
 export function projectPlatformOperationsContext(

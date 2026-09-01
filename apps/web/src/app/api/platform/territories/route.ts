@@ -5,6 +5,7 @@ import {
   TenantFactoryRuntime,
 } from "@/lib/tenant/tenant-factory-service";
 import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
+import { ensurePlatformControlPlane } from "@/lib/platform/ensure-control-plane";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,7 @@ export async function GET(request: Request) {
   if (!actor.authenticated || !actor.personId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  ensurePlatformControlPlane();
   if (
     !canAccessPlatformAdmin({
       personId: actor.personId,
@@ -30,6 +32,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
+  ensurePlatformControlPlane();
   let body: {
     name?: string;
     slug?: string;

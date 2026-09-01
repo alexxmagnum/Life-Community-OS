@@ -21,11 +21,5 @@ export async function GET(request: Request) {
   ) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  return NextResponse.json({
-    context: PlatformOperationsRuntime.context(),
-    health: PlatformOperationsRuntime.healthList(),
-    features: PlatformOperationsRuntime.features(),
-    provisioning: PlatformOperationsRuntime.provisioningList(),
-    subscriptions: PlatformOperationsRuntime.subscriptions(),
-  });
+  return NextResponse.json({ health: PlatformOperationsRuntime.healthList() });
 }

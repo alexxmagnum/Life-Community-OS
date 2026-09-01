@@ -4,6 +4,7 @@ import {
   TenantFactoryDeniedError,
   TenantFactoryRuntime,
 } from "@/lib/tenant/tenant-factory-service";
+import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
 import { ensurePlatformControlPlane } from "@/lib/platform/ensure-control-plane";
 
 export const runtime = "nodejs";
@@ -23,7 +24,10 @@ export async function GET(request: Request) {
   ) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
-  return NextResponse.json({ tenants: TenantFactoryRuntime.list() });
+  return NextResponse.json({
+    usage: PlatformOperationsRuntime.context().featuresUsage,
+    tenants: PlatformOperationsRuntime.features(),
+  });
 }
 
 export async function POST(request: Request) {
@@ -31,17 +35,12 @@ export async function POST(request: Request) {
   const actor = await resolveRequestActor(request);
   ensurePlatformControlPlane();
   let body: {
-    name?: string;
-    slug?: string;
-    locale?: string;
-    timezone?: string;
-    branding?: { name?: string; shortName?: string; primaryColor?: string };
-    territories?: Array<{ name?: string; slug?: string }>;
+    communitySlug?: string;
+    features?: Record<string, boolean>;
     tenantId?: string;
     territoryId?: string;
     role?: string;
     plan?: string;
-    features?: unknown;
   };
   try {
     body = (await request.json()) as typeof body;
@@ -49,43 +48,42 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
   try {
-    const result = TenantFactoryRuntime.provision({
+    TenantFactoryRuntime.assertOperator(actor);
+    const community = TenantFactoryRuntime.list().find(
+      (row) => row.slug === body.communitySlug?.trim(),
+    );
+    if (!community) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    const features = TenantFactoryRuntime.setFeatures({
       actor,
+      tenantId: community.id,
+      features: {
+        marketplace: body.features?.marketplace,
+        lifeMap: body.features?.lifeMap,
+        reservations: body.features?.reservations,
+        experiences: body.features?.experiences,
+        housing: body.features?.housing,
+        golf: body.features?.golf,
+        hospitality: body.features?.hospitality,
+        community: body.features?.community,
+        resources: body.features?.resources,
+        work: body.features?.work,
+        official: body.features?.official,
+      },
       spoof: {
         tenantId: body.tenantId,
         territoryId: body.territoryId,
         role: body.role,
         plan: body.plan,
-        features: body.features,
-      },
-      request: {
-        name: body.name ?? "",
-        slug: body.slug ?? "",
-        locale: body.locale?.trim() || "en",
-        timezone: body.timezone?.trim() || "UTC",
-        branding: body.branding?.name?.trim()
-          ? {
-              name: body.branding.name.trim(),
-              shortName: body.branding.shortName?.trim(),
-              primaryColor: body.branding.primaryColor?.trim(),
-            }
-          : undefined,
-        territories: (body.territories ?? [])
-          .filter((row) => row.name?.trim())
-          .map((row) => ({ name: row.name!.trim(), slug: row.slug })),
+        features: undefined,
       },
     });
-    return NextResponse.json({ result }, { status: 201 });
+    return NextResponse.json({ features });
   } catch (error) {
     if (error instanceof TenantFactoryDeniedError) {
       const status = error.message === "unauthorized" ? 401 : 403;
       return NextResponse.json({ error: error.message }, { status });
-    }
-    if (error instanceof Error && error.message === "territory_required") {
-      return NextResponse.json({ error: "invalid" }, { status: 400 });
-    }
-    if (error instanceof Error && error.message === "slug_taken") {
-      return NextResponse.json({ error: "slug_taken" }, { status: 409 });
     }
     throw error;
   }

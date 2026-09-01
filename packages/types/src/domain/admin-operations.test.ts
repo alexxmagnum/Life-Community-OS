@@ -4,12 +4,19 @@ import {
   canAccessAdminOperations,
   canAccessAdminSection,
   canAssignMembershipRole,
+  canMutateSaasControlPlane,
 } from "./admin-operations";
 
 describe("Admin operations policy", () => {
   it("TEST 3 — member cannot enter admin", () => {
     assert.equal(canAccessAdminOperations("member"), false);
     assert.equal(canAccessAdminSection("member", "dashboard"), false);
+  });
+
+  it("community admin cannot mutate the SaaS control plane", () => {
+    assert.equal(canAccessAdminOperations("administrator"), true);
+    assert.equal(canMutateSaasControlPlane(false), false);
+    assert.equal(canMutateSaasControlPlane(true), true);
   });
 
   it("administrator can open settings; moderator cannot", () => {

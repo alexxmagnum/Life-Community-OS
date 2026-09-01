@@ -6,10 +6,13 @@
 import {
   projectPlatformAudit,
   projectPlatformOperationsContext,
+  projectTenantFeatureObservabilityList,
   projectTenantHealth,
+  projectTenantHealthList,
   projectTenantSubscription,
   provisioningStatusFromTenant,
   type PlatformOperationsContext,
+  type TenantFeatureObservability,
   type TenantHealthContext,
   type TenantSubscription,
   type TenantProvisioningStatus,
@@ -39,14 +42,47 @@ export const PlatformOperationsRuntime = {
     );
   },
 
+  healthList(): TenantHealthContext[] {
+    return projectTenantHealthList(
+      TenantFactoryRuntime.snapshot(),
+      listPlatformAudit(),
+    );
+  },
+
+  features(): TenantFeatureObservability[] {
+    return projectTenantFeatureObservabilityList(
+      TenantFactoryRuntime.snapshot(),
+    );
+  },
+
   subscription(tenantId: string): TenantSubscription | null {
     return projectTenantSubscription(TenantFactoryRuntime.snapshot(), tenantId);
+  },
+
+  subscriptions(): TenantSubscription[] {
+    return TenantFactoryRuntime.list().flatMap((row) => {
+      const sub = projectTenantSubscription(
+        TenantFactoryRuntime.snapshot(),
+        row.id,
+      );
+      return sub ? [sub] : [];
+    });
   },
 
   provisioning(tenantId: string): TenantProvisioningStatus | null {
     const tenant = TenantFactoryRuntime.list().find((row) => row.id === tenantId);
     if (!tenant) return null;
     return provisioningStatusFromTenant(tenant.status);
+  },
+
+  provisioningList(): Array<{
+    tenantId: string;
+    status: TenantProvisioningStatus;
+  }> {
+    return TenantFactoryRuntime.list().map((row) => ({
+      tenantId: row.id,
+      status: provisioningStatusFromTenant(row.status),
+    }));
   },
 
   audit() {

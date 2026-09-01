@@ -51,7 +51,7 @@ export function AdminOperationsShell({
           title="Sin acceso de administración"
           description={
             authenticated
-              ? "Este espacio es para gestores, moderadores y administradores de la comunidad."
+              ? "Este espacio es para gestores, moderadores y administradores de la comunidad. No crea tenants ni cambia planes."
               : "Inicia sesión con una membresía de staff."
           }
           actionLabel="Ir a perfil"

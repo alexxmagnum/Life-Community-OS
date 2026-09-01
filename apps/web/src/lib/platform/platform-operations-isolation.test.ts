@@ -32,7 +32,7 @@ import {
   replaceTenantFactoryStoreForTests,
 } from "@/lib/tenant/tenant-factory-service";
 import { PlatformOperationsRuntime } from "@/lib/platform/platform-operations-service";
-import { recordCrossTenantDenied } from "@/lib/platform/platform-operations-store";
+import { recordTerritoryMismatch } from "@/lib/platform/platform-operations-store";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -144,6 +144,21 @@ describe("Platform Operations isolation", () => {
         }),
       (error: unknown) => error instanceof TenantFactoryDeniedError,
     );
+    assert.throws(
+      () =>
+        TenantFactoryRuntime.setFeatures({
+          actor: tenantAdmin,
+          tenantId: "any",
+          features: { marketplace: true },
+        }),
+      (error: unknown) => error instanceof TenantFactoryDeniedError,
+    );
+    assert.equal(
+      PlatformOperationsRuntime.security().some(
+        (row) => row.kind === "invalid_permission",
+      ),
+      true,
+    );
   });
 
   it("TEST 4 — Tenant isolation", () => {
@@ -193,6 +208,29 @@ describe("Platform Operations isolation", () => {
     assert.equal(usage.marketplace >= 1, true);
     assert.equal(usage.lifeMap, 1);
     assert.equal(usage.reservations, 1);
+    const created = TenantFactoryRuntime.list()[0]!;
+    const observed = PlatformOperationsRuntime.features().find(
+      (row) => row.tenantId === created.id,
+    );
+    assert.equal(observed?.marketplace, true);
+    assert.equal(observed?.lifeMap, true);
+    assert.equal(observed?.reservations, true);
+    TenantFactoryRuntime.setFeatures({
+      actor: operator(),
+      tenantId: created.id,
+      features: { marketplace: false },
+    });
+    assert.equal(
+      PlatformOperationsRuntime.features().find((row) => row.tenantId === created.id)
+        ?.marketplace,
+      false,
+    );
+    assert.equal(
+      PlatformOperationsRuntime.audit().some(
+        (row) => row.action === "platform.feature.changed",
+      ),
+      true,
+    );
   });
 
   it("TEST 6 — AuditLog records changes", () => {
@@ -236,11 +274,6 @@ describe("Platform Operations isolation", () => {
       actor: actor({ tenantSlug: "life-panoramica", personId: "person-alex" }),
     });
     assert.equal("error" in denied, true);
-    recordCrossTenantDenied({
-      actorTenantId: "life-panoramica",
-      requestedTenantId: "life-valley",
-      actorPersonId: "person-alex",
-    });
     const events = PlatformOperationsRuntime.security();
     assert.equal(events.some((row) => row.kind === "cross_tenant"), true);
   });
@@ -303,6 +336,18 @@ describe("Platform Operations isolation", () => {
         (row) => row.id === otherHealth.territories[0]?.id,
       ),
       false,
+    );
+    recordTerritoryMismatch({
+      actorTerritoryId: luxuryHealth.territories[0]!.id,
+      requestedTerritoryId: otherHealth.territories[0]!.id,
+      tenantId: luxury.tenantId,
+      actorPersonId: "person-alex",
+    });
+    assert.equal(
+      PlatformOperationsRuntime.security().some(
+        (row) => row.kind === "territory_mismatch",
+      ),
+      true,
     );
   });
 

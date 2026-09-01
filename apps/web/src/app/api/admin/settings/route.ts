@@ -83,10 +83,18 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "identity_immutable" }, { status: 403 });
   }
 
+  if (body.capabilities) {
+    return NextResponse.json(
+      { error: "saas_features_forbidden" },
+      { status: 403 },
+    );
+  }
+
   const bound = resolveWriteTenantId({
     request,
     bodyTenantId: body.tenantId,
     actorTenantSlug: gated.actor.tenantSlug,
+    actorPersonId: gated.actor.personId,
   });
   if ("error" in bound) return bound.error;
   const { persistenceScopeFromRequest } = await import(
@@ -104,7 +112,6 @@ export async function PATCH(request: Request) {
       timezone: body.timezone,
       contactEmail: body.contactEmail,
       contactPhone: body.contactPhone,
-      capabilities: body.capabilities,
     },
     scope,
   });

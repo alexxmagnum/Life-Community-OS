@@ -433,6 +433,35 @@ export const TenantFactoryService = {
     };
   },
 
+  /**
+   * SaaS feature overlay. Does not replace Feature Management
+   * (tenant-contract / pack flags). Plan stays the commercial source.
+   */
+  setFeatures(
+    snapshot: TenantFactorySnapshot,
+    tenantId: string,
+    patch: Partial<ProductCapabilityMap>,
+  ): TenantFactorySnapshot {
+    const tenant = snapshot.tenants.find((row) => row.id === tenantId);
+    if (!tenant) throw new Error("tenant_not_found");
+    const current =
+      snapshot.featuresByTenant[tenantId] ?? featuresForPlan(tenant.plan);
+    const next = { ...current };
+    for (const [key, value] of Object.entries(patch)) {
+      if (typeof value === "boolean") {
+        next[key as keyof ProductCapabilityMap] = value;
+      }
+    }
+    next.community = true;
+    return {
+      ...snapshot,
+      featuresByTenant: {
+        ...snapshot.featuresByTenant,
+        [tenantId]: next,
+      },
+    };
+  },
+
   seedAdministrator(
     snapshot: TenantFactorySnapshot,
     input: { tenantId: string; personId: string },

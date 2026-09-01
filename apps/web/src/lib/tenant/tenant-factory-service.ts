@@ -6,19 +6,26 @@
 import type { RequestActor } from "@/lib/auth/request-actor";
 import {
   TenantFactoryService,
+  adoptConfiguredTenant,
   canAccessPlatformAdmin,
   emptyTenantFactorySnapshot,
   rejectClientAuthoritySpoof,
   type ClientAuthoritySpoof,
   type PlatformOperator,
+  type ProductCapabilityMap,
+  type TenantBrandingSlice,
   type TenantFactorySnapshot,
+  type TenantIdentityRecord,
   type TenantPlan,
   type TenantProvisionRequest,
   type TenantProvisionResult,
   type TenantStatus,
+  type TerritoryBounds,
   type TerritoryProvisionInput,
 } from "@life-community-os/types";
 import {
+  recordAdminChange,
+  recordInvalidPermission,
   recordPlatformAudit,
   recordSpoofSecurityEvent,
   replacePlatformOperationsStoreForTests,
@@ -60,6 +67,11 @@ function requirePlatformOperator(actor: RequestActor): string {
       operators: snapshot.operators,
     })
   ) {
+    recordInvalidPermission({
+      tenantId: actor.tenantSlug,
+      actorPersonId: actor.personId,
+      action: "security.permission.changed",
+    });
     throw new TenantFactoryDeniedError("forbidden");
   }
   return actor.personId;
@@ -172,6 +184,11 @@ export const TenantFactoryRuntime = {
       input.tenantId,
       input.status,
     );
+    recordAdminChange({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.admin.action",
+    });
     recordPlatformAudit({
       tenantId: input.tenantId,
       actorPersonId: personId,
@@ -181,5 +198,80 @@ export const TenantFactoryRuntime = {
       metadata: { status: input.status },
     });
     return snapshot.tenants.find((row) => row.id === input.tenantId) ?? null;
+  },
+
+  setFeatures(input: {
+    actor: RequestActor;
+    tenantId: string;
+    features: Partial<ProductCapabilityMap>;
+    spoof?: ClientAuthoritySpoof | null;
+  }) {
+    const personId = requirePlatformOperator(input.actor);
+    const spoofed = rejectClientAuthoritySpoof(input.spoof);
+    if (spoofed) {
+      recordSpoofSecurityEvent({
+        field: spoofed,
+        actorPersonId: personId,
+        tenantId: input.tenantId,
+      });
+      throw new TenantFactoryDeniedError("forbidden");
+    }
+    snapshot = TenantFactoryService.setFeatures(
+      snapshot,
+      input.tenantId,
+      input.features,
+    );
+    recordPlatformAudit({
+      tenantId: input.tenantId,
+      actorPersonId: personId,
+      action: "platform.feature.changed",
+      entityType: "tenant",
+      entityId: input.tenantId,
+    });
+    return snapshot.featuresByTenant[input.tenantId] ?? null;
+  },
+
+  adoptConfigured(input: {
+    identity: TenantIdentityRecord;
+    branding: TenantBrandingSlice;
+    features: ProductCapabilityMap;
+    territories: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      locale?: string;
+      timezone?: string;
+      bounds?: TerritoryBounds;
+    }>;
+  }): TenantProvisionResult {
+    if (
+      snapshot.tenants.some(
+        (row) =>
+          row.id === input.identity.tenantUuid ||
+          row.slug === input.identity.slug,
+      )
+    ) {
+      const existing = snapshot.tenants.find(
+        (row) =>
+          row.id === input.identity.tenantUuid ||
+          row.slug === input.identity.slug,
+      )!;
+      return {
+        tenantId: existing.id,
+        territories: snapshot.territories.filter(
+          (row) => row.tenantId === existing.id,
+        ),
+        status: existing.status,
+      };
+    }
+    const adopted = adoptConfiguredTenant({
+      snapshot,
+      identity: input.identity,
+      branding: input.branding,
+      features: input.features,
+      territories: input.territories,
+    });
+    snapshot = adopted.snapshot;
+    return adopted.result;
   },
 };

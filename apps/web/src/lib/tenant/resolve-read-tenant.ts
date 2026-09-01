@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import type { RequestActor } from "@/lib/auth/request-actor";
 import { resolveTenantPublicId } from "./ids";
 import { resolveRequestTenantSlug } from "./resolve-request-tenant";
+import { recordCrossTenantDenied } from "@/lib/platform/platform-operations-store";
 
 export function resolveReadTenantId(input: {
   request: Request;
@@ -29,6 +30,11 @@ export function resolveReadTenantId(input: {
 
   if (input.actor.authenticated && input.actor.hasMembership) {
     if (requested !== input.actor.tenantSlug) {
+      recordCrossTenantDenied({
+        actorTenantId: input.actor.tenantSlug,
+        requestedTenantId: requested,
+        actorPersonId: input.actor.personId ?? undefined,
+      });
       return {
         error: NextResponse.json(
           { error: "tenant_forbidden" },

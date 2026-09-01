@@ -11,6 +11,10 @@ import {
   type PlatformOperationsContext,
   type PlatformSecurityEvent,
   type ProvisionedTenant,
+  type TenantFeatureObservability,
+  type TenantHealthContext,
+  type TenantProvisioningStatus,
+  type TenantSubscription,
 } from "@life-community-os/types";
 import { EmptyState, FlowScreenHeader, MobileScreen } from "@life-community-os/ui";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
@@ -22,18 +26,30 @@ type TerritoryRow = {
   slug: string;
 };
 
+function featureLabel(on: boolean): string {
+  return on ? "ON" : "OFF";
+}
+
 export function PlatformAdminScreen() {
   const router = useRouter();
   const { currentUser } = useCurrentUser();
   const [tenants, setTenants] = useState<ProvisionedTenant[]>([]);
   const [territories, setTerritories] = useState<TerritoryRow[]>([]);
   const [context, setContext] = useState<PlatformOperationsContext | null>(null);
+  const [health, setHealth] = useState<TenantHealthContext[]>([]);
+  const [features, setFeatures] = useState<TenantFeatureObservability[]>([]);
+  const [provisioning, setProvisioning] = useState<
+    Array<{ tenantId: string; status: TenantProvisioningStatus }>
+  >([]);
+  const [subscriptions, setSubscriptions] = useState<TenantSubscription[]>([]);
   const [audit, setAudit] = useState<PlatformAuditRecord[]>([]);
   const [security, setSecurity] = useState<PlatformSecurityEvent[]>([]);
   const [forbidden, setForbidden] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [territoryName, setTerritoryName] = useState("");
+  const [extraTerritory, setExtraTerritory] = useState("");
+  const [extraTerritoryTenant, setExtraTerritoryTenant] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -59,8 +75,19 @@ export function PlatformAdminScreen() {
     if (operationsRes.ok) {
       const data = (await operationsRes.json()) as {
         context?: PlatformOperationsContext;
+        health?: TenantHealthContext[];
+        features?: TenantFeatureObservability[];
+        provisioning?: Array<{
+          tenantId: string;
+          status: TenantProvisioningStatus;
+        }>;
+        subscriptions?: TenantSubscription[];
       };
       setContext(data.context ?? null);
+      setHealth(data.health ?? []);
+      setFeatures(data.features ?? []);
+      setProvisioning(data.provisioning ?? []);
+      setSubscriptions(data.subscriptions ?? []);
     }
     if (territoriesRes.ok) {
       const data = (await territoriesRes.json()) as {
@@ -189,20 +216,34 @@ export function PlatformAdminScreen() {
       <section className="mt-6">
         <p className="text-[13px] font-semibold">Tenants</p>
         <ul className="mt-2 space-y-2 text-[14px]">
-          {tenants.map((tenant) => (
-            <li
-              key={tenant.id}
-              className="rounded-[16px] border border-[var(--color-border-glass)] px-4 py-3"
-            >
-              <span className="font-semibold">{tenant.name}</span>
-              <span className="mt-0.5 block text-[12px] text-[var(--color-text-tertiary)]">
-                {tenant.slug} · {tenant.plan} · {tenant.status}
-              </span>
-            </li>
-          ))}
+          {tenants.map((tenant) => {
+            const rowHealth = health.find((row) => row.tenantId === tenant.id);
+            const rowFeatures = features.find((row) => row.tenantId === tenant.id);
+            const rowStage = provisioning.find((row) => row.tenantId === tenant.id);
+            return (
+              <li
+                key={tenant.id}
+                className="rounded-[16px] border border-[var(--color-border-glass)] px-4 py-3"
+              >
+                <span className="font-semibold">{tenant.name}</span>
+                <span className="mt-0.5 block text-[12px] text-[var(--color-text-tertiary)]">
+                  {tenant.slug} · {tenant.plan} · {tenant.status}
+                  {rowHealth ? ` · ${rowHealth.configurationStatus}` : ""}
+                  {rowStage ? ` · ${rowStage.status}` : ""}
+                </span>
+                {rowFeatures ? (
+                  <span className="mt-1 block text-[12px] text-[var(--color-text-secondary)]">
+                    Marketplace {featureLabel(rowFeatures.marketplace)} · Life
+                    Map {featureLabel(rowFeatures.lifeMap)} · Reservations{" "}
+                    {featureLabel(rowFeatures.reservations)}
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       </section>
-      <section className="mt-6">
+      <section className="mt-6 space-y-2">
         <p className="text-[13px] font-semibold">Territories</p>
         <ul className="mt-2 space-y-1 text-[13px] text-[var(--color-text-secondary)]">
           {territories.map((row) => (
@@ -211,6 +252,42 @@ export function PlatformAdminScreen() {
             </li>
           ))}
         </ul>
+        <input
+          className="min-h-[44px] w-full rounded-[12px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3"
+          placeholder="slug del tenant"
+          value={extraTerritoryTenant}
+          onChange={(event) => setExtraTerritoryTenant(event.target.value)}
+        />
+        <input
+          className="min-h-[44px] w-full rounded-[12px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3"
+          placeholder="Nuevo territory"
+          value={extraTerritory}
+          onChange={(event) => setExtraTerritory(event.target.value)}
+        />
+        <button
+          type="button"
+          className="rounded-full bg-[var(--color-surface-muted)] px-4 py-2 text-[13px] font-semibold"
+          onClick={() => {
+            void fetch("/api/platform/territories", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                communitySlug: extraTerritoryTenant,
+                name: extraTerritory,
+              }),
+            }).then((res) => {
+              if (!res.ok) {
+                setError("No se pudo crear el territory.");
+                return;
+              }
+              setExtraTerritory("");
+              setError(null);
+              void refresh();
+            });
+          }}
+        >
+          Crear Territory
+        </button>
       </section>
       <section className="mt-6">
         <p className="text-[13px] font-semibold">Features</p>
@@ -229,10 +306,13 @@ export function PlatformAdminScreen() {
         <ul className="mt-2 space-y-1 text-[13px] text-[var(--color-text-secondary)]">
           {TENANT_PLANS.map((plan) => {
             const limits = limitsForPlan(plan);
+            const subscribed = subscriptions.filter((row) => row.plan === plan)
+              .length;
             return (
               <li key={plan}>
                 {plan} · territories {limits.territories}
                 {limits.members == null ? "" : ` · members ${limits.members}`}
+                {subscribed ? ` · ${subscribed} tenants` : ""}
               </li>
             );
           })}

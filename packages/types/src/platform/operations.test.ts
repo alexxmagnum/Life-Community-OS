@@ -20,11 +20,13 @@ import {
   billingPlanDoesNotGrantPermissions,
   communityAdminCannotMutateSaas,
   detectCrossTenantSecurityEvent,
+  detectTerritoryMismatchEvent,
   isOpaquePlatformOperationsEntity,
   limitsForPlan,
   projectFeatureUsage,
   projectPlatformAudit,
   projectPlatformOperationsContext,
+  projectTenantFeatureObservability,
   projectTenantHealth,
   projectTenantSubscription,
   provisioningStatusFromTenant,
@@ -148,6 +150,28 @@ describe("Platform Operations Context", () => {
     assert.equal(usage.lifeMap, 1);
     assert.equal(usage.reservations, 1);
     assert.equal("FeatureScore" in usage, false);
+    const observed = projectTenantFeatureObservability(
+      started.snapshot,
+      started.result.tenantId,
+    );
+    assert.equal(observed?.marketplace, true);
+    assert.equal(observed?.lifeMap, true);
+    assert.equal(observed?.reservations, true);
+    const toggled = TenantFactoryService.setFeatures(
+      started.snapshot,
+      started.result.tenantId,
+      { marketplace: false },
+    );
+    assert.equal(
+      projectTenantFeatureObservability(toggled, started.result.tenantId)
+        ?.marketplace,
+      false,
+    );
+    assert.equal(
+      projectTenantFeatureObservability(toggled, started.result.tenantId)
+        ?.lifeMap,
+      true,
+    );
   });
 
   it("TEST 6 — AuditLog records platform changes", () => {
@@ -185,6 +209,13 @@ describe("Platform Operations Context", () => {
       }),
       null,
     );
+    const mismatch = detectTerritoryMismatchEvent({
+      actorTerritoryId: "10000000-0000-4000-8000-000000000002",
+      requestedTerritoryId: "20000000-0000-4000-8000-000000000002",
+      tenantId: "life-panoramica",
+    });
+    assert.ok(mismatch);
+    assert.equal(mismatch.kind, "territory_mismatch");
   });
 
   it("TEST 8 — Billing plan is separate from permissions", () => {
