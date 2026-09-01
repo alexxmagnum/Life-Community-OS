@@ -35,14 +35,9 @@ import {
   type HomeHeroPill,
   type HomeHeroSlide,
 } from "@life-community-os/ui";
-import { getCommunityExperienceFeed } from "@/lib/community/community-client";
-import { fetchCommunityOperations } from "@/lib/community/community-operations-client";
+import { getCommunityExperienceFeed, fetchCommunityHome } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
-import {
-  fetchPersonalContext,
-  fetchPersonalInsights,
-} from "@/lib/personal/personal-client";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
@@ -61,6 +56,21 @@ function belongingGreeting(name: string, hour: number): string {
   const salutation =
     hour < 12 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
   return `${salutation}, ${name}`;
+}
+
+function feedMomentToAnnouncement(
+  item: CommunityFeedItem,
+  tenantId: string,
+  territoryId: string,
+): TerritoryAnnouncement {
+  return {
+    id: item.id,
+    tenantId,
+    territoryId,
+    title: item.title,
+    body: item.description ?? "",
+    createdAt: item.startsAt ?? new Date().toISOString(),
+  };
 }
 
 function madridHour(nowMs = Date.now()): number {
@@ -145,45 +155,67 @@ export function HomeScreen() {
     let cancelled = false;
     const territoryId = homeQuery.territoryId;
     if (!sessionReady) return;
-    if (!authenticated || !hasMembership || !territoryId) {
-      setFeedItems([]);
-      setReasons({});
-      setPersonalizationEnabled(false);
-      setFeedReady(true);
-      return;
-    }
     setFeedReady(false);
-    void getCommunityExperienceFeed({
+    void fetchCommunityHome({
       tenantId: configuration.tenantId,
       territoryId,
-    }).then((data) => {
+    }).then((home) => {
       if (cancelled) return;
-      setFeedItems(data.items);
-      setReasons(data.reasons);
-      setPersonalizationEnabled(data.personalizationEnabled);
-      setFeedReady(true);
-    });
-    void fetchCommunityOperations({
-      tenantId: configuration.tenantId,
-      territoryId,
-    }).then((data) => {
-      if (cancelled) return;
-      setPulse(data.pulse);
-      setAnnouncements(data.pulse?.important ?? []);
-    });
-    void fetchPersonalContext({
-      tenantId: configuration.tenantId,
-      territoryId,
-    }).then((data) => {
-      if (cancelled) return;
-      setFavoriteLocations(data.context?.favoriteLocations ?? []);
-    });
-    void fetchPersonalInsights({
-      tenantId: configuration.tenantId,
-      territoryId,
-      publish: true,
-    }).then((rows) => {
-      if (!cancelled) setInsights(rows);
+      if (home) {
+        const items = [
+          ...home.moments,
+          ...home.currentActivities,
+          ...home.upcomingActivities,
+        ];
+        setFeedItems(items);
+        const importantMoments = home.moments
+          .slice(0, 3)
+          .map((item) =>
+            feedMomentToAnnouncement(
+              item,
+              configuration.tenantId,
+              territoryId ?? "",
+            ),
+          );
+        setPulse({
+          tenantId: configuration.tenantId,
+          territoryId: territoryId ?? "",
+          now: home.currentActivities,
+          next: home.upcomingActivities,
+          important: importantMoments,
+          community: items,
+        });
+        setAnnouncements(importantMoments);
+        setInsights(
+          (home.forYouToday ?? []).map((row) => ({
+            id: row.id,
+            title: row.title,
+            body: row.reason,
+            reason: row.reason,
+            href: row.href,
+          })),
+        );
+        setPersonalizationEnabled(home.membershipScope === "active");
+        setFeedReady(true);
+        return;
+      }
+      if (!authenticated || !hasMembership || !territoryId) {
+        setFeedItems([]);
+        setReasons({});
+        setPersonalizationEnabled(false);
+        setFeedReady(true);
+        return;
+      }
+      void getCommunityExperienceFeed({
+        tenantId: configuration.tenantId,
+        territoryId,
+      }).then((data) => {
+        if (cancelled) return;
+        setFeedItems(data.items);
+        setReasons(data.reasons);
+        setPersonalizationEnabled(data.personalizationEnabled);
+        setFeedReady(true);
+      });
     });
     return () => {
       cancelled = true;

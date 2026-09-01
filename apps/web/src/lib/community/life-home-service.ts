@@ -31,7 +31,7 @@ export const LifeHomeService = {
   }): Promise<LifeHomeContext> {
     const membershipScope = resolveLifeHomeMembershipScope({
       hasMembership: input.actor.hasMembership,
-      membershipStatus: input.actor.hasMembership ? "active" : "removed",
+      membershipStatus: input.actor.membershipStatus,
     });
     const experienceContext: TerritoryExperienceContext = {
       tenantId: input.tenantId,

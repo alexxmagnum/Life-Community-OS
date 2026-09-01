@@ -1,6 +1,10 @@
 "use client";
 
-import type { CommunityFeedItem } from "@life-community-os/types";
+import type {
+  CommunityFeedItem,
+  DiscoverExperienceContext,
+  LifeHomeContext,
+} from "@life-community-os/types";
 
 export type CommunityFeedPayload = {
   tenantId?: string;
@@ -175,4 +179,40 @@ export async function fetchCommunityNotifications(tenantId: string) {
   );
   if (!res.ok) return { notifications: [] as unknown[] };
   return (await res.json()) as { notifications: unknown[] };
+}
+
+export async function fetchCommunityHome(input: {
+  tenantId: string;
+  territoryId?: string | null;
+}): Promise<LifeHomeContext | null> {
+  const params = new URLSearchParams({ tenantId: input.tenantId });
+  if (input.territoryId?.trim()) {
+    params.set("territoryId", input.territoryId.trim());
+  }
+  const res = await fetch(`/api/community/home?${params.toString()}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "x-tenant-slug": input.tenantId },
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { home?: LifeHomeContext };
+  return data.home ?? null;
+}
+
+export async function fetchDiscoverExperience(input: {
+  tenantId: string;
+  territoryId?: string | null;
+}): Promise<DiscoverExperienceContext | null> {
+  const params = new URLSearchParams({ tenantId: input.tenantId });
+  if (input.territoryId?.trim()) {
+    params.set("territoryId", input.territoryId.trim());
+  }
+  const res = await fetch(`/api/community/discover?${params.toString()}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { "x-tenant-slug": input.tenantId },
+  });
+  if (!res.ok) return null;
+  const data = (await res.json()) as { discover?: DiscoverExperienceContext };
+  return data.discover ?? null;
 }

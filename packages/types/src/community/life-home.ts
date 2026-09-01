@@ -81,11 +81,19 @@ export function resolveLifeHomeMembershipScope(input: {
   hasMembership: boolean;
   membershipStatus?: MembershipStatus | null;
 }): LifeHomeMembershipScope {
-  if (!input.hasMembership) return "guest";
-  if (membershipGrantsCommunityAccess(input.membershipStatus ?? "removed")) {
+  if (
+    input.hasMembership &&
+    membershipGrantsCommunityAccess(input.membershipStatus ?? "active")
+  ) {
     return "active";
   }
-  return "pending";
+  if (
+    input.membershipStatus === "pending" ||
+    input.membershipStatus === "invited"
+  ) {
+    return "pending";
+  }
+  return "guest";
 }
 
 export function projectLifeHomeContext(input: {

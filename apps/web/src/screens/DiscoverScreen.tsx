@@ -31,7 +31,7 @@ import {
 } from "@/lib/location";
 import { fetchBusinesses } from "@/lib/business/business-client";
 import { fetchHelpRequests } from "@/lib/marketplace/commerce-client";
-import { fetchCommunityFeed } from "@/lib/community/community-client";
+import { fetchCommunityFeed, fetchDiscoverExperience } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { LivingFeedCard } from "@/components/community/LivingFeedCard";
@@ -83,18 +83,49 @@ export function DiscoverScreen() {
     let cancelled = false;
     void (async () => {
       if (!sessionReady) return;
-      if (authenticated && hasMembership) {
-        const community = await fetchCommunityFeed(configuration.tenantId, {
-          territoryId: experienceQuery?.territoryId ?? discoverQuery.territoryId,
-        });
-        if (!cancelled) {
-          setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
-          setFeedItems(community.items ?? []);
-          setReasons(community.personalization?.reasons ?? {});
+      const territoryId =
+        experienceQuery?.territoryId ?? discoverQuery.territoryId;
+      const discover = await fetchDiscoverExperience({
+        tenantId: configuration.tenantId,
+        territoryId,
+      });
+      if (discover && !cancelled) {
+        setFeedItems([
+          ...discover.nowNearby,
+          ...discover.upcomingPlans,
+        ]);
+        if (discover.help.length > 0) {
+          setNeighbourTips(
+            discover.help.map((row) => ({
+              id: row.id,
+              tenantId: configuration.tenantId,
+              territoryId: territoryId ?? "",
+              title: row.title,
+              description: row.title,
+              authorDisplayName: "Vecino",
+              category: "ayuda",
+              type: "offer_help",
+              status: "open",
+              createdAt: new Date().toISOString(),
+            })) as HelpRequest[],
+          );
         }
+        setReasons(
+          Object.fromEntries(
+            (discover.ideasForToday ?? []).map((row) => [row.id, row.reason]),
+          ),
+        );
+      } else if (!cancelled && authenticated && hasMembership) {
+        const community = await fetchCommunityFeed(configuration.tenantId, {
+          territoryId,
+        });
+        setPersistedGroups((community.groups as CommunityGroupRecord[]) ?? []);
+        setFeedItems(community.items ?? []);
+        setReasons(community.personalization?.reasons ?? {});
       } else if (!cancelled) {
         setPersistedGroups([]);
         setFeedItems([]);
+        setNeighbourTips([]);
       }
       if (!canLocal) {
         if (!cancelled) {
@@ -259,7 +290,7 @@ export function DiscoverScreen() {
     hasPlans ||
     localProfessionals.length > 0 ||
     localBusinesses.length > 0 ||
-    living.help.length > 0;
+    neighbourTips.length > 0;
 
   return (
     <MobileScreen>
@@ -395,7 +426,7 @@ export function DiscoverScreen() {
                   <GroupCard
                     key={g.id}
                     name={g.name}
-                    members={0}
+                    members={(g as CommunityGroupRecord & { memberCount?: number }).memberCount ?? 0}
                     imageUrl={g.imageUrl ?? ""}
                     onOpen={() => router.push(`/community/groups/${g.id}`)}
                   />

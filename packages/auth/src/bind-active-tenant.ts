@@ -3,7 +3,7 @@
  * Requested tenant is a hint — never a grant.
  */
 
-import type { MembershipRole } from "@life-community-os/types";
+import type { MembershipRole, MembershipStatus } from "@life-community-os/types";
 import type { MembershipSummary } from "./current-user";
 
 export type TenantBindResult =
@@ -20,16 +20,21 @@ export function bindActiveTenant(input: {
   }
 
   const requested = input.requestedTenantId?.trim().toLowerCase() || null;
+  const rank = (status: MembershipSummary["status"]) =>
+    status === "active" ? 0 : status === "pending" || status === "invited" ? 1 : 2;
+  const sorted = [...input.memberships].sort(
+    (a, b) => rank(a.status) - rank(b.status),
+  );
 
   if (requested) {
-    const match = input.memberships.find((m) => m.tenantId === requested);
+    const match = sorted.find((m) => m.tenantId === requested);
     if (match) {
       return { status: "bound", membership: match };
     }
     return { status: "tenant_forbidden", requestedTenantId: requested };
   }
 
-  const first = input.memberships[0];
+  const first = sorted[0];
   if (!first) return { status: "no_membership" };
   return { status: "bound", membership: first };
 }
@@ -39,6 +44,7 @@ export function membershipSummary(input: {
   membershipId: string;
   personId: string;
   role: MembershipRole;
+  status?: MembershipStatus;
   territoryId?: string | null;
 }): MembershipSummary {
   return {
@@ -46,6 +52,7 @@ export function membershipSummary(input: {
     membershipId: input.membershipId,
     personId: input.personId,
     role: input.role,
+    status: input.status ?? "active",
     territoryId: input.territoryId?.trim() || null,
   };
 }

@@ -69,14 +69,6 @@ export function buildLocalEntityCatalogInputs(
   const drafts: CreateLocationInput[] = [];
 
   for (const entity of localEntityCatalog) {
-    if (
-      entity.kind === "restaurant" ||
-      entity.kind === "cafe" ||
-      entity.kind === "shop" ||
-      entity.kind === "service"
-    ) {
-      continue;
-    }
     const locationId = catalogLocationId(entity.id, id);
     if (ids.has(locationId) || names.has(entity.name.toLowerCase())) continue;
     const offset = CATALOG_NUCLEUS_OFFSETS[entity.id] ?? {

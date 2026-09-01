@@ -4,13 +4,14 @@
  */
 
 import type { CurrentUserContext } from "@life-community-os/auth";
-import type { MembershipRole } from "@life-community-os/types";
+import type { MembershipRole, MembershipStatus } from "@life-community-os/types";
 import { resolveAuthSession } from "@/lib/auth/resolve-session";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
 
 export type RequestActor = {
   authenticated: boolean;
   hasMembership: boolean;
+  membershipStatus?: MembershipStatus | null;
   providerReference: string | null;
   personId: string | null;
   role: MembershipRole | null;
@@ -33,6 +34,7 @@ export async function resolveRequestActor(
   return {
     authenticated: currentUser.authenticated,
     hasMembership: currentUser.hasMembership,
+    membershipStatus: currentUser.membershipStatus,
     providerReference: currentUser.userId,
     personId: currentUser.personId,
     role: currentUser.role,

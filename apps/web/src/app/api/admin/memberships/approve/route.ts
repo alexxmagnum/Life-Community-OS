@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { GUEST_ACCESS_DENIED, INVITATION_INVALID } from "@life-community-os/types";
 import { actorCanAccessSection } from "@/lib/admin/permissions";
+import { updateMembershipStatus } from "@/lib/auth/ensure-domain-membership";
 import { MembershipOnboardingRuntime } from "@/lib/membership/membership-onboarding-service";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 
@@ -38,7 +39,17 @@ export async function POST(request: Request) {
     if (membership.tenantId !== bound.tenantId) {
       return NextResponse.json({ error: GUEST_ACCESS_DENIED }, { status: 403 });
     }
-    return NextResponse.json({ membership });
+    const updated = await updateMembershipStatus({
+      tenantSlug: bound.tenantId,
+      personId: membership.personId,
+      status: "active",
+    });
+    return NextResponse.json({
+      membership: {
+        ...membership,
+        status: updated?.status ?? "active",
+      },
+    });
   } catch (error) {
     if (error instanceof Error) {
       if (error.message === GUEST_ACCESS_DENIED) {

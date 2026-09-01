@@ -82,6 +82,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       email?: string | null;
       displayName?: string | null;
       hasMembership?: boolean;
+      membershipStatus?: CurrentUserContext["membershipStatus"];
       tenantDenied?: boolean;
       user?: { id: string; email: string | null } | null;
       memberships?: Array<{
@@ -103,6 +104,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       displayName: data.displayName ?? null,
       authenticated: Boolean(data.authenticated),
       hasMembership: Boolean(data.hasMembership),
+      membershipStatus: data.membershipStatus ?? null,
       configured: Boolean(data.configured),
       local: Boolean(data.local),
       tenantDenied: Boolean(data.tenantDenied),

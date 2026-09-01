@@ -56,7 +56,10 @@ type ExperienceFixtureStore = {
 const DATA_DIR = path.join(process.cwd(), ".data", "experiences");
 
 function fixtureEnabled(): boolean {
-  return process.env.LCOS_EXPERIENCE_FIXTURE === "1";
+  return (
+    process.env.LCOS_EXPERIENCE_FIXTURE === "1" ||
+    process.env.NODE_ENV !== "production"
+  );
 }
 
 function filePath(tenantSlug: string): string {

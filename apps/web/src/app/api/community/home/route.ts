@@ -11,9 +11,6 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
-  if (!actor.authenticated) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
   if (
     !actorCanReadCommunityExperienceFeed(actor) &&
     !guestCanAccess({

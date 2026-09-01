@@ -25,6 +25,7 @@ import {
   type CommunityCreationContext,
   type PersonalContext,
 } from "@life-community-os/types";
+import { resolveMembershipAccessScope } from "@/lib/membership/membership-experience-scope";
 import { requireTenantPack } from "@/lib/tenant/registry";
 import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
@@ -280,6 +281,22 @@ export function MemberShell({ children }: { children: ReactNode }) {
     router,
   ]);
 
+  const accessScope = useMemo(
+    () =>
+      resolveMembershipAccessScope({
+        authenticated: currentUser.authenticated,
+        hasMembership: currentUser.hasMembership,
+        membershipStatus: currentUser.membershipStatus,
+        role: currentUser.role,
+      }),
+    [
+      currentUser.authenticated,
+      currentUser.hasMembership,
+      currentUser.membershipStatus,
+      currentUser.role,
+    ],
+  );
+
   /**
    * Magic Plus visibility — membership + creation capability.
    * Not Tenant Plan, Feature Management, or Platform Admin.
@@ -456,16 +473,27 @@ export function MemberShell({ children }: { children: ReactNode }) {
       >
         {sessionReady &&
         currentUser.authenticated &&
-        !currentUser.hasMembership &&
+        accessScope.scope === "registered" &&
         pathname !== "/me" ? (
           <EmptyState
-            title="No perteneces a esta comunidad"
-            description="Tu cuenta está autenticada, pero no tiene membresía aquí. Entra en Perfil para unirte o pide acceso a un administrador."
-            actionLabel="Ir a perfil"
+            title="No perteneces todavía a esta comunidad"
+            description="Únete con tu código de acceso o pide una invitación a un administrador."
+            actionLabel="Unirme a comunidad"
             onAction={() => router.push("/me")}
           />
         ) : (
-          children
+          <>
+            {sessionReady &&
+            currentUser.authenticated &&
+            accessScope.scope === "pending" &&
+            pathname !== "/me" ? (
+              <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
+                Tu solicitud está pendiente de aprobación. Mientras tanto puedes
+                explorar el territorio.
+              </div>
+            ) : null}
+            {children}
+          </>
         )}
       </AppShell>
       <AppMenuSheet

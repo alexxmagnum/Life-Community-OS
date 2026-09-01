@@ -33,6 +33,19 @@ export function mutationDenial(
   return null;
 }
 
+export async function requireAuthenticatedActor(
+  request: Request,
+): Promise<{ actor: RequestActor } | { error: NextResponse }> {
+  const actor = await resolveRequestActor(request);
+  if (!actor.authenticated || !actor.providerReference) {
+    return deny("unauthorized", 401);
+  }
+  if (actor.tenantDenied) {
+    return deny("tenant_forbidden", 403);
+  }
+  return { actor };
+}
+
 export async function requireMutationActor(
   request: Request,
 ): Promise<{ actor: RequestActor } | { error: NextResponse }> {

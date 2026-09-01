@@ -35,11 +35,18 @@ export type DomainMembershipResult = {
   membershipId: string;
   territoryId: string;
   role: MembershipRole;
+  status: StoredMembership["status"];
   source: "supabase" | "file";
   tenantSlug?: string;
   displayName?: string | null;
   email?: string | null;
 };
+
+const BINDABLE_MEMBERSHIP_STATUSES = new Set<StoredMembership["status"]>([
+  "pending",
+  "invited",
+  "active",
+]);
 
 function territoryForTenant(tenantSlug: string): string {
   const slug = resolveTenantPublicId(tenantSlug);
@@ -57,6 +64,7 @@ type IdentityMembershipRpcRow = {
   tenant_slug: string;
   territory_id: string;
   role: string;
+  status?: string;
   display_name: string | null;
   email: string | null;
 };
@@ -72,11 +80,18 @@ async function listSupabaseMemberships(
       { p_provider_reference: providerReference },
     );
     if (!error && Array.isArray(data)) {
-      return (data as IdentityMembershipRpcRow[]).map((row) => ({
+      return (data as IdentityMembershipRpcRow[])
+        .filter((row) =>
+          BINDABLE_MEMBERSHIP_STATUSES.has(
+            (row.status as StoredMembership["status"]) ?? "active",
+          ),
+        )
+        .map((row) => ({
         personId: row.person_id,
         membershipId: row.membership_id,
         territoryId: row.territory_id,
         role: coerceMembershipRole(row.role),
+        status: (row.status as StoredMembership["status"]) ?? "active",
         source: "supabase" as const,
         tenantSlug:
           row.tenant_slug ||
@@ -103,7 +118,7 @@ async function listSupabaseMemberships(
       .from("memberships")
       .select("id, person_id, tenant_id, territory_id, membership_type, status")
       .eq("person_id", identity.person_id)
-      .eq("status", "active");
+      .in("status", ["pending", "invited", "active"]);
     if (memError) {
       console.warn("[membership] list failed", memError.message);
       return null;
@@ -123,6 +138,7 @@ async function listSupabaseMemberships(
         membershipId: row.id as string,
         territoryId: row.territory_id as string,
         role: coerceMembershipRole(row.membership_type as string),
+        status: (row.status as StoredMembership["status"]) ?? "active",
         source: "supabase" as const,
         tenantSlug: tenantId ? tenantUuidToSlug(tenantId) ?? undefined : undefined,
         displayName: (person as { display_name?: string | null } | null)
@@ -142,12 +158,14 @@ async function ensureSupabaseMembership(input: {
   email: string | null;
   displayName: string | null;
   role?: MembershipRole;
+  status?: StoredMembership["status"];
 }): Promise<DomainMembershipResult | null> {
   const client = await createServiceDatabaseClientSafe();
   if (!client) return null;
   const tenantUuid = tenantSlugToUuid(input.tenantSlug);
   if (!tenantUuid) return null;
   const territoryId = territoryForTenant(input.tenantSlug);
+  const targetStatus = input.status ?? "active";
 
   try {
     const { data: existingIdentity } = await client
@@ -211,7 +229,7 @@ async function ensureSupabaseMembership(input: {
           territory_id: territoryId,
           tenant_id: tenantUuid,
           membership_type: role,
-          status: "active",
+          status: targetStatus,
         } as never)
         .select("id, membership_type")
         .single();
@@ -226,6 +244,7 @@ async function ensureSupabaseMembership(input: {
         role: coerceMembershipRole(
           (membership as { membership_type: string }).membership_type,
         ),
+        status: targetStatus,
         source: "supabase",
         tenantSlug: input.tenantSlug,
         displayName: input.displayName,
@@ -240,6 +259,9 @@ async function ensureSupabaseMembership(input: {
       role: coerceMembershipRole(
         (existingMembership as { membership_type: string }).membership_type,
       ),
+      status:
+        (existingMembership as { status?: StoredMembership["status"] }).status ??
+        "active",
       source: "supabase",
       tenantSlug: input.tenantSlug,
       displayName: input.displayName,
@@ -257,6 +279,7 @@ export async function ensureDomainMembership(input: {
   email?: string | null;
   displayName?: string | null;
   role?: MembershipRole;
+  status?: StoredMembership["status"];
 }): Promise<DomainMembershipResult> {
   const tenantSlug = resolveTenantPublicId(input.tenantSlug);
   const fromDb = await ensureSupabaseMembership({
@@ -265,6 +288,7 @@ export async function ensureDomainMembership(input: {
     email: input.email ?? null,
     displayName: input.displayName ?? null,
     role: input.role,
+    status: input.status,
   });
 
   if (fromDb) {
@@ -284,6 +308,7 @@ export async function ensureDomainMembership(input: {
     email: input.email ?? null,
     displayName: input.displayName ?? null,
     role: input.role,
+    status: input.status,
   });
 
   return {
@@ -291,11 +316,70 @@ export async function ensureDomainMembership(input: {
     membershipId: file.membership.id,
     territoryId: file.membership.territoryId,
     role: file.membership.role,
+    status: file.membership.status,
     source: "file",
     tenantSlug,
     displayName: file.identity.displayName,
     email: file.identity.email,
   };
+}
+
+/** Person + identity without membership — for onboarding before community join. */
+export async function ensurePersonIdentity(input: {
+  tenantSlug: string;
+  providerReference: string;
+  email?: string | null;
+  displayName?: string | null;
+}): Promise<{ personId: string }> {
+  const membership = await ensureDomainMembership({
+    ...input,
+    status: "pending",
+  });
+  return { personId: membership.personId };
+}
+
+/** Persist onboarding outcome into domain membership (SoT). */
+export async function commitOnboardingMembership(input: {
+  tenantSlug: string;
+  providerReference: string;
+  email?: string | null;
+  displayName?: string | null;
+  territoryId: string;
+  role?: MembershipRole;
+  status: StoredMembership["status"];
+}): Promise<DomainMembershipResult> {
+  const tenantSlug = resolveTenantPublicId(input.tenantSlug);
+  const existing = await resolveMembershipForAuthUser({
+    tenantSlug,
+    providerReference: input.providerReference,
+  });
+  if (existing && existing.status === "active" && input.status !== "active") {
+    return existing;
+  }
+  if (existing && input.status === "active") {
+    const updated = await updateMembershipStatus({
+      tenantSlug,
+      personId: existing.personId,
+      status: "active",
+    });
+    if (updated) {
+      return {
+        ...existing,
+        status: "active",
+        membershipId: updated.id,
+        territoryId: updated.territoryId,
+        role: updated.role,
+      };
+    }
+  }
+  return ensureDomainMembership({
+    tenantSlug,
+    providerReference: input.providerReference,
+    email: input.email,
+    displayName: input.displayName,
+    role: input.role,
+    status: input.status,
+  });
 }
 
 export async function listMembershipsForAuthUser(input: {
@@ -310,11 +394,14 @@ export async function listMembershipsForAuthUser(input: {
   if (!isFilePersistenceAllowed()) return [];
 
   const rows = await listMembershipsForProvider(input.providerReference);
-  return rows.map(({ membership, identity }) => ({
+  return rows
+    .filter(({ membership }) => BINDABLE_MEMBERSHIP_STATUSES.has(membership.status))
+    .map(({ membership, identity }) => ({
     personId: membership.personId,
     membershipId: membership.id,
     territoryId: membership.territoryId,
     role: membership.role,
+    status: membership.status,
     source: "file" as const,
     tenantSlug: membership.tenantSlug,
     displayName: identity.displayName,

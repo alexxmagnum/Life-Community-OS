@@ -4,7 +4,8 @@
  * User (auth provider) ≠ Person (community human) ≠ Membership (person+tenant+role).
  */
 
-import type { MembershipRole } from "@life-community-os/types";
+import type { MembershipRole, MembershipStatus } from "@life-community-os/types";
+import { membershipGrantsCommunityAccess } from "@life-community-os/types";
 
 /** Technical login identity (Supabase user id or local provider reference). */
 export type AuthUser = {
@@ -24,6 +25,7 @@ export type MembershipSummary = {
   membershipId: string;
   personId: string;
   role: MembershipRole;
+  status: MembershipStatus;
   /** Active Territory for this membership. Never resolved from a tenant pack. */
   territoryId?: string | null;
 };
@@ -42,6 +44,7 @@ export type CurrentUserContext = {
   displayName: string | null;
   authenticated: boolean;
   hasMembership: boolean;
+  membershipStatus: MembershipStatus | null;
   /** Active Territory bound from membership. Null when unbound. */
   territoryId: string | null;
 };
@@ -57,6 +60,7 @@ export const EMPTY_CURRENT_USER: CurrentUserContext = {
   displayName: null,
   authenticated: false,
   hasMembership: false,
+  membershipStatus: null,
   territoryId: null,
 };
 
@@ -66,17 +70,19 @@ export function currentUserFromMembership(input: {
   membership: MembershipSummary;
   permissions: readonly string[];
 }): CurrentUserContext {
+  const active = membershipGrantsCommunityAccess(input.membership.status);
   return {
     userId: input.user.userId,
     personId: input.person.personId,
     tenantId: input.membership.tenantId,
     membershipId: input.membership.membershipId,
     role: input.membership.role,
-    permissions: input.permissions,
+    permissions: active ? input.permissions : [],
     email: input.user.email,
     displayName: input.person.displayName,
     authenticated: true,
-    hasMembership: true,
+    hasMembership: active,
+    membershipStatus: input.membership.status,
     territoryId: input.membership.territoryId?.trim() || null,
   };
 }
@@ -92,5 +98,6 @@ export function authenticatedWithoutMembership(input: {
     displayName: input.displayName ?? null,
     authenticated: true,
     hasMembership: false,
+    membershipStatus: null,
   };
 }

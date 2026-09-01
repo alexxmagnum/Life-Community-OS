@@ -42,6 +42,7 @@ function toSummaries(
         membershipId: row.membershipId,
         personId: row.personId,
         role: row.role,
+        status: row.status,
         territoryId: row.territoryId,
       }),
     );
@@ -260,14 +261,15 @@ export function sessionPayload(session: ResolvedAuthSession) {
       territoryId: m.territoryId ?? null,
     })),
     tenantDenied: session.tenantDenied,
-    membership: currentUser.hasMembership
+    membership: currentUser.hasMembership || currentUser.membershipStatus
       ? {
           id: currentUser.membershipId,
           tenantId: currentUser.tenantId,
           territoryId: currentUser.territoryId,
           membershipType: currentUser.role,
-          status: "active",
+          status: currentUser.membershipStatus ?? "active",
         }
       : null,
+    membershipStatus: currentUser.membershipStatus,
   };
 }

@@ -5,6 +5,8 @@ import {
   GUEST_ACCESS_DENIED,
   ROLE_SPOOF_FORBIDDEN,
 } from "@life-community-os/types";
+import { MembershipExperienceService } from "@/lib/membership/membership-experience-service";
+import { requireAuthenticatedActor } from "@/lib/auth/mutation-gate";
 import { MembershipOnboardingRuntime } from "@/lib/membership/membership-onboarding-service";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
@@ -13,8 +15,7 @@ import { resolveActiveTerritoryContext } from "@/lib/tenant/resolve-territory";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const { requireMutationActor } = await import("@/lib/auth/mutation-gate");
-  const gated = await requireMutationActor(request);
+  const gated = await requireAuthenticatedActor(request);
   if ("error" in gated) return gated.error;
   let body: {
     tenantId?: string;
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
   try {
-    const membership = MembershipOnboardingRuntime.joinWithCode({
+    const membership = await MembershipExperienceService.joinWithCommunityCode({
       actor: gated.actor,
       tenantId: bound.tenantId,
       territoryId,
@@ -75,6 +76,9 @@ export async function POST(request: Request) {
       }
       if (error.message === GUEST_ACCESS_DENIED) {
         return NextResponse.json({ error: GUEST_ACCESS_DENIED }, { status: 403 });
+      }
+      if (error.message === "unauthorized") {
+        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
       }
     }
     throw error;

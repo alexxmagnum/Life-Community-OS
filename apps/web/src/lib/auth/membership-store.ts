@@ -126,7 +126,11 @@ export async function listMembershipsForProvider(
     );
     if (!identity) continue;
     const membership = data.memberships.find(
-      (m) => m.personId === identity.personId && m.status === "active",
+      (m) =>
+        m.personId === identity.personId &&
+        (m.status === "active" ||
+          m.status === "pending" ||
+          m.status === "invited"),
     );
     if (!membership) continue;
     results.push({ identity, membership });
@@ -141,6 +145,7 @@ export async function upsertFileMembership(input: {
   email: string | null;
   displayName: string | null;
   role?: MembershipRole;
+  status?: StoredMembership["status"];
 }): Promise<{ identity: StoredIdentity; membership: StoredMembership }> {
   const slug = resolveTenantPublicId(input.tenantSlug);
   const data = await readFile(slug);
@@ -170,12 +175,17 @@ export async function upsertFileMembership(input: {
   }
 
   let membership = data.memberships.find(
-    (m) => m.personId === identity!.personId && m.status === "active",
+    (m) =>
+      m.personId === identity!.personId &&
+      (m.status === "active" ||
+        m.status === "pending" ||
+        m.status === "invited"),
   );
+  const targetStatus = input.status ?? "active";
   if (!membership) {
     const directoryEmpty = !data.memberships.some((m) => m.status === "active");
     const role = coerceMembershipRole(
-      resolveJoinRole({ existingRole: null, directoryEmpty }),
+      input.role ?? resolveJoinRole({ existingRole: null, directoryEmpty }),
     );
     membership = {
       id: newId("mem"),
@@ -183,11 +193,22 @@ export async function upsertFileMembership(input: {
       tenantSlug: slug,
       territoryId: input.territoryId,
       role,
-      status: "active",
+      status: targetStatus,
       createdAt: now,
       updatedAt: now,
     };
     data.memberships.push(membership);
+  } else if (input.status && membership.status !== input.status) {
+    membership = {
+      ...membership,
+      status: input.status,
+      territoryId: input.territoryId || membership.territoryId,
+      role: input.role ? coerceMembershipRole(input.role) : membership.role,
+      updatedAt: now,
+    };
+    data.memberships = data.memberships.map((m) =>
+      m.id === membership!.id ? membership! : m,
+    );
   }
 
   await writeFile(slug, data);

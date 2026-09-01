@@ -19,6 +19,7 @@ import {
   type LifeMap3DLayer,
   type LifeMap3DSpatialObject,
 } from "@life-community-os/life-map-renderer-3d-layer";
+import { isLifeMap3dAccentEnabled } from "./life-map-3d-env";
 import type { TerritoryDataResolver } from "@life-community-os/types";
 import {
   isTerritoryGeoJsonPayload,
@@ -405,8 +406,7 @@ export function MapLibreLifeMapCanvas({
         pixelRatio: lifeMapPixelRatioForQuality(quality),
         showTerrain: false,
         showEnvironment: false,
-        // Commercial lock: MapLibre pins own places — no procedural toys.
-        showSpatialObjects: false,
+        showSpatialObjects: isLifeMap3dAccentEnabled(),
         ...(assetResolver ? { assetResolver } : {}),
         buildingMaterial: {
           color: "#5a564c",
@@ -421,7 +421,9 @@ export function MapLibreLifeMapCanvas({
       map.getCanvas().style.filter = "";
 
       const pushSpatialForZoom = (zoom: number) => {
-        const show3d = shouldShowGrounded3dAccents(zoom);
+        const show3d = shouldShowGrounded3dAccents(zoom, {
+          hasGroundedAssets: isLifeMap3dAccentEnabled(),
+        });
         layer3d.setInput({
           // MapLibre owns city fabric — never reintroduce Three building toys.
           buildings: [],
@@ -571,7 +573,9 @@ export function MapLibreLifeMapCanvas({
       buildings: [],
       water: [],
       green: [],
-      spatialObjects: shouldShowGrounded3dAccents(zoom)
+      spatialObjects: shouldShowGrounded3dAccents(zoom, {
+        hasGroundedAssets: isLifeMap3dAccentEnabled(),
+      })
         ? [...spatialObjects]
         : [],
       scene,

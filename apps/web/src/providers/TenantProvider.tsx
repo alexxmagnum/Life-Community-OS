@@ -166,19 +166,37 @@ export function TenantProvider({
     [],
   );
 
+  const isFeatureEnabled = useCallback(
+    (key: keyof TenantFeatureFlags) => Boolean(features[key]),
+    [features],
+  );
+
   const hasCapability = useCallback(
     (key: CapabilityKey | string) => {
       if (currentUser.hasMembership && currentUser.permissions.length > 0) {
         return currentUser.permissions.includes(key);
       }
+      if (
+        isFeatureEnabled("localLife") &&
+        (key === CAPABILITIES.localView || key === CAPABILITIES.experienceView)
+      ) {
+        return (
+          !currentUser.authenticated ||
+          currentUser.membershipStatus === "pending" ||
+          currentUser.membershipStatus === "invited" ||
+          currentUser.membershipStatus === "active" ||
+          currentUser.membershipStatus === null
+        );
+      }
       return false;
     },
-    [currentUser.hasMembership, currentUser.permissions],
-  );
-
-  const isFeatureEnabled = useCallback(
-    (key: keyof TenantFeatureFlags) => Boolean(features[key]),
-    [features],
+    [
+      currentUser.authenticated,
+      currentUser.hasMembership,
+      currentUser.membershipStatus,
+      currentUser.permissions,
+      isFeatureEnabled,
+    ],
   );
 
   const isModuleEnabled = useCallback(
