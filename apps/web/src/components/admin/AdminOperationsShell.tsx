@@ -22,6 +22,7 @@ const NAV: { href: string; label: string; section: AdminOperationsSection }[] = 
   { href: "/admin/reservations", label: "Reservations", section: "reservations" },
   { href: "/admin/marketplace", label: "Marketplace", section: "marketplace" },
   { href: "/admin/moderation", label: "Moderation", section: "moderation" },
+  { href: "/admin/communication", label: "Comunicación", section: "communication" },
   { href: "/admin/territory", label: "Territory", section: "territory" },
   { href: "/admin/settings", label: "Settings", section: "settings" },
   { href: "/admin/privacy", label: "Privacy", section: "privacy" },

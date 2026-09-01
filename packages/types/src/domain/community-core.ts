@@ -57,7 +57,11 @@ export type CommunityNotificationKind =
   | "community_thanks"
   | "community_governance"
   | "mention"
-  | "official_alert";
+  | "official_alert"
+  | "official_announcement"
+  | "conversation_message"
+  | "experience_update"
+  | "reservation_update";
 
 export type CommunityEventParticipantRole =
   | "organizer"

@@ -12,6 +12,7 @@ import {
 } from "./community-feed";
 import type { CommunityCreationSource } from "./action-composer";
 import type { CommunitySuggestion } from "./intelligence";
+import type { LifeHomeCommunicationSummary } from "./communication";
 import type { CommunityOperationAction } from "./operations";
 import type { TerritoryDailyPulse } from "./operations";
 import type { TerritoryHomeQuery } from "../platform/territory-experience";
@@ -61,6 +62,7 @@ export type LifeHomeContext = {
   magicPlusEligible: boolean;
   membershipScope: LifeHomeMembershipScope;
   forYouToday?: CommunitySuggestion[];
+  communication?: LifeHomeCommunicationSummary;
 };
 
 export type ProfileLifeContext = {

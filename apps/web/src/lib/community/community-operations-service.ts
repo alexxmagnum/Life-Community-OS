@@ -103,7 +103,7 @@ export const CommunityOperationsService = {
     if (!projected) throw new OperationsDeniedError("invalid");
     await recordAdminAudit({
       actor: input.actor,
-      action: "content.publish",
+      action: "community.communication.announcement.published",
       entityType: "post",
       entityId: post.id,
       reason: "territory_announcement",

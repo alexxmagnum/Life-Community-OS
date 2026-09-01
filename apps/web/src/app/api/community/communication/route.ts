@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { guestCanAccess } from "@life-community-os/types";
 import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
-import { LifeHomeService } from "@/lib/community/life-home-service";
-import { CommunityIntelligenceService } from "@/lib/community/community-intelligence-service";
 import { CommunityCommunicationService } from "@/lib/community/community-communication-service";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
+import {
+  defaultTerritoryIdForIdentity,
+  identityTerritoriesForTenant,
+} from "@/lib/tenant/territory-catalog";
+import { resolveActiveTerritory } from "@life-community-os/types";
 
 export const runtime = "nodejs";
 
@@ -30,57 +33,43 @@ export async function GET(request: Request) {
     actor,
   });
   if ("error" in bound) return bound.error;
-  const home = await LifeHomeService.fromRequest({
+  const resolved = resolveActiveTerritory({
     tenantId: bound.tenantId,
-    actor,
-    queryTerritoryId: url.searchParams.get("territoryId"),
+    membershipTerritoryId: actor.territoryId,
+    selectedTerritoryId: url.searchParams.get("territoryId"),
+    defaultTerritoryId: defaultTerritoryIdForIdentity(bound.tenantId),
+    territories: identityTerritoriesForTenant(bound.tenantId),
+    capabilities: actor.permissions,
   });
-  if (!home) {
+  if (!resolved.ok || !resolved.context.territoryId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
+  const communication = await CommunityCommunicationService.resolve({
+    tenantId: bound.tenantId,
+    actor,
+    territoryId: resolved.context.territoryId,
+  });
   if (
-    home.membershipScope === "guest" &&
+    !actor.hasMembership &&
     !guestCanAccess({
       resource: "open_content",
       hasActiveMembership: false,
     })
   ) {
     return NextResponse.json({
-      home: {
-        territory: home.territory,
-        moments: home.moments.slice(0, 3),
-        currentActivities: [],
-        upcomingActivities: [],
-        places: [],
-        actions: [],
-        magicPlusEligible: false,
-        membershipScope: "guest",
+      communication: {
+        ...communication,
+        conversations: [],
+        channels: communication.channels.filter(
+          (row) => row.kind === "official",
+        ),
+        permissions: {
+          ...communication.permissions,
+          canSend: false,
+          canReport: false,
+        },
       },
     });
   }
-  if (home.membershipScope === "pending") {
-    return NextResponse.json({
-      home: {
-        ...home,
-        places: [],
-        currentActivities: [],
-        upcomingActivities: [],
-        magicPlusEligible: false,
-      },
-    });
-  }
-  const enriched = await CommunityIntelligenceService.enrichHome(home, {
-    tenantId: bound.tenantId,
-    actor,
-    territoryId: home.territory.territoryId,
-  });
-  const withCommunication = await CommunityCommunicationService.enrichHome(
-    enriched,
-    {
-      tenantId: bound.tenantId,
-      actor,
-      territoryId: home.territory.territoryId,
-    },
-  );
-  return NextResponse.json({ home: withCommunication });
+  return NextResponse.json({ communication });
 }

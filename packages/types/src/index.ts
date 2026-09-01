@@ -200,6 +200,43 @@ export {
   operationalHintsFromPlace,
 } from "./community/automation";
 
+/** Community Communication — territorial messaging without a social network. */
+export type {
+  CommunityChannelKind,
+  CommunityCommunicationLayer,
+  CommunityCommunicationNotificationKind,
+  CommunityChannelContext,
+  CommunityConversationSummary,
+  CommunityAnnouncementExperience,
+  ExperienceConversationContext,
+  CommunityCommunicationPreferences,
+  CommunityUnreadContext,
+  CommunityCommunicationPermissions,
+  CommunityCommunicationComposerHint,
+  CommunityCommunicationContext,
+  CommunityCommunicationInput,
+  LifeHomeCommunicationSummary,
+} from "./community/communication";
+export {
+  COMMUNITY_CHANNEL_KINDS,
+  COMMUNITY_COMMUNICATION_LAYERS,
+  COMMUNITY_COMMUNICATION_NOTIFICATION_KINDS,
+  ConversationExperienceService,
+  resolveChannelKind,
+  resolveCommunicationLayer,
+  resolveConversation,
+  resolveChannels,
+  resolveUnreadContext,
+  resolveCommunicationPreferences,
+  announcementExperienceFromTerritory,
+  resolveComposerHints,
+  projectCommunityCommunicationContext,
+  projectLifeHomeCommunicationSummary,
+  communicationRespectsTerritory,
+  privateConversationProtected,
+  isOpaqueCommunityCommunicationEntity,
+} from "./community/communication";
+
 /** Tenant Factory — SaaS community deployment, not a customer fork. */
 export type {
   TenantPlan,

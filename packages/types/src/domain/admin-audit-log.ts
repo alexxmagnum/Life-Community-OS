@@ -71,6 +71,10 @@ export const ADMIN_AUDIT_ACTIONS = [
   "community.automation.created",
   "community.automation.triggered",
   "community.automation.confirmed",
+  "community.communication.channel.created",
+  "community.communication.message.reported",
+  "community.communication.announcement.published",
+  "community.communication.moderated",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];
@@ -96,7 +100,9 @@ export type AdminAuditEntityType =
   | "backup"
   | "export"
   | "restore"
-  | "privacy";
+  | "privacy"
+  | "message"
+  | "conversation";
 
 const SENSITIVE_METADATA_KEY =
   /secret|token|password|authorization|cookie|api[_-]?key|private|message[_-]?content/i;
