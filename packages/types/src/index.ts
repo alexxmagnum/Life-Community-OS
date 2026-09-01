@@ -444,6 +444,43 @@ export {
   saasControlPlaneForbiddenMessage,
 } from "./platform/customer-success";
 
+/** SaaS analytics & business intelligence — aggregated platform observability. */
+export type {
+  PlatformReportKind,
+  TenantFeatureUsage,
+  TenantCapacityUsage,
+  TenantCapacityContext,
+  ProductHealthContext,
+  TenantAnalyticsContext,
+  PlanDistribution,
+  OperationalHealthSummary,
+  PlatformBusinessIntelligenceContext,
+  PlatformReportContext,
+  AnalyticsUsageOverlay,
+  PlatformAnalyticsInput,
+  CustomerSuccessAnalyticsInsight,
+} from "./platform/business-intelligence";
+export {
+  PLATFORM_REPORT_KINDS,
+  deriveTenantCapacityUsage,
+  projectTenantCapacity,
+  projectTenantFeatureUsage,
+  projectProductHealth,
+  projectTenantAnalytics,
+  projectPlatformBusinessIntelligence,
+  projectPlatformReport,
+  analyticsInsightsForCustomerSuccess,
+  isOpaqueAnalyticsEntity,
+  analyticsIsNotTracking,
+  privacyRespectedInAnalytics,
+  crossTenantAnalyticsBlocked,
+  communityAdminBlockedFromAnalytics,
+  rejectAnalyticsClientSpoof,
+  analyticsAuditMetadata,
+  saasAnalyticsForbiddenMessage,
+  analyticsContainsPersonalData,
+} from "./platform/business-intelligence";
+
 /** Community Social Loop — participation around real life, not a social network. */
 export type {
   CommunityParticipationEntityType,

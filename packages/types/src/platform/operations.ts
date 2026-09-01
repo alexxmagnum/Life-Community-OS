@@ -65,6 +65,7 @@ export const PLATFORM_ADMIN_SURFACES = [
   "tenants",
   "customers",
   "customer_success",
+  "analytics",
   "territories",
   "features",
   "plans",

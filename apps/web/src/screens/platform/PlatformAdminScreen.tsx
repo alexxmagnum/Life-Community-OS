@@ -219,6 +219,12 @@ export function PlatformAdminScreen() {
       >
         Customer Success →
       </Link>
+      <Link
+        href="/platform/analytics"
+        className="mt-1 inline-block text-[13px] font-semibold text-[var(--color-action-primary)]"
+      >
+        Platform Analytics →
+      </Link>
       {context ? (
         <section className="mt-4 rounded-[16px] border border-[var(--color-border-glass)] px-4 py-3 text-[13px]">
           <p className="font-semibold">Estado operacional</p>
