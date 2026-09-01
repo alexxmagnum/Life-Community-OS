@@ -68,6 +68,9 @@ export const ADMIN_AUDIT_ACTIONS = [
   "privacy.delete.completed",
   "privacy.consent.changed",
   "privacy.access.denied",
+  "community.automation.created",
+  "community.automation.triggered",
+  "community.automation.confirmed",
 ] as const;
 
 export type AdminAuditAction = (typeof ADMIN_AUDIT_ACTIONS)[number];

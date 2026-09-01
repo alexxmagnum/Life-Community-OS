@@ -164,6 +164,42 @@ export {
   matchingInterestsForSuggestion,
 } from "./community/intelligence";
 
+/** Community Automation — proactive assistance, user confirms every delivery. */
+export type {
+  CommunityAutomationProviderId,
+  CommunityAutomationTriggerKind,
+  CommunityAutomationTrigger,
+  CommunityAutomationPreview,
+  CommunityOperationalHint,
+  CommunityAutomationPermissions,
+  CommunityAutomationContext,
+  CommunityAutomationInput,
+  ReservationAutomationRow,
+  ExperienceAutomationRow,
+  AutomationProvider,
+  TriggerResolver,
+  NotificationPlanner,
+} from "./community/automation";
+export {
+  COMMUNITY_AUTOMATION_PROVIDER_IDS,
+  COMMUNITY_AUTOMATION_TRIGGER_KINDS,
+  resolveReminders,
+  resolveCommunitySuggestions,
+  resolveOperationalHints,
+  resolveAdminOperationalHints,
+  resolveTriggers,
+  createAutomationPreview,
+  planAutomationNotifications,
+  projectCommunityAutomationContext,
+  RuleBasedAutomationProvider,
+  RuleBasedNotificationPlanner,
+  automationRespectsTerritory,
+  automationRequiresConfirmation,
+  automationDoesNotAutoExecute,
+  isOpaqueCommunityAutomationEntity,
+  operationalHintsFromPlace,
+} from "./community/automation";
+
 /** Tenant Factory — SaaS community deployment, not a customer fork. */
 export type {
   TenantPlan,

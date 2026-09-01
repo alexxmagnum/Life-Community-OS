@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { projectLifePlaceExperienceView } from "@life-community-os/types";
 import { CommunityIntelligenceService } from "@/lib/community/community-intelligence-service";
+import { CommunityAutomationService } from "@/lib/community/community-automation-service";
 import { LifePlaceQueryService } from "@/lib/life-place/life-place-query";
 import { actorCanOpenLifePlace } from "@/lib/life-place/permissions";
 import { PersonalizationService } from "@/lib/personal/personalization-service";
@@ -69,9 +70,18 @@ export async function GET(request: Request, { params }: Params) {
       place: context,
     },
   );
+  const automatedView = await CommunityAutomationService.enrichLifePlaceView(
+    enrichedView,
+    {
+      tenantId: bound.tenantId,
+      actor,
+      territoryId,
+      place: context,
+    },
+  );
   return NextResponse.json({
     ...context,
-    experienceView: enrichedView,
+    experienceView: automatedView,
     location: context.location,
     activity: context.currentActivity,
     experiences: context.experiences,
