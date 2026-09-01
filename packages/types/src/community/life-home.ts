@@ -11,6 +11,7 @@ import {
   partitionLivingCommunityFeed,
 } from "./community-feed";
 import type { CommunityCreationSource } from "./action-composer";
+import type { CommunitySuggestion } from "./intelligence";
 import type { CommunityOperationAction } from "./operations";
 import type { TerritoryDailyPulse } from "./operations";
 import type { TerritoryHomeQuery } from "../platform/territory-experience";
@@ -59,6 +60,7 @@ export type LifeHomeContext = {
   empty?: LifeHomeEmptyState;
   magicPlusEligible: boolean;
   membershipScope: LifeHomeMembershipScope;
+  forYouToday?: CommunitySuggestion[];
 };
 
 export type ProfileLifeContext = {
@@ -92,6 +94,7 @@ export function projectLifeHomeContext(input: {
   operationActions?: readonly CommunityOperationAction[];
   membershipScope: LifeHomeMembershipScope;
   capabilities: readonly string[];
+  forYouToday?: readonly CommunitySuggestion[];
 }): LifeHomeContext {
   const living = partitionLivingCommunityFeed([
     ...input.pulse.now,
@@ -166,6 +169,9 @@ export function projectLifeHomeContext(input: {
       requiredCapability: CAPABILITIES.experienceCreate,
     }),
     membershipScope: input.membershipScope,
+    ...(input.forYouToday?.length
+      ? { forYouToday: [...input.forYouToday] }
+      : {}),
   };
 }
 

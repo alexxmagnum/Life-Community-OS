@@ -137,6 +137,33 @@ export {
   discoverUsesRealDomainData,
 } from "./community/discover-experience";
 
+/** Community Intelligence — contextual suggestions, not opaque AI authority. */
+export type {
+  CommunityIntelligenceProviderId,
+  CommunitySuggestionKind,
+  CommunitySuggestion,
+  CommunityIntelligenceContext,
+  CommunityIntelligenceInput,
+  CommunityIntelligenceProvider,
+  RecommendationProvider,
+  ExplanationProvider,
+} from "./community/intelligence";
+export {
+  COMMUNITY_INTELLIGENCE_PROVIDER_IDS,
+  explainSuggestion,
+  resolveDailyIdeas,
+  resolvePlaceIdeas,
+  resolveContributionIdeas,
+  resolveSuggestions,
+  projectCommunityIntelligenceContext,
+  RuleBasedCommunityIntelligenceProvider,
+  intelligenceDoesNotInventContent,
+  intelligenceRespectsTerritory,
+  isOpaqueCommunityIntelligenceEntity,
+  suggestionUsesExplicitPreference,
+  matchingInterestsForSuggestion,
+} from "./community/intelligence";
+
 /** Tenant Factory — SaaS community deployment, not a customer fork. */
 export type {
   TenantPlan,

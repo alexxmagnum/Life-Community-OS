@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { guestCanAccess } from "@life-community-os/types";
 import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
 import { LifeHomeService } from "@/lib/community/life-home-service";
+import { CommunityIntelligenceService } from "@/lib/community/community-intelligence-service";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 
 export const runtime = "nodejs";
@@ -67,5 +68,10 @@ export async function GET(request: Request) {
       },
     });
   }
-  return NextResponse.json({ home });
+  const enriched = await CommunityIntelligenceService.enrichHome(home, {
+    tenantId: bound.tenantId,
+    actor,
+    territoryId: home.territory.territoryId,
+  });
+  return NextResponse.json({ home: enriched });
 }

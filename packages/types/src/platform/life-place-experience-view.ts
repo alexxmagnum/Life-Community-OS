@@ -9,6 +9,7 @@ import {
   LIVING_PLACE_EMPTY_TITLE,
 } from "../community/community-feed";
 import { communityFeedLivingLabel } from "../community/community-feed";
+import type { CommunitySuggestion } from "../community/intelligence";
 
 export type LifePlaceExperienceView = {
   locationId: string;
@@ -33,10 +34,12 @@ export type LifePlaceExperienceView = {
     title: string;
     cta: string;
   };
+  suggestions?: CommunitySuggestion[];
 };
 
 export function projectLifePlaceExperienceView(
   context: LifePlaceContext,
+  suggestions?: readonly CommunitySuggestion[],
 ): LifePlaceExperienceView {
   const nowItem = context.currentActivity[0];
   const nowLabel = nowItem
@@ -70,6 +73,7 @@ export function projectLifePlaceExperienceView(
       title: hasLife ? "" : LIVING_PLACE_EMPTY_TITLE,
       cta: LIVING_PLACE_EMPTY_CTA,
     },
+    ...(suggestions?.length ? { suggestions: [...suggestions] } : {}),
   };
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { guestCanAccess } from "@life-community-os/types";
 import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
 import { DiscoverExperienceService } from "@/lib/community/discover-experience-service";
+import { CommunityIntelligenceService } from "@/lib/community/community-intelligence-service";
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 
 export const runtime = "nodejs";
@@ -36,5 +37,10 @@ export async function GET(request: Request) {
   if (!discover) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  return NextResponse.json({ discover });
+  const enriched = await CommunityIntelligenceService.enrichDiscover(discover, {
+    tenantId: bound.tenantId,
+    actor,
+    territoryId: discover.territoryId,
+  });
+  return NextResponse.json({ discover: enriched });
 }

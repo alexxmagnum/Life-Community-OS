@@ -12,6 +12,7 @@ import {
 } from "./community-feed";
 import type { DiscoverQueryContext } from "../platform/territory-experience";
 import type { LifeHomePlace } from "./life-home";
+import type { CommunitySuggestion } from "./intelligence";
 
 export type DiscoverServiceSummary = {
   id: string;
@@ -38,6 +39,7 @@ export type DiscoverExperienceContext = {
     title: string;
     cta: string;
   };
+  ideasForToday?: CommunitySuggestion[];
 };
 
 export function projectDiscoverExperienceContext(input: {
@@ -46,6 +48,7 @@ export function projectDiscoverExperienceContext(input: {
   livingPlaces?: readonly LifeHomePlace[];
   services?: readonly DiscoverServiceSummary[];
   help?: readonly DiscoverHelpSummary[];
+  ideasForToday?: readonly CommunitySuggestion[];
 }): DiscoverExperienceContext {
   const scoped = input.items.filter(
     (item) =>
@@ -75,6 +78,9 @@ export function projectDiscoverExperienceContext(input: {
           title: LIVING_EMPTY_TITLE,
           cta: LIVING_EMPTY_CTA,
         },
+    ...(input.ideasForToday?.length
+      ? { ideasForToday: [...input.ideasForToday] }
+      : {}),
   };
 }
 
