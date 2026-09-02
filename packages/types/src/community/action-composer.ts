@@ -55,6 +55,8 @@ export type CommunityCreationContext = {
   source?: CommunityCreationSource;
   locationId?: string;
   locationName?: string;
+  /** Opens Magic Plus focused on one intention (still routes through + sheet). */
+  focusActionType?: CommunityCreationActionType;
 };
 
 export type CommunityActionRegistryInput = {
@@ -201,11 +203,45 @@ export function sanitizeCommunityCreationContext(
     : undefined;
   const locationId = input?.locationId?.trim() || undefined;
   const locationName = input?.locationName?.trim() || undefined;
+  const focusActionType = isCommunityCreationActionType(
+    input?.focusActionType ?? "",
+  )
+    ? input!.focusActionType
+    : undefined;
   return {
     ...(source ? { source } : {}),
     ...(locationId ? { locationId } : {}),
     ...(locationName ? { locationName } : {}),
+    ...(focusActionType ? { focusActionType } : {}),
   };
+}
+
+/** Magic Plus section id for contextual focus (matches magic-plus-sections). */
+export function magicPlusSectionIdForActionType(
+  type: CommunityCreationActionType,
+): string {
+  switch (type) {
+    case "experience_create":
+    case "event_create":
+      return "experience";
+    case "announcement_create":
+      return "announcement";
+    case "marketplace_listing":
+      return "marketplace";
+    case "work_create":
+    case "offer_service":
+    case "business_create":
+      return "work";
+    case "help_request":
+    case "help_offer":
+      return "help";
+    case "reservation_create":
+      return "reservation";
+    case "group_create":
+      return "experience";
+    default:
+      return "experience";
+  }
 }
 
 function productKeyForCreation(

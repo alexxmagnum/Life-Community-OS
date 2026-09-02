@@ -289,6 +289,14 @@ export function buildLifePlaceActions(input: {
     href: `/discover?place=${encodeURIComponent(input.location.id)}`,
   });
 
+  if (input.canCreateActivity) {
+    push({
+      kind: "create_activity",
+      label: "Crear experiencia",
+      href: "magic-plus:experience_create",
+    });
+  }
+
   return actions;
 }
 

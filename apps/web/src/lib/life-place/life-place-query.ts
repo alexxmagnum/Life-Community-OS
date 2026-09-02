@@ -360,6 +360,7 @@ export async function resolveLifePlace(
           }
         : undefined,
     cover: cover?.reference,
+    canCreateActivity: includeLife && input.actor.hasMembership,
     importantNotice: includeLife
       ? (
           await CommunityOperationsService.announcements({

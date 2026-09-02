@@ -169,10 +169,10 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
 
   it("TEST 7 — Active member mantiene experiencia completa", () => {
     const community = readWeb("screens/CommunityScreen.tsx");
-    assert.match(community, /openActionComposer/);
+    assert.match(community, /openActionComposerWithIntent/);
     assert.match(community, /COMMUNITY_NOW_EMPTY_TITLE/);
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /openActionComposer/);
+    assert.match(home, /openActionComposerWithIntent/);
     assert.match(home, /LIVING_EMPTY_CTA/);
     const guest = guestActor(PANO);
     assert.equal(actorCanOpenLifePlace(guest), true);

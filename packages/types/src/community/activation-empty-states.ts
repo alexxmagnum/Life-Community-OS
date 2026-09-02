@@ -3,15 +3,22 @@
  */
 
 /** Home — experiences block */
-export const LIVING_EMPTY_TITLE = "Aún no hay planes cerca";
+export const LIVING_EMPTY_TITLE = "La comunidad empieza contigo";
 export const LIVING_EMPTY_DESCRIPTION =
-  "Descubre actividades o crea la próxima experiencia.";
+  "Crea la primera experiencia y comparte un momento con tus vecinos.";
 export const LIVING_EMPTY_CTA = "Crear experiencia";
 
 /** Community — Ahora / Próximamente */
 export const COMMUNITY_NOW_EMPTY_TITLE = "La comunidad empieza contigo";
 export const COMMUNITY_NOW_EMPTY_DESCRIPTION =
-  "Crea una experiencia, actividad o encuentro para darle vida al territorio.";
+  "Crea la primera experiencia y comparte un momento con tus vecinos.";
+
+/** Community activation panel */
+export const COMMUNITY_ACTIVATION_PANEL_TITLE =
+  "Empieza a dar vida a tu comunidad";
+export const COMMUNITY_ACTIVATION_PANEL_DESCRIPTION =
+  "Elige una acción para iniciar el movimiento en tu territorio.";
+export const COMMUNITY_ACTIVATION_VISITOR_CTA = "Únete para participar";
 
 /** Community — Grupos */
 export const COMMUNITY_GROUPS_EMPTY_TITLE =
@@ -37,6 +44,10 @@ export const COMMUNITY_OFFICIAL_ANNOUNCEMENTS_VISITOR =
 /** Home — announcements hint */
 export const HOME_ANNOUNCEMENTS_EMPTY =
   "Información importante aparecerá aquí.";
+export const HOME_ANNOUNCEMENTS_CTA = "Crear aviso";
+
+/** Home — help block */
+export const HOME_HELP_CTA = "Pedir ayuda";
 
 /** Home — services block */
 export const HOME_SERVICES_EMPTY_TITLE = "¿Necesitas algo?";
@@ -61,6 +72,7 @@ export const LIVING_PLACE_EMPTY_TITLE = "Aún no hay experiencias aquí";
 export const LIVING_PLACE_EMPTY_DESCRIPTION =
   "Descubre qué ocurre en este lugar o crea una experiencia para compartir.";
 export const LIVING_PLACE_EMPTY_CTA = "Ver experiencias";
+export const LIVING_PLACE_CREATE_CTA = "Crear experiencia";
 
 /** Profile — visitor (title is composed dynamically via profileVisitorTitle) */
 export const PROFILE_VISITOR_TITLE = "Bienvenido a LIFE";

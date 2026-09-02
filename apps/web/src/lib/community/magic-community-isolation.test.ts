@@ -195,7 +195,7 @@ describe("Magic Community Experience isolation", () => {
     assert.ok(context.actions.some((item) => item.kind === "view_experiences"));
     assert.equal(
       context.actions.some((item) => item.kind === "create_activity"),
-      false,
+      true,
     );
   });
 
@@ -217,7 +217,7 @@ describe("Magic Community Experience isolation", () => {
   it("TEST 7 — empty activity invites to create experiences", () => {
     const living = partitionLivingCommunityFeed([]);
     assert.equal(living.moments.length, 0);
-    assert.equal(LIVING_EMPTY_TITLE, "Aún no hay planes cerca");
+    assert.equal(LIVING_EMPTY_TITLE, "La comunidad empieza contigo");
     assert.equal(LIVING_EMPTY_CTA, "Crear experiencia");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
@@ -418,7 +418,7 @@ describe("Premium Experience Polish isolation", () => {
     assert.ok(context.actions.some((item) => item.kind === "view_experiences"));
     assert.equal(
       context.actions.some((item) => item.kind === "create_activity"),
-      false,
+      true,
     );
   });
 

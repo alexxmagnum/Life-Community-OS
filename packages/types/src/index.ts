@@ -81,6 +81,7 @@ export {
   isCommunityCreationActionAvailable,
   listCommunityCreationActions,
   CommunityActionRegistry,
+  magicPlusSectionIdForActionType,
 } from "./community/action-composer";
 
 /** Community Operations — daily territorial projection, not a life domain. */
@@ -140,8 +141,14 @@ export {
   COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA,
   COMMUNITY_OFFICIAL_ANNOUNCEMENTS_VISITOR,
   HOME_ANNOUNCEMENTS_EMPTY,
+  HOME_ANNOUNCEMENTS_CTA,
+  HOME_HELP_CTA,
   HOME_SERVICES_EMPTY_TITLE,
   HOME_SERVICES_EMPTY_CTA,
+  COMMUNITY_ACTIVATION_PANEL_TITLE,
+  COMMUNITY_ACTIVATION_PANEL_DESCRIPTION,
+  COMMUNITY_ACTIVATION_VISITOR_CTA,
+  LIVING_PLACE_CREATE_CTA,
   SERVICES_PROFESSIONALS_EMPTY_TITLE,
   SERVICES_PROFESSIONALS_EMPTY_DESCRIPTION,
   SERVICES_PROFESSIONALS_EMPTY_CTA,
@@ -154,6 +161,12 @@ export {
   PROFILE_REGISTERED_TITLE,
   DEAD_EMPTY_COPY_PATTERNS,
 } from "./community/activation-empty-states";
+
+export type { CommunityActivationMetrics } from "./community/community-activation-metrics";
+export {
+  EMPTY_COMMUNITY_ACTIVATION_METRICS,
+  FORBIDDEN_ACTIVATION_METRIC_KEYS,
+} from "./community/community-activation-metrics";
 
 /** Territory Home & resident experience evolution — projection only. */
 export type {

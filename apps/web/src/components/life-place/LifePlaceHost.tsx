@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LifePlaceAction, LifePlaceContext } from "@life-community-os/types";
 import { fetchLifePlace } from "@/lib/life-place/life-place-client";
+import { openActionComposerWithIntent } from "@/lib/community/action-composer-client";
 import {
   LIFE_PLACE_MEMBER_ACTION_KINDS,
   visitorConversionHref,
@@ -51,6 +52,14 @@ export function LifePlaceHost({
       router.push(visitorConversionHref(currentUser.authenticated));
       return;
     }
+    if (action.kind === "create_activity") {
+      openActionComposerWithIntent("experience_create", {
+        source: "life_place",
+        locationId: context?.location.id,
+        locationName: context?.location.name,
+      });
+      return;
+    }
     if (action.kind === "contact") {
       window.open(action.href, "_blank", "noopener,noreferrer");
       return;
@@ -77,6 +86,16 @@ export function LifePlaceHost({
               router.push(
                 `/discover?place=${encodeURIComponent(context.location.id)}`,
               )
+            }
+            onCreateExperience={
+              isVisitor
+                ? undefined
+                : () =>
+                    openActionComposerWithIntent("experience_create", {
+                      source: "life_place",
+                      locationId: context.location.id,
+                      locationName: context.location.name,
+                    })
             }
             onJoin={() =>
               router.push(visitorConversionHref(currentUser.authenticated))

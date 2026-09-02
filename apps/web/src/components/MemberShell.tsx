@@ -13,9 +13,11 @@ import {
 } from "@life-community-os/ui";
 import {
   bindProjectedNavigation,
+  COMMUNITY_CREATION_ACTIONS,
   CommunityActionRegistry,
   communityCreationRoute,
   composerSuggestionReason,
+  magicPlusSectionIdForActionType,
   personalizeComposerActions,
   projectPlatformNavigation,
   sanitizeCommunityCreationContext,
@@ -328,6 +330,29 @@ export function MemberShell({ children }: { children: ReactNode }) {
     [listedCreationActions, toCreateAction],
   );
 
+  const focusedCreateSections = useMemo(() => {
+    const focus = composeContext.focusActionType;
+    if (!focus) return createSections;
+    const sectionId = magicPlusSectionIdForActionType(focus);
+    const bySection = createSections.filter((section) => section.id === sectionId);
+    if (bySection.length > 0) return bySection;
+    return createSections
+      .map((section) => ({
+        ...section,
+        actions: section.actions.filter((action) => action.id === focus),
+      }))
+      .filter((section) => section.actions.length > 0);
+  }, [composeContext.focusActionType, createSections]);
+
+  const composerTitle = useMemo(() => {
+    const focus = composeContext.focusActionType;
+    if (!focus) return "¿Qué quieres crear?";
+    return (
+      COMMUNITY_CREATION_ACTIONS.find((action) => action.type === focus)
+        ?.title ?? "¿Qué quieres crear?"
+    );
+  }, [composeContext.focusActionType]);
+
   const createActions = useMemo(
     () => createSections.flatMap((section) => section.actions),
     [createSections],
@@ -368,6 +393,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
           source: detail?.source ?? inferCreationSource(pathname),
           locationId: detail?.locationId,
           locationName: detail?.locationName,
+          focusActionType: detail?.focusActionType,
         }),
       );
       setCreateOpen(true);
@@ -513,14 +539,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
           setComposeContext({});
         }}
         sections={
-          createSections.length > 0 ? createSections : undefined
+          focusedCreateSections.length > 0 ? focusedCreateSections : undefined
         }
         actions={
-          createSections.length > 0 ? undefined : magicPlusEmptyActions
+          focusedCreateSections.length > 0 ? undefined : magicPlusEmptyActions
         }
         locationName={composeContext.locationName}
         source={composeContext.source}
-        title="¿Qué quieres crear?"
+        title={composerTitle}
         subtitle="Elige una intención y te llevamos al dominio correcto"
         emptyMessage="Descubre qué puedes crear en tu comunidad"
       />

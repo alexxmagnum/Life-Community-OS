@@ -13,6 +13,7 @@ import {
   CommunityActionRegistry,
   communityCreationRoute,
   isCommunityCreationActionType,
+  magicPlusSectionIdForActionType,
   sanitizeCommunityCreationContext,
 } from "./action-composer";
 
@@ -143,5 +144,17 @@ describe("Action Composer contract", () => {
     assert.equal("territoryId" in extra, false);
     assert.equal("createdBy" in extra, false);
     assert.equal(extra.source, "home");
+  });
+
+  it("preserves focusActionType for contextual Magic Plus", () => {
+    const clean = sanitizeCommunityCreationContext({
+      source: "home",
+      focusActionType: "experience_create",
+    });
+    assert.equal(clean.focusActionType, "experience_create");
+    assert.equal(
+      magicPlusSectionIdForActionType("experience_create"),
+      "experience",
+    );
   });
 });

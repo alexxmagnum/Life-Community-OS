@@ -71,9 +71,9 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
     assert.match(community, /COMMUNITY_GROUPS_EMPTY_CTA/);
     assert.match(community, /COMMUNITY_HELP_EMPTY_CTA/);
     assert.match(community, /COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA/);
-    assert.match(community, /openActionComposer/);
+    assert.match(community, /openActionComposerWithIntent/);
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /openActionComposer/);
+    assert.match(home, /openActionComposerWithIntent/);
     assert.match(home, /LIVING_EMPTY_CTA/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
@@ -86,11 +86,14 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
 
   it('TEST 4 — Life Place vacío no contiene "primera historia"', () => {
     const sheet = readWeb("components/life-place/LifePlaceSheet.tsx");
+    const host = readWeb("components/life-place/LifePlaceHost.tsx");
     assert.match(sheet, /LIVING_PLACE_EMPTY_TITLE/);
     assert.match(sheet, /LIVING_PLACE_EMPTY_DESCRIPTION/);
     assert.match(sheet, /LIVING_PLACE_EMPTY_CTA/);
+    assert.match(sheet, /LIVING_PLACE_CREATE_CTA/);
     assert.doesNotMatch(sheet, /primera historia/i);
     assert.doesNotMatch(sheet, /openActionComposer/);
+    assert.match(host, /openActionComposerWithIntent/);
   });
 
   it("TEST 5 — Empty states no crean posts sociales", () => {
@@ -107,10 +110,10 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
     assert.match(shell, /ActionComposer/);
     assert.match(shell, /¿Qué quieres crear\?/);
     const community = readWeb("screens/CommunityScreen.tsx");
-    assert.match(community, /openActionComposer/);
+    assert.match(community, /openActionComposerWithIntent/);
     assert.doesNotMatch(community, /\/community\/posts\/create/);
-    const lifePlace = readWeb("components/life-place/LifePlaceSheet.tsx");
-    assert.match(lifePlace, /create_activity/);
-    assert.doesNotMatch(lifePlace, /openActionComposer/);
+    const lifePlaceHost = readWeb("components/life-place/LifePlaceHost.tsx");
+    assert.match(lifePlaceHost, /create_activity/);
+    assert.match(lifePlaceHost, /openActionComposerWithIntent/);
   });
 });

@@ -62,7 +62,8 @@ import {
 } from "@life-community-os/types";
 import { groupToHubCard } from "@/lib/community/map-to-ui";
 import { LivingFeedCard } from "@/components/community/LivingFeedCard";
-import { openActionComposer } from "@/lib/community/action-composer-client";
+import { openActionComposerWithIntent } from "@/lib/community/action-composer-client";
+import { CommunityActivationPanel } from "@/components/community/CommunityActivationPanel";
 import {
   ANNOUNCEMENT_EMPTY_GLYPH,
   EXPERIENCE_EMPTY_GLYPH,
@@ -371,7 +372,16 @@ export function CommunityHubScreen() {
     );
   }
 
-  const openComposer = () => openActionComposer({ source: "global_plus" });
+  const openExperienceComposer = () =>
+    openActionComposerWithIntent("experience_create", { source: "global_plus" });
+  const openGroupComposer = () =>
+    openActionComposerWithIntent("group_create", { source: "global_plus" });
+  const openHelpComposer = () =>
+    openActionComposerWithIntent("help_request", { source: "global_plus" });
+  const openAnnouncementComposer = () =>
+    openActionComposerWithIntent("announcement_create", {
+      source: "global_plus",
+    });
 
   const communityName = theme.shortName || theme.name;
 
@@ -473,7 +483,7 @@ export function CommunityHubScreen() {
         {canCreate ? (
           <Button
             variant="secondary"
-            onClick={openComposer}
+            onClick={openExperienceComposer}
             className="mt-3 min-h-[44px] w-full text-[15px]"
           >
             Aportar a la comunidad
@@ -554,13 +564,28 @@ export function CommunityHubScreen() {
               : undefined
           }
         >
+          {!ahoraHasBody && canCreate ? (
+            <div className="mb-3">
+              <CommunityActivationPanel
+                variant="member"
+                onCreateExperience={openExperienceComposer}
+                onCreateAnnouncement={openAnnouncementComposer}
+                onAddBusiness={() =>
+                  openActionComposerWithIntent("business_create", {
+                    source: "global_plus",
+                  })
+                }
+                onInviteNeighbors={() => router.push("/me")}
+              />
+            </div>
+          ) : null}
           {!ahoraHasBody ? (
             <EmptyState
               title={COMMUNITY_NOW_EMPTY_TITLE}
               description={COMMUNITY_NOW_EMPTY_DESCRIPTION}
               imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openExperienceComposer : undefined}
             />
           ) : (
             <div className="space-y-2.5">
@@ -755,7 +780,7 @@ export function CommunityHubScreen() {
               description={COMMUNITY_GROUPS_EMPTY_DESCRIPTION}
               imageUrl={GROUP_EMPTY_GLYPH}
               actionLabel={canCreate ? COMMUNITY_GROUPS_EMPTY_CTA : undefined}
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openGroupComposer : undefined}
             />
           ) : expandGroups ? (
             <div className="space-y-2.5">
@@ -801,7 +826,7 @@ export function CommunityHubScreen() {
               description={COMMUNITY_NOW_EMPTY_DESCRIPTION}
               imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openExperienceComposer : undefined}
             />
           ) : (
             <div className="space-y-3">
@@ -842,7 +867,7 @@ export function CommunityHubScreen() {
               description={COMMUNITY_HELP_EMPTY_DESCRIPTION}
               imageUrl={HELP_EMPTY_GLYPH}
               actionLabel={canCreate ? COMMUNITY_HELP_EMPTY_CTA : undefined}
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openHelpComposer : undefined}
             />
           ) : (
             <div className="space-y-3">
@@ -875,7 +900,7 @@ export function CommunityHubScreen() {
               description="Únete a un plan o crea el primero desde Magic Plus."
               imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openExperienceComposer : undefined}
             />
           ) : (
             <div className="space-y-2">
@@ -982,7 +1007,7 @@ export function CommunityHubScreen() {
               actionLabel={
                 canCreate ? COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA : undefined
               }
-              onAction={canCreate ? openComposer : undefined}
+              onAction={canCreate ? openAnnouncementComposer : undefined}
             />
           ) : (
             <div className="space-y-2.5">

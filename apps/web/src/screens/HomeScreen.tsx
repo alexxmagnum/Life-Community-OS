@@ -12,6 +12,8 @@ import {
   communityFeedPrimaryLabel,
   communityFeedTimeLabel,
   HOME_ANNOUNCEMENTS_EMPTY,
+  HOME_ANNOUNCEMENTS_CTA,
+  HOME_HELP_CTA,
   HOME_SERVICES_EMPTY_CTA,
   HOME_SERVICES_EMPTY_TITLE,
   isLivingMomentFeedItem,
@@ -40,7 +42,8 @@ import {
 } from "@life-community-os/ui";
 import { getCommunityExperienceFeed, fetchCommunityHome } from "@/lib/community/community-client";
 import { fetchTerritoryAnnouncements } from "@/lib/community/community-operations-client";
-import { openActionComposer } from "@/lib/community/action-composer-client";
+import { openActionComposerWithIntent } from "@/lib/community/action-composer-client";
+import { CommunityActivationPanel } from "@/components/community/CommunityActivationPanel";
 import { COMMUNITY_EMPTY_GLYPH, LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { locationCardImageUrl, communityFeedCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
@@ -334,7 +337,6 @@ export function HomeScreen() {
           quote: undefined as string | undefined,
           personName: undefined as string | undefined,
           personAvatarUrl: undefined as string | undefined,
-          liked: false,
           href: lifeMapHrefForFeedItem(item),
         })),
     [feedItems],
@@ -459,6 +461,19 @@ export function HomeScreen() {
         ) : (
           <p className="mb-4 rounded-[16px] border border-dashed border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)]/60 px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
             {HOME_ANNOUNCEMENTS_EMPTY}
+            {hasMembership && canCreateExperience ? (
+              <button
+                type="button"
+                onClick={() =>
+                  openActionComposerWithIntent("announcement_create", {
+                    source: "home",
+                  })
+                }
+                className="ui-press mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]"
+              >
+                {HOME_ANNOUNCEMENTS_CTA}
+              </button>
+            ) : null}
           </p>
         )}
         <p className="mb-3 text-[14px] text-white/55">Ahora mismo</p>
@@ -491,7 +506,10 @@ export function HomeScreen() {
                 }
                 onAction={
                   canCreateExperience
-                    ? () => openActionComposer({ source: "home" })
+                    ? () =>
+                        openActionComposerWithIntent("experience_create", {
+                          source: "home",
+                        })
                     : undefined
                 }
               />
@@ -555,12 +573,49 @@ export function HomeScreen() {
         </section>
       ) : null}
 
+      {authenticated && hasMembership && moments.length === 0 ? (
+        <section>
+          <CommunityActivationPanel
+            variant="member"
+            onCreateExperience={() =>
+              openActionComposerWithIntent("experience_create", {
+                source: "home",
+              })
+            }
+            onCreateAnnouncement={() =>
+              openActionComposerWithIntent("announcement_create", {
+                source: "home",
+              })
+            }
+            onAddBusiness={() =>
+              openActionComposerWithIntent("business_create", {
+                source: "home",
+              })
+            }
+            onInviteNeighbors={() => router.push("/me")}
+          />
+        </section>
+      ) : null}
+
+      {isVisitor && moments.length === 0 ? (
+        <section>
+          <CommunityActivationPanel
+            variant="visitor"
+            onJoin={() => router.push(visitorConversionHref(authenticated))}
+          />
+        </section>
+      ) : null}
+
       {isModuleEnabled("community") ? (
         <section>
           <HomeSectionHead title="Necesito ayuda" />
           <button
             type="button"
-            onClick={() => router.push("/community")}
+            onClick={() =>
+              hasMembership
+                ? openActionComposerWithIntent("help_request", { source: "home" })
+                : router.push("/community")
+            }
             className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
           >
             <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
@@ -569,6 +624,11 @@ export function HomeScreen() {
             <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
               Vecinos ayudando vecinos — pide o ofrece colaboración.
             </span>
+            {hasMembership ? (
+              <span className="mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]">
+                {HOME_HELP_CTA}
+              </span>
+            ) : null}
           </button>
         </section>
       ) : null}
@@ -668,7 +728,9 @@ export function HomeScreen() {
           <HomeSectionHead title="Cómo puedo aportar" />
           <button
             type="button"
-            onClick={() => openActionComposer({ source: "home" })}
+            onClick={() =>
+              openActionComposerWithIntent("experience_create", { source: "home" })
+            }
             className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
           >
             <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
@@ -699,7 +761,6 @@ export function HomeScreen() {
               quote={move.quote}
               personName={move.personName}
               personAvatarUrl={move.personAvatarUrl}
-              liked={move.liked}
               onClick={() => router.push(move.href)}
             />
           ))}

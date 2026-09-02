@@ -6,6 +6,7 @@
 import {
   isCommunityCreationSource,
   sanitizeCommunityCreationContext,
+  type CommunityCreationActionType,
   type CommunityCreationContext,
   type CommunityCreationSource,
 } from "@life-community-os/types";
@@ -35,7 +36,16 @@ export function openActionComposer(detail?: ActionComposerDetail): void {
           : undefined,
         locationId: detail?.locationId,
         locationName: detail?.locationName,
+        focusActionType: detail?.focusActionType,
       }),
     }),
   );
+}
+
+/** Contextual CTA — opens Magic Plus focused on one domain intention. */
+export function openActionComposerWithIntent(
+  focusActionType: CommunityCreationActionType,
+  detail?: Omit<ActionComposerDetail, "focusActionType">,
+): void {
+  openActionComposer({ ...detail, focusActionType });
 }

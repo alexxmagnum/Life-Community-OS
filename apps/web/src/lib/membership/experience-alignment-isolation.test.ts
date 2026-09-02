@@ -93,14 +93,14 @@ describe("Phase 18I-P2 experience alignment", () => {
     assert.equal(adminPerms.includes(CAPABILITIES.manageEnter), true);
   });
 
-  it("PASS — Life Place no crea experiencias", () => {
+  it("PASS — Life Place enruta creación por Magic Plus", () => {
     const sheet = readWeb("components/life-place/LifePlaceSheet.tsx");
     const host = readWeb("components/life-place/LifePlaceHost.tsx");
     assert.doesNotMatch(sheet, /Crear algo aquí/);
-    assert.doesNotMatch(sheet, /Crear experiencia aquí/);
-    assert.doesNotMatch(sheet, /onCompose/);
-    assert.doesNotMatch(host, /openActionComposer/);
+    assert.doesNotMatch(sheet, /router\.push\("\/experiences\/create"\)/);
+    assert.match(host, /openActionComposerWithIntent\("experience_create"/);
     assert.match(sheet, /LIVING_PLACE_EMPTY_TITLE/);
+    assert.match(sheet, /LIVING_PLACE_CREATE_CTA/);
   });
 
   it("PASS — Magic Plus inicia creación", () => {
@@ -134,7 +134,7 @@ describe("Phase 18I-P2 experience alignment", () => {
     });
     assert.equal(
       actions.some((action) => action.kind === "create_activity"),
-      false,
+      true,
     );
     assert.equal(
       actions.some((action) => action.kind === "navigate"),
@@ -186,7 +186,7 @@ describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — No existe copy de historias sociales", () => {
     assert.doesNotMatch(LIVING_EMPTY_DESCRIPTION, /historia/i);
     assert.doesNotMatch(LIVING_PLACE_EMPTY_TITLE, /historia/i);
-    assert.equal(LIVING_EMPTY_TITLE, "Aún no hay planes cerca");
+    assert.equal(LIVING_EMPTY_TITLE, "La comunidad empieza contigo");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
       "Aún no hay experiencias aquí",

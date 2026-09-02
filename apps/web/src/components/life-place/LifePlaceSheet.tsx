@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   LIVING_PLACE_EMPTY_CTA,
+  LIVING_PLACE_CREATE_CTA,
   LIVING_PLACE_EMPTY_DESCRIPTION,
   LIVING_PLACE_EMPTY_TITLE,
   lifePlaceActionLabel,
@@ -33,6 +34,7 @@ export type LifePlaceSheetProps = {
   onAction: (action: LifePlaceAction) => void;
   onClose: () => void;
   onExploreExperiences?: () => void;
+  onCreateExperience?: () => void;
   isVisitor?: boolean;
   onJoin?: () => void;
 };
@@ -42,6 +44,7 @@ export function LifePlaceSheet({
   onAction,
   onClose,
   onExploreExperiences,
+  onCreateExperience,
   isVisitor = false,
   onJoin,
 }: LifePlaceSheetProps) {
@@ -98,7 +101,8 @@ export function LifePlaceSheet({
         action.kind === "reserve_resource" ||
         action.kind === "participate" ||
         action.kind === "navigate" ||
-        action.kind === "view_experiences") &&
+        action.kind === "view_experiences" ||
+        action.kind === "create_activity") &&
       (!isVisitor || !LIFE_PLACE_MEMBER_ACTION_KINDS.has(action.kind)),
   );
   const secondaryActions = context.actions.filter(
@@ -240,6 +244,15 @@ export function LifePlaceSheet({
                       className="ui-press mt-3 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-primary)]"
                     >
                       {LIVING_PLACE_EMPTY_CTA}
+                    </button>
+                  ) : null}
+                  {onCreateExperience ? (
+                    <button
+                      type="button"
+                      onClick={onCreateExperience}
+                      className="ui-press mt-2 rounded-full bg-[var(--color-action-primary)] px-3.5 py-1.5 text-[13px] font-semibold text-white"
+                    >
+                      {LIVING_PLACE_CREATE_CTA}
                     </button>
                   ) : null}
                 </>
