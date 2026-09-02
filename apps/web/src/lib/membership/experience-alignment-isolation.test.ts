@@ -39,9 +39,13 @@ function readWeb(rel: string): string {
 describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — Visitor no parece miembro", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /title="Acceso"/);
-    assert.match(profile, /Iniciar sesión/);
+    assert.match(profile, /Bienvenido a LIFE/);
+    assert.match(
+      profile,
+      /Explora el territorio antes de unirte a la comunidad/,
+    );
     assert.match(profile, /Crear cuenta/);
+    assert.match(profile, /Iniciar sesión/);
     assert.match(profile, /isActiveMember \? \([\s\S]*Mi vida aquí/);
     const scope = resolveMembershipAccessScope({
       authenticated: false,
