@@ -10,6 +10,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import {
   createLocation,
+  optionalTerritoryField,
   validateLocation,
   type CreateLocationInput,
   type Location,
@@ -24,7 +25,7 @@ import {
   resolveTenantPublicId,
   tenantSlugToUuid,
 } from "@/lib/tenant/ids";
-import { resolveStampTerritoryId } from "@/lib/tenant/resolve-territory";
+import { resolveOptionalTerritoryId } from "@/lib/tenant/resolve-territory";
 
 export type LocationWriteScope = {
   accessToken?: string | null;
@@ -270,10 +271,12 @@ export async function saveLocationServer(
     tenantId: slug,
     ownerId,
     createdBy,
-    territoryId: resolveStampTerritoryId({
-      tenantId: slug,
-      explicit: input.territoryId,
-    }),
+    // Location may exist without Territory — never invent from Tenant alone.
+    ...optionalTerritoryField(
+      resolveOptionalTerritoryId({
+        explicit: input.territoryId,
+      }),
+    ),
   });
   if (!locationFixtureEnabled()) {
     const wroteDb = await upsertDatabase(location, scope);

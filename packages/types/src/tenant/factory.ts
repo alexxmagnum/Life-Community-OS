@@ -386,9 +386,8 @@ export const TenantFactoryService = {
     if (snapshot.tenants.some((row) => row.slug === slug)) {
       throw new Error("slug_taken");
     }
-    if (!request.territories.length) {
-      throw new Error("territory_required");
-    }
+    // Territory is optional under Tenant (Tenant ≠ Territory).
+    // Zero territories is valid for SaaS orgs that bind Locations directly.
     const plan = options?.plan ?? "community";
     const now = new Date().toISOString();
     const tenantId = options?.tenantId?.trim() || cryptoId();

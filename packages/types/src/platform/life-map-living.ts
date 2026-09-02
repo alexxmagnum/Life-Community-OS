@@ -28,7 +28,8 @@ export type LifeMapLivingLodBand =
 export type LifeMapLocationView = {
   id: string;
   tenantId: string;
-  territoryId: string;
+  /** Optional — Location may exist without Territory. */
+  territoryId?: string;
   name: string;
   category: string;
   type: string;
@@ -137,8 +138,9 @@ export function projectLocationToLifeMapView(
   location: Location,
 ): LifeMapLocationView | null {
   const tenantId = location.tenantId.trim();
-  const territoryId = location.territoryId?.trim() ?? "";
-  if (!tenantId || !territoryId) return null;
+  const territoryId = location.territoryId?.trim() || undefined;
+  // Location requires Tenant; Territory is optional (Location ≠ Territory).
+  if (!tenantId) return null;
   if (location.visibility === "private") return null;
   if (
     !Number.isFinite(location.latitude) ||
@@ -149,7 +151,7 @@ export function projectLocationToLifeMapView(
   return {
     id: location.id,
     tenantId,
-    territoryId,
+    ...(territoryId ? { territoryId } : {}),
     name: location.name,
     category: location.category,
     type: location.type,
@@ -189,7 +191,8 @@ export function createLifeMapContext(input: {
     const view = projectLocationToLifeMapView(location);
     if (!view) return [];
     if (view.tenantId !== tenantId) return [];
-    if (view.territoryId !== territoryId) return [];
+    // Unscoped locations (no Territory) remain visible in any Territory scope.
+    if (view.territoryId && view.territoryId !== territoryId) return [];
     const live = feedItems.filter((item) => item.locationId === view.id);
     const participating = live.reduce((sum, item) => {
       const occupied = item.metadata?.occupied;

@@ -8,7 +8,7 @@ import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 import {
   filterForActiveTerritory,
   resolveActiveTerritoryContext,
-  resolveStampTerritoryId,
+  resolveOptionalTerritoryId,
 } from "@/lib/tenant/resolve-territory";
 
 export const runtime = "nodejs";
@@ -108,8 +108,7 @@ export async function POST(request: Request) {
         tenantId: bound.tenantId,
         ownerId: gated.actor.personId ?? undefined,
         createdBy: gated.actor.personId ?? undefined,
-        territoryId: resolveStampTerritoryId({
-          tenantId: bound.tenantId,
+        territoryId: resolveOptionalTerritoryId({
           explicit: body.territoryId,
           inherited: gated.actor.territoryId,
         }),

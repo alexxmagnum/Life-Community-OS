@@ -39,12 +39,12 @@ export const PROFILE_ACTIVE_CLARITY_TITLE = "Mi vida aquí";
 export const JOIN_EXPERIENCE_TITLE = "Únete a tu comunidad";
 export const JOIN_EXPERIENCE_BODY =
   "Tu cuenta está lista. Ahora forma parte de una comunidad para participar con tus vecinos.";
-export const JOIN_CODE_LABEL = "Código de comunidad";
+export const JOIN_CODE_LABEL = "Código de acceso";
 export const JOIN_CODE_CTA = "Continuar con código";
 export const JOIN_INVITE_LABEL = "Aceptar invitación";
 export const JOIN_INVITE_CTA = "Continuar con invitación";
 export const JOIN_CODE_HINT =
-  "Pide el código a tu comunidad o a la administración del territorio.";
+  "Usa el código de tu zona (por ejemplo Aldea Golf) dentro del tenant, o el código general que te hayan dado.";
 
 export const WELCOME_AFTER_REGISTER_TITLE = "Tu cuenta está lista";
 export const WELCOME_AFTER_REGISTER_BODY =

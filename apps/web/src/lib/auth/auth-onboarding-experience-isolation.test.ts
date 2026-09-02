@@ -44,7 +44,7 @@ describe("auth onboarding experience isolation", () => {
     assert.doesNotMatch(register, /\/api\/auth\/community-code/);
     const join = readWeb("components/membership/JoinCommunityExperience.tsx");
     assert.match(join, /Únete a tu comunidad|JOIN_EXPERIENCE_TITLE/);
-    assert.match(join, /Código de comunidad|JOIN_CODE_LABEL/);
+    assert.match(join, /JOIN_CODE_LABEL|Código de acceso/);
   });
 
   it("TEST 3 — password confirmation funciona", () => {

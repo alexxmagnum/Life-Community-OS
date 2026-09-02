@@ -4,9 +4,10 @@
  * Flow: Request → Session → Tenant → Active Territory → Domain Data
  * Never: Request → Tenant Pack → Territory
  *
- * Existing clients that omit territoryId keep tenant-only lists.
- * When a Territory is present (membership, query, or 1:1 default), APIs
- * filter stamped domain rows with recordMatchesTerritoryScope.
+ * Invariant: Tenant ≠ Territory ≠ Location
+ * - Territory is optional under a Tenant.
+ * - Location may omit Territory (tenant-scoped only).
+ * - Do not conflate Tenant slug with a default Territory when stamping Locations.
  */
 
 import { NextResponse } from "next/server";
@@ -35,8 +36,11 @@ export function defaultTerritoryIdForTenant(tenantId: string): string | null {
   return tenantSlugToTerritoryUuid(tenantId);
 }
 
-export function resolveStampTerritoryId(input: {
-  tenantId: string;
+/**
+ * Stamp Territory only when explicitly known (request or actor membership).
+ * Never invent a Territory from Tenant alone — Location may exist without Territory.
+ */
+export function resolveOptionalTerritoryId(input: {
   explicit?: string | null;
   inherited?: string | null;
 }): string | undefined {
@@ -44,6 +48,20 @@ export function resolveStampTerritoryId(input: {
   if (explicit) return explicit;
   const inherited = input.inherited?.trim();
   if (inherited) return inherited;
+  return undefined;
+}
+
+/**
+ * For domains that require a Territory (e.g. Experience, Membership-bound activity).
+ * Prefer explicit → inherited → demo default map when present.
+ */
+export function resolveStampTerritoryId(input: {
+  tenantId: string;
+  explicit?: string | null;
+  inherited?: string | null;
+}): string | undefined {
+  const optional = resolveOptionalTerritoryId(input);
+  if (optional) return optional;
   return tenantSlugToTerritoryUuid(input.tenantId) ?? undefined;
 }
 
