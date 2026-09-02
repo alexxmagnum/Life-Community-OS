@@ -36,7 +36,7 @@ describe("Phase 18J product experience recovery", () => {
     assert.match(shell, /magicPlusMode !== "hidden"/);
     assert.match(shell, /return "hidden" as const/);
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /PROFILE_VISITOR_TITLE/);
+    assert.match(profile, /profileVisitorTitle/);
     const scope = resolveMembershipAccessScope({
       authenticated: false,
       hasMembership: false,

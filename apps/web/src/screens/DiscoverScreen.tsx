@@ -19,11 +19,11 @@ import {
 } from "@life-community-os/ui";
 import { useTenantLocations } from "@/lib/location";
 import { fetchBusinesses } from "@/lib/business/business-client";
-import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import { PLACE_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { locationCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile } from "@life-community-os/types";
-import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 import {
@@ -38,7 +38,7 @@ import {
  */
 export function DiscoverScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, configuration, authenticated, hasMembership } = useTenant();
+  const { isFeatureEnabled, configuration, authenticated, hasMembership } = useTenant();
   const { sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const discoverQuery = discoverQueryFromActive(activeTerritory);
@@ -50,14 +50,13 @@ export function DiscoverScreen() {
   const [localBusinesses, setLocalBusinesses] = useState<BusinessProfile[]>([]);
   const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
 
-  const canLocal =
-    isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
+  const canBrowsePublicTerritory = isFeatureEnabled("localLife");
   const isVisitor = !hasMembership;
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!canLocal || !sessionReady || !isFeatureEnabled("services")) {
+      if (!canBrowsePublicTerritory || !sessionReady) {
         if (!cancelled) setLocalBusinesses([]);
         return;
       }
@@ -89,16 +88,15 @@ export function DiscoverScreen() {
       cancelled = true;
     };
   }, [
-    canLocal,
+    canBrowsePublicTerritory,
     sessionReady,
-    isFeatureEnabled,
     configuration.tenantId,
     query,
     discoverQuery.territoryId,
   ]);
 
   const nearYou = useMemo(() => {
-    if (!canLocal) return [];
+    if (!canBrowsePublicTerritory) return [];
     const q = query.trim().toLowerCase();
     return allLocations
       .filter((loc) => {
@@ -128,7 +126,7 @@ export function DiscoverScreen() {
         verified: true,
         trustNote: undefined as string | undefined,
       }));
-  }, [canLocal, query, allLocations, configuration.branding.name]);
+  }, [canBrowsePublicTerritory, query, allLocations, configuration.branding.name]);
 
   const hasAnything = nearYou.length > 0 || localBusinesses.length > 0;
 
@@ -156,7 +154,7 @@ export function DiscoverScreen() {
               ? "Prueba con otras palabras."
               : "Aún no hay lugares publicados cerca. Abre el mapa para orientarte."
           }
-          imageUrl={query ? undefined : LIVING_EMPTY_GLYPH}
+          imageUrl={query ? undefined : PLACE_EMPTY_GLYPH}
           actionLabel={query ? "Limpiar búsqueda" : "Ver el mapa"}
           onAction={
             query ? () => setQuery("") : () => router.push("/map")

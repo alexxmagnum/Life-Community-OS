@@ -39,8 +39,9 @@ import {
   type HomeHeroSlide,
 } from "@life-community-os/ui";
 import { getCommunityExperienceFeed, fetchCommunityHome } from "@/lib/community/community-client";
+import { fetchTerritoryAnnouncements } from "@/lib/community/community-operations-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
-import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import { COMMUNITY_EMPTY_GLYPH, LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 import { locationCardImageUrl, communityFeedCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
@@ -50,6 +51,10 @@ import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 import {
   VISITOR_HOME_DESCRIPTION,
+  VISITOR_HOME_EMPTY_DESCRIPTION,
+  VISITOR_HOME_EMPTY_TITLE,
+  VISITOR_HOME_EXPLORE_LABEL,
+  VISITOR_HOME_REGISTER_LABEL,
   VISITOR_JOIN_HEADLINE,
   VISITOR_VALUE_PROPOSITION,
   visitorConversionHref,
@@ -219,6 +224,15 @@ export function HomeScreen() {
         setPersonalizationEnabled(home.membershipScope === "active");
         setFeedReady(true);
         return;
+      }
+      if ((!authenticated || !hasMembership) && territoryId) {
+        void fetchTerritoryAnnouncements({
+          tenantId: configuration.tenantId,
+          territoryId,
+        }).then((rows) => {
+          if (cancelled) return;
+          if (rows.length > 0) setAnnouncements(rows.slice(0, 3));
+        });
       }
       if (!authenticated || !hasMembership || !territoryId) {
         setFeedItems([]);
@@ -450,25 +464,38 @@ export function HomeScreen() {
         <p className="mb-3 text-[14px] text-white/55">Ahora mismo</p>
         {moments.length === 0 ? (
           <div>
-            <EmptyState
-              title={LIVING_EMPTY_TITLE}
-              description={LIVING_EMPTY_DESCRIPTION}
-              imageUrl={LIVING_EMPTY_GLYPH}
-              actionLabel={
-                canCreateExperience
-                  ? LIVING_EMPTY_CTA
-                  : isVisitor
-                    ? visitorConversionLabel(authenticated)
+            {isVisitor ? (
+              <>
+                <EmptyState
+                  title={VISITOR_HOME_EMPTY_TITLE}
+                  description={VISITOR_HOME_EMPTY_DESCRIPTION}
+                  imageUrl={COMMUNITY_EMPTY_GLYPH}
+                  actionLabel={VISITOR_HOME_EXPLORE_LABEL}
+                  onAction={() => router.push("/community")}
+                />
+                <button
+                  type="button"
+                  onClick={() => router.push("/register")}
+                  className="ui-press mt-3 w-full min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[14px] font-semibold text-[var(--color-text-secondary)]"
+                >
+                  {VISITOR_HOME_REGISTER_LABEL}
+                </button>
+              </>
+            ) : (
+              <EmptyState
+                title={LIVING_EMPTY_TITLE}
+                description={LIVING_EMPTY_DESCRIPTION}
+                imageUrl={LIVING_EMPTY_GLYPH}
+                actionLabel={
+                  canCreateExperience ? LIVING_EMPTY_CTA : undefined
+                }
+                onAction={
+                  canCreateExperience
+                    ? () => openActionComposer({ source: "home" })
                     : undefined
-              }
-              onAction={
-                canCreateExperience
-                  ? () => openActionComposer({ source: "home" })
-                  : isVisitor
-                    ? () => router.push(visitorConversionHref(authenticated))
-                    : undefined
-              }
-            />
+                }
+              />
+            )}
           </div>
         ) : (
           <HomeRail>

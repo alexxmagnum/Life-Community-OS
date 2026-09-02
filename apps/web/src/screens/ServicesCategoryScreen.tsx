@@ -46,6 +46,10 @@ import {
 import {
   visitorConversionHref,
   visitorConversionLabel,
+  VISITOR_CTA_MOBILITY,
+  VISITOR_CTA_NEIGHBOUR_HELP,
+  VISITOR_CTA_RECOMMENDATIONS,
+  VISITOR_CTA_WORK,
 } from "@/lib/membership/visitor-experience";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { SERVICE_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
@@ -83,8 +87,10 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const canAccessMemberData =
     sessionReady && authenticated && hasMembership;
 
+  const canBrowsePublicTerritory = isFeatureEnabled("localLife");
+
   const canLocal =
-    isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
+    canBrowsePublicTerritory && hasCapability(CAPABILITIES.localView);
   const canMarket =
     canAccessMemberData &&
     isFeatureEnabled("marketplace") &&
@@ -98,7 +104,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
 
   const entities = useMemo(() => {
     if (!hub || hub.content.kind !== "local-entities") return [];
-    if (!canLocal) return [];
+    if (!canBrowsePublicTerritory) return [];
     return rankLocalEntitiesForTerritory(
       filterLocationsByLocalKinds(
         allLocations.filter((item) => item.visibility !== "private"),
@@ -107,7 +113,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       ).map(locationToLocalEntity),
       personId ?? "",
     );
-  }, [hub, canLocal, query, personId, allLocations]);
+  }, [hub, canBrowsePublicTerritory, query, personId, allLocations]);
 
   useEffect(() => {
     if (!hub) return;
@@ -244,7 +250,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   let body: ReactNode = null;
 
   if (hub.content.kind === "local-entities") {
-    if (!canLocal) {
+    if (!canBrowsePublicTerritory) {
       body = (
         <EmptyState
           title={SERVICES_PROFESSIONALS_EMPTY_TITLE}
@@ -300,21 +306,19 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Accede para ver trabajos"
-          description={
-            authenticated
-              ? "Únete a la comunidad para ver anuncios de trabajo del territorio."
-              : "Inicia sesión y únete a la comunidad para ver anuncios de trabajo."
-          }
-          actionLabel={authenticated ? "Unirme a comunidad" : "Iniciar sesión"}
-          onAction={() => router.push(authenticated ? "/me" : "/login")}
+          title={VISITOR_CTA_WORK}
+          description="Los anuncios de trabajo del territorio están disponibles para miembros de la comunidad."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       );
     } else if (!canWork) {
       body = (
         <EmptyState
-          title="Sin acceso"
-          description="Los anuncios de trabajo no están disponibles para tu cuenta."
+          title="Anuncios no disponibles"
+          description="Los anuncios de trabajo no están activos para tu cuenta."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       );
     } else if (workPosts.length === 0) {
@@ -368,12 +372,8 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Únete para ver ayuda vecinal"
-          description={
-            authenticated
-              ? "Únete a la comunidad para ver y pedir ayuda entre vecinos."
-              : "Crea tu cuenta y únete a la comunidad para ver ayuda entre vecinos."
-          }
+          title={VISITOR_CTA_NEIGHBOUR_HELP}
+          description="La ayuda entre vecinos está disponible para miembros de la comunidad."
           actionLabel={visitorConversionLabel(authenticated)}
           onAction={() => router.push(visitorConversionHref(authenticated))}
         />
@@ -415,7 +415,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Regístrate para ver movilidad"
+          title={VISITOR_CTA_MOBILITY}
           description="Únete a la comunidad para ver trayectos y movilidad compartida."
           actionLabel={visitorConversionLabel(authenticated)}
           onAction={() => router.push(visitorConversionHref(authenticated))}
@@ -450,7 +450,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Únete para ver recomendaciones"
+          title={VISITOR_CTA_RECOMMENDATIONS}
           description="Las recomendaciones de vecinos están disponibles para miembros de la comunidad."
           actionLabel={visitorConversionLabel(authenticated)}
           onAction={() => router.push(visitorConversionHref(authenticated))}
@@ -459,7 +459,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     } else if (!canLocal) {
       body = (
         <EmptyState
-          title="Explora el territorio"
+          title={VISITOR_CTA_RECOMMENDATIONS}
           description="Inicia sesión y únete a la comunidad para ver recomendaciones."
           actionLabel={visitorConversionLabel(authenticated)}
           onAction={() => router.push(visitorConversionHref(authenticated))}

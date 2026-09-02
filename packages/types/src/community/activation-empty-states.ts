@@ -62,10 +62,10 @@ export const LIVING_PLACE_EMPTY_DESCRIPTION =
   "Descubre qué ocurre en este lugar o crea una experiencia para compartir.";
 export const LIVING_PLACE_EMPTY_CTA = "Ver experiencias";
 
-/** Profile — visitor */
-export const PROFILE_VISITOR_TITLE = "Conoce tu comunidad";
+/** Profile — visitor (title is composed dynamically via profileVisitorTitle) */
+export const PROFILE_VISITOR_TITLE = "Bienvenido a LIFE";
 export const PROFILE_VISITOR_DESCRIPTION =
-  "Crea tu cuenta para participar, reservar y crear experiencias.";
+  "Forma parte de la comunidad para participar y crear experiencias.";
 
 /** Profile — registered (no active membership) */
 export const PROFILE_REGISTERED_TITLE = "Únete a tu comunidad";

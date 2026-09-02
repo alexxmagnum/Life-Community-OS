@@ -48,7 +48,7 @@ export function RegisterScreen() {
           body: JSON.stringify({ code: communityCode.trim() }),
         });
       }
-      router.replace("/");
+      router.replace("/me");
       router.refresh();
     } catch {
       setError("Error de red. Inténtalo de nuevo.");

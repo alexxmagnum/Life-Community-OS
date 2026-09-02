@@ -32,7 +32,7 @@ function activationSurfaceCopy(): string {
 describe("Phase 18K-FIX-B community activation empty states", () => {
   it("TEST 1 — Visitor ve activación, no vacío muerto", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /PROFILE_VISITOR_TITLE/);
+    assert.match(profile, /profileVisitorTitle/);
     assert.match(profile, /PROFILE_VISITOR_DESCRIPTION/);
     assert.match(profile, /Crear cuenta/);
     assert.match(profile, /Iniciar sesión/);

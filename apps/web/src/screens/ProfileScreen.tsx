@@ -11,7 +11,6 @@ import {
   propertyMembershipRoleLabel,
   PROFILE_REGISTERED_TITLE,
   PROFILE_VISITOR_DESCRIPTION,
-  PROFILE_VISITOR_TITLE,
   type PersonalContext,
   type PersonalFavorite,
   type PropertyPublicView,
@@ -26,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
 import { JoinCommunityPanel } from "@/components/membership/JoinCommunityPanel";
 import { profileMembershipLabel } from "@/lib/membership/join-community-experience";
+import { profileVisitorTitle } from "@/lib/membership/visitor-experience";
 import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { fetchHousingProperties } from "@/lib/housing/housing-client";
 import { useEntityMedia } from "@/lib/media/use-entity-media";
@@ -193,7 +193,7 @@ export function ProfileScreen() {
     return (
       <MobileScreen dense>
         <ScreenHeader
-          title={PROFILE_VISITOR_TITLE}
+          title={profileVisitorTitle(configuration.branding.name)}
           subtitle="Explora el territorio antes de unirte a la comunidad."
         />
         <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-4">

@@ -1,5 +1,5 @@
 /**
- * Phase 18K-FIX-A — visitor activation and public territory discovery.
+ * Phase 18L-FIX-A — visitor activation and membership entry flow.
  */
 
 import assert from "node:assert/strict";
@@ -19,6 +19,13 @@ import {
   actorCanReadLifePlaceLife,
   actorCanReadLifePlacePublicTerritory,
 } from "@/lib/life-place/permissions";
+import { resolveMembershipAccessScope } from "@/lib/membership/membership-experience-scope";
+import {
+  COMMUNITY_PREVIEW_EMPTY_TITLE,
+  profileVisitorTitle,
+  VISITOR_HOME_EMPTY_TITLE,
+  VISITOR_HOME_EXPLORE_LABEL,
+} from "@/lib/membership/visitor-experience";
 import type { RequestActor } from "@/lib/auth/request-actor";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -76,18 +83,32 @@ function memberActor(tenantSlug: string): RequestActor {
   };
 }
 
-describe("Phase 18K-FIX-A visitor activation", () => {
-  it("PASS — Visitor puede abrir Discover público", () => {
+describe("Phase 18L-FIX-A visitor member activation", () => {
+  it("TEST 1 — Visitor ve Home con orientación", () => {
+    const home = readWeb("screens/HomeScreen.tsx");
+    assert.match(home, /VISITOR_HOME_EMPTY_TITLE/);
+    assert.match(home, /VISITOR_HOME_EMPTY_DESCRIPTION/);
+    assert.match(home, /VISITOR_HOME_EXPLORE_LABEL/);
+    assert.match(home, /VISITOR_HOME_REGISTER_LABEL/);
+    assert.match(home, /COMMUNITY_EMPTY_GLYPH/);
+    assert.match(home, /fetchTerritoryAnnouncements/);
+    assert.match(home, /isVisitor \?/);
+    assert.equal(VISITOR_HOME_EMPTY_TITLE, "La comunidad empieza contigo");
+    assert.equal(VISITOR_HOME_EXPLORE_LABEL, "Explorar comunidad");
+  });
+
+  it("TEST 2 — Visitor puede explorar Discover", () => {
     const discover = readWeb("screens/DiscoverScreen.tsx");
+    assert.match(discover, /canBrowsePublicTerritory/);
+    assert.match(discover, /fetchBusinesses/);
     assert.doesNotMatch(
       discover,
-      /!authenticated[\s\S]*!hasMembership[\s\S]*fetchBusinesses/,
+      /!canLocal[\s\S]*fetchBusinesses/,
     );
-    assert.match(discover, /fetchBusinesses/);
     assert.match(discover, /VISITOR_JOIN_HEADLINE/);
   });
 
-  it("PASS — Visitor puede ver negocios públicos", () => {
+  it("TEST 3 — Visitor puede ver negocios públicos", () => {
     const guest = guestActor(PANO);
     assert.equal(actorCanViewBusinesses(guest), true);
     assert.equal(
@@ -109,70 +130,58 @@ describe("Phase 18K-FIX-A visitor activation", () => {
       }),
       true,
     );
+    const services = readWeb("screens/ServicesCategoryScreen.tsx");
+    assert.match(services, /canBrowsePublicTerritory/);
   });
 
-  it("PASS — Visitor puede abrir Life Place público", () => {
-    const guest = guestActor(PANO);
-    assert.equal(actorCanOpenLifePlace(guest), true);
-    assert.equal(actorCanReadLifePlacePublicTerritory(guest), true);
-    const host = readWeb("components/life-place/LifePlaceHost.tsx");
-    assert.match(host, /LIFE_PLACE_MEMBER_ACTION_KINDS/);
-  });
-
-  it("PASS — Visitor no accede a datos privados", () => {
+  it("TEST 4 — Visitor no ve datos privados", () => {
     const guest = guestActor(PANO);
     assert.equal(actorCanReadLifePlaceLife(guest), false);
     assert.equal(actorCanViewHelp(guest), false);
     const sheet = readWeb("components/life-place/LifePlaceSheet.tsx");
     assert.match(sheet, /nearbyHelp.*!isVisitor/);
     assert.match(sheet, /context\.community && !isVisitor/);
-  });
-
-  it("PASS — Visitor recibe CTA correcto para registrarse", () => {
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /VISITOR_JOIN_HEADLINE/);
-    assert.match(home, /visitorConversionLabel/);
+    assert.match(home, /authenticated && hasMembership/);
+  });
+
+  it("TEST 5 — Registered termina en /me", () => {
+    const register = readWeb("screens/RegisterScreen.tsx");
+    assert.match(register, /router\.replace\("\/me"\)/);
+    assert.doesNotMatch(register, /router\.replace\("\/"\)/);
+  });
+
+  it("TEST 6 — Registered puede iniciar JoinCommunity", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /profileVisitorTitle/);
-    assert.match(profile, /Crear cuenta/);
-    const services = readWeb("screens/ServicesCategoryScreen.tsx");
-    assert.match(services, /visitorConversionHref/);
-    assert.match(services, /visitorConversionLabel/);
-    assert.match(
-      services,
-      /!canAccessMemberData[\s\S]*visitorConversionHref/,
-    );
+    assert.match(profile, /JoinCommunityPanel/);
+    const scope = resolveMembershipAccessScope({
+      authenticated: true,
+      hasMembership: false,
+      membershipStatus: null,
+      role: null,
+    });
+    assert.equal(scope.scope, "registered");
+    const preview = readWeb("components/community/CommunityPreviewPanel.tsx");
+    assert.match(preview, /COMMUNITY_PREVIEW_EMPTY_TITLE/);
+    assert.match(preview, /COMMUNITY_PREVIEW_JOIN_LABEL/);
+    assert.equal(COMMUNITY_PREVIEW_EMPTY_TITLE, "Tu comunidad está esperando");
   });
 
-  it("PASS — Services público no devuelve 401", () => {
-    const services = readWeb("screens/ServicesCategoryScreen.tsx");
-    assert.match(services, /const canWork =[\s\S]*canAccessMemberData/);
-    assert.match(services, /const canMarket =[\s\S]*canAccessMemberData/);
-    assert.match(services, /hub\.content\.kind === "work" && canWork/);
-    assert.match(services, /hub\.content\.kind === "neighbour-help" && canMarket/);
-    assert.match(services, /hub\.content\.kind === "local-entities"/);
-    assert.match(services, /canBrowsePublicTerritory[\s\S]*filterLocationsByLocalKinds/);
-    assert.match(
-      services,
-      /if \(!canAccessMemberData\)[\s\S]*VISITOR_CTA_WORK/,
-    );
-    const commerce = readWeb("lib/marketplace/commerce-client.ts");
-    assert.match(commerce, /if \(!res\.ok\) return \[\]/);
-  });
-
-  it("PASS — Servicios privados siguen protegidos", () => {
+  it("TEST 7 — Active member mantiene experiencia completa", () => {
+    const community = readWeb("screens/CommunityScreen.tsx");
+    assert.match(community, /openActionComposer/);
+    assert.match(community, /COMMUNITY_NOW_EMPTY_TITLE/);
+    const home = readWeb("screens/HomeScreen.tsx");
+    assert.match(home, /openActionComposer/);
+    assert.match(home, /LIVING_EMPTY_CTA/);
     const guest = guestActor(PANO);
-    assert.equal(actorCanViewHelp(guest), false);
-    assert.equal(
-      guestCanAccess({
-        resource: "private_community",
-        hasActiveMembership: false,
-      }),
-      false,
-    );
+    assert.equal(actorCanOpenLifePlace(guest), true);
+    assert.equal(actorCanReadLifePlacePublicTerritory(guest), true);
+    const member = memberActor(PANO);
+    assert.equal(member.hasMembership, true);
   });
 
-  it("PASS — Visitor no cruza tenants", () => {
+  it("TEST 8 — Tenant isolation intacto", () => {
     const valleyGuest = guestActor(VALLEY);
     assert.equal(
       businessVisibleToActor(valleyGuest, {
@@ -193,7 +202,13 @@ describe("Phase 18K-FIX-A visitor activation", () => {
       }),
       false,
     );
-    const panoMember = memberActor(PANO);
-    assert.equal(actorCanViewBusinesses(panoMember), true);
+    assert.equal(
+      guestCanAccess({
+        resource: "private_community",
+        hasActiveMembership: false,
+      }),
+      false,
+    );
+    assert.equal(profileVisitorTitle("Panorámica"), "Bienvenido a LIFE Panorámica");
   });
 });

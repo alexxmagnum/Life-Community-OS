@@ -31,4 +31,8 @@ export const RESERVATION_EMPTY_GLYPH = getAsset(
 ).path;
 
 export const LIVING_EMPTY_GLYPH = EXPERIENCE_EMPTY_GLYPH;
-export const LIVING_PLACE_GLYPH = getAsset("navigation.discover.card").path;
+export const COMMUNITY_EMPTY_GLYPH = getAsset(
+  "community.heart-community.symbol",
+).path;
+export const PLACE_EMPTY_GLYPH = getAsset("navigation.discover.card").path;
+export const LIVING_PLACE_GLYPH = PLACE_EMPTY_GLYPH;

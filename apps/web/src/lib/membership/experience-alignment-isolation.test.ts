@@ -39,7 +39,7 @@ function readWeb(rel: string): string {
 describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — Visitor no parece miembro", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /PROFILE_VISITOR_TITLE/);
+    assert.match(profile, /profileVisitorTitle/);
     assert.match(
       profile,
       /Explora el territorio antes de unirte a la comunidad/,
