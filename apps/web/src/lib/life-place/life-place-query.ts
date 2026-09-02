@@ -46,6 +46,7 @@ import {
 import {
   actorCanReadLifePlaceLife,
   actorCanReadLifePlaceCommunityPreview,
+  actorCanReadLifePlacePublicTerritory,
   actorCanSeeLocation,
 } from "./permissions";
 
@@ -131,6 +132,9 @@ export async function resolveLifePlace(
 
   const includeLife = actorCanReadLifePlaceLife(input.actor);
   const includePreview = actorCanReadLifePlaceCommunityPreview(input.actor);
+  const includePublicTerritory = actorCanReadLifePlacePublicTerritory(
+    input.actor,
+  );
   const pack = getTenantPack(tenantId);
   const product =
     input.productCapabilities ?? pack?.productCapabilities;
@@ -149,9 +153,10 @@ export async function resolveLifePlace(
     ).filter((item) => item.locationId === locationId);
   }
 
-  const allResources = includeLife
-    ? await listResourcesServer(tenantId, input.scope)
-    : [];
+  const allResources =
+    includeLife || includePublicTerritory
+      ? await listResourcesServer(tenantId, input.scope)
+      : [];
   const resourcesAtPlace = allResources.filter(
     (resource) =>
       resource.locationId === locationId &&
@@ -169,27 +174,37 @@ export async function resolveLifePlace(
   );
 
   const experiences: LifePlaceExperienceSummary[] = [];
-  if (includeLife) {
+  if (includeLife || includePublicTerritory) {
     const rows = await listExperiencesServer(tenantId, input.scope, {
       territoryId,
     });
     for (const experience of rows) {
       if (experience.status !== "published") continue;
-      if (!experience.resourceId || !resourceIds.has(experience.resourceId)) {
+      if (includeLife) {
+        if (!experience.resourceId || !resourceIds.has(experience.resourceId)) {
+          continue;
+        }
+      } else if (
+        !experience.resourceId ||
+        !resourceIds.has(experience.resourceId)
+      ) {
         continue;
       }
-      const participants = await listExperienceParticipantsServer(
-        tenantId,
-        experience.id,
-        input.scope,
-      );
-      const occupied = participants.filter((row) =>
-        participationOccupiesSeat(row.role),
-      ).length;
-      const available =
-        experience.capacity > 0
-          ? Math.max(0, experience.capacity - occupied)
-          : undefined;
+      let available: number | undefined;
+      if (includeLife) {
+        const participants = await listExperienceParticipantsServer(
+          tenantId,
+          experience.id,
+          input.scope,
+        );
+        const occupied = participants.filter((row) =>
+          participationOccupiesSeat(row.role),
+        ).length;
+        available =
+          experience.capacity > 0
+            ? Math.max(0, experience.capacity - occupied)
+            : undefined;
+      }
       experiences.push({
         id: experience.id,
         title: experience.title,
@@ -237,7 +252,7 @@ export async function resolveLifePlace(
     businessRow.tenantId === tenantId &&
     recordMatchesTerritoryScope(businessRow.territoryId, territoryId) &&
     (businessRow.status === "published" ||
-      businessRow.ownerPersonId === input.actor.personId)
+      (includeLife && businessRow.ownerPersonId === input.actor.personId))
       ? {
           id: businessRow.id,
           name: businessRow.name,

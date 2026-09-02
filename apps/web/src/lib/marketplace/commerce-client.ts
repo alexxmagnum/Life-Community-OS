@@ -133,6 +133,7 @@ export async function fetchHelpRequests(input: {
   if (input.board) params.set("board", input.board);
   const res = await fetch(`/api/help?${params.toString()}`, {
     cache: "no-store",
+    credentials: "same-origin",
     headers: { "x-tenant-slug": input.tenantId },
   });
   if (!res.ok) return [];

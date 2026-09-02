@@ -31,6 +31,7 @@ import {
   ScreenSearch,
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { resolvePlaceHref, useTenantLocations } from "@/lib/location";
 import {
   fetchHelpRequests,
@@ -38,6 +39,10 @@ import {
   listingImageUrl,
   listingPriceLabel,
 } from "@/lib/marketplace/commerce-client";
+import {
+  visitorConversionHref,
+  visitorConversionLabel,
+} from "@/lib/membership/visitor-experience";
 
 /**
  * Servicios hub — "I need something solved."
@@ -50,9 +55,12 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     isModuleEnabled,
     hasCapability,
     isProductCapabilityEnabled,
+    authenticated,
+    hasMembership,
     personId,
     configuration,
   } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const { allLocations } = useTenantLocations(configuration.tenantId);
   const [query, setQuery] = useState("");
   const [workFilter, setWorkFilter] = useState<WorkPostType | "all">("all");
@@ -66,13 +74,18 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
   const featureOk =
     hub?.featureKeys.some((key) => isFeatureEnabled(key)) ?? false;
 
+  const canAccessMemberData =
+    sessionReady && authenticated && hasMembership;
+
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
   const canMarket =
+    canAccessMemberData &&
     isFeatureEnabled("marketplace") &&
     isProductCapabilityEnabled("marketplace") &&
     hasCapability(CAPABILITIES.marketplaceView);
   const canWork =
+    canAccessMemberData &&
     isModuleEnabled("services") &&
     (isFeatureEnabled("work") || isFeatureEnabled("services")) &&
     hasCapability(CAPABILITIES.localView);
@@ -150,6 +163,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       }
       if (
         hub.content.kind === "recommendations" &&
+        canAccessMemberData &&
         canLocal &&
         isFeatureEnabled("recommendations")
       ) {
@@ -178,6 +192,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     canWork,
     canMarket,
     canLocal,
+    canAccessMemberData,
     workFilter,
     query,
     configuration.tenantId,
@@ -226,8 +241,10 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canLocal) {
       body = (
         <EmptyState
-          title="Sin acceso"
-          description="No puedes ver profesionales con tu cuenta actual."
+          title="Explora el territorio"
+          description="Inicia sesión y únete a la comunidad para ver profesionales del territorio."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       );
     } else if (entities.length === 0) {
@@ -266,7 +283,20 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       );
     }
   } else if (hub.content.kind === "work") {
-    if (!canWork) {
+    if (!canAccessMemberData) {
+      body = (
+        <EmptyState
+          title="Accede para ver trabajos"
+          description={
+            authenticated
+              ? "Únete a la comunidad para ver anuncios de trabajo del territorio."
+              : "Inicia sesión y únete a la comunidad para ver anuncios de trabajo."
+          }
+          actionLabel={authenticated ? "Unirme a comunidad" : "Iniciar sesión"}
+          onAction={() => router.push(authenticated ? "/me" : "/login")}
+        />
+      );
+    } else if (!canWork) {
       body = (
         <EmptyState
           title="Sin acceso"
@@ -321,11 +351,24 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       );
     }
   } else if (hub.content.kind === "neighbour-help") {
-    if (!canMarket) {
+    if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Sin acceso"
-          description="La ayuda entre vecinos no está disponible para tu cuenta."
+          title="Únete para ver ayuda vecinal"
+          description={
+            authenticated
+              ? "Únete a la comunidad para ver y pedir ayuda entre vecinos."
+              : "Crea tu cuenta y únete a la comunidad para ver ayuda entre vecinos."
+          }
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
+        />
+      );
+    } else if (!canMarket) {
+      body = (
+        <EmptyState
+          title="Ayuda no disponible"
+          description="La ayuda entre vecinos no está activa para tu cuenta."
         />
       );
     } else if (neighbourHelp.length === 0) {
@@ -355,7 +398,16 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       );
     }
   } else if (hub.content.kind === "mobility") {
-    if (mobility.length === 0) {
+    if (!canAccessMemberData) {
+      body = (
+        <EmptyState
+          title="Regístrate para ver movilidad"
+          description="Únete a la comunidad para ver trayectos y movilidad compartida."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
+        />
+      );
+    } else if (mobility.length === 0) {
       body = (
         <EmptyState
           title={hub.emptyTitle}
@@ -381,11 +433,22 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
       );
     }
   } else if (hub.content.kind === "recommendations") {
-    if (!canLocal) {
+    if (!canAccessMemberData) {
       body = (
         <EmptyState
-          title="Sin acceso"
-          description="No puedes ver recomendaciones con tu cuenta actual."
+          title="Únete para ver recomendaciones"
+          description="Las recomendaciones de vecinos están disponibles para miembros de la comunidad."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
+        />
+      );
+    } else if (!canLocal) {
+      body = (
+        <EmptyState
+          title="Explora el territorio"
+          description="Inicia sesión y únete a la comunidad para ver recomendaciones."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       );
     } else if (tips.length === 0) {

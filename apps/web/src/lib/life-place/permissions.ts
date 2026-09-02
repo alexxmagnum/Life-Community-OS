@@ -28,6 +28,18 @@ export function actorCanReadLifePlaceLife(actor: RequestActor): boolean {
   return Boolean(actor.authenticated && actor.hasMembership);
 }
 
+/** Public territory preview at a Life Place — no private life or member data. */
+export function actorCanReadLifePlacePublicTerritory(
+  actor: RequestActor,
+): boolean {
+  if (actor.tenantDenied) return false;
+  if (actorCanReadLifePlaceLife(actor)) return false;
+  return guestCanAccess({
+    resource: "public_place",
+    hasActiveMembership: actor.hasMembership,
+  });
+}
+
 export function actorCanSeeLocation(actor: RequestActor, location: Location): boolean {
   if (location.visibility === "public") return true;
   if (location.visibility === "members") return actor.hasMembership;

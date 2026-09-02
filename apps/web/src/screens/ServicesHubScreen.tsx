@@ -82,7 +82,10 @@ export function ServicesHubScreen() {
     hasCapability,
     isProductCapabilityEnabled,
     personId,
+    authenticated,
+    hasMembership,
   } = useTenant();
+  const isVisitor = !authenticated || !hasMembership;
 
   const territoryAccess = useMemo(
     () =>
@@ -156,7 +159,9 @@ export function ServicesHubScreen() {
           Servicios
         </h1>
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
-          Profesionales y ayuda · espacios para reservar
+          {isVisitor
+            ? "Explora categorías del territorio. Únete para pedir ayuda, reservar o publicar."
+            : "Profesionales y ayuda · espacios para reservar"}
         </p>
       </header>
 

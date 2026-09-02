@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LifePlaceAction, LifePlaceContext } from "@life-community-os/types";
 import { fetchLifePlace } from "@/lib/life-place/life-place-client";
+import {
+  LIFE_PLACE_MEMBER_ACTION_KINDS,
+  visitorConversionHref,
+} from "@/lib/membership/visitor-experience";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { LifePlaceSheet } from "./LifePlaceSheet";
 
 export type LifePlaceHostProps = {
@@ -20,7 +25,9 @@ export function LifePlaceHost({
   onClose,
 }: LifePlaceHostProps) {
   const router = useRouter();
+  const { currentUser } = useCurrentUser();
   const [context, setContext] = useState<LifePlaceContext | null>(null);
+  const isVisitor = !currentUser.hasMembership;
 
   useEffect(() => {
     if (!locationId) {
@@ -40,6 +47,10 @@ export function LifePlaceHost({
   if (!locationId) return null;
 
   const onAction = (action: LifePlaceAction) => {
+    if (isVisitor && LIFE_PLACE_MEMBER_ACTION_KINDS.has(action.kind)) {
+      router.push(visitorConversionHref(currentUser.authenticated));
+      return;
+    }
     if (action.kind === "contact") {
       window.open(action.href, "_blank", "noopener,noreferrer");
       return;
@@ -61,10 +72,14 @@ export function LifePlaceHost({
             context={context}
             onAction={onAction}
             onClose={onClose}
+            isVisitor={isVisitor}
             onExploreExperiences={() =>
               router.push(
                 `/discover?place=${encodeURIComponent(context.location.id)}`,
               )
+            }
+            onJoin={() =>
+              router.push(visitorConversionHref(currentUser.authenticated))
             }
           />
         ) : (

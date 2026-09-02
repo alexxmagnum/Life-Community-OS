@@ -24,7 +24,13 @@ import { locationCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import type { BusinessProfile } from "@life-community-os/types";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
+import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
+import {
+  VISITOR_JOIN_HEADLINE,
+  visitorConversionHref,
+  visitorConversionLabel,
+} from "@/lib/membership/visitor-experience";
 
 /**
  * Descubrir = explore the territory.
@@ -32,7 +38,8 @@ import { useTerritory } from "@/providers/TerritoryProvider";
  */
 export function DiscoverScreen() {
   const router = useRouter();
-  const { isFeatureEnabled, hasCapability, configuration } = useTenant();
+  const { isFeatureEnabled, hasCapability, configuration, authenticated, hasMembership } = useTenant();
+  const { sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const discoverQuery = discoverQueryFromActive(activeTerritory);
   const { allLocations } = useTenantLocations(
@@ -45,11 +52,12 @@ export function DiscoverScreen() {
 
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
+  const isVisitor = !hasMembership;
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!canLocal || !isFeatureEnabled("services")) {
+      if (!canLocal || !sessionReady || !isFeatureEnabled("services")) {
         if (!cancelled) setLocalBusinesses([]);
         return;
       }
@@ -82,6 +90,7 @@ export function DiscoverScreen() {
     };
   }, [
     canLocal,
+    sessionReady,
     isFeatureEnabled,
     configuration.tenantId,
     query,
@@ -200,6 +209,25 @@ export function DiscoverScreen() {
                 ))}
               </LocalLifeRail>
             </CommunityLifeSection>
+          ) : null}
+
+          {isVisitor ? (
+            <section className="rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[var(--shadow-elev-1)]">
+              <p className="font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
+                {VISITOR_JOIN_HEADLINE}
+              </p>
+              <p className="mt-2 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+                Crea tu cuenta para participar en experiencias, reservar y crear
+                acciones útiles en el territorio.
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push(visitorConversionHref(authenticated))}
+                className="ui-press mt-4 min-h-[44px] rounded-full bg-[var(--color-action-primary)] px-5 text-[14px] font-semibold text-[var(--color-text-on-action)]"
+              >
+                {visitorConversionLabel(authenticated)}
+              </button>
+            </section>
           ) : null}
         </div>
       )}

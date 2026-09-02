@@ -45,6 +45,13 @@ import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
+import {
+  VISITOR_HOME_DESCRIPTION,
+  VISITOR_JOIN_HEADLINE,
+  VISITOR_VALUE_PROPOSITION,
+  visitorConversionHref,
+  visitorConversionLabel,
+} from "@/lib/membership/visitor-experience";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
@@ -122,22 +129,31 @@ export function HomeScreen() {
   );
   const todaySectionRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
-    const current = madridHour();
-    setHour(current);
-    setGreeting(
-      belongingGreeting(
-        currentUser.displayName || currentUser.email?.split("@")[0] || "vecino",
-        current,
-      ),
-    );
-  }, [currentUser.displayName, currentUser.email]);
-
   const territoryName =
     activeTerritory.territoryName ??
     theme.identity?.territoryName ??
     theme.logoText;
   const placeName = theme.shortName || territoryName;
+
+  useEffect(() => {
+    const current = madridHour();
+    setHour(current);
+    const isVisitor = !currentUser.authenticated || !currentUser.hasMembership;
+    const displayName =
+      currentUser.displayName || currentUser.email?.split("@")[0] || "vecino";
+    setGreeting(
+      isVisitor
+        ? `Bienvenido a ${placeName}`
+        : belongingGreeting(displayName, current),
+    );
+  }, [
+    currentUser.authenticated,
+    currentUser.displayName,
+    currentUser.email,
+    currentUser.hasMembership,
+    placeName,
+  ]);
+
   const todayTitle = resolveCopyTemplate(
     theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
     placeName,
@@ -149,6 +165,9 @@ export function HomeScreen() {
     isFeatureEnabled("experiences") &&
     hasCapability(CAPABILITIES.experienceView) &&
     homeQuery.sources.includes("experience");
+  const isVisitor = !authenticated || !hasMembership;
+  const canCreateExperience =
+    canExperiences && hasCapability(CAPABILITIES.experienceCreate);
 
   useEffect(() => {
     let cancelled = false;
@@ -358,10 +377,15 @@ export function HomeScreen() {
   }, [hour, moments.length, moves.length]);
 
   /** Territory name + what is happening today — place is context, not the actor. */
-  const tagline =
-    moments.length > 0
+  const tagline = isVisitor
+    ? `${placeName}\ntiene vida cerca de ti.`
+    : moments.length > 0
       ? `${placeName}\ntiene actividad hoy.`
       : `${placeName}\nestá tranquila hoy.`;
+
+  const heroDescription = isVisitor
+    ? VISITOR_HOME_DESCRIPTION
+    : "Descubre, participa y disfruta de lo que ocurre cerca de ti.";
 
   return (
     <div className="life-home overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))] pb-1">
@@ -370,12 +394,31 @@ export function HomeScreen() {
         initialIndex={heroInitialIndex}
         greeting={greeting}
         tagline={tagline}
-        description="Descubre, participa y disfruta de lo que ocurre cerca de ti."
+        description={heroDescription}
         pills={heroPills}
         underChrome={false}
       />
 
       <div className="space-y-7 px-4 md:px-0">
+      {isVisitor ? (
+        <section className="rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[var(--shadow-elev-1)]">
+          <p className="text-[14px] leading-snug text-[var(--color-text-secondary)]">
+            {VISITOR_VALUE_PROPOSITION}
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(visitorConversionHref(authenticated))}
+            className="ui-press ui-lift mt-4 w-full rounded-[16px] bg-[var(--color-action-primary)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)]"
+          >
+            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-on-action)]">
+              {VISITOR_JOIN_HEADLINE}
+            </span>
+            <span className="mt-1 block text-[14px] text-[var(--color-text-on-action)]/85">
+              {visitorConversionLabel(authenticated)} para participar y crear.
+            </span>
+          </button>
+        </section>
+      ) : null}
       {/* ── HOY — Territory first, then the life happening in it ── */}
       <section ref={todaySectionRef} className="scroll-mt-[64px]">
         <HomeSectionHead title={todayTitle} sparkle />
@@ -405,14 +448,18 @@ export function HomeScreen() {
               description={LIVING_EMPTY_DESCRIPTION}
               imageUrl={LIVING_EMPTY_GLYPH}
               actionLabel={
-                canExperiences && hasCapability(CAPABILITIES.experienceCreate)
+                canCreateExperience
                   ? LIVING_EMPTY_CTA
-                  : undefined
+                  : isVisitor
+                    ? visitorConversionLabel(authenticated)
+                    : undefined
               }
               onAction={
-                canExperiences && hasCapability(CAPABILITIES.experienceCreate)
+                canCreateExperience
                   ? () => openActionComposer({ source: "home" })
-                  : undefined
+                  : isVisitor
+                    ? () => router.push(visitorConversionHref(authenticated))
+                    : undefined
               }
             />
           </div>

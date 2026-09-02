@@ -19,6 +19,10 @@ import {
   togglePersonalFavorite,
 } from "@/lib/personal/personal-client";
 import { locationCardImageUrl } from "@/lib/location/location-card-asset";
+import {
+  LIFE_PLACE_MEMBER_ACTION_KINDS,
+  visitorConversionLabel,
+} from "@/lib/membership/visitor-experience";
 import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
@@ -27,6 +31,8 @@ export type LifePlaceSheetProps = {
   onAction: (action: LifePlaceAction) => void;
   onClose: () => void;
   onExploreExperiences?: () => void;
+  isVisitor?: boolean;
+  onJoin?: () => void;
 };
 
 export function LifePlaceSheet({
@@ -34,6 +40,8 @@ export function LifePlaceSheet({
   onAction,
   onClose,
   onExploreExperiences,
+  isVisitor = false,
+  onJoin,
 }: LifePlaceSheetProps) {
   const { configuration } = useTenant();
   const { currentUser } = useCurrentUser();
@@ -84,11 +92,12 @@ export function LifePlaceSheet({
 
   const primaryActions = context.actions.filter(
     (action) =>
-      action.kind === "join_experience" ||
-      action.kind === "reserve_resource" ||
-      action.kind === "participate" ||
-      action.kind === "navigate" ||
-      action.kind === "view_experiences",
+      (action.kind === "join_experience" ||
+        action.kind === "reserve_resource" ||
+        action.kind === "participate" ||
+        action.kind === "navigate" ||
+        action.kind === "view_experiences") &&
+      (!isVisitor || !LIFE_PLACE_MEMBER_ACTION_KINDS.has(action.kind)),
   );
   const secondaryActions = context.actions.filter(
     (action) =>
@@ -97,8 +106,14 @@ export function LifePlaceSheet({
       action.kind !== "participate" &&
       action.kind !== "navigate" &&
       action.kind !== "view_experiences" &&
-      action.kind !== "create_activity",
+      action.kind !== "create_activity" &&
+      (!isVisitor || !LIFE_PLACE_MEMBER_ACTION_KINDS.has(action.kind)),
   );
+  const visitorHasMemberActions = isVisitor
+    ? context.actions.some((action) =>
+        LIFE_PLACE_MEMBER_ACTION_KINDS.has(action.kind),
+      )
+    : false;
 
   return (
     <aside
@@ -257,10 +272,28 @@ export function LifePlaceSheet({
                 {action.label || lifePlaceActionLabel(action.kind)}
               </button>
             ))}
+            {visitorHasMemberActions && onJoin ? (
+              <>
+                <button
+                  type="button"
+                  onClick={onJoin}
+                  className="ui-press rounded-full bg-[var(--color-action-primary)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-on-action)]"
+                >
+                  Únete para participar
+                </button>
+                <button
+                  type="button"
+                  onClick={onJoin}
+                  className="ui-press rounded-full border border-[var(--color-border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-primary)]"
+                >
+                  Regístrate para reservar
+                </button>
+              </>
+            ) : null}
           </div>
         </section>
 
-        {context.community ? (
+        {context.community && !isVisitor ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
               Quién participa
@@ -303,7 +336,7 @@ export function LifePlaceSheet({
           </section>
         ) : null}
 
-        {context.nearbyHelp && context.nearbyHelp.length > 0 ? (
+        {context.nearbyHelp && context.nearbyHelp.length > 0 && !isVisitor ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
               Ayuda entre vecinos
@@ -338,13 +371,22 @@ export function LifePlaceSheet({
         {upcoming.length > 0 ? (
           <section className="mt-5">
             <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-              Próximas actividades
+              {isVisitor ? "Actividades públicas" : "Próximas actividades"}
             </h3>
             <ul className="mt-2 space-y-1 text-[14px] text-[var(--color-text-secondary)]">
               {upcoming.map((item) => (
                 <li key={item.id}>{item.title}</li>
               ))}
             </ul>
+            {isVisitor && onJoin ? (
+              <button
+                type="button"
+                onClick={onJoin}
+                className="ui-press mt-3 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-primary)]"
+              >
+                {visitorConversionLabel(currentUser.authenticated)} para participar
+              </button>
+            ) : null}
           </section>
         ) : null}
       </div>

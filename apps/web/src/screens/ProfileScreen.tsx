@@ -190,29 +190,29 @@ export function ProfileScreen() {
     return (
       <MobileScreen dense>
         <ScreenHeader
-          title="Acceso"
-          subtitle="Explora Life Panorámica. Crea tu cuenta para unirte a la comunidad."
+          title={`Bienvenido a LIFE ${configuration.branding.name}`}
+          subtitle="Explora el territorio antes de unirte a la comunidad."
         />
         <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
-            Como visitante puedes ver Home, Discover y los lugares del
-            territorio. Para guardar preferencias, reservar o crear
-            experiencias necesitas una cuenta.
+            Como visitante puedes ver Home, Discover, lugares y comercios del
+            territorio. Para participar, reservar o crear experiencias únete a
+            la comunidad.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
               type="button"
               className="min-h-[44px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/register")}
             >
-              Iniciar sesión
+              Crear cuenta
             </button>
             <button
               type="button"
               className="min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-              onClick={() => router.push("/register")}
+              onClick={() => router.push("/login")}
             >
-              Crear cuenta
+              Iniciar sesión
             </button>
           </div>
         </section>
