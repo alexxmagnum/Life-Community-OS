@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { isAuthConfigured } from "@life-community-os/auth";
+import { membershipGrantsCommunityAccess } from "@life-community-os/types";
 import { ensureDomainMembership } from "@/lib/auth/ensure-domain-membership";
 import { AUTH_COOKIE, setAuthCookie } from "@/lib/auth/session-cookies";
 import { resolveRequestTenantSlug } from "@/lib/tenant/resolve-request-tenant";
@@ -19,6 +20,11 @@ function publicClient() {
   });
 }
 
+/**
+ * Account creation — creates auth identity + person.
+ * Membership stays pending until Join Community (Account ≠ Membership).
+ * Session cookies enable automatic login when the provider returns a session.
+ */
 export async function POST(request: Request) {
   if (!isAuthConfigured()) {
     return NextResponse.json(
@@ -31,7 +37,15 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { email?: string; password?: string; displayName?: string; role?: string; tenantId?: string; territoryId?: string; membershipId?: string };
+  let body: {
+    email?: string;
+    password?: string;
+    displayName?: string;
+    role?: string;
+    tenantId?: string;
+    territoryId?: string;
+    membershipId?: string;
+  };
   try {
     body = (await request.json()) as {
       email?: string;
@@ -78,25 +92,29 @@ export async function POST(request: Request) {
   }
 
   const tenantSlug = resolveRequestTenantSlug(request);
-  let membershipPayload: {
+  let accountPayload: {
     personId: string;
-    role: string;
-    membershipId: string;
+    role: string | null;
+    membershipId: string | null;
     hasMembership: boolean;
+    membershipStatus: string | null;
   } | null = null;
 
   if (data.user) {
+    // Person + pending membership — community join remains a separate step.
     const membership = await ensureDomainMembership({
       tenantSlug,
       providerReference: data.user.id,
       email: data.user.email ?? email,
       displayName: body.displayName?.trim() || null,
+      status: "pending",
     });
-    membershipPayload = {
+    accountPayload = {
       personId: membership.personId,
       role: membership.role,
       membershipId: membership.membershipId,
-      hasMembership: true,
+      hasMembership: membershipGrantsCommunityAccess(membership.status),
+      membershipStatus: membership.status,
     };
   }
 
@@ -105,10 +123,11 @@ export async function POST(request: Request) {
       ? { id: data.user.id, email: data.user.email ?? null }
       : null,
     needsEmailConfirmation: !data.session,
-    ...membershipPayload,
+    ...accountPayload,
     tenantSlug,
   });
 
+  // Persistent session cookies — same mechanism as login (no parallel auth).
   if (data.session) {
     setAuthCookie(
       response,

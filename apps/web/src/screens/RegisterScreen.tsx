@@ -3,101 +3,108 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FlowScreenHeader, MobileScreen } from "@life-community-os/ui";
+import { RequiredFieldLabel } from "@/components/auth/RequiredFieldLabel";
+import {
+  AUTH_EMAIL_INVALID,
+  AUTH_NETWORK,
+  AUTH_PASSWORD_MISMATCH,
+  AUTH_PASSWORD_WEAK,
+  isStrongEnoughPassword,
+  isValidAuthEmail,
+  mapRegisterError,
+  passwordsMatch,
+} from "@/lib/auth/auth-form-messages";
 
+/**
+ * Account creation only — Membership join happens later on /me.
+ * Account ≠ Membership. Authentication ≠ Community.
+ */
 export function RegisterScreen() {
   const router = useRouter();
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [communityCode, setCommunityCode] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
     setInfo(null);
+
+    if (!isValidAuthEmail(email)) {
+      setError(AUTH_EMAIL_INVALID);
+      return;
+    }
+    if (!isStrongEnoughPassword(password)) {
+      setError(AUTH_PASSWORD_WEAK);
+      return;
+    }
+    if (!passwordsMatch(password, passwordConfirm)) {
+      setError(AUTH_PASSWORD_MISMATCH);
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, displayName }),
+        body: JSON.stringify({ email, password }),
       });
       const data = (await res.json()) as {
         error?: string;
         needsEmailConfirmation?: boolean;
       };
       if (!res.ok) {
-        setError(
-          data.error === "auth_not_configured"
-            ? "El registro aún no está disponible. Prueba unirte desde Perfil."
-            : "No pudimos crear la cuenta. Revisa los datos e inténtalo de nuevo.",
-        );
+        setError(mapRegisterError(data.error));
         return;
       }
       if (data.needsEmailConfirmation) {
         setInfo("Revisa tu email para confirmar la cuenta.");
         return;
       }
-      if (communityCode.trim()) {
-        await fetch("/api/auth/community-code", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: communityCode.trim() }),
-        });
-      }
+      // Session cookies set by API → automatic login → membership join on /me
       router.replace("/me");
       router.refresh();
     } catch {
-      setError("Error de red. Inténtalo de nuevo.");
+      setError(AUTH_NETWORK);
     } finally {
       setLoading(false);
     }
   };
 
   const fieldClass =
-    "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]";
+    "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[16px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)]";
 
   return (
-    <MobileScreen>
+    <MobileScreen dense className="gap-5 pb-4">
       <FlowScreenHeader
         title="Crear cuenta"
-        subtitle="Únete a tu comunidad"
+        subtitle="Únete a LIFE y descubre tu comunidad"
         onBack={() => router.push("/login")}
         onExit={() => router.push("/")}
       />
-      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-3" onSubmit={onSubmit} noValidate>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Nombre
-          </span>
-          <input
-            className={fieldClass}
-            type="text"
-            autoComplete="name"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        </label>
-        <label className="block space-y-1.5">
-          <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Email
-          </span>
+          <RequiredFieldLabel>Email</RequiredFieldLabel>
           <input
             className={fieldClass}
             type="email"
+            inputMode="email"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoFocus
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Contraseña
-          </span>
+          <RequiredFieldLabel>Contraseña</RequiredFieldLabel>
           <input
             className={fieldClass}
             type="password"
@@ -109,15 +116,15 @@ export function RegisterScreen() {
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Código de comunidad (opcional)
-          </span>
+          <RequiredFieldLabel>Confirmar contraseña</RequiredFieldLabel>
           <input
             className={fieldClass}
-            type="text"
-            placeholder="Ej. PANORAMICA"
-            value={communityCode}
-            onChange={(e) => setCommunityCode(e.target.value)}
+            type="password"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={passwordConfirm}
+            onChange={(e) => setPasswordConfirm(e.target.value)}
           />
         </label>
         {error ? (
@@ -134,8 +141,15 @@ export function RegisterScreen() {
           {loading ? "Creando…" : "Crear cuenta"}
         </button>
       </form>
-      <p className="mt-4 text-[13px] text-[var(--color-text-tertiary)]">
-        ¿Ya tienes cuenta? Inicia sesión y únete desde tu perfil.
+      <p className="pb-2 text-center text-[14px] leading-5 text-[var(--color-text-tertiary)]">
+        ¿Ya tienes cuenta?{" "}
+        <button
+          type="button"
+          className="font-semibold text-[var(--color-action-primary)]"
+          onClick={() => router.push("/login")}
+        >
+          Iniciar sesión
+        </button>
       </p>
     </MobileScreen>
   );
