@@ -224,7 +224,7 @@ describe("Action Composer isolation", () => {
     assert.equal(listing.territoryId, LIFE_PANORAMICA_TERRITORY_UUID);
   });
 
-  it("TEST 8 — Life Place preselects Location", () => {
+  it("TEST 8 — Life Place links context without starting creation", () => {
     const pool = createLocation({
       id: "loc-pool-composer",
       tenantId: PANO,
@@ -241,11 +241,19 @@ describe("Action Composer isolation", () => {
       tenantId: PANO,
       territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
       location: pool,
-      canCreateActivity: true,
     });
-    const action = context.actions.find((item) => item.kind === "create_activity");
-    assert.ok(action);
-    assert.equal(action?.href.includes("locationId=loc-pool-composer"), true);
+    const viewExperiences = context.actions.find(
+      (item) => item.kind === "view_experiences",
+    );
+    assert.ok(viewExperiences);
+    assert.equal(
+      viewExperiences?.href.includes("place=loc-pool-composer"),
+      true,
+    );
+    assert.equal(
+      context.actions.some((item) => item.kind === "create_activity"),
+      false,
+    );
     const experience = CommunityActionRegistry.list({
       hasMembership: true,
       capabilities: permissionsForRole("member", PANO),

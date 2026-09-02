@@ -191,7 +191,12 @@ describe("Magic Community Experience isolation", () => {
     });
     assert.equal(context.location.id, "loc-pool-magic");
     assert.equal(context.location.name, "Piscina");
-    assert.ok(context.actions.some((item) => item.kind === "create_activity"));
+    assert.ok(context.actions.some((item) => item.kind === "navigate"));
+    assert.ok(context.actions.some((item) => item.kind === "view_experiences"));
+    assert.equal(
+      context.actions.some((item) => item.kind === "create_activity"),
+      false,
+    );
   });
 
   it("TEST 6 — Discover uses the same feed query", () => {
@@ -209,16 +214,16 @@ describe("Magic Community Experience isolation", () => {
     assert.equal(home.tenantId, discover.tenantId);
   });
 
-  it("TEST 7 — empty activity invites to create", () => {
+  it("TEST 7 — empty activity invites to create experiences", () => {
     const living = partitionLivingCommunityFeed([]);
     assert.equal(living.moments.length, 0);
-    assert.equal(LIVING_EMPTY_TITLE, "La comunidad está despertando");
-    assert.equal(LIVING_EMPTY_CTA, "Crear plan");
+    assert.equal(LIVING_EMPTY_TITLE, "Nada programado todavía");
+    assert.equal(LIVING_EMPTY_CTA, "Crear experiencia");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
-      "Este lugar está esperando su primera historia.",
+      "Aún no hay experiencias en este lugar",
     );
-    assert.equal(LIVING_PLACE_EMPTY_CTA, "Crear algo aquí");
+    assert.equal(LIVING_PLACE_EMPTY_CTA, "Ver experiencias");
   });
 
   it("TEST 8 — a disabled capability hides the action", () => {
@@ -409,7 +414,12 @@ describe("Premium Experience Polish isolation", () => {
       canCreateActivity: true,
     });
     assert.equal(context.location.id, "loc-pool-premium");
-    assert.ok(context.actions.some((item) => item.kind === "create_activity"));
+    assert.ok(context.actions.some((item) => item.kind === "navigate"));
+    assert.ok(context.actions.some((item) => item.kind === "view_experiences"));
+    assert.equal(
+      context.actions.some((item) => item.kind === "create_activity"),
+      false,
+    );
   });
 
   it("TEST 7 — feed keeps real domain data", async () => {

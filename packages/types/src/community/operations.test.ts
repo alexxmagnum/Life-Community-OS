@@ -165,9 +165,10 @@ describe("Community Operations Context", () => {
     assert.equal(next.now.length + next.next.length, pulse.now.length + pulse.next.length);
   });
 
-  it("titles the composer from place or today, never a generic post", () => {
+  it("titles the composer from home or experience, never from a place", () => {
     assert.equal(composerTitleForSource("home"), "Crear para hoy");
-    assert.equal(composerTitleForSource("life_place"), "Crear en este lugar");
+    assert.equal(composerTitleForSource("life_place"), "Crear experiencia");
+    assert.equal(composerTitleForSource("discover"), "Crear experiencia");
   });
 
   it("keeps service reservations valid without a physical resource", () => {

@@ -148,13 +148,13 @@ describe("Phase 18I-P product polish", () => {
     assert.equal(shell.includes("currentUser.hasMembership"), true);
   });
 
-  it("TEST 7 — Magic Plus crea experiencia", () => {
+  it("TEST 7 — Magic Plus enruta creación universal", () => {
     const composer = readFileSync(
       path.join(HERE, "..", "..", "components", "community", "ActionComposer.tsx"),
       "utf8",
     );
-    assert.equal(composer.includes("Crear experiencia"), true);
-    assert.equal(composer.includes("Organiza planes"), true);
+    assert.equal(composer.includes("¿Qué quieres crear?"), true);
+    assert.equal(composer.includes("dominio correcto"), true);
   });
 
   it("TEST 8 — No aparece a visitor", () => {
@@ -176,14 +176,14 @@ describe("Phase 18I-P product polish", () => {
     );
   });
 
-  it("TEST 9 — Place no muestra CTA muerto", () => {
+  it("TEST 9 — Place no muestra CTA de creación", () => {
     const sheet = readFileSync(
       path.join(HERE, "..", "..", "components", "life-place", "LifePlaceSheet.tsx"),
       "utf8",
     );
-    assert.equal(sheet.includes("Crear experiencia aquí"), true);
-    assert.equal(sheet.includes("Explorar experiencias"), true);
-    assert.equal(sheet.includes("canCreateExperience"), true);
+    assert.equal(sheet.includes("Crear experiencia aquí"), false);
+    assert.equal(sheet.includes("Crear algo aquí"), false);
+    assert.equal(sheet.includes("LIVING_PLACE_EMPTY_TITLE"), true);
   });
 
   it("TEST 10 — Experiencia contextual funciona", async () => {

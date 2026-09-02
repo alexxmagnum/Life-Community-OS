@@ -127,6 +127,46 @@ function representationKeyFor(
   return profileFor(experienceType).representationKey;
 }
 
+/** Semantic card asset key for UI surfaces (Discover, Home, Life Place). */
+export function cardAssetKeyForExperienceType(
+  experienceType: LocationExperienceType,
+  category = "",
+): string {
+  const key = category.trim().toLowerCase();
+  if (key.includes("golf")) return "sports.golf.card";
+  if (key.includes("football") || key.includes("fútbol") || key.includes("futbol")) {
+    return "sports.football.card";
+  }
+  switch (experienceType) {
+    case "restaurant":
+    case "cafe":
+      return "experiences.eat.card";
+    case "shop":
+      return "community.marketplace.card";
+    case "professional_service":
+      return "services.maintenance.card";
+    case "sports_facility":
+      return "sports.sports.card";
+    case "community_facility":
+      return "services.spaces-reservations.card";
+    case "community_event":
+      return "community.recommendations.card";
+    case "community_place":
+    default:
+      return "navigation.discover.card";
+  }
+}
+
+export function cardAssetKeyForCategory(
+  category: string,
+  type: LocationType,
+): string {
+  return cardAssetKeyForExperienceType(
+    experienceTypeFor(category, type),
+    category,
+  );
+}
+
 function profileFor(
   experienceType: LocationExperienceType,
 ): Pick<

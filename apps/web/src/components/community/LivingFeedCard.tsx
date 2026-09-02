@@ -15,9 +15,7 @@ import {
   type CommunityFeedItem,
 } from "@life-community-os/types";
 import { ActivityCard, staggerItemProps } from "@life-community-os/ui";
-
-const FALLBACK_IMAGE =
-  "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
+import { communityFeedCardImageUrl } from "@/lib/location/location-card-asset";
 
 export type LivingFeedCardProps = {
   item: CommunityFeedItem;
@@ -31,7 +29,7 @@ export type LivingFeedCardProps = {
 export function LivingFeedCard({
   item,
   index = 0,
-  fallbackImage = FALLBACK_IMAGE,
+  fallbackImage,
   onOpenPlace,
   onOpenHref,
   reason,
@@ -39,6 +37,10 @@ export function LivingFeedCard({
   const stagger = staggerItemProps(index);
   const href = communityFeedItemHref(item);
   const state = livingFeedCardState(item);
+  const imageUrl =
+    item.metadata?.imageUrl?.trim() ||
+    fallbackImage ||
+    communityFeedCardImageUrl(item);
   const open = () => {
     if (item.locationId && onOpenPlace) {
       onOpenPlace(item.locationId);
@@ -62,7 +64,7 @@ export function LivingFeedCard({
             .filter(Boolean)
             .join(" · ") || undefined
         }
-        imageUrl={item.metadata?.imageUrl?.trim() || fallbackImage}
+        imageUrl={imageUrl}
         badgeLabel={livingFeedCardStateLabel(state)}
         ctaLabel={communityFeedPrimaryLabel(item)}
         onClick={open}

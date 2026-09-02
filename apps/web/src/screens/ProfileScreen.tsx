@@ -168,6 +168,10 @@ export function ProfileScreen() {
   const placeName =
     theme.identity?.territoryName ?? theme.logoText ?? "Tu comunidad";
 
+  const isVisitor = !currentUser.authenticated;
+  const isActiveMember =
+    currentUser.hasMembership && currentUser.membershipStatus === "active";
+
   const session = {
     configured: currentUser.configured,
     authenticated: currentUser.authenticated,
@@ -182,15 +186,53 @@ export function ProfileScreen() {
     router.refresh();
   };
 
+  if (isVisitor) {
+    return (
+      <MobileScreen dense>
+        <ScreenHeader
+          title="Acceso"
+          subtitle="Explora Life Panorámica. Crea tu cuenta para unirte a la comunidad."
+        />
+        <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-4">
+          <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
+            Como visitante puedes ver Home, Discover y los lugares del
+            territorio. Para guardar preferencias, reservar o crear
+            experiencias necesitas una cuenta.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="min-h-[44px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
+              onClick={() => router.push("/login")}
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              className="min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+              onClick={() => router.push("/register")}
+            >
+              Crear cuenta
+            </button>
+          </div>
+        </section>
+      </MobileScreen>
+    );
+  }
+
   return (
     <MobileScreen dense>
       <ScreenHeader
-        title="Mi vida aquí"
-        subtitle="Lo que has creado, en lo que has participado y dónde has ayudado."
+        title="Mi perfil"
+        subtitle={
+          isActiveMember
+            ? "Identidad, relación con la comunidad y acciones personales."
+            : "No formas parte todavía de una comunidad."
+        }
       />
 
       <ProfileCard
-        name={currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino"}
+        name={currentUser.displayName || currentUser.email?.split("@")[0] || "Usuario"}
         membershipLabel={profileMembershipLabel({
           authenticated: currentUser.authenticated,
           hasMembership: currentUser.hasMembership,
@@ -226,6 +268,8 @@ export function ProfileScreen() {
 
       <JoinCommunityPanel onJoined={() => void refreshSession()} />
 
+      {isActiveMember ? (
+      <>
       {personId ? (
         <section className="space-y-3">
           <h2 className="text-[15px] font-semibold text-[var(--color-text-primary)]">
@@ -512,7 +556,7 @@ export function ProfileScreen() {
           Mi vida aquí
         </h2>
         <p className="text-[13px] leading-5 text-[var(--color-text-tertiary)]">
-          Solo tú ves esto. No es un muro público.
+          Tu actividad, reservas y participación — solo tú ves esto.
         </p>
         <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
           He creado
@@ -651,6 +695,8 @@ export function ProfileScreen() {
           />
         ) : null}
       </section>
+      </>
+      ) : null}
 
       {hasCapability(CAPABILITIES.manageEnter) ? (
         <p className="rounded-[14px] bg-[var(--color-surface-muted)] px-3.5 py-3 text-[13px] leading-5 text-[var(--color-text-secondary)]">

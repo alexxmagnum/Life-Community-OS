@@ -4,7 +4,6 @@
  */
 
 import {
-  CAPABILITIES,
   createLifePlaceContext,
   dateOffsetIso,
   isProfessionalBusiness,
@@ -23,7 +22,6 @@ import {
   businessTrustLabels,
 } from "@life-community-os/types";
 import type { RequestActor } from "@/lib/auth/request-actor";
-import { actorHasCapability } from "@/lib/auth/permissions";
 import {
   getBusinessByLocationServer,
   listBusinessesServer,
@@ -319,10 +317,6 @@ export async function resolveLifePlace(
         )
       : null);
 
-  const canCreateActivity =
-    includeLife &&
-    actorHasCapability(permissions, CAPABILITIES.experienceCreate);
-
   const context = createLifePlaceContext({
     tenantId,
     territoryId,
@@ -351,7 +345,6 @@ export async function resolveLifePlace(
           }
         : undefined,
     cover: cover?.reference,
-    canCreateActivity,
     importantNotice: includeLife
       ? (
           await CommunityOperationsService.announcements({

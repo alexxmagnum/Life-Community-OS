@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LifePlaceAction, LifePlaceContext } from "@life-community-os/types";
 import { fetchLifePlace } from "@/lib/life-place/life-place-client";
-import { openActionComposer } from "@/lib/community/action-composer-client";
-import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
-import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { LifePlaceSheet } from "./LifePlaceSheet";
 
 export type LifePlaceHostProps = {
@@ -23,12 +20,7 @@ export function LifePlaceHost({
   onClose,
 }: LifePlaceHostProps) {
   const router = useRouter();
-  const { hasCapability } = useTenant();
-  const { currentUser } = useCurrentUser();
   const [context, setContext] = useState<LifePlaceContext | null>(null);
-  const canCreateExperience =
-    currentUser.hasMembership &&
-    hasCapability(CAPABILITIES.experienceCreate);
 
   useEffect(() => {
     if (!locationId) {
@@ -69,17 +61,10 @@ export function LifePlaceHost({
             context={context}
             onAction={onAction}
             onClose={onClose}
-            canCreateExperience={canCreateExperience}
-            onExploreExperiences={() => router.push("/discover")}
-            onCompose={
-              canCreateExperience
-                ? () =>
-                    openActionComposer({
-                      source: "life_place",
-                      locationId: context.location.id,
-                      locationName: context.location.name,
-                    })
-                : undefined
+            onExploreExperiences={() =>
+              router.push(
+                `/discover?place=${encodeURIComponent(context.location.id)}`,
+              )
             }
           />
         ) : (

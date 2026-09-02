@@ -32,8 +32,8 @@ export function ActionComposer({
   sections,
   locationName,
   source,
-  title = "Crear experiencia",
-  subtitle = "Organiza planes, actividades y encuentros en el territorio",
+  title = "¿Qué quieres crear?",
+  subtitle = "Elige una intención y te llevamos al dominio correcto",
   emptyMessage = "Descubre qué puedes crear",
 }: ActionComposerProps) {
   const place = locationName?.trim();

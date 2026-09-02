@@ -250,8 +250,7 @@ export function composerTitleForSource(
   source?: CommunityCreationSource,
 ): string {
   if (source === "home") return "Crear para hoy";
-  if (source === "life_place") return "Crear en este lugar";
-  return "¿Qué quieres aportar?";
+  return "Crear experiencia";
 }
 
 export function isOpaqueDailyLifeEntity(name: string): boolean {

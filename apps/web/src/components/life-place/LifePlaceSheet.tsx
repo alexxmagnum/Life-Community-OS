@@ -5,7 +5,7 @@
  * Reused from Life Map, Home and Discover. Does not own domain data.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LIVING_PLACE_EMPTY_TITLE,
   lifePlaceActionLabel,
@@ -14,11 +14,11 @@ import {
   type LifePlaceAction,
   type LifePlaceContext,
 } from "@life-community-os/types";
-import { LIVING_PLACE_GLYPH } from "@/lib/community/composer-glyphs";
 import {
   fetchPersonalContext,
   togglePersonalFavorite,
 } from "@/lib/personal/personal-client";
+import { locationCardImageUrl } from "@/lib/location/location-card-asset";
 import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 
@@ -26,8 +26,6 @@ export type LifePlaceSheetProps = {
   context: LifePlaceContext;
   onAction: (action: LifePlaceAction) => void;
   onClose: () => void;
-  onCompose?: () => void;
-  canCreateExperience?: boolean;
   onExploreExperiences?: () => void;
 };
 
@@ -35,8 +33,6 @@ export function LifePlaceSheet({
   context,
   onAction,
   onClose,
-  onCompose,
-  canCreateExperience = false,
   onExploreExperiences,
 }: LifePlaceSheetProps) {
   const { configuration } = useTenant();
@@ -46,9 +42,20 @@ export function LifePlaceSheet({
   const availability = lifePlaceAvailabilityLabel(context);
   const lead = context.currentActivity[0];
   const when = formatLifePlaceWhen(lead?.startsAt);
-  const identityImage = lead?.metadata?.imageUrl?.trim();
+  const identityImage = useMemo(
+    () =>
+      lead?.metadata?.imageUrl?.trim() ||
+      locationCardImageUrl({
+        category: context.location.category,
+        type: context.location.type as "business",
+        imageUrl: undefined,
+      }),
+    [context.location.category, context.location.type, lead?.metadata?.imageUrl],
+  );
   const facilities = context.resources.map((item) => item.name);
   const upcoming = context.experiences.slice(0, 6);
+  const hasExperiences =
+    context.currentActivity.length > 0 || context.experiences.length > 0;
 
   useEffect(() => {
     if (!currentUser.hasMembership) {
@@ -74,36 +81,41 @@ export function LifePlaceSheet({
     context.territoryId,
     currentUser.hasMembership,
   ]);
-  const joinOrReserve = context.actions.filter(
+
+  const primaryActions = context.actions.filter(
     (action) =>
       action.kind === "join_experience" ||
       action.kind === "reserve_resource" ||
-      action.kind === "participate",
+      action.kind === "participate" ||
+      action.kind === "navigate" ||
+      action.kind === "view_experiences",
   );
-  const otherActions = context.actions.filter(
+  const secondaryActions = context.actions.filter(
     (action) =>
       action.kind !== "join_experience" &&
       action.kind !== "reserve_resource" &&
       action.kind !== "participate" &&
+      action.kind !== "navigate" &&
+      action.kind !== "view_experiences" &&
       action.kind !== "create_activity",
   );
 
   return (
     <aside
       className="ui-sheet overflow-hidden rounded-[22px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] shadow-[var(--shadow-elev-2)]"
-      aria-label="Qué puedo hacer aquí"
+      aria-label="Información del lugar"
     >
       <div className="relative h-36 overflow-hidden bg-[var(--color-surface-muted)]">
         <img
-          src={identityImage || LIVING_PLACE_GLYPH}
+          src={identityImage}
           alt=""
           className={
-            identityImage
+            lead?.metadata?.imageUrl?.trim()
               ? "h-full w-full object-cover"
               : "absolute bottom-3 right-4 h-20 w-20 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.25)]"
           }
         />
-        {identityImage ? (
+        {lead?.metadata?.imageUrl?.trim() ? (
           <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[var(--color-surface-elevated)] via-transparent to-black/20" />
         ) : null}
         <button
@@ -140,15 +152,29 @@ export function LifePlaceSheet({
           ) : null}
         </div>
 
+        {context.location.address ? (
+          <p className="mt-2 text-[13px] text-[var(--color-text-secondary)]">
+            {context.location.address}
+          </p>
+        ) : null}
+
+        {context.location.summary ? (
+          <p className="mt-2 text-[14px] leading-snug text-[var(--color-text-secondary)]">
+            {context.location.summary}
+          </p>
+        ) : null}
+
         <section className="mt-4 rounded-2xl bg-[var(--color-surface-muted)] px-3.5 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-            {context.operations?.status === "important_notice"
-              ? "Aviso"
-              : context.operations?.status === "reservation_open"
-                ? "Reserva abierta"
-                : context.operations?.status === "upcoming"
-                  ? "Próximo"
-                  : "Ahora"}
+            {hasExperiences
+              ? context.operations?.status === "important_notice"
+                ? "Aviso"
+                : context.operations?.status === "reservation_open"
+                  ? "Reserva abierta"
+                  : context.operations?.status === "upcoming"
+                    ? "Próximo"
+                    : "Ahora"
+              : "Experiencias"}
           </p>
           {context.operations?.status === "important_notice" ? (
             <p className="mt-1 text-[14px] text-[var(--color-text-secondary)]">
@@ -174,12 +200,6 @@ export function LifePlaceSheet({
                   {availability}
                 </p>
               ) : null}
-              {typeof (lead as { reason?: string } | undefined)?.reason ===
-              "string" ? (
-                <p className="mt-1 text-[13px] text-[var(--color-text-tertiary)]">
-                  Porque: {(lead as { reason?: string }).reason}
-                </p>
-              ) : null}
             </>
           ) : (
             <>
@@ -193,21 +213,13 @@ export function LifePlaceSheet({
                   <p className="mt-1 text-[15px] leading-snug text-[var(--color-text-primary)]">
                     {LIVING_PLACE_EMPTY_TITLE}
                   </p>
-                  {canCreateExperience && onCompose ? (
-                    <button
-                      type="button"
-                      onClick={onCompose}
-                      className="ui-press mt-3 rounded-full bg-[image:var(--gradient-brand)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-on-action)]"
-                    >
-                      Crear experiencia aquí
-                    </button>
-                  ) : onExploreExperiences ? (
+                  {onExploreExperiences ? (
                     <button
                       type="button"
                       onClick={onExploreExperiences}
                       className="ui-press mt-3 rounded-full border border-[var(--color-border-subtle)] bg-[var(--color-surface-muted)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--color-text-primary)]"
                     >
-                      Explorar experiencias
+                      Ver experiencias
                     </button>
                   ) : null}
                 </>
@@ -221,26 +233,21 @@ export function LifePlaceSheet({
             Acciones
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {joinOrReserve.map((action) => (
+            {primaryActions.map((action) => (
               <button
                 key={`${action.kind}:${action.href}`}
                 type="button"
                 onClick={() => onAction(action)}
-                className="ui-press rounded-full bg-[var(--color-action-primary)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-on-action)]"
+                className={
+                  action.kind === "navigate" || action.kind === "view_experiences"
+                    ? "ui-press rounded-full border border-[var(--color-border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-primary)]"
+                    : "ui-press rounded-full bg-[var(--color-action-primary)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-on-action)]"
+                }
               >
                 {action.label || lifePlaceActionLabel(action.kind)}
               </button>
             ))}
-            {onCompose && now ? (
-              <button
-                type="button"
-                onClick={onCompose}
-                className="ui-press rounded-full border border-[var(--color-border-subtle)] px-3.5 py-2 text-[13px] font-medium text-[var(--color-text-primary)]"
-              >
-                Crear algo aquí
-              </button>
-            ) : null}
-            {otherActions.map((action) => (
+            {secondaryActions.map((action) => (
               <button
                 key={`${action.kind}:${action.href}`}
                 type="button"

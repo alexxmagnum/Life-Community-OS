@@ -38,15 +38,13 @@ import {
 import { getCommunityExperienceFeed, fetchCommunityHome } from "@/lib/community/community-client";
 import { openActionComposer } from "@/lib/community/action-composer-client";
 import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import { locationCardImageUrl, communityFeedCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-
-const LOCATION_NEARBY_FALLBACK_IMAGE =
-  "/assets/3d/platform/community/neighbours/scene/neighbours.webp";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
@@ -95,6 +93,7 @@ export function HomeScreen() {
   const {
     theme,
     isFeatureEnabled,
+    isModuleEnabled,
     hasCapability,
     configuration,
     authenticated,
@@ -314,7 +313,7 @@ export function HomeScreen() {
         name: loc.name,
         imageUrl:
           preferEntityMediaUrl(undefined, loc.imageUrl) ||
-          LOCATION_NEARBY_FALLBACK_IMAGE,
+          locationCardImageUrl(loc),
         distanceLabel: loc.areaLabel ?? configuration.branding.name,
         statusLabel: loc.category,
         ratingLabel: undefined as string | undefined,
@@ -358,11 +357,11 @@ export function HomeScreen() {
     ];
   }, [hour, moments.length, moves.length]);
 
-  /** The break is intentional: place first, then the state it is in. */
+  /** Territory name + what is happening today — place is context, not the actor. */
   const tagline =
     moments.length > 0
-      ? `${placeName}\nestá viva hoy.`
-      : `${placeName}\nrespira tranquila.`;
+      ? `${placeName}\ntiene actividad hoy.`
+      : `${placeName}\nestá tranquila hoy.`;
 
   return (
     <div className="life-home overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))] pb-1">
@@ -432,7 +431,7 @@ export function HomeScreen() {
                 where={presentation.whereLabel}
                 imageUrl={
                   item.metadata?.imageUrl?.trim() ||
-                  LOCATION_NEARBY_FALLBACK_IMAGE
+                  communityFeedCardImageUrl(item)
                 }
                 peopleLabel={communityFeedLivingLabel(item)}
                 statusLabel={presentation.statusLabel}
@@ -475,6 +474,24 @@ export function HomeScreen() {
         </section>
       ) : null}
 
+      {isModuleEnabled("services") ? (
+        <section>
+          <HomeSectionHead title="Resolver algo" />
+          <button
+            type="button"
+            onClick={() => router.push("/services")}
+            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
+          >
+            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
+              Servicios cerca
+            </span>
+            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
+              Profesionales, ayuda vecinal, movilidad y marketplace.
+            </span>
+          </button>
+        </section>
+      ) : null}
+
       {upcomingMoments.length > 0 ? (
         <section>
           <HomeSectionHead title="Próximamente" />
@@ -489,7 +506,7 @@ export function HomeScreen() {
                 where={item.metadata?.locationLabel || placeName}
                 imageUrl={
                   item.metadata?.imageUrl?.trim() ||
-                  LOCATION_NEARBY_FALLBACK_IMAGE
+                  communityFeedCardImageUrl(item)
                 }
                 peopleLabel={communityFeedLivingLabel(item)}
                 statusLabel={reasons[item.id]}
@@ -505,7 +522,7 @@ export function HomeScreen() {
         </section>
       ) : null}
 
-      {favoritePlaces.length > 0 ? (
+      {authenticated && hasMembership && favoritePlaces.length > 0 ? (
         <section>
           <HomeSectionHead title="Mis lugares" actionLabel="Mapa" actionGlyph="map" onAction={() => router.push("/map")} />
           <HomeRail>
@@ -515,7 +532,7 @@ export function HomeScreen() {
                 name={place.name}
                 imageUrl={
                   preferEntityMediaUrl(undefined, place.imageUrl) ||
-                  LOCATION_NEARBY_FALLBACK_IMAGE
+                  locationCardImageUrl(place)
                 }
                 distanceLabel={place.areaLabel ?? configuration.branding.name}
                 statusLabel="Favorito"

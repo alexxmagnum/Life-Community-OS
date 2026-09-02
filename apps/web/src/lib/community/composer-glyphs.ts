@@ -3,24 +3,22 @@
  * Not a domain. Paths are public platform files already in the repo.
  */
 
+import { getAsset } from "@life-community-os/assets";
+
 export const COMPOSER_GLYPH_BY_ACTION: Record<string, string> = {
-  experience_create:
-    "/assets/3d/platform/sports/sports/card/sports.webp",
-  event_create: "/assets/3d/platform/actions/calendar/symbol/calendar.webp",
-  help_request:
-    "/assets/3d/platform/community/neighbour-help/card/neighbour-help.webp",
-  help_offer:
-    "/assets/3d/platform/community/neighbour-help/card/neighbour-help.webp",
-  marketplace_listing:
-    "/assets/3d/platform/community/marketplace/card/marketplace.webp",
-  group_create:
-    "/assets/3d/platform/people/friends-group/scene/friends-group.webp",
-  business_create: "/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp",
-  offer_service: "/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp",
+  experience_create: getAsset("sports.sports.card").path,
+  event_create: getAsset("community.recommendations.card").path,
+  announcement_create: getAsset("community.recommendations.card").path,
+  help_request: getAsset("community.neighbour-help.card").path,
+  help_offer: getAsset("community.neighbour-help.card").path,
+  marketplace_listing: getAsset("community.marketplace.card").path,
+  work_create: getAsset("services.maintenance.card").path,
+  reservation_create: getAsset("services.spaces-reservations.card").path,
+  group_create: getAsset("community.recommendations.card").path,
+  business_create: getAsset("services.maintenance.card").path,
+  offer_service: getAsset("services.maintenance.card").path,
 };
 
-export const LIVING_EMPTY_GLYPH =
-  "/assets/3d/platform/community/heart-community/symbol/heart-community.webp";
+export const LIVING_EMPTY_GLYPH = getAsset("community.recommendations.card").path;
 
-export const LIVING_PLACE_GLYPH =
-  "/assets/3d/platform/navigation/map-pin/symbol/map-pin.webp";
+export const LIVING_PLACE_GLYPH = getAsset("navigation.discover.card").path;

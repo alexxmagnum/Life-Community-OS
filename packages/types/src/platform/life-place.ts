@@ -24,6 +24,8 @@ export const LIFE_PLACE_ACTION_KINDS = [
   "create_activity",
   "hire_service",
   "ask_help",
+  "navigate",
+  "view_experiences",
 ] as const;
 
 export type LifePlaceActionKind = (typeof LIFE_PLACE_ACTION_KINDS)[number];
@@ -137,6 +139,10 @@ export function lifePlaceActionLabel(kind: LifePlaceActionKind): string {
       return "Contratar";
     case "ask_help":
       return "Pedir ayuda";
+    case "navigate":
+      return "Cómo llegar";
+    case "view_experiences":
+      return "Ver experiencias";
   }
 }
 
@@ -271,13 +277,17 @@ export function buildLifePlaceActions(input: {
     href: `/help/create?type=need_help&locationId=${encodeURIComponent(input.location.id)}`,
   });
 
-  if (input.canCreateActivity) {
-    push({
-      kind: "create_activity",
-      label: "Proponer un plan",
-      href: `/experiences/create?locationId=${encodeURIComponent(input.location.id)}`,
-    });
-  }
+  push({
+    kind: "navigate",
+    label: "Cómo llegar",
+    href: `/map?focus=${encodeURIComponent(input.location.id)}&navigate=1`,
+  });
+
+  push({
+    kind: "view_experiences",
+    label: "Ver experiencias",
+    href: `/discover?place=${encodeURIComponent(input.location.id)}`,
+  });
 
   return actions;
 }

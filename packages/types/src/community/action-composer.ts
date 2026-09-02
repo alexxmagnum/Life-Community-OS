@@ -14,9 +14,12 @@ import {
 export const COMMUNITY_CREATION_ACTION_TYPES = [
   "experience_create",
   "event_create",
+  "announcement_create",
   "help_request",
   "help_offer",
   "marketplace_listing",
+  "work_create",
+  "reservation_create",
   "group_create",
   "business_create",
   "offer_service",
@@ -83,6 +86,16 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     territoryRequired: true,
   },
   {
+    id: "announcement_create",
+    type: "announcement_create",
+    title: "Publicar aviso",
+    description: "Comunicación importante para la comunidad",
+    icon: "📣",
+    requiredCapability: CAPABILITIES.contentCreate,
+    route: "/community/events/create",
+    territoryRequired: true,
+  },
+  {
     id: "help_request",
     type: "help_request",
     title: "Pedir ayuda",
@@ -110,6 +123,26 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     icon: "🎁",
     requiredCapability: CAPABILITIES.marketplaceCreate,
     route: "/marketplace/create",
+    territoryRequired: true,
+  },
+  {
+    id: "work_create",
+    type: "work_create",
+    title: "Publicar trabajo",
+    description: "Busca colaboración o ofrece tu oficio",
+    icon: "💼",
+    requiredCapability: CAPABILITIES.localView,
+    route: "/services/work/create",
+    territoryRequired: true,
+  },
+  {
+    id: "reservation_create",
+    type: "reservation_create",
+    title: "Reservar espacio",
+    description: "Solicita una instalación o recurso del territorio",
+    icon: "📅",
+    requiredCapability: CAPABILITIES.resourceReserve,
+    route: "/resources",
     territoryRequired: true,
   },
   {
@@ -182,6 +215,7 @@ function productKeyForCreation(
     case "experience_create":
       return "experiences";
     case "event_create":
+    case "announcement_create":
     case "group_create":
       return "community";
     case "marketplace_listing":
@@ -189,6 +223,10 @@ function productKeyForCreation(
     case "business_create":
     case "offer_service":
       return "lifeMap";
+    case "work_create":
+      return "work";
+    case "reservation_create":
+      return "reservations";
     case "help_request":
     case "help_offer":
       return null;
@@ -208,12 +246,16 @@ export function communityCreationRoute(
   if (action.type === "help_request") {
     parts.push("type=need_help");
   }
+  if (action.type === "announcement_create") {
+    parts.push("intent=announcement");
+  }
   if (action.type === "offer_service") {
     parts.push("intent=service");
   }
   if (
     (action.type === "experience_create" ||
       action.type === "event_create" ||
+      action.type === "announcement_create" ||
       action.type === "offer_service") &&
     locationId
   ) {
@@ -222,7 +264,11 @@ export function communityCreationRoute(
   if (action.type === "experience_create" && locationName) {
     parts.push(`locationName=${encodeURIComponent(locationName)}`);
   }
-  if (action.type === "event_create" && locationName) {
+  if (
+    (action.type === "event_create" ||
+      action.type === "announcement_create") &&
+    locationName
+  ) {
     parts.push(`location=${encodeURIComponent(locationName)}`);
   }
   return parts.length > 0 ? `${action.route}?${parts.join("&")}` : action.route;

@@ -6,7 +6,6 @@ import {
   AppShell,
   AppMenuSheet,
   CommunityAppHeader,
-  CreatePostSheet,
   type AppMenuCategory,
   type CreateAction,
   type NavItem,
@@ -20,6 +19,7 @@ import {
   personalizeComposerActions,
   projectPlatformNavigation,
   sanitizeCommunityCreationContext,
+  type CommunityCreationAction,
   type CommunityCreationContext,
   type PersonalContext,
 } from "@life-community-os/types";
@@ -28,7 +28,6 @@ import { requireTenantPack } from "@/lib/tenant/registry";
 import { useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-import { useCommunityInteractions } from "@/providers/CommunityInteractionProvider";
 import { BrandSplash } from "@/components/BrandSplash";
 import { ActionComposer } from "@/components/community/ActionComposer";
 import {
@@ -37,6 +36,7 @@ import {
   type ActionComposerDetail,
 } from "@/lib/community/action-composer-client";
 import { COMPOSER_GLYPH_BY_ACTION } from "@/lib/community/composer-glyphs";
+import { buildMagicPlusSections } from "@/lib/community/magic-plus-sections";
 import { fetchPersonalContext } from "@/lib/personal/personal-client";
 import { useNotifications } from "@/providers/NotificationProvider";
 
@@ -97,77 +97,18 @@ function IconProfile() {
   );
 }
 
-function IconMap() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M9 4.5 3.5 6.5v13L9 17.5l6 2 5.5-2v-13L15 6.5 9 4.5Z"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 4.5v13M15 6.5v13"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function IconDiscover() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" />
-      <path
-        d="m16.5 16.5 4 4"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M11 8.5v5M8.5 11h5"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function buildNav(flags: {
-  services: boolean;
-  showMap: boolean;
-  showDiscover: boolean;
-}): NavItem[] {
-  /** Magic Plus is the FAB — destinations only. */
+function buildNav(flags: { services: boolean }): NavItem[] {
+  /** Magic Plus is the FAB — bottom bar = Inicio · Comunidad · Servicios · Perfil. */
   const items: NavItem[] = [
     { id: "home", label: "Inicio", href: "/", icon: <IconHome /> },
+    {
+      id: "community",
+      label: "Comunidad",
+      href: "/community",
+      icon: <IconCommunity />,
+    },
   ];
-  if (flags.showMap) {
-    items.push({
-      id: "map",
-      label: "Mapa",
-      href: "/map",
-      icon: <IconMap />,
-    });
-  }
-  if (flags.showDiscover) {
-    items.push({
-      id: "discover",
-      label: "Descubrir",
-      href: "/discover",
-      icon: <IconDiscover />,
-    });
-  }
-  items.push({
-    id: "community",
-    label: "Comunidad",
-    href: "/community",
-    icon: <IconCommunity />,
-  });
-  if (!flags.showMap && flags.services) {
+  if (flags.services) {
     items.push({
       id: "services",
       label: "Servicios",
@@ -180,10 +121,10 @@ function buildNav(flags: {
 }
 
 function activeFromPath(pathname: string): NavItemId {
-  if (pathname.startsWith("/discover")) return "discover";
-  if (pathname.startsWith("/map")) return "map";
-  if (pathname.startsWith("/locations")) return "map";
-  if (pathname.startsWith("/business")) return "map";
+  if (pathname.startsWith("/discover")) return "home";
+  if (pathname.startsWith("/map")) return "home";
+  if (pathname.startsWith("/locations")) return "home";
+  if (pathname.startsWith("/business")) return "services";
   if (pathname.startsWith("/services")) return "services";
   if (pathname.startsWith("/marketplace")) return "services";
   if (pathname.startsWith("/resources")) return "services";
@@ -211,7 +152,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const { currentUser, sessionReady } = useCurrentUser();
   const { context: activeTerritory } = useTerritory();
   const { unreadCount } = useNotifications();
-  const { createPublication } = useCommunityInteractions();
   const [createOpen, setCreateOpen] = useState(false);
   const [composeContext, setComposeContext] = useState<CommunityCreationContext>(
     {},
@@ -219,15 +159,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const [personalContext, setPersonalContext] = useState<PersonalContext | null>(
     null,
   );
-  const [postOpen, setPostOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [magicPlusPreviewOpen, setMagicPlusPreviewOpen] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-
-  const showToast = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2200);
-  };
 
   const brandName = theme.logoText;
   const wordmarkPrimary = theme.identity?.wordmarkPrimary ?? theme.logoText;
@@ -327,7 +260,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
   );
 
   /**
-   * Magic Plus — experience creation engine for active members.
+   * Magic Plus — universal creation router for active members.
    * Pending users see a join preview; visitors never see the FAB.
    */
   const magicPlusMode = useMemo(() => {
@@ -344,10 +277,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const canShowMagicPlusFab = magicPlusMode !== "hidden";
 
   /**
-   * Contribution entry (+) — domain create actions only.
-   * Register / onboarding / reserve / report stay on their own screens.
+   * Magic Plus — intention sections routing to existing domains.
    */
-  const createActions = useMemo((): CreateAction[] => {
+  const listedCreationActions = useMemo((): CommunityCreationAction[] => {
     if (!currentUser.hasMembership) return [];
     const listed = CommunityActionRegistry.list({
       hasMembership: currentUser.hasMembership,
@@ -356,10 +288,20 @@ export function MemberShell({ children }: { children: ReactNode }) {
       territoryId:
         activeTerritory.territoryId ?? currentUser.territoryId ?? undefined,
     });
-    const ordered = personalContext
+    return personalContext
       ? personalizeComposerActions(listed, personalContext)
       : listed;
-    return ordered.map((action) => ({
+  }, [
+    activeTerritory.territoryId,
+    personalContext,
+    currentUser.hasMembership,
+    currentUser.permissions,
+    currentUser.territoryId,
+    productCapabilities,
+  ]);
+
+  const toCreateAction = useCallback(
+    (action: CommunityCreationAction): CreateAction => ({
       id: action.id,
       title: action.title,
       description: action.description,
@@ -377,30 +319,26 @@ export function MemberShell({ children }: { children: ReactNode }) {
       ),
       onSelect: () =>
         router.push(communityCreationRoute(action, composeContext)),
-    }));
-  }, [
-    activeTerritory.territoryId,
-    composeContext,
-    personalContext,
-    currentUser.hasMembership,
-    currentUser.permissions,
-    currentUser.territoryId,
-    productCapabilities,
-    router,
-  ]);
+    }),
+    [composeContext, personalContext, router],
+  );
+
+  const createSections = useMemo(
+    () => buildMagicPlusSections(listedCreationActions, toCreateAction),
+    [listedCreationActions, toCreateAction],
+  );
+
+  const createActions = useMemo(
+    () => createSections.flatMap((section) => section.actions),
+    [createSections],
+  );
 
   const navItems = useMemo(
     () =>
       buildNav({
         services: isModuleEnabled("services"),
-        showMap:
-          isModuleEnabled("lifeMap") &&
-          isFeatureEnabled("lifeMap") &&
-          isProductCapabilityEnabled("lifeMap"),
-        showDiscover:
-          isFeatureEnabled("localLife") || isFeatureEnabled("experiences"),
       }),
-    [isModuleEnabled, isFeatureEnabled, isProductCapabilityEnabled],
+    [isModuleEnabled],
   );
 
   const magicPlusEmptyActions = useMemo((): CreateAction[] => {
@@ -442,12 +380,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
       const detail = (event as CustomEvent<ActionComposerDetail>).detail;
       openComposer(detail);
     };
-    const openPost = () => setPostOpen(true);
     window.addEventListener(ACTION_COMPOSER_EVENT, openCreate);
-    window.addEventListener("lcos:open-post", openPost);
     return () => {
       window.removeEventListener(ACTION_COMPOSER_EVENT, openCreate);
-      window.removeEventListener("lcos:open-post", openPost);
     };
   }, [openComposer]);
 
@@ -483,9 +418,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         }
         showCreateFab={canShowMagicPlusFab}
         createFabLabel={
-          magicPlusMode === "preview"
-            ? "Crear experiencias"
-            : "Crear experiencia"
+          magicPlusMode === "preview" ? "Unirse para crear" : "Crear"
         }
         navNotice={
           navAlert ? (
@@ -526,7 +459,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
             }
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
-            menuLabel="Explorar comunidad"
+            menuLabel="Menú"
             notificationCount={unreadCount}
             onNotifications={() => router.push("/notifications")}
             notificationsLabel="Notificaciones"
@@ -579,13 +512,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
           setCreateOpen(false);
           setComposeContext({});
         }}
+        sections={
+          createSections.length > 0 ? createSections : undefined
+        }
         actions={
-          createActions.length > 0 ? createActions : magicPlusEmptyActions
+          createSections.length > 0 ? undefined : magicPlusEmptyActions
         }
         locationName={composeContext.locationName}
         source={composeContext.source}
-        title="Crear experiencia"
-        subtitle="Organiza planes, actividades y encuentros en el territorio"
+        title="¿Qué quieres crear?"
+        subtitle="Elige una intención y te llevamos al dominio correcto"
         emptyMessage="Descubre qué puedes crear en tu comunidad"
       />
       {magicPlusPreviewOpen ? (
@@ -598,11 +534,12 @@ export function MemberShell({ children }: { children: ReactNode }) {
           />
           <div className="relative z-10 m-4 w-full max-w-md rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-elev-2)]">
             <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
-              Únete para crear experiencias
+              Únete para crear en la comunidad
             </h2>
             <p className="mt-2 text-[14px] leading-snug text-[var(--color-text-secondary)]">
-              Magic Plus es el motor para organizar planes, actividades y
-              encuentros. Completa tu membresía para empezar a crear.
+              Magic Plus es la entrada universal de creación: experiencias,
+              avisos, ayuda, servicios y más. Completa tu membresía para
+              empezar.
             </p>
             <button
               type="button"
@@ -615,25 +552,6 @@ export function MemberShell({ children }: { children: ReactNode }) {
               Unirme a la comunidad
             </button>
           </div>
-        </div>
-      ) : null}
-      <CreatePostSheet
-        open={postOpen}
-        onClose={() => setPostOpen(false)}
-        onSubmit={async (input) => {
-          const created = await createPublication(input);
-          if (created) {
-            showToast("Publicado. Ya puedes verlo en Comunidad.");
-            router.push(`/community/content/${created.id}`);
-          }
-        }}
-      />
-      {toast ? (
-        <div
-          className="fixed bottom-28 left-1/2 z-[60] max-w-sm -translate-x-1/2 rounded-[var(--radius-md)] bg-[var(--color-text-primary)] px-4 py-3 text-center text-[15px] text-[var(--color-text-inverse)] shadow-[var(--shadow-elev-2)] md:bottom-10"
-          role="status"
-        >
-          {toast}
         </div>
       ) : null}
     </>

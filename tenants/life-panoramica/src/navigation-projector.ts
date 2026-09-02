@@ -174,6 +174,61 @@ export function projectMemberNavigation(
 
   const categories: ProjectedNavCategory[] = [];
 
+  // ── Explorar territorio (secondary — not bottom nav) ──────────
+
+  {
+    const territoryChildren: ProjectedNavLeaf[] = [];
+    if (
+      moduleOn(configuration, "lifeMap") &&
+      hasCapability(CAPABILITIES.localView)
+    ) {
+      territoryChildren.push({
+        id: "t-map",
+        label: "Mapa",
+        icon: "place",
+        href: "/map",
+      });
+    }
+    if (
+      isFeatureEnabled("localLife") ||
+      isFeatureEnabled("experiences") ||
+      moduleOn(configuration, "nearby")
+    ) {
+      territoryChildren.push({
+        id: "t-discover",
+        label: "Descubrir",
+        icon: "place",
+        href: "/discover",
+      });
+      territoryChildren.push({
+        id: "t-places",
+        label: "Lugares",
+        icon: "place",
+        href: "/discover",
+      });
+    }
+    if (moduleOn(configuration, "lifeMap")) {
+      territoryChildren.push({
+        id: "t-poi",
+        label: "Puntos de interés",
+        icon: "pin",
+        href: "/map",
+      });
+    }
+    if (territoryChildren.length > 0) {
+      categories.push({
+        id: "territory-explore",
+        area: "explorer",
+        moduleId: "lifeMap",
+        tone: "local",
+        glyph: "🗺",
+        label: "Explorar territorio",
+        description: "Mapa, lugares y puntos de interés del territorio",
+        children: territoryChildren,
+      });
+    }
+  }
+
   // ── AREA 1 — Community Explorer ─────────────────────────────
 
   if (moduleOn(configuration, "community")) {
