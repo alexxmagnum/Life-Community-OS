@@ -40,13 +40,10 @@ describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — Visitor no parece miembro", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
     assert.match(profile, /profileVisitorTitle/);
-    assert.match(
-      profile,
-      /Explora el territorio antes de unirte a la comunidad/,
-    );
-    assert.match(profile, /Crear cuenta/);
-    assert.match(profile, /Iniciar sesión/);
-    assert.match(profile, /isActiveMember \? \([\s\S]*Mi vida aquí/);
+    assert.match(profile, /Explora el territorio/);
+    assert.match(profile, /Únete a LIFE/);
+    assert.match(profile, /Explorar lugares/);
+    assert.match(profile, /isActiveMember \?/);
     const scope = resolveMembershipAccessScope({
       authenticated: false,
       hasMembership: false,
@@ -58,8 +55,8 @@ describe("Phase 18I-P2 experience alignment", () => {
 
   it("PASS — Registered puede unirse", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityPanel/);
-    assert.match(profile, /No formas parte todavía de una comunidad/);
+    assert.match(profile, /JoinCommunityExperience/);
+    assert.match(profile, /canonicalUserStateView|UserStateCard/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,

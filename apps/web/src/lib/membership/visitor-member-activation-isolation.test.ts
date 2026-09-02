@@ -89,12 +89,12 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
     assert.match(home, /VISITOR_HOME_EMPTY_TITLE/);
     assert.match(home, /VISITOR_HOME_EMPTY_DESCRIPTION/);
     assert.match(home, /VISITOR_HOME_EXPLORE_LABEL/);
-    assert.match(home, /VISITOR_HOME_REGISTER_LABEL/);
+    assert.match(home, /VISITOR_JOIN_HEADLINE/);
     assert.match(home, /COMMUNITY_EMPTY_GLYPH/);
     assert.match(home, /fetchTerritoryAnnouncements/);
     assert.match(home, /isVisitor \?/);
-    assert.equal(VISITOR_HOME_EMPTY_TITLE, "La comunidad empieza contigo");
-    assert.equal(VISITOR_HOME_EXPLORE_LABEL, "Explorar comunidad");
+    assert.equal(VISITOR_HOME_EMPTY_TITLE, "Descubre tu territorio");
+    assert.equal(VISITOR_HOME_EXPLORE_LABEL, "Explorar lugares");
   });
 
   it("TEST 2 — Visitor puede explorar Discover", () => {
@@ -147,13 +147,13 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
 
   it("TEST 5 — Registered termina en /me", () => {
     const register = readWeb("screens/RegisterScreen.tsx");
-    assert.match(register, /router\.replace\("\/me"\)/);
+    assert.match(register, /router\.replace\("\/me\?welcome=1"\)/);
     assert.doesNotMatch(register, /router\.replace\("\/"\)/);
   });
 
   it("TEST 6 — Registered puede iniciar JoinCommunity", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityPanel/);
+    assert.match(profile, /JoinCommunityExperience/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,

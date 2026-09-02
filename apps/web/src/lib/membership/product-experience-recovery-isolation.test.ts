@@ -48,7 +48,7 @@ describe("Phase 18J product experience recovery", () => {
 
   it("PASS — Registered puede unirse", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityPanel/);
+    assert.match(profile, /JoinCommunityExperience/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,

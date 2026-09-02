@@ -1,22 +1,23 @@
 /**
- * Visitor activation copy and routes — Phase 18K-FIX-A / 18L-FIX-A.
- * Discover first, then join, then participate.
+ * Visitor activation copy and routes — Discover first, then join, then participate.
+ * Phase 18O-FIX-A: one primary conversion CTA; no ambiguous “únete cuando quieras”.
  */
 
-export const VISITOR_JOIN_HEADLINE = "Únete a tu comunidad";
+export const VISITOR_JOIN_HEADLINE = "Únete a LIFE";
 
 export const VISITOR_VALUE_PROPOSITION =
   "Life conecta vecinos, lugares y actividades reales — no es una red social.";
 
 export const VISITOR_HOME_DESCRIPTION =
-  "Descubre el territorio, ve qué ocurre cerca y únete cuando quieras participar.";
+  "Descubre el territorio y ve qué ocurre cerca. Crea una cuenta para participar.";
 
 /** Home — visitor empty state when territory has no live activity yet. */
-export const VISITOR_HOME_EMPTY_TITLE = "La comunidad empieza contigo";
+export const VISITOR_HOME_EMPTY_TITLE = "Descubre tu territorio";
 export const VISITOR_HOME_EMPTY_DESCRIPTION =
-  "Descubre lugares, participa en actividades y crea nuevas experiencias para tu comunidad.";
-export const VISITOR_HOME_EXPLORE_LABEL = "Explorar comunidad";
-export const VISITOR_HOME_REGISTER_LABEL = "Crear cuenta";
+  "Explora lugares y servicios cerca de ti. Crea una cuenta para participar con tus vecinos.";
+export const VISITOR_HOME_EXPLORE_LABEL = "Explorar lugares";
+export const VISITOR_HOME_SERVICES_LABEL = "Ver servicios";
+export const VISITOR_HOME_REGISTER_LABEL = "Únete a LIFE";
 
 /** Community preview — visitor / registered without membership. */
 export const COMMUNITY_PREVIEW_EMPTY_TITLE = "Tu comunidad está esperando";
@@ -47,7 +48,7 @@ export function visitorConversionHref(authenticated: boolean): string {
 }
 
 export function visitorConversionLabel(authenticated: boolean): string {
-  return authenticated ? "Unirme a la comunidad" : "Crear cuenta";
+  return authenticated ? "Unirme a la comunidad" : "Únete a LIFE";
 }
 
 export function visitorLoginLabel(authenticated: boolean): string {

@@ -80,7 +80,7 @@ export const PROFILE_VISITOR_DESCRIPTION =
   "Forma parte de la comunidad para participar y crear experiencias.";
 
 /** Profile — registered (no active membership) */
-export const PROFILE_REGISTERED_TITLE = "Únete a tu comunidad";
+export const PROFILE_REGISTERED_TITLE = "Completa tu comunidad";
 
 /** Dead empty copy patterns — must never ship in activation surfaces. */
 export const DEAD_EMPTY_COPY_PATTERNS = [

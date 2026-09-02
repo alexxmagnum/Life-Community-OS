@@ -9,7 +9,6 @@ import {
   housingPropertyTypeLabel,
   PERSONAL_INTEREST_OPTIONS,
   propertyMembershipRoleLabel,
-  PROFILE_REGISTERED_TITLE,
   PROFILE_VISITOR_DESCRIPTION,
   type PersonalContext,
   type PersonalFavorite,
@@ -21,10 +20,16 @@ import {
   ProfileCard,
   ScreenHeader,
 } from "@life-community-os/ui";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { TerritoryBelongingCard } from "@/components/TerritoryBelongingCard";
-import { JoinCommunityPanel } from "@/components/membership/JoinCommunityPanel";
+import { JoinCommunityExperience } from "@/components/membership/JoinCommunityExperience";
+import { PostRegisterWelcome } from "@/components/membership/PostRegisterWelcome";
+import { UserStateCard } from "@/components/membership/UserStateCard";
 import { profileMembershipLabel } from "@/lib/membership/join-community-experience";
+import {
+  canonicalUserStateView,
+  PROFILE_ACTIVE_CLARITY_TITLE,
+} from "@/lib/membership/first-user-clarity";
 import { profileVisitorTitle } from "@/lib/membership/visitor-experience";
 import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { fetchHousingProperties } from "@/lib/housing/housing-client";
@@ -57,6 +62,7 @@ import type {
  */
 export function ProfileScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { currentUser, refreshSession } = useCurrentUser();
   const {
     theme,
@@ -79,6 +85,9 @@ export function ProfileScreen() {
   const [favorites, setFavorites] = useState<PersonalFavorite[]>([]);
   const { coverUrl: avatarMediaUrl } = useEntityMedia("profile", personId);
   const [uploadedAvatar, setUploadedAvatar] = useState<string | undefined>();
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+  const showWelcome =
+    !welcomeDismissed && searchParams.get("welcome") === "1";
 
   const upcomingExperienceCount = joinedExperiences.filter(
     (e) => e.status !== "cancelled" && e.status !== "expired",
@@ -174,6 +183,12 @@ export function ProfileScreen() {
   const isVisitor = !currentUser.authenticated;
   const isActiveMember =
     currentUser.hasMembership && currentUser.membershipStatus === "active";
+  const clarity = canonicalUserStateView({
+    authenticated: currentUser.authenticated,
+    hasMembership: currentUser.hasMembership,
+    membershipStatus: currentUser.membershipStatus,
+    role: currentUser.role,
+  });
 
   const session = {
     configured: currentUser.configured,
@@ -189,12 +204,23 @@ export function ProfileScreen() {
     router.refresh();
   };
 
+  const dismissWelcome = () => {
+    setWelcomeDismissed(true);
+    router.replace("/me");
+    requestAnimationFrame(() => {
+      document.getElementById("join")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  };
+
   if (isVisitor) {
     return (
       <MobileScreen dense>
         <ScreenHeader
           title={profileVisitorTitle(configuration.branding.name)}
-          subtitle="Explora el territorio antes de unirte a la comunidad."
+          subtitle="Explora el territorio. Crea una cuenta LIFE para participar."
         />
         <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
@@ -206,14 +232,14 @@ export function ProfileScreen() {
               className="min-h-[44px] rounded-full bg-[var(--color-action-primary)] px-4 text-[13px] font-semibold text-white"
               onClick={() => router.push("/register")}
             >
-              Crear cuenta
+              Únete a LIFE
             </button>
             <button
               type="button"
               className="min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/discover")}
             >
-              Iniciar sesión
+              Explorar lugares
             </button>
           </div>
         </section>
@@ -224,13 +250,28 @@ export function ProfileScreen() {
   return (
     <MobileScreen dense>
       <ScreenHeader
-        title={isActiveMember ? "Mi perfil" : PROFILE_REGISTERED_TITLE}
+        title={
+          isActiveMember
+            ? PROFILE_ACTIVE_CLARITY_TITLE
+            : clarity.title
+        }
         subtitle={
           isActiveMember
             ? "Identidad, relación con la comunidad y acciones personales."
-            : "No formas parte todavía de una comunidad."
+            : clarity.explanation
         }
       />
+
+      {showWelcome && !isActiveMember ? (
+        <PostRegisterWelcome onContinue={dismissWelcome} />
+      ) : null}
+
+      {!isActiveMember ? (
+        <UserStateCard
+          view={clarity}
+          showAction={clarity.state === "pending_membership"}
+        />
+      ) : null}
 
       <ProfileCard
         name={currentUser.displayName || currentUser.email?.split("@")[0] || "Usuario"}
@@ -267,7 +308,9 @@ export function ProfileScreen() {
         />
       ) : null}
 
-      <JoinCommunityPanel onJoined={() => void refreshSession()} />
+      {!isActiveMember ? (
+        <JoinCommunityExperience onJoined={() => void refreshSession()} />
+      ) : null}
 
       {isActiveMember ? (
       <>

@@ -131,10 +131,10 @@ describe("Phase 18K-FIX-A visitor activation", () => {
   it("PASS — Visitor recibe CTA correcto para registrarse", () => {
     const home = readWeb("screens/HomeScreen.tsx");
     assert.match(home, /VISITOR_JOIN_HEADLINE/);
-    assert.match(home, /visitorConversionLabel/);
+    assert.match(home, /visitorConversionHref/);
     const profile = readWeb("screens/ProfileScreen.tsx");
     assert.match(profile, /profileVisitorTitle/);
-    assert.match(profile, /Crear cuenta/);
+    assert.match(profile, /Únete a LIFE/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /visitorConversionHref/);
     assert.match(services, /visitorConversionLabel/);

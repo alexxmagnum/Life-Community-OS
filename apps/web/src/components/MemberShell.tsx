@@ -503,7 +503,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
         accessScope.scope === "registered" &&
         pathname !== "/me" ? (
           <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
-            Aún no perteneces a esta comunidad.{" "}
+            Tu cuenta está lista. Ahora forma parte de una comunidad.{" "}
             <button
               type="button"
               className="font-semibold text-[var(--color-action-primary)]"
@@ -518,8 +518,14 @@ export function MemberShell({ children }: { children: ReactNode }) {
         accessScope.scope === "pending" &&
         pathname !== "/me" ? (
           <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
-            Tu solicitud está pendiente de aprobación. Mientras tanto puedes
-            explorar el territorio.
+            Solicitud enviada. Mientras tanto puedes explorar el territorio.{" "}
+            <button
+              type="button"
+              className="font-semibold text-[var(--color-action-primary)]"
+              onClick={() => router.push("/discover")}
+            >
+              Explorar mientras tanto
+            </button>
           </div>
         ) : null}
         {children}
@@ -560,12 +566,11 @@ export function MemberShell({ children }: { children: ReactNode }) {
           />
           <div className="relative z-10 m-4 w-full max-w-md rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] p-5 shadow-[var(--shadow-elev-2)]">
             <h2 className="font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
-              Únete para crear en la comunidad
+              Únete a una comunidad para crear experiencias
             </h2>
             <p className="mt-2 text-[14px] leading-snug text-[var(--color-text-secondary)]">
-              Magic Plus es la entrada universal de creación: experiencias,
-              avisos, ayuda, servicios y más. Completa tu membresía para
-              empezar.
+              Tu cuenta está lista. Completa tu pertenencia para crear y
+              participar con tus vecinos.
             </p>
             <button
               type="button"
@@ -575,7 +580,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
                 router.push("/me");
               }}
             >
-              Unirme a la comunidad
+              Unirme
             </button>
           </div>
         </div>

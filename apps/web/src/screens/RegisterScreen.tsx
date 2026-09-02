@@ -65,8 +65,8 @@ export function RegisterScreen() {
         setInfo("Revisa tu email para confirmar la cuenta.");
         return;
       }
-      // Session cookies set by API → automatic login → membership join on /me
-      router.replace("/me");
+      // Session cookies set by API → automatic login → guided join on /me
+      router.replace("/me?welcome=1");
       router.refresh();
     } catch {
       setError(AUTH_NETWORK);
@@ -82,7 +82,7 @@ export function RegisterScreen() {
     <MobileScreen dense className="gap-5 pb-4">
       <FlowScreenHeader
         title="Crear cuenta"
-        subtitle="Únete a LIFE y descubre tu comunidad"
+        subtitle="Crea tu cuenta LIFE. Luego te unes a tu comunidad."
         onBack={() => router.push("/login")}
         onExit={() => router.push("/")}
       />

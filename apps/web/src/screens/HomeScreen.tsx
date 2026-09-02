@@ -57,11 +57,10 @@ import {
   VISITOR_HOME_EMPTY_DESCRIPTION,
   VISITOR_HOME_EMPTY_TITLE,
   VISITOR_HOME_EXPLORE_LABEL,
-  VISITOR_HOME_REGISTER_LABEL,
+  VISITOR_HOME_SERVICES_LABEL,
   VISITOR_JOIN_HEADLINE,
   VISITOR_VALUE_PROPOSITION,
   visitorConversionHref,
-  visitorConversionLabel,
 } from "@/lib/membership/visitor-experience";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
@@ -433,9 +432,27 @@ export function HomeScreen() {
               {VISITOR_JOIN_HEADLINE}
             </span>
             <span className="mt-1 block text-[14px] text-[var(--color-text-on-action)]/85">
-              {visitorConversionLabel(authenticated)} para participar y crear.
+              {authenticated
+                ? "Completa tu pertenencia para participar."
+                : "Crea tu cuenta y forma parte de la comunidad."}
             </span>
           </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/discover")}
+              className="ui-press min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+            >
+              {VISITOR_HOME_EXPLORE_LABEL}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push("/services")}
+              className="ui-press min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
+            >
+              {VISITOR_HOME_SERVICES_LABEL}
+            </button>
+          </div>
         </section>
       ) : null}
       {/* ── HOY — Territory first, then the life happening in it ── */}
@@ -480,22 +497,13 @@ export function HomeScreen() {
         {moments.length === 0 ? (
           <div>
             {isVisitor ? (
-              <>
-                <EmptyState
-                  title={VISITOR_HOME_EMPTY_TITLE}
-                  description={VISITOR_HOME_EMPTY_DESCRIPTION}
-                  imageUrl={COMMUNITY_EMPTY_GLYPH}
-                  actionLabel={VISITOR_HOME_EXPLORE_LABEL}
-                  onAction={() => router.push("/community")}
-                />
-                <button
-                  type="button"
-                  onClick={() => router.push("/register")}
-                  className="ui-press mt-3 w-full min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-4 text-[14px] font-semibold text-[var(--color-text-secondary)]"
-                >
-                  {VISITOR_HOME_REGISTER_LABEL}
-                </button>
-              </>
+              <EmptyState
+                title={VISITOR_HOME_EMPTY_TITLE}
+                description={VISITOR_HOME_EMPTY_DESCRIPTION}
+                imageUrl={COMMUNITY_EMPTY_GLYPH}
+                actionLabel={VISITOR_HOME_EXPLORE_LABEL}
+                onAction={() => router.push("/discover")}
+              />
             ) : (
               <EmptyState
                 title={LIVING_EMPTY_TITLE}
@@ -593,15 +601,6 @@ export function HomeScreen() {
               })
             }
             onInviteNeighbors={() => router.push("/me")}
-          />
-        </section>
-      ) : null}
-
-      {isVisitor && moments.length === 0 ? (
-        <section>
-          <CommunityActivationPanel
-            variant="visitor"
-            onJoin={() => router.push(visitorConversionHref(authenticated))}
           />
         </section>
       ) : null}

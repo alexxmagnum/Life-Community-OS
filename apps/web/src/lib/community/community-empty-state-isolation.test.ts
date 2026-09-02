@@ -34,8 +34,8 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
     assert.match(profile, /profileVisitorTitle/);
     assert.match(profile, /PROFILE_VISITOR_DESCRIPTION/);
-    assert.match(profile, /Crear cuenta/);
-    assert.match(profile, /Iniciar sesión/);
+    assert.match(profile, /Únete a LIFE/);
+    assert.match(profile, /Explorar lugares/);
     assert.match(profile, /isActiveMember \?/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /SERVICES_PROFESSIONALS_VISITOR/);
@@ -53,8 +53,8 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
 
   it("TEST 2 — Registered ve JoinCommunity", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityPanel/);
-    assert.match(profile, /PROFILE_REGISTERED_TITLE/);
+    assert.match(profile, /JoinCommunityExperience/);
+    assert.match(profile, /canonicalUserStateView|UserStateCard/);
     assert.match(profile, /isActiveMember \?/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,

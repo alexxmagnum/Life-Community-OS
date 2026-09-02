@@ -79,7 +79,7 @@ describe("Phase 18I-P product polish", () => {
       path.join(HERE, "..", "..", "screens", "ProfileScreen.tsx"),
       "utf8",
     );
-    assert.equal(profile.includes("JoinCommunityPanel"), true);
+    assert.equal(profile.includes("JoinCommunityExperience"), true);
     assert.equal(profile.includes("join-community-experience"), true);
   });
 

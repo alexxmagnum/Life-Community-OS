@@ -42,9 +42,9 @@ describe("auth onboarding experience isolation", () => {
     const register = readWeb("screens/RegisterScreen.tsx");
     assert.doesNotMatch(register, /communityCode|Código de comunidad|Código comunidad/);
     assert.doesNotMatch(register, /\/api\/auth\/community-code/);
-    const join = readWeb("components/membership/JoinCommunityPanel.tsx");
-    assert.match(join, /Únete a tu comunidad/);
-    assert.match(join, /Código comunidad/);
+    const join = readWeb("components/membership/JoinCommunityExperience.tsx");
+    assert.match(join, /Únete a tu comunidad|JOIN_EXPERIENCE_TITLE/);
+    assert.match(join, /Código de comunidad|JOIN_CODE_LABEL/);
   });
 
   it("TEST 3 — password confirmation funciona", () => {
@@ -64,7 +64,7 @@ describe("auth onboarding experience isolation", () => {
     assert.match(route, /data\.session/);
     const register = readWeb("screens/RegisterScreen.tsx");
     assert.doesNotMatch(register, /router\.replace\("\/login"\)/);
-    assert.match(register, /router\.replace\("\/me"\)/);
+    assert.match(register, /router\.replace\("\/me\?welcome=1"\)/);
   });
 
   it("TEST 5 — usuario vuelve autenticado (sesión persistente)", () => {
@@ -80,17 +80,17 @@ describe("auth onboarding experience isolation", () => {
 
   it("TEST 6 — después de registro llega a /me", () => {
     const register = readWeb("screens/RegisterScreen.tsx");
-    assert.match(register, /router\.replace\("\/me"\)/);
+    assert.match(register, /router\.replace\("\/me\?welcome=1"\)/);
     assert.doesNotMatch(register, /router\.replace\("\/"\)/);
-    assert.match(register, /Únete a LIFE y descubre tu comunidad/);
+    assert.match(register, /Crea tu cuenta LIFE/);
   });
 
   it("TEST 7 — join community separado", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityPanel/);
-    const join = readWeb("components/membership/JoinCommunityPanel.tsx");
+    assert.match(profile, /JoinCommunityExperience/);
+    const join = readWeb("components/membership/JoinCommunityExperience.tsx");
     assert.match(join, /!currentUser\.authenticated \|\| currentUser\.hasMembership/);
-    assert.match(join, /Únete a tu comunidad/);
+    assert.match(join, /JOIN_EXPERIENCE_TITLE|Únete a tu comunidad/);
     const route = readWeb("app/api/auth/register/route.ts");
     assert.match(route, /status: "pending"/);
     assert.match(route, /membershipGrantsCommunityAccess/);
