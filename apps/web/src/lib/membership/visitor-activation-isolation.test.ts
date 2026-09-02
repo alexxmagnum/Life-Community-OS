@@ -137,13 +137,25 @@ describe("Phase 18K-FIX-A visitor activation", () => {
     assert.match(profile, /Crear cuenta/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /visitorConversionHref/);
-    assert.doesNotMatch(services, /title="Sin acceso"/);
+    assert.match(services, /visitorConversionLabel/);
+    assert.match(
+      services,
+      /!canAccessMemberData[\s\S]*visitorConversionHref/,
+    );
   });
 
   it("PASS — Services público no devuelve 401", () => {
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
-    assert.match(services, /canAccessMemberData && canWork/);
-    assert.match(services, /neighbour-help.*canAccessMemberData/s);
+    assert.match(services, /const canWork =[\s\S]*canAccessMemberData/);
+    assert.match(services, /const canMarket =[\s\S]*canAccessMemberData/);
+    assert.match(services, /hub\.content\.kind === "work" && canWork/);
+    assert.match(services, /hub\.content\.kind === "neighbour-help" && canMarket/);
+    assert.match(services, /hub\.content\.kind === "local-entities"/);
+    assert.match(services, /canLocal[\s\S]*filterLocationsByLocalKinds/);
+    assert.match(
+      services,
+      /if \(!canAccessMemberData\)[\s\S]*Accede para ver trabajos/,
+    );
     const commerce = readWeb("lib/marketplace/commerce-client.ts");
     assert.match(commerce, /if \(!res\.ok\) return \[\]/);
   });
