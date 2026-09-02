@@ -5,7 +5,7 @@
 
 import { actorHasCapability } from "@/lib/auth/permissions";
 import type { RequestActor } from "@/lib/auth/request-actor";
-import { CAPABILITIES } from "@life-community-os/types";
+import { CAPABILITIES, guestCanAccess } from "@life-community-os/types";
 import type { MembershipRole } from "@life-community-os/types";
 
 export function canModerateCommunity(
@@ -56,6 +56,31 @@ export function actorCanCreateEvent(actor: RequestActor): boolean {
   return (
     actorHasCapability(actor.permissions, CAPABILITIES.experienceCreate) ||
     actorHasCapability(actor.permissions, CAPABILITIES.contentCreate)
+  );
+}
+
+export function actorCanReadTerritoryAnnouncements(actor: RequestActor): boolean {
+  if (actor.tenantDenied) return false;
+  if (actor.authenticated && actor.hasMembership) return true;
+  return guestCanAccess({
+    resource: "open_content",
+    hasActiveMembership: false,
+  });
+}
+
+export function actorCanCreateCommunityAnnouncement(
+  actor: RequestActor,
+): boolean {
+  return actorCanCreatePost(actor);
+}
+
+export function actorCanCreateOfficialAnnouncement(
+  actor: RequestActor,
+): boolean {
+  if (!actorCanViewCommunity(actor)) return false;
+  return (
+    canModerateCommunity(actor.role) ||
+    actorHasCapability(actor.permissions, CAPABILITIES.announcementPublishOfficial)
   );
 }
 

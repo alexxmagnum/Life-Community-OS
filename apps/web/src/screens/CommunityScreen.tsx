@@ -42,7 +42,8 @@ import { useReservations } from "@/providers/ReservationProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
 import { channelAccessLabel } from "@/lib/demo-access-copy";
 import { resolvePlaceHref } from "@/lib/location";
-import type { CommunityEvent, CommunityFeedItem, CommunityGroupRecord, CommunityOwnActivity } from "@life-community-os/types";
+import { fetchTerritoryAnnouncements } from "@/lib/community/community-operations-client";
+import type { CommunityEvent, CommunityFeedItem, CommunityGroupRecord, CommunityOwnActivity, TerritoryAnnouncement } from "@life-community-os/types";
 import {
   LIVING_EMPTY_CTA,
   LIVING_EMPTY_DESCRIPTION,
@@ -105,6 +106,9 @@ export function CommunityHubScreen() {
   const [domainGroups, setDomainGroups] = useState<CommunityGroupRecord[]>([]);
   const [domainEvents, setDomainEvents] = useState<CommunityEvent[]>([]);
   const [experienceFeed, setExperienceFeed] = useState<CommunityFeedItem[]>([]);
+  const [territoryAnnouncements, setTerritoryAnnouncements] = useState<
+    TerritoryAnnouncement[]
+  >([]);
   const [ownActivity, setOwnActivity] = useState<CommunityOwnActivity | null>(
     null,
   );
@@ -220,6 +224,19 @@ export function CommunityHubScreen() {
       cancelled = true;
     };
   }, [tenantSlug, communityOn, activeTerritory.territoryId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchTerritoryAnnouncements({
+      tenantId: tenantSlug,
+      territoryId: activeTerritory.territoryId,
+    }).then((rows) => {
+      if (!cancelled) setTerritoryAnnouncements(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tenantSlug, activeTerritory.territoryId]);
 
   useEffect(() => {
     if (!personId) {
@@ -367,7 +384,10 @@ export function CommunityHubScreen() {
     isProductCapabilityEnabled("housing") &&
     hasCapability(CAPABILITIES.housingView);
   const showOfficial =
-    officialEntities.length > 0 || officialNotices.length > 0 || showChannels;
+    officialEntities.length > 0 ||
+    officialNotices.length > 0 ||
+    territoryAnnouncements.length > 0 ||
+    showChannels;
   /**
    * C.3.1 — Community Explorar must not compete as a Belong peer
    * (IA_DECISION: not a global module portal). Keep tile logic for rollback /
@@ -955,6 +975,23 @@ export function CommunityHubScreen() {
                   title={entity.name}
                   meta={entity.description}
                   onClick={() => router.push(`/official/${entity.slug}`)}
+                />
+              ))}
+
+              {territoryAnnouncements.length > 0 ? (
+                <p className="pt-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                  Avisos del territorio
+                </p>
+              ) : null}
+              {territoryAnnouncements.map((item) => (
+                <HubRow
+                  key={item.id}
+                  tone="quiet"
+                  glyph="📣"
+                  title={item.title}
+                  meta={item.body}
+                  trailingLabel={formatContentWhen(item.createdAt)}
+                  onClick={() => router.push(`/community/content/${item.id}`)}
                 />
               ))}
 

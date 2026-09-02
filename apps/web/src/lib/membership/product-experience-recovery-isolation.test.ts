@@ -97,8 +97,8 @@ describe("Phase 18J product experience recovery", () => {
     );
     assert.ok(announcement);
     assert.equal(
-      communityCreationRoute(announcement).includes("intent=announcement"),
-      true,
+      communityCreationRoute(announcement),
+      "/community/announcements/create",
     );
     const work = COMMUNITY_CREATION_ACTIONS.find(
       (item) => item.type === "work_create",

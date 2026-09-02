@@ -4,6 +4,10 @@
  */
 
 import type {
+  CommunityAnnouncementAudience,
+  CommunityAnnouncementCategory,
+  CommunityAnnouncementMeta,
+  CommunityAnnouncementPriority,
   CommunityOperationsContext,
   TerritoryAnnouncement,
   TerritoryDailyPulse,
@@ -11,6 +15,7 @@ import type {
 import {
   announcementFromPost,
   communityOperationActionLabel,
+  isOfficialAnnouncementCategory,
   personalizeTerritoryDailyPulse,
   projectCommunityOperationsContext,
   projectTerritoryDailyPulse,
@@ -21,7 +26,11 @@ import type { RequestActor } from "@/lib/auth/request-actor";
 import { recordAdminAudit } from "@/lib/admin/server-admin-repository";
 import { listBusinessesServer } from "@/lib/business/server-business-repository";
 import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
-import { canModerateCommunity } from "@/lib/community/permissions";
+import {
+  actorCanCreateCommunityAnnouncement,
+  actorCanCreateOfficialAnnouncement,
+  canModerateCommunity,
+} from "@/lib/community/permissions";
 import {
   createCommunityNotification,
   createCommunityPost,
@@ -76,17 +85,45 @@ export const CommunityOperationsService = {
     title: string;
     body: string;
     createdByFromClient?: string | null;
+    category?: CommunityAnnouncementCategory;
+    priority?: CommunityAnnouncementPriority;
+    audience?: CommunityAnnouncementAudience;
+    locationId?: string | null;
+    startsAt?: string | null;
+    endsAt?: string | null;
+    requiresAcknowledgement?: boolean;
   }): Promise<TerritoryAnnouncement> {
     const personId = requireActor(input.actor, input.tenantId);
     if (input.createdByFromClient) {
       throw new OperationsDeniedError("owner_immutable");
     }
-    if (!canModerateCommunity(input.actor.role)) {
+    const category = input.category ?? "community";
+    const priority = input.priority ?? "normal";
+    const audience = input.audience ?? "territory";
+    const official = isOfficialAnnouncementCategory(category);
+    if (official) {
+      if (!actorCanCreateOfficialAnnouncement(input.actor)) {
+        throw new OperationsDeniedError("forbidden");
+      }
+    } else if (!actorCanCreateCommunityAnnouncement(input.actor)) {
       throw new OperationsDeniedError("forbidden");
     }
     const title = input.title.trim();
     const body = input.body.trim();
     if (!title || !body) throw new OperationsDeniedError("invalid");
+    const announcementMeta: CommunityAnnouncementMeta = {
+      category,
+      priority,
+      audience,
+      ...(input.locationId?.trim()
+        ? { locationId: input.locationId.trim() }
+        : {}),
+      ...(input.startsAt?.trim() ? { startsAt: input.startsAt.trim() } : {}),
+      ...(input.endsAt?.trim() ? { endsAt: input.endsAt.trim() } : {}),
+      ...(input.requiresAcknowledgement
+        ? { requiresAcknowledgement: true }
+        : {}),
+    };
     const post = await createCommunityPost({
       tenantId: input.tenantId,
       authorPersonId: personId,
@@ -98,16 +135,37 @@ export const CommunityOperationsService = {
       body,
       kind: "announcement",
       territoryId: input.territoryId,
+      announcementMeta,
     });
     const projected = announcementFromPost(post);
     if (!projected) throw new OperationsDeniedError("invalid");
     await recordAdminAudit({
       actor: input.actor,
-      action: "community.communication.announcement.published",
+      action: "community.announcement.created",
       entityType: "post",
       entityId: post.id,
       reason: "territory_announcement",
-      metadata: { territoryId: input.territoryId },
+      metadata: { territoryId: input.territoryId, category, priority },
+    });
+    await recordAdminAudit({
+      actor: input.actor,
+      action: official
+        ? "community.communication.announcement.published"
+        : "community.announcement.published",
+      entityType: "post",
+      entityId: post.id,
+      reason: "territory_announcement",
+      metadata: { territoryId: input.territoryId, category, priority },
+    });
+    await createCommunityNotification({
+      tenantId: input.tenantId,
+      recipientPersonId: personId,
+      kind: "official_announcement",
+      title: projected.title,
+      body: projected.body,
+      entityType: "post",
+      entityId: post.id,
+      createdBy: personId,
     });
     return projected;
   },

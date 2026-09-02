@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { actorCanReadCommunityExperienceFeed } from "@/lib/community/permissions";
+import {
+  actorCanCreateCommunityAnnouncement,
+  actorCanCreateOfficialAnnouncement,
+  actorCanReadTerritoryAnnouncements,
+} from "@/lib/community/permissions";
 import {
   CommunityOperationsService,
   OperationsDeniedError,
@@ -7,14 +11,19 @@ import {
 import { resolveReadTenantId } from "@/lib/tenant/resolve-read-tenant";
 import { resolveWriteTenantId } from "@/lib/tenant/resolve-write-tenant";
 import { resolveActiveTerritoryContext } from "@/lib/tenant/resolve-territory";
+import type {
+  CommunityAnnouncementAudience,
+  CommunityAnnouncementCategory,
+  CommunityAnnouncementPriority,
+} from "@life-community-os/types";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   const { resolveRequestActor } = await import("@/lib/auth/request-actor");
   const actor = await resolveRequestActor(request);
-  if (!actorCanReadCommunityExperienceFeed(actor)) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  if (!actorCanReadTerritoryAnnouncements(actor)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const url = new URL(request.url);
   const bound = resolveReadTenantId({
@@ -33,10 +42,13 @@ export async function GET(request: Request) {
   if (!territoryId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  const announcements = await CommunityOperationsService.announcements({
-    tenantId: bound.tenantId,
-    territoryId,
-  });
+  const locationId = url.searchParams.get("locationId")?.trim();
+  const announcements = (
+    await CommunityOperationsService.announcements({
+      tenantId: bound.tenantId,
+      territoryId,
+    })
+  ).filter((item) => !locationId || item.locationId === locationId);
   return NextResponse.json({ announcements });
 }
 
@@ -49,11 +61,27 @@ export async function POST(request: Request) {
     body?: string;
     tenantId?: string;
     createdBy?: string;
+    category?: CommunityAnnouncementCategory;
+    priority?: CommunityAnnouncementPriority;
+    audience?: CommunityAnnouncementAudience;
+    locationId?: string;
+    startsAt?: string;
+    endsAt?: string;
+    requiresAcknowledgement?: boolean;
   };
   try {
     body = (await request.json()) as typeof body;
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+  const category = body.category ?? "community";
+  const official =
+    category === "official" || category === "emergency";
+  if (official && !actorCanCreateOfficialAnnouncement(gated.actor)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!official && !actorCanCreateCommunityAnnouncement(gated.actor)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const bound = resolveWriteTenantId({
     request,
@@ -78,6 +106,13 @@ export async function POST(request: Request) {
       title: body.title ?? "",
       body: body.body ?? "",
       createdByFromClient: body.createdBy ?? null,
+      category: body.category,
+      priority: body.priority,
+      audience: body.audience,
+      locationId: body.locationId ?? null,
+      startsAt: body.startsAt ?? null,
+      endsAt: body.endsAt ?? null,
+      requiresAcknowledgement: body.requiresAcknowledgement,
     });
     return NextResponse.json({ announcement }, { status: 201 });
   } catch (error) {

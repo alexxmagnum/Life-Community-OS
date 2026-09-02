@@ -366,10 +366,7 @@ export async function resolveLifePlace(
             tenantId,
             territoryId,
           })
-        ).find((item) => {
-          const blob = `${item.title} ${item.body}`.toLowerCase();
-          return blob.includes(location.name.toLowerCase());
-        })?.title
+        ).find((item) => item.locationId === location.id)?.title
       : undefined,
   });
 

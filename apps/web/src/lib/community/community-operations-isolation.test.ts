@@ -186,7 +186,16 @@ describe("Community Operations isolation", () => {
     );
   });
 
-  it("TEST 4 — announcements only from community staff", async () => {
+  it("TEST 4 — community members create avisos; officials require staff", async () => {
+    const memberAnnouncement = await CommunityOperationsService.createAnnouncement({
+      tenantId: PANO,
+      actor: actor({ tenantSlug: PANO, role: "member" }),
+      territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
+      title: "Llave encontrada",
+      body: "Zona norte del club.",
+      category: "community",
+    });
+    assert.equal(memberAnnouncement.title, "Llave encontrada");
     await assert.rejects(
       () =>
         CommunityOperationsService.createAnnouncement({
@@ -195,10 +204,11 @@ describe("Community Operations isolation", () => {
           territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
           title: "Corte de agua",
           body: "Mañana de 8 a 10.",
+          category: "official",
         }),
       (error: unknown) => error instanceof OperationsDeniedError,
     );
-    const announcement = await CommunityOperationsService.createAnnouncement({
+    const official = await CommunityOperationsService.createAnnouncement({
       tenantId: PANO,
       actor: actor({
         tenantSlug: PANO,
@@ -208,14 +218,19 @@ describe("Community Operations isolation", () => {
       territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
       title: "Horario de verano",
       body: "La piscina cambia horario.",
+      category: "official",
     });
-    assert.equal(announcement.title, "Horario de verano");
+    assert.equal(official.title, "Horario de verano");
     const listed = await CommunityOperationsService.announcements({
       tenantId: PANO,
       territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
     });
     assert.equal(
-      listed.some((item) => item.id === announcement.id),
+      listed.some((item) => item.id === memberAnnouncement.id),
+      true,
+    );
+    assert.equal(
+      listed.some((item) => item.id === official.id),
       true,
     );
   });

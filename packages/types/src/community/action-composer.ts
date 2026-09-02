@@ -88,11 +88,11 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
   {
     id: "announcement_create",
     type: "announcement_create",
-    title: "Publicar aviso",
-    description: "Comunicación importante para la comunidad",
+    title: "Crear aviso",
+    description: "Comparte información importante con tu comunidad",
     icon: "📣",
     requiredCapability: CAPABILITIES.contentCreate,
-    route: "/community/events/create",
+    route: "/community/announcements/create",
     territoryRequired: true,
   },
   {
@@ -245,9 +245,6 @@ export function communityCreationRoute(
   }
   if (action.type === "help_request") {
     parts.push("type=need_help");
-  }
-  if (action.type === "announcement_create") {
-    parts.push("intent=announcement");
   }
   if (action.type === "offer_service") {
     parts.push("intent=service");

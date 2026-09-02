@@ -6,6 +6,7 @@ import type {
   GroupMembershipStatus,
 } from "./community-group";
 import type { CommunityParticipationPrivacy } from "../community/participation";
+import type { CommunityAnnouncementMeta } from "../community/announcement";
 
 /**
  * Community Core — tenant-owned social domain.
@@ -129,6 +130,7 @@ export type CommunityPost = {
   createdBy: DomainId;
   createdAt: IsoDateTimeString;
   updatedAt: IsoDateTimeString;
+  announcementMeta?: CommunityAnnouncementMeta;
 };
 
 export type CommunityEvent = {

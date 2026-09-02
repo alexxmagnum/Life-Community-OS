@@ -451,6 +451,7 @@ export async function createCommunityPost(input: {
   kind?: CommunityPostKind;
   groupId?: string;
   territoryId?: string;
+  announcementMeta?: CommunityPost["announcementMeta"];
   scope?: CommunityWriteScope;
 }): Promise<CommunityPost> {
   const slug = resolveTenantPublicId(input.tenantId);
@@ -473,6 +474,7 @@ export async function createCommunityPost(input: {
     createdAt: now,
     updatedAt: now,
     ...(territoryId ? { territoryId } : {}),
+    ...(input.announcementMeta ? { announcementMeta: input.announcementMeta } : {}),
   };
   const snapshot = await loadSnapshot(slug, input.scope);
   snapshot.posts = [post, ...snapshot.posts.filter((item) => item.id !== post.id)];

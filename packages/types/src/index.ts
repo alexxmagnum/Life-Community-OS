@@ -107,6 +107,23 @@ export {
   isOpaqueDailyLifeEntity,
 } from "./community/operations";
 
+/** Structured community announcements — territorial actions, not social posts. */
+export type {
+  CommunityAnnouncementCategory,
+  CommunityAnnouncementPriority,
+  CommunityAnnouncementAudience,
+  CommunityAnnouncementMeta,
+} from "./community/announcement";
+export {
+  COMMUNITY_ANNOUNCEMENT_CATEGORIES,
+  COMMUNITY_ANNOUNCEMENT_PRIORITIES,
+  COMMUNITY_ANNOUNCEMENT_AUDIENCES,
+  communityAnnouncementCategoryLabel,
+  isOfficialAnnouncementCategory,
+  announcementMetaFromPost,
+  projectStructuredAnnouncement,
+} from "./community/announcement";
+
 /** Territory Home & resident experience evolution — projection only. */
 export type {
   LifeHomeTerritoryHero,

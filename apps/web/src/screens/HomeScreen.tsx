@@ -430,7 +430,7 @@ export function HomeScreen() {
                 className="rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-primary)]"
               >
                 <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-                  Aviso del territorio
+                  Información importante
                 </span>
                 <span className="mt-1 block font-semibold">{item.title}</span>
                 <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">

@@ -9,6 +9,7 @@ import type { CommunityFeedItem } from "./community-feed";
 import { partitionLivingCommunityFeed } from "./community-feed";
 import type { CommunityCreationSource } from "./action-composer";
 import type { CommunityPost } from "../domain/community-core";
+import { projectStructuredAnnouncement } from "./announcement";
 import { personalizeCommunityFeed } from "../personal/personalization";
 import type { PersonalContext } from "../personal/personal-context";
 
@@ -53,6 +54,14 @@ export type TerritoryAnnouncement = {
   title: string;
   body: string;
   createdAt: string;
+  createdBy?: string;
+  category?: import("./announcement").CommunityAnnouncementCategory;
+  priority?: import("./announcement").CommunityAnnouncementPriority;
+  audience?: import("./announcement").CommunityAnnouncementAudience;
+  locationId?: string;
+  startsAt?: string;
+  endsAt?: string;
+  requiresAcknowledgement?: boolean;
 };
 
 export type TerritoryDailyPulse = {
@@ -149,20 +158,20 @@ export function communityOperationActionLabel(
 export function announcementFromPost(
   post: Pick<
     CommunityPost,
-    "id" | "tenantId" | "territoryId" | "kind" | "title" | "body" | "createdAt" | "status"
+    | "id"
+    | "tenantId"
+    | "territoryId"
+    | "kind"
+    | "title"
+    | "body"
+    | "createdAt"
+    | "status"
+    | "createdBy"
+    | "announcementMeta"
   >,
 ): TerritoryAnnouncement | null {
   if (post.kind !== "announcement" || post.status !== "published") return null;
-  const territoryId = post.territoryId?.trim();
-  if (!territoryId) return null;
-  return {
-    id: post.id,
-    tenantId: post.tenantId,
-    territoryId,
-    title: post.title,
-    body: post.body,
-    createdAt: post.createdAt,
-  };
+  return projectStructuredAnnouncement(post);
 }
 
 export function projectTerritoryDailyPulse(input: {

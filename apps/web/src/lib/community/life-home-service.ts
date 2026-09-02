@@ -52,7 +52,9 @@ export const LifeHomeService = {
         territoryId: input.territoryId,
         items: [],
         announcements:
-          membershipScope === "guest" ? announcements.slice(0, 3) : [],
+          membershipScope === "guest" || membershipScope === "pending"
+            ? announcements.slice(0, 3)
+            : [],
       });
       return projectLifeHomeContext({
         query: territoryHomeQuery(experienceContext),
