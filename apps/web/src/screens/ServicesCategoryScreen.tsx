@@ -405,7 +405,7 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
               authorName={item.authorDisplayName}
               imageUrl=""
               meta={formatContentWhen(item.createdAt)}
-              onClick={() => router.push(`/services/work/${item.id}`)}
+              onClick={() => router.push(`/help/${item.id}`)}
             />
           ))}
         </div>

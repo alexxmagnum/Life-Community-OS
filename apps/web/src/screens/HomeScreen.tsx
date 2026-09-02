@@ -555,22 +555,58 @@ export function HomeScreen() {
         </section>
       ) : null}
 
+      {isModuleEnabled("community") ? (
+        <section>
+          <HomeSectionHead title="Necesito ayuda" />
+          <button
+            type="button"
+            onClick={() => router.push("/community")}
+            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
+          >
+            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
+              Ayuda entre vecinos
+            </span>
+            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
+              Vecinos ayudando vecinos — pide o ofrece colaboración.
+            </span>
+          </button>
+        </section>
+      ) : null}
+
       {isModuleEnabled("services") ? (
         <section>
-          <HomeSectionHead title={HOME_SERVICES_EMPTY_TITLE} />
+          <HomeSectionHead title="Necesito un profesional" />
           <button
             type="button"
             onClick={() => router.push("/services")}
             className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
           >
             <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              Servicios cerca
+              {HOME_SERVICES_EMPTY_TITLE}
             </span>
             <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              Profesionales, ayuda vecinal, movilidad y marketplace.
+              Profesionales y negocios cerca.
             </span>
             <span className="mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]">
               {HOME_SERVICES_EMPTY_CTA}
+            </span>
+          </button>
+        </section>
+      ) : null}
+
+      {isModuleEnabled("marketplace") && isFeatureEnabled("marketplace") ? (
+        <section>
+          <HomeSectionHead title="Comprar algo" />
+          <button
+            type="button"
+            onClick={() => router.push("/marketplace")}
+            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
+          >
+            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
+              Compra y venta
+            </span>
+            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
+              Compra, vende o regala entre vecinos.
             </span>
           </button>
         </section>

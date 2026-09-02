@@ -101,6 +101,7 @@ export function ServicesHubScreen() {
     if (!isModuleEnabled("services")) return cards;
 
     for (const hub of servicesCategoryHubs) {
+      if (hub.slug === "neighbour-help") continue;
       const flagsOk = hub.featureKeys.some((key) => isFeatureEnabled(key));
       if (!flagsOk) continue;
       const resolved = resolveHubAsset(hub.slug);
@@ -160,15 +161,15 @@ export function ServicesHubScreen() {
         </h1>
         <p className="text-[15px] leading-6 text-[var(--color-text-secondary)]">
           {isVisitor
-            ? "Explora categorías del territorio. Únete para pedir ayuda, reservar o publicar."
-            : "Profesionales y ayuda · espacios para reservar"}
+            ? "Profesionales y negocios del territorio. Únete para contactar y publicar."
+            : "Encuentra soluciones cerca — profesionales, negocios y trabajo."}
         </p>
       </header>
 
       {entries.length === 0 ? (
         <EmptyState
           title="Servicios en silencio"
-          description="Cuando tu comunidad active ayuda, trabajo o profesionales, los verás aquí."
+          description="Cuando tu comunidad active profesionales, trabajo o movilidad, los verás aquí."
           actionLabel="Volver al inicio"
           onAction={() => router.push("/")}
         />
@@ -195,11 +196,9 @@ export function ServicesHubScreen() {
 function copyForServiceSlug(slug: string, fallback: string): string {
   switch (slug) {
     case "professionals":
-      return "Ayuda cualificada cerca.";
+      return "Profesionales y negocios cerca.";
     case "work":
       return "Busco u ofrezco trabajo.";
-    case "neighbour-help":
-      return "Una mano entre vecinos.";
     case "mobility":
       return "Trayectos y movilidad.";
     case "recommendations":

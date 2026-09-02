@@ -15,41 +15,30 @@ import {
   MobileScreen,
 } from "@life-community-os/ui";
 import { fetchHelpRequest } from "@/lib/marketplace/commerce-client";
+import {
+  visitorConversionHref,
+  visitorConversionLabel,
+} from "@/lib/membership/visitor-experience";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 
-function typeLabel(item: HelpRequest): string {
-  if (isWorkHelpCategory(item.category)) {
-    return item.type === "need_help" ? "Busco trabajo" : "Ofrezco trabajo";
-  }
-  return helpRequestTypeLabel(item.type);
-}
-
-function boardHref(): string {
-  return "/services/work";
-}
-
-export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
+export function HelpDetailScreen({ helpId }: { helpId: string }) {
   const router = useRouter();
   const {
     configuration,
-    isFeatureEnabled,
-    isModuleEnabled,
+    authenticated,
+    hasMembership,
     hasCapability,
   } = useTenant();
   const [item, setItem] = useState<HelpRequest | null>(null);
   const [ready, setReady] = useState(false);
 
-  const workEnabled =
-    isModuleEnabled("services") &&
-    (isFeatureEnabled("work") || isFeatureEnabled("services"));
-
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const row = await fetchHelpRequest(configuration.tenantId, workPostId);
+      const row = await fetchHelpRequest(configuration.tenantId, helpId);
       if (cancelled) return;
-      if (row && !isWorkHelpCategory(row.category)) {
-        router.replace(`/help/${workPostId}`);
+      if (row && isWorkHelpCategory(row.category)) {
+        router.replace(`/services/work/${helpId}`);
         return;
       }
       setItem(row);
@@ -58,33 +47,15 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [configuration.tenantId, workPostId, router]);
-
-  if (!workEnabled) {
-    return (
-      <MobileScreen>
-        <FlowScreenHeader
-          title="Ayuda"
-          onBack={() => router.push("/services")}
-          onExit={() => router.push("/services")}
-        />
-        <EmptyState
-          title="No disponible"
-          description="Este tablón no está activo en tu comunidad ahora mismo."
-          actionLabel="Ver servicios"
-          onAction={() => router.push("/services")}
-        />
-      </MobileScreen>
-    );
-  }
+  }, [configuration.tenantId, helpId, router]);
 
   if (!ready) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Anuncio"
-          onBack={() => router.push("/services")}
-          onExit={() => router.push("/services")}
+          title="Ayuda entre vecinos"
+          onBack={() => router.push("/community")}
+          onExit={() => router.push("/community")}
         />
       </MobileScreen>
     );
@@ -94,31 +65,33 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title="Anuncio"
-          onBack={() => router.push("/services")}
-          onExit={() => router.push("/services")}
+          title="Ayuda entre vecinos"
+          onBack={() => router.push("/community")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
-          title="Anuncio no encontrado"
+          title="Ayuda no encontrada"
           description="Puede haberse cerrado o el enlace no es válido."
-          actionLabel="Ver servicios"
-          onAction={() => router.push("/services")}
+          actionLabel="Ver comunidad"
+          onAction={() => router.push("/community")}
         />
       </MobileScreen>
     );
   }
 
-  if (!hasCapability(CAPABILITIES.localView)) {
+  if (!hasCapability(CAPABILITIES.localView) || !authenticated || !hasMembership) {
     return (
       <MobileScreen>
         <FlowScreenHeader
-          title={typeLabel(item)}
-          onBack={() => router.push(boardHref())}
-          onExit={() => router.push("/services")}
+          title="Ayuda entre vecinos"
+          onBack={() => router.push("/community")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState
-          title="Sin acceso"
-          description="No puedes ver este anuncio con tu cuenta actual."
+          title="Únete para participar"
+          description="Vecinos ayudando vecinos. Crea tu cuenta y únete a la comunidad para ver y responder ayudas."
+          actionLabel={visitorConversionLabel(authenticated)}
+          onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       </MobileScreen>
     );
@@ -128,15 +101,15 @@ export function WorkPostDetailScreen({ workPostId }: { workPostId: string }) {
     <MobileScreen dense>
       <FlowScreenHeader
         title={item.title}
-        subtitle={typeLabel(item)}
-        onBack={() => router.push(boardHref())}
-        onExit={() => router.push("/services")}
+        subtitle={helpRequestTypeLabel(item.type)}
+        onBack={() => router.push("/community")}
+        onExit={() => router.push("/community")}
       />
 
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-2.5 py-0.5 text-[13px] font-semibold text-[var(--color-text-primary)]">
-            {typeLabel(item)}
+            {helpRequestTypeLabel(item.type)}
           </span>
           <span className="text-[13px] font-medium text-[var(--color-text-tertiary)]">
             {item.category}

@@ -1045,6 +1045,9 @@ export {
   createHelpRequestRecord,
   WORK_HELP_CATEGORIES,
   isWorkHelpCategory,
+  helpRequestHref,
+  workPostHref,
+  helpHrefForCategory,
 } from "./domain/help-request";
 
 /** Location discovery — LocalEntity is a view of Location. */

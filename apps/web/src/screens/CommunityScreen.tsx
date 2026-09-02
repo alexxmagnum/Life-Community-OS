@@ -56,6 +56,7 @@ import {
   COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA,
   COMMUNITY_OFFICIAL_ANNOUNCEMENTS_DESCRIPTION,
   COMMUNITY_OFFICIAL_ANNOUNCEMENTS_TITLE,
+  helpHrefForCategory,
   LIVING_EMPTY_CTA,
   partitionLivingCommunityFeed,
 } from "@life-community-os/types";
@@ -834,7 +835,7 @@ export function CommunityHubScreen() {
       </section>
 
       <section id="plaza-help" className="scroll-mt-3">
-        <HomeSection title="Ayudas" subtitle="Vecinos que piden o ofrecen una mano.">
+        <HomeSection title="Ayudas" subtitle="Vecinos ayudando vecinos.">
           {living.help.length === 0 ? (
             <EmptyState
               title={COMMUNITY_HELP_EMPTY_TITLE}
@@ -1167,9 +1168,14 @@ export function CommunityHubScreen() {
                         key={`work-${item.post.id}`}
                         glyph="🤝"
                         title={item.post.title}
-                        meta="Servicio entre vecinos"
+                        meta="Colaboración entre vecinos"
                         onClick={() =>
-                          router.push(`/services/work/${item.post.id}`)
+                          router.push(
+                            helpHrefForCategory(
+                              item.post.id,
+                              item.post.category,
+                            ),
+                          )
                         }
                       />
                     );

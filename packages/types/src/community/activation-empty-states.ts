@@ -20,10 +20,10 @@ export const COMMUNITY_GROUPS_EMPTY_DESCRIPTION =
   "Grupos para organizar actividades, compartir aficiones o ayudar a otros vecinos.";
 export const COMMUNITY_GROUPS_EMPTY_CTA = "Crear grupo";
 
-/** Community — Ayudas */
+/** Community — Ayudas (neighbour help, not professional services) */
 export const COMMUNITY_HELP_EMPTY_TITLE = "Ayuda entre vecinos";
 export const COMMUNITY_HELP_EMPTY_DESCRIPTION =
-  "Comparte necesidades o ofrece ayuda cuando alguien lo necesite.";
+  "Ofrece tu tiempo o pide colaboración cuando alguien lo necesite.";
 export const COMMUNITY_HELP_EMPTY_CTA = "Pedir ayuda";
 
 /** Community — Oficial / avisos */
@@ -45,10 +45,10 @@ export const HOME_SERVICES_EMPTY_CTA = "Explorar servicios";
 /** Services — professionals category */
 export const SERVICES_PROFESSIONALS_EMPTY_TITLE = "Encuentra soluciones cerca";
 export const SERVICES_PROFESSIONALS_EMPTY_DESCRIPTION =
-  "Profesionales y servicios locales aparecerán aquí.";
+  "Profesionales y negocios locales aparecerán aquí.";
 export const SERVICES_PROFESSIONALS_EMPTY_CTA = "Ofrecer servicio";
 export const SERVICES_PROFESSIONALS_VISITOR =
-  "Regístrate para contactar con profesionales y participar.";
+  "Regístrate para contactar con profesionales del territorio.";
 
 /** Reservations */
 export const RESERVATIONS_EMPTY_TITLE = "Espacios para disfrutar";

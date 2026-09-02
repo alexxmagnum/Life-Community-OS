@@ -14,7 +14,6 @@ import {
 import type { RequestActor } from "@/lib/auth/request-actor";
 import { listBusinessesServer } from "@/lib/business/server-business-repository";
 import { CommunityExperienceFeedService } from "@/lib/community/community-experience-feed";
-import { listHelpRequestsServer } from "@/lib/help/server-help-repository";
 import { listLocationsServer } from "@/lib/location/server-location-repository";
 import { getTenantPack } from "@/lib/tenant/registry";
 import {
@@ -40,7 +39,7 @@ export const DiscoverExperienceService = {
         timezone: "UTC",
         capabilities: input.actor.permissions,
       };
-    const [items, businesses, help, locations] = await Promise.all([
+    const [items, businesses, locations] = await Promise.all([
       CommunityExperienceFeedService.list({
         tenantId: input.tenantId,
         territoryId: input.territoryId,
@@ -48,7 +47,6 @@ export const DiscoverExperienceService = {
         permissions: input.actor.permissions,
       }),
       listBusinessesServer(input.tenantId),
-      listHelpRequestsServer(input.tenantId),
       listLocationsServer(input.tenantId),
     ]);
     const inScope = (territoryId?: string) =>
@@ -73,14 +71,7 @@ export const DiscoverExperienceService = {
           category: row.category,
           href: `/near/place/${row.locationId ?? row.id}`,
         })),
-      help: help
-        .filter((row) => row.status === "open" && inScope(row.territoryId))
-        .slice(0, 8)
-        .map((row) => ({
-          id: row.id,
-          title: row.title,
-          href: `/help/${row.id}`,
-        })),
+      help: [],
     });
   },
 

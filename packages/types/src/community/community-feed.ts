@@ -170,7 +170,13 @@ export function communityFeedItemHref(item: CommunityFeedItem): string {
   if (item.type === "business_activity" && item.locationId) {
     return `/locations/${encodeURIComponent(item.locationId)}`;
   }
-  if (item.metadata?.domain === "help") return "/help";
+  if (item.metadata?.domain === "help") {
+    const prefix = "community:help:";
+    if (item.id.startsWith(prefix)) {
+      return `/help/${encodeURIComponent(item.id.slice(prefix.length))}`;
+    }
+    return "/community";
+  }
   return "/community";
 }
 
@@ -643,7 +649,7 @@ export function projectHelpToFeedItem(
     actions: { primary: "contact" },
     metadata: {
       domain: "help",
-      href: "/help",
+      href: `/help/${encodeURIComponent(input.id)}`,
       ...(input.ownerPersonId?.trim()
         ? { organizerPersonId: input.ownerPersonId.trim() }
         : {}),

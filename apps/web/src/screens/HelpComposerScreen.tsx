@@ -36,8 +36,8 @@ export function HelpComposerScreen() {
       <MobileScreen>
         <FlowScreenHeader
           title="Ayuda"
-          onBack={() => router.push("/services/neighbour-help")}
-          onExit={() => router.push("/services")}
+          onBack={() => router.push("/community")}
+          onExit={() => router.push("/community")}
         />
         <EmptyState title="Sin acceso" />
       </MobileScreen>
@@ -62,15 +62,15 @@ export function HelpComposerScreen() {
       setSubmitting(false);
       return;
     }
-    router.replace("/services/neighbour-help");
+    router.replace(`/help/${created.request.id}`);
   };
 
   return (
     <MobileScreen>
       <FlowScreenHeader
         title={type === "offer_help" ? "Ofrecer ayuda" : "Pedir ayuda"}
-        onBack={() => router.push("/services/neighbour-help")}
-        onExit={() => router.push("/services")}
+        onBack={() => router.push("/community")}
+        onExit={() => router.push("/community")}
       />
       <div className="flex flex-wrap gap-2">
         {(["need_help", "offer_help"] as const).map((value) => (

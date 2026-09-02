@@ -122,6 +122,18 @@ export function isWorkHelpCategory(category: string): boolean {
   );
 }
 
+export function helpRequestHref(id: string): string {
+  return `/help/${encodeURIComponent(id.trim())}`;
+}
+
+export function workPostHref(id: string): string {
+  return `/services/work/${encodeURIComponent(id.trim())}`;
+}
+
+export function helpHrefForCategory(id: string, category: string): string {
+  return isWorkHelpCategory(category) ? workPostHref(id) : helpRequestHref(id);
+}
+
 function cryptoRandomId(): string {
   const c =
     typeof globalThis !== "undefined"

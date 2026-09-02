@@ -345,6 +345,7 @@ export function projectMemberNavigation(
   if (moduleOn(configuration, "services")) {
     const children: ProjectedNavLeaf[] = [];
     for (const hub of serviceHubs) {
+      if (hub.slug === "neighbour-help") continue;
       const flagsOk = hub.featureKeys.some((key) => isFeatureEnabled(key));
       if (!flagsOk) continue;
       children.push({
@@ -374,7 +375,7 @@ export function projectMemberNavigation(
         tone: "exchange",
         glyph: "🛠",
         label: "Servicios",
-        description: "Ayuda, profesionales y soluciones cercanas",
+        description: "Profesionales, negocios y soluciones cercanas",
         children: filterLeavesByCapability(children, hasCapability),
       });
     }

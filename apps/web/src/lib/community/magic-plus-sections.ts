@@ -32,7 +32,7 @@ const MAGIC_PLUS_SECTION_DEFS: readonly {
   },
   {
     id: "work",
-    title: "Trabajo / servicio",
+    title: "Trabajo y oficios",
     actionTypes: ["work_create", "offer_service", "business_create"],
   },
   {
