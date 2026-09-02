@@ -133,7 +133,7 @@ describe("Phase 18K-FIX-A visitor activation", () => {
     assert.match(home, /VISITOR_JOIN_HEADLINE/);
     assert.match(home, /visitorConversionLabel/);
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /Bienvenido a LIFE/);
+    assert.match(profile, /PROFILE_VISITOR_TITLE/);
     assert.match(profile, /Crear cuenta/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /visitorConversionHref/);

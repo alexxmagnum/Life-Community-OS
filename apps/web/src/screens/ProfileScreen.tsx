@@ -9,6 +9,9 @@ import {
   housingPropertyTypeLabel,
   PERSONAL_INTEREST_OPTIONS,
   propertyMembershipRoleLabel,
+  PROFILE_REGISTERED_TITLE,
+  PROFILE_VISITOR_DESCRIPTION,
+  PROFILE_VISITOR_TITLE,
   type PersonalContext,
   type PersonalFavorite,
   type PropertyPublicView,
@@ -190,14 +193,12 @@ export function ProfileScreen() {
     return (
       <MobileScreen dense>
         <ScreenHeader
-          title={`Bienvenido a LIFE ${configuration.branding.name}`}
+          title={PROFILE_VISITOR_TITLE}
           subtitle="Explora el territorio antes de unirte a la comunidad."
         />
         <section className="rounded-[14px] border border-[var(--color-border-subtle)] p-4">
           <p className="text-[14px] leading-6 text-[var(--color-text-secondary)]">
-            Como visitante puedes ver Home, Discover, lugares y comercios del
-            territorio. Para participar, reservar o crear experiencias únete a
-            la comunidad.
+            {PROFILE_VISITOR_DESCRIPTION}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button
@@ -223,7 +224,7 @@ export function ProfileScreen() {
   return (
     <MobileScreen dense>
       <ScreenHeader
-        title="Mi perfil"
+        title={isActiveMember ? "Mi perfil" : PROFILE_REGISTERED_TITLE}
         subtitle={
           isActiveMember
             ? "Identidad, relación con la comunidad y acciones personales."

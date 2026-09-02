@@ -3,6 +3,11 @@
 import { useRouter } from "next/navigation";
 import { formatSlotDate, reservationBadgeStatus } from "@/lib/reservations/presentation";
 import {
+  RESERVATIONS_EMPTY_CTA,
+  RESERVATIONS_EMPTY_DESCRIPTION,
+  RESERVATIONS_EMPTY_TITLE,
+} from "@life-community-os/types";
+import {
   Button,
   EmptyState,
   FlowScreenHeader,
@@ -12,6 +17,7 @@ import {
 } from "@life-community-os/ui";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useReservations } from "@/providers/ReservationProvider";
+import { RESERVATION_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 
 export function MyReservationsScreen() {
   const router = useRouter();
@@ -47,9 +53,10 @@ export function MyReservationsScreen() {
         </h2>
         {upcoming.length === 0 ? (
           <EmptyState
-            title="No hay reservas próximas"
-            description="Reserva una pista, sala o terraza cuando la necesites."
-            actionLabel="Ver lugares"
+            title={RESERVATIONS_EMPTY_TITLE}
+            description={RESERVATIONS_EMPTY_DESCRIPTION}
+            imageUrl={RESERVATION_EMPTY_GLYPH}
+            actionLabel={RESERVATIONS_EMPTY_CTA}
             onAction={() => router.push("/resources")}
           />
         ) : (

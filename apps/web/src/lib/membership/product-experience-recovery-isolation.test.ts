@@ -36,7 +36,7 @@ describe("Phase 18J product experience recovery", () => {
     assert.match(shell, /magicPlusMode !== "hidden"/);
     assert.match(shell, /return "hidden" as const/);
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /Bienvenido a LIFE/);
+    assert.match(profile, /PROFILE_VISITOR_TITLE/);
     const scope = resolveMembershipAccessScope({
       authenticated: false,
       hasMembership: false,
@@ -148,7 +148,7 @@ describe("Phase 18J product experience recovery", () => {
 
   it("PASS — Home enlaza a Services", () => {
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /Resolver algo/);
+    assert.match(home, /HOME_SERVICES_EMPTY_TITLE/);
     assert.match(home, /router\.push\("\/services"\)/);
   });
 

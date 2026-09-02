@@ -39,7 +39,7 @@ function readWeb(rel: string): string {
 describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — Visitor no parece miembro", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /Bienvenido a LIFE/);
+    assert.match(profile, /PROFILE_VISITOR_TITLE/);
     assert.match(
       profile,
       /Explora el territorio antes de unirte a la comunidad/,
@@ -186,10 +186,10 @@ describe("Phase 18I-P2 experience alignment", () => {
   it("PASS — No existe copy de historias sociales", () => {
     assert.doesNotMatch(LIVING_EMPTY_DESCRIPTION, /historia/i);
     assert.doesNotMatch(LIVING_PLACE_EMPTY_TITLE, /historia/i);
-    assert.equal(LIVING_EMPTY_TITLE, "Nada programado todavía");
+    assert.equal(LIVING_EMPTY_TITLE, "Aún no hay planes cerca");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
-      "Aún no hay experiencias en este lugar",
+      "Aún no hay experiencias aquí",
     );
     assert.equal(LIVING_PLACE_EMPTY_CTA, "Ver experiencias");
     const discover = readWeb("screens/DiscoverScreen.tsx");

@@ -11,6 +11,9 @@ import {
   communityFeedLivingLabel,
   communityFeedPrimaryLabel,
   communityFeedTimeLabel,
+  HOME_ANNOUNCEMENTS_EMPTY,
+  HOME_SERVICES_EMPTY_CTA,
+  HOME_SERVICES_EMPTY_TITLE,
   isLivingMomentFeedItem,
   LIVING_EMPTY_CTA,
   LIVING_EMPTY_DESCRIPTION,
@@ -439,7 +442,11 @@ export function HomeScreen() {
               </p>
             ))}
           </div>
-        ) : null}
+        ) : (
+          <p className="mb-4 rounded-[16px] border border-dashed border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)]/60 px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
+            {HOME_ANNOUNCEMENTS_EMPTY}
+          </p>
+        )}
         <p className="mb-3 text-[14px] text-white/55">Ahora mismo</p>
         {moments.length === 0 ? (
           <div>
@@ -523,7 +530,7 @@ export function HomeScreen() {
 
       {isModuleEnabled("services") ? (
         <section>
-          <HomeSectionHead title="Resolver algo" />
+          <HomeSectionHead title={HOME_SERVICES_EMPTY_TITLE} />
           <button
             type="button"
             onClick={() => router.push("/services")}
@@ -534,6 +541,9 @@ export function HomeScreen() {
             </span>
             <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
               Profesionales, ayuda vecinal, movilidad y marketplace.
+            </span>
+            <span className="mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]">
+              {HOME_SERVICES_EMPTY_CTA}
             </span>
           </button>
         </section>

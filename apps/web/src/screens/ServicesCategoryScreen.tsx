@@ -16,6 +16,10 @@ import {
   isWorkHelpCategory,
   locationToLocalEntity,
   marketplaceListingTypeLabel,
+  SERVICES_PROFESSIONALS_EMPTY_CTA,
+  SERVICES_PROFESSIONALS_EMPTY_DESCRIPTION,
+  SERVICES_PROFESSIONALS_EMPTY_TITLE,
+  SERVICES_PROFESSIONALS_VISITOR,
   type HelpRequest,
   type MarketplaceListing,
   type WorkPostType,
@@ -43,6 +47,8 @@ import {
   visitorConversionHref,
   visitorConversionLabel,
 } from "@/lib/membership/visitor-experience";
+import { openActionComposer } from "@/lib/community/action-composer-client";
+import { SERVICE_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
 
 /**
  * Servicios hub — "I need something solved."
@@ -241,17 +247,25 @@ export function ServicesCategoryScreen({ category }: { category: string }) {
     if (!canLocal) {
       body = (
         <EmptyState
-          title="Explora el territorio"
-          description="Inicia sesión y únete a la comunidad para ver profesionales del territorio."
+          title={SERVICES_PROFESSIONALS_EMPTY_TITLE}
+          description={SERVICES_PROFESSIONALS_VISITOR}
+          imageUrl={SERVICE_EMPTY_GLYPH}
           actionLabel={visitorConversionLabel(authenticated)}
           onAction={() => router.push(visitorConversionHref(authenticated))}
         />
       );
     } else if (entities.length === 0) {
+      const canOffer =
+        canAccessMemberData && hasCapability(CAPABILITIES.contentCreate);
       body = (
         <EmptyState
-          title={hub.emptyTitle}
-          description={hub.emptyDescription}
+          title={SERVICES_PROFESSIONALS_EMPTY_TITLE}
+          description={SERVICES_PROFESSIONALS_EMPTY_DESCRIPTION}
+          imageUrl={SERVICE_EMPTY_GLYPH}
+          actionLabel={canOffer ? SERVICES_PROFESSIONALS_EMPTY_CTA : undefined}
+          onAction={
+            canOffer ? () => openActionComposer({ source: "global_plus" }) : undefined
+          }
         />
       );
     } else {

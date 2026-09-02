@@ -217,11 +217,11 @@ describe("Magic Community Experience isolation", () => {
   it("TEST 7 — empty activity invites to create experiences", () => {
     const living = partitionLivingCommunityFeed([]);
     assert.equal(living.moments.length, 0);
-    assert.equal(LIVING_EMPTY_TITLE, "Nada programado todavía");
+    assert.equal(LIVING_EMPTY_TITLE, "Aún no hay planes cerca");
     assert.equal(LIVING_EMPTY_CTA, "Crear experiencia");
     assert.equal(
       LIVING_PLACE_EMPTY_TITLE,
-      "Aún no hay experiencias en este lugar",
+      "Aún no hay experiencias aquí",
     );
     assert.equal(LIVING_PLACE_EMPTY_CTA, "Ver experiencias");
   });

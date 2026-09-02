@@ -261,14 +261,14 @@ const BAND_ORDER: Record<CommunityFeedRankBand, number> = {
  * Territory life order: now → next → relevant → popular.
  * Never sort by id, seed, or pack priority.
  */
-/** Empty community copy — invitation to create experiences, never social stories. */
-export const LIVING_EMPTY_TITLE = "Nada programado todavía";
-export const LIVING_EMPTY_DESCRIPTION =
-  "Aún no hay experiencias cerca. Las personas de la comunidad las organizan desde Magic Plus.";
-export const LIVING_EMPTY_CTA = "Crear experiencia";
-export const LIVING_PLACE_EMPTY_TITLE =
-  "Aún no hay experiencias en este lugar";
-export const LIVING_PLACE_EMPTY_CTA = "Ver experiencias";
+export {
+  LIVING_EMPTY_TITLE,
+  LIVING_EMPTY_DESCRIPTION,
+  LIVING_EMPTY_CTA,
+  LIVING_PLACE_EMPTY_TITLE,
+  LIVING_PLACE_EMPTY_DESCRIPTION,
+  LIVING_PLACE_EMPTY_CTA,
+} from "./activation-empty-states";
 
 export function isHelpFeedItem(item: CommunityFeedItem): boolean {
   return item.metadata?.domain === "help";

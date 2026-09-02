@@ -45,15 +45,29 @@ import { resolvePlaceHref } from "@/lib/location";
 import { fetchTerritoryAnnouncements } from "@/lib/community/community-operations-client";
 import type { CommunityEvent, CommunityFeedItem, CommunityGroupRecord, CommunityOwnActivity, TerritoryAnnouncement } from "@life-community-os/types";
 import {
+  COMMUNITY_GROUPS_EMPTY_CTA,
+  COMMUNITY_GROUPS_EMPTY_DESCRIPTION,
+  COMMUNITY_GROUPS_EMPTY_TITLE,
+  COMMUNITY_HELP_EMPTY_CTA,
+  COMMUNITY_HELP_EMPTY_DESCRIPTION,
+  COMMUNITY_HELP_EMPTY_TITLE,
+  COMMUNITY_NOW_EMPTY_DESCRIPTION,
+  COMMUNITY_NOW_EMPTY_TITLE,
+  COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA,
+  COMMUNITY_OFFICIAL_ANNOUNCEMENTS_DESCRIPTION,
+  COMMUNITY_OFFICIAL_ANNOUNCEMENTS_TITLE,
   LIVING_EMPTY_CTA,
-  LIVING_EMPTY_DESCRIPTION,
-  LIVING_EMPTY_TITLE,
   partitionLivingCommunityFeed,
 } from "@life-community-os/types";
 import { groupToHubCard } from "@/lib/community/map-to-ui";
 import { LivingFeedCard } from "@/components/community/LivingFeedCard";
 import { openActionComposer } from "@/lib/community/action-composer-client";
-import { LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import {
+  ANNOUNCEMENT_EMPTY_GLYPH,
+  EXPERIENCE_EMPTY_GLYPH,
+  GROUP_EMPTY_GLYPH,
+  HELP_EMPTY_GLYPH,
+} from "@/lib/community/composer-glyphs";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { CommunityPreviewPanel } from "@/components/community/CommunityPreviewPanel";
 import { resolveMembershipAccessScope } from "@/lib/membership/membership-experience-scope";
@@ -421,7 +435,7 @@ export function CommunityHubScreen() {
           .join(" · ")
       : living.moments.length > 0
         ? "Lo que está pasando"
-        : LIVING_EMPTY_TITLE;
+        : COMMUNITY_NOW_EMPTY_TITLE;
 
   const visibleChannels = expandChannels
     ? accessibleChannels
@@ -541,9 +555,9 @@ export function CommunityHubScreen() {
         >
           {!ahoraHasBody ? (
             <EmptyState
-              title={LIVING_EMPTY_TITLE}
-              description={LIVING_EMPTY_DESCRIPTION}
-              imageUrl={LIVING_EMPTY_GLYPH}
+              title={COMMUNITY_NOW_EMPTY_TITLE}
+              description={COMMUNITY_NOW_EMPTY_DESCRIPTION}
+              imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -736,10 +750,10 @@ export function CommunityHubScreen() {
         >
           {groupItems.length === 0 ? (
             <EmptyState
-              title="Todavía no hay grupos aquí"
-              description="Crea el primero y da un lugar a quienes viven cerca."
-              imageUrl={LIVING_EMPTY_GLYPH}
-              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              title={COMMUNITY_GROUPS_EMPTY_TITLE}
+              description={COMMUNITY_GROUPS_EMPTY_DESCRIPTION}
+              imageUrl={GROUP_EMPTY_GLYPH}
+              actionLabel={canCreate ? COMMUNITY_GROUPS_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
           ) : expandGroups ? (
@@ -782,9 +796,9 @@ export function CommunityHubScreen() {
         <HomeSection title="Próximamente" subtitle="Planes y eventos que vienen.">
           {living.upcoming.length === 0 && domainEvents.length === 0 ? (
             <EmptyState
-              title={LIVING_EMPTY_TITLE}
-              description={LIVING_EMPTY_DESCRIPTION}
-              imageUrl={LIVING_EMPTY_GLYPH}
+              title={COMMUNITY_NOW_EMPTY_TITLE}
+              description={COMMUNITY_NOW_EMPTY_DESCRIPTION}
+              imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -823,10 +837,10 @@ export function CommunityHubScreen() {
         <HomeSection title="Ayudas" subtitle="Vecinos que piden o ofrecen una mano.">
           {living.help.length === 0 ? (
             <EmptyState
-              title="Todavía no hay ayudas aquí"
-              description="Si alguien necesita una mano, aparecerá aquí."
-              imageUrl={LIVING_EMPTY_GLYPH}
-              actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
+              title={COMMUNITY_HELP_EMPTY_TITLE}
+              description={COMMUNITY_HELP_EMPTY_DESCRIPTION}
+              imageUrl={HELP_EMPTY_GLYPH}
+              actionLabel={canCreate ? COMMUNITY_HELP_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
           ) : (
@@ -857,8 +871,8 @@ export function CommunityHubScreen() {
             ownActivity.upcomingReservations.length === 0) ? (
             <EmptyState
               title="Aún no has participado"
-              description="Únete a un plan o crea el primero."
-              imageUrl={LIVING_EMPTY_GLYPH}
+              description="Únete a un plan o crea el primero desde Magic Plus."
+              imageUrl={EXPERIENCE_EMPTY_GLYPH}
               actionLabel={canCreate ? LIVING_EMPTY_CTA : undefined}
               onAction={canCreate ? openComposer : undefined}
             />
@@ -961,8 +975,13 @@ export function CommunityHubScreen() {
         >
           {!showOfficial ? (
             <EmptyState
-              title="Sin información oficial todavía"
-              description="Cuando haya entidades o avisos oficiales, los verás aquí."
+              title={COMMUNITY_OFFICIAL_ANNOUNCEMENTS_TITLE}
+              description={COMMUNITY_OFFICIAL_ANNOUNCEMENTS_DESCRIPTION}
+              imageUrl={ANNOUNCEMENT_EMPTY_GLYPH}
+              actionLabel={
+                canCreate ? COMMUNITY_OFFICIAL_ANNOUNCEMENTS_CTA : undefined
+              }
+              onAction={canCreate ? openComposer : undefined}
             />
           ) : (
             <div className="space-y-2.5">

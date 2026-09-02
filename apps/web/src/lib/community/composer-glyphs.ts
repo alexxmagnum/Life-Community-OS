@@ -1,5 +1,5 @@
 /**
- * Existing 3D assets for Action Composer invitations.
+ * Existing 3D assets for Action Composer invitations and activation empty states.
  * Not a domain. Paths are public platform files already in the repo.
  */
 
@@ -19,6 +19,16 @@ export const COMPOSER_GLYPH_BY_ACTION: Record<string, string> = {
   offer_service: getAsset("services.maintenance.card").path,
 };
 
-export const LIVING_EMPTY_GLYPH = getAsset("community.recommendations.card").path;
+export const EXPERIENCE_EMPTY_GLYPH = getAsset("sports.sports.card").path;
+export const HELP_EMPTY_GLYPH = getAsset("community.neighbour-help.card").path;
+export const GROUP_EMPTY_GLYPH = getAsset("community.recommendations.card").path;
+export const ANNOUNCEMENT_EMPTY_GLYPH = getAsset(
+  "community.recommendations.card",
+).path;
+export const SERVICE_EMPTY_GLYPH = getAsset("services.maintenance.card").path;
+export const RESERVATION_EMPTY_GLYPH = getAsset(
+  "services.spaces-reservations.card",
+).path;
 
+export const LIVING_EMPTY_GLYPH = EXPERIENCE_EMPTY_GLYPH;
 export const LIVING_PLACE_GLYPH = getAsset("navigation.discover.card").path;
