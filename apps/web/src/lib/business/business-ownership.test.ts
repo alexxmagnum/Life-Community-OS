@@ -115,18 +115,23 @@ describe("business platform ownership", () => {
     assert.equal(actorCanEditBusiness(stranger, created.business), false);
   });
 
-  it("TEST 3 — administrador publica negocio", async () => {
+  it("TEST 3 — administrador aprueba negocio en revisión", async () => {
     const created = await register({
       tenantId: PANO,
       ownerPersonId: "person-alex",
       name: "Taller Alex",
+    });
+    await setBusinessStatus({
+      tenantId: PANO,
+      businessId: created.business.id,
+      status: "pending_review",
     });
     const admin = actor({
       tenantSlug: PANO,
       role: "administrator",
       personId: "person-admin",
     });
-    assert.equal(actorCanPublishBusiness(admin, created.business), true);
+    assert.equal(actorCanPublishBusiness(admin, created.business), false);
     assert.equal(actorCanReviewBusiness(admin), true);
     const published = await setBusinessStatus({
       tenantId: PANO,

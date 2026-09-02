@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BusinessProfile } from "@life-community-os/types";
+import {
+  businessLifecycleLabel,
+  canAdminApproveBusiness,
+  canAdminRejectBusiness,
+} from "@life-community-os/types";
 import { fetchBusinesses, reviewBusinessRequest } from "@/lib/business/business-client";
 import { AdminCard, AdminOperationsShell } from "@/components/admin/AdminOperationsShell";
 import { useTenant } from "@/providers/TenantProvider";
@@ -54,36 +59,55 @@ export function AdminBusinessesScreen() {
                 >
                   <span className="block text-[15px] font-medium">{item.name}</span>
                   <span className="block text-[13px] text-[var(--color-text-tertiary)]">
-                    {item.status} · {item.category}
+                    {businessLifecycleLabel(item.status)} · {item.category}
                   </span>
                 </button>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
-                    onClick={() =>
-                      void reviewBusinessRequest({
-                        tenantId: tenantSlug,
-                        businessId: item.id,
-                        action: "approve",
-                      }).then(() => refresh())
-                    }
-                  >
-                    Aprobar
-                  </button>
-                  <button
-                    type="button"
-                    className="min-h-[36px] rounded-full border px-3 text-[13px]"
-                    onClick={() =>
-                      void reviewBusinessRequest({
-                        tenantId: tenantSlug,
-                        businessId: item.id,
-                        action: "suspend",
-                      }).then(() => refresh())
-                    }
-                  >
-                    Suspender
-                  </button>
+                  {canAdminApproveBusiness(item.status) ? (
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-full bg-[var(--color-action-primary)] px-3 text-[13px] font-semibold text-white"
+                      onClick={() =>
+                        void reviewBusinessRequest({
+                          tenantId: tenantSlug,
+                          businessId: item.id,
+                          action: "approve",
+                        }).then(() => refresh())
+                      }
+                    >
+                      Aprobar
+                    </button>
+                  ) : null}
+                  {canAdminRejectBusiness(item.status) ? (
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-full border px-3 text-[13px]"
+                      onClick={() =>
+                        void reviewBusinessRequest({
+                          tenantId: tenantSlug,
+                          businessId: item.id,
+                          action: "reject",
+                        }).then(() => refresh())
+                      }
+                    >
+                      Rechazar
+                    </button>
+                  ) : null}
+                  {item.status === "published" ? (
+                    <button
+                      type="button"
+                      className="min-h-[36px] rounded-full border px-3 text-[13px]"
+                      onClick={() =>
+                        void reviewBusinessRequest({
+                          tenantId: tenantSlug,
+                          businessId: item.id,
+                          action: "suspend",
+                        }).then(() => refresh())
+                      }
+                    >
+                      Suspender
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="min-h-[36px] rounded-full border px-3 text-[13px]"

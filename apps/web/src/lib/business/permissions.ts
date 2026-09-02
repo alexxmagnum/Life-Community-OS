@@ -67,10 +67,9 @@ export function actorCanPublishBusiness(
   business: Pick<BusinessProfile, "ownerPersonId" | "status">,
 ): boolean {
   if (!actorHasMemberTerritoryView(actor)) return false;
-  if (isTenantStaffRole(actor.role)) return true;
+  if (isTenantStaffRole(actor.role)) return false;
   return (
-    actorOwnsBusiness(actor, business) &&
-    (business.status === "draft" || business.status === "pending_review")
+    actorOwnsBusiness(actor, business) && business.status === "draft"
   );
 }
 

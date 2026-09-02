@@ -8,6 +8,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { BusinessProfile } from "@life-community-os/types";
 import {
+  businessLifecycleLabel,
+  businessOwnerStatusMessage,
+  canOwnerSubmitBusinessForReview,
+} from "@life-community-os/types";
+import {
   EmptyState,
   FlowScreenHeader,
   MobileScreen,
@@ -29,14 +34,6 @@ import {
 import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { useEntityMedia } from "@/lib/media/use-entity-media";
 import { useTenant } from "@/providers/TenantProvider";
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Borrador",
-  pending_review: "Pendiente de revisión",
-  published: "Publicado",
-  suspended: "Suspendido",
-  archived: "Archivado",
-};
 
 export function LocationDetailScreen() {
   const router = useRouter();
@@ -250,11 +247,14 @@ export function LocationDetailScreen() {
           {profile?.summary ?? experience.summary}
         </p>
 
-        {business ? (
-          <p className="text-[13px] text-[var(--color-text-tertiary)]">
-            {STATUS_LABEL[business.status] ?? business.status}
-            {isStaff ? ` · propietario ${business.ownerPersonId}` : ""}
-          </p>
+        {business && (isOwner || isStaff) ? (
+          <div className="rounded-[14px] border border-[var(--color-border-subtle)] bg-[var(--color-surface-elevated,#fff)] px-4 py-3">
+            <p className="text-[13px] font-medium text-[var(--color-text-primary)]">
+              {isOwner
+                ? businessOwnerStatusMessage(business.status)
+                : `${businessLifecycleLabel(business.status)} · propietario ${business.ownerPersonId}`}
+            </p>
+          </div>
         ) : null}
 
         {profile?.hours ? (
@@ -332,7 +332,7 @@ export function LocationDetailScreen() {
               >
                 Guardar
               </button>
-              {business && isOwner && business.status === "draft" ? (
+              {business && isOwner && canOwnerSubmitBusinessForReview(business.status) ? (
                 <button
                   type="button"
                   disabled={saving}
@@ -340,6 +340,7 @@ export function LocationDetailScreen() {
                   onClick={() =>
                     void (async () => {
                       setSaving(true);
+                      setMessage(null);
                       await publishBusinessRequest({
                         tenantId: tenantSlug,
                         businessId: business.id,
@@ -349,14 +350,15 @@ export function LocationDetailScreen() {
                         locationId,
                       });
                       setBusiness(rows[0] ?? null);
+                      setMessage("Solicitud enviada. Pendiente de revisión.");
                       setSaving(false);
                     })()
                   }
                 >
-                  Solicitar publicación
+                  Solicitar presencia en la comunidad
                 </button>
               ) : null}
-              {business && isStaff && business.status !== "published" ? (
+              {business && isStaff && business.status === "pending_review" ? (
                 <button
                   type="button"
                   disabled={saving}
@@ -379,7 +381,33 @@ export function LocationDetailScreen() {
                     })()
                   }
                 >
-                  Publicar
+                  Aprobar
+                </button>
+              ) : null}
+              {business && isStaff && business.status === "pending_review" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border-subtle)] px-4 text-[13px] font-semibold"
+                  onClick={() =>
+                    void (async () => {
+                      setSaving(true);
+                      await reviewBusinessRequest({
+                        tenantId: tenantSlug,
+                        businessId: business.id,
+                        action: "reject",
+                      });
+                      const rows = await fetchBusinesses({
+                        tenantId: configuration.tenantId,
+                        locationId,
+                      });
+                      setBusiness(rows[0] ?? null);
+                      await refresh?.();
+                      setSaving(false);
+                    })()
+                  }
+                >
+                  Rechazar
                 </button>
               ) : null}
               {business && isStaff && business.status === "published" ? (

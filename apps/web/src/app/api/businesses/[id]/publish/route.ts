@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   actorCanPublishBusiness,
-  isTenantStaffRole,
 } from "@/lib/business/permissions";
 import {
   getBusinessServer,
@@ -35,14 +34,14 @@ export async function POST(request: Request, { params }: Params) {
   if (!actorCanPublishBusiness(gated.actor, existing)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
+  if (existing.status !== "draft") {
+    return NextResponse.json({ error: "invalid_state" }, { status: 400 });
+  }
 
-  const nextStatus = isTenantStaffRole(gated.actor.role)
-    ? "published"
-    : "pending_review";
   const business = await setBusinessStatus({
     tenantId: bound.tenantId,
     businessId: id,
-    status: nextStatus,
+    status: "pending_review",
     scope,
   });
   return NextResponse.json({ business });

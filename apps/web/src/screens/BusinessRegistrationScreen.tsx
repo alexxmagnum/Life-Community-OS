@@ -18,7 +18,7 @@ import {
   ScreenPrimaryAction,
 } from "@life-community-os/ui";
 import { getAddressGeocoder, LOCATION_CATEGORY_OPTIONS } from "@/lib/location";
-import { createBusinessRequest, publishBusinessRequest } from "@/lib/business/business-client";
+import { createBusinessRequest } from "@/lib/business/business-client";
 import { linkMediaToEntity } from "@/lib/media/media-client";
 import { EntityMediaField } from "@/components/media/EntityMediaField";
 import { useTenant } from "@/providers/TenantProvider";
@@ -140,10 +140,6 @@ export function BusinessRegistrationScreen() {
         setSaving(false);
         return;
       }
-      await publishBusinessRequest({
-        tenantId,
-        businessId: created.business.id,
-      });
       await Promise.all(
         pendingMediaIds.map((mediaId) =>
           linkMediaToEntity({
@@ -165,7 +161,7 @@ export function BusinessRegistrationScreen() {
     <MobileScreen>
       <FlowScreenHeader
         title={intentService ? "Ofrecer un servicio" : "Registrar negocio"}
-        subtitle="Quedará en borrador hasta que un administrador lo publique"
+        subtitle="Se guardará como borrador. Cuando esté listo, solicita presencia en la comunidad."
         onBack={() => router.push("/map")}
         onExit={() => router.push("/map")}
       />
@@ -320,7 +316,7 @@ export function BusinessRegistrationScreen() {
       </section>
 
       <ScreenPrimaryAction
-        label={saving ? "Guardando…" : "Enviar a revisión"}
+        label={saving ? "Guardando…" : "Guardar borrador"}
         onClick={() => void onSave()}
         disabled={!canConfirm || saving}
       />

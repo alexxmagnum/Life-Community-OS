@@ -1028,6 +1028,17 @@ export {
 } from "./domain/business-profile";
 
 export {
+  businessLifecyclePhase,
+  businessLifecycleLabel,
+  businessOwnerStatusMessage,
+  isBusinessPubliclyDiscoverable,
+  canOwnerSubmitBusinessForReview,
+  canAdminApproveBusiness,
+  canAdminRejectBusiness,
+} from "./domain/business-lifecycle";
+export type { BusinessLifecyclePhase } from "./domain/business-lifecycle";
+
+export {
   MARKETPLACE_LISTING_TYPES,
   MARKETPLACE_LISTING_STATUSES,
   isMarketplaceListingType,
