@@ -118,6 +118,7 @@ export async function createCommunityGroupRequest(input: {
   return res.json();
 }
 
+/** @deprecated Prefer createExperienceRequest({ kind: "event" }). Bridge creates Experience only. */
 export async function createCommunityEventRequest(input: {
   tenantId: string;
   title: string;

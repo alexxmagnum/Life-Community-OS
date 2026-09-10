@@ -590,6 +590,18 @@ export async function listCommunityEvents(
     );
 }
 
+/** All CommunityEvent rows including draft/cancelled — migration / backfill only. */
+export async function listAllCommunityEventsServer(
+  tenantId: string,
+  scope?: CommunityWriteScope,
+): Promise<CommunityEvent[]> {
+  const snapshot = await listCommunitySnapshot(tenantId, scope);
+  return [...snapshot.events].sort(
+    (a, b) =>
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+}
+
 export async function getCommunityEventServer(
   tenantId: string,
   eventId: string,
@@ -608,6 +620,12 @@ export async function getCommunityGroupServer(
   return snapshot.groups.find((item) => item.id === groupId) ?? null;
 }
 
+/**
+ * @deprecated Phase 3 — do not use for product writes.
+ * New Events must be Experience(kind=event) via createExperienceServer / composer.
+ * Kept for fixtures, isolation tests, and emergency legacy tooling only.
+ * Prefer backfillCommunityEventsToExperiences for existing rows.
+ */
 export async function createCommunityEvent(input: {
   tenantId: string;
   authorPersonId: string;

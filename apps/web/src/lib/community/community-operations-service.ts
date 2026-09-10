@@ -204,6 +204,10 @@ export const CommunityOperationsService = {
     requireActor(input.actor, input.tenantId);
     const territoryId = input.territoryId;
     const tenantId = resolveTenantPublicId(input.tenantId);
+    const { backfillCommunityEventsToExperiences } = await import(
+      "@/lib/community/community-event-backfill"
+    );
+    await backfillCommunityEventsToExperiences({ tenantId: input.tenantId });
     const [experiences, events, reservations, help, businesses, announcements] =
       await Promise.all([
         listExperiencesServer(input.tenantId, undefined, { territoryId }),
@@ -215,15 +219,32 @@ export const CommunityOperationsService = {
       ]);
     const inScope = (recordTerritoryId?: string) =>
       recordMatchesTerritoryScope(recordTerritoryId, territoryId);
+    const { readLegacyCommunityEventId } = await import(
+      "@life-community-os/types"
+    );
+    const publishedExperiences = experiences.filter(
+      (item) => item.status === "published" && inScope(item.territoryId),
+    );
+    const experienceEvents = publishedExperiences.filter(
+      (item) => item.kind === "event",
+    );
+    const migratedLegacyIds = new Set(
+      experienceEvents
+        .map((item) => readLegacyCommunityEventId(item.metadata))
+        .filter((id): id is string => Boolean(id)),
+    );
+    const legacyEventsUnmigrated = events.filter(
+      (item) =>
+        item.status === "published" &&
+        inScope(item.territoryId) &&
+        !migratedLegacyIds.has(item.id),
+    );
     return projectCommunityOperationsContext({
       tenantId,
       territoryId,
-      experiences: experiences.filter(
-        (item) => item.status === "published" && inScope(item.territoryId),
-      ).length,
-      events: events.filter(
-        (item) => item.status === "published" && inScope(item.territoryId),
-      ).length,
+      experiences: publishedExperiences.length,
+      // Prefer Experience(kind=event); add only unmigrated legacy rows (no double count).
+      events: experienceEvents.length + legacyEventsUnmigrated.length,
       reservations: reservations.filter(
         (item) =>
           reservationIsActive(item.status) && inScope(item.territoryId),

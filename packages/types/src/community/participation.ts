@@ -190,7 +190,8 @@ export function entityHrefForParticipation(
     case "experience":
       return `/experiences/${id}`;
     case "event":
-      return `/community`;
+      // Legacy CommunityEvent id → redirect route resolves Experience(kind=event).
+      return `/community/events/${id}`;
     case "group":
       return `/community/groups/${id}`;
     case "help":

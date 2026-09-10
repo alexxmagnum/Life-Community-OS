@@ -84,6 +84,20 @@ export {
   magicPlusSectionIdForActionType,
 } from "./community/action-composer";
 
+/** CommunityEvent → Experience(kind=event) migration mapping. */
+export type { CommunityEventExperienceMigrationFields } from "./community/community-event-migration";
+export {
+  COMMUNITY_EVENT_MIGRATED_FROM,
+  LEGACY_COMMUNITY_EVENT_ID_META,
+  experienceIdForLegacyCommunityEvent,
+  legacyCommunityEventIdFromExperienceId,
+  readLegacyCommunityEventId,
+  isMigratedFromCommunityEvent,
+  mapCommunityEventStatusToExperience,
+  mapCommunityEventParticipantRole,
+  mapCommunityEventToExperienceFields,
+} from "./community/community-event-migration";
+
 /** Experience Composer — single create surface by Experience.kind. */
 export type {
   ExperienceComposerFieldId,

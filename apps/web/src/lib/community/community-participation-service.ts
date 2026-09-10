@@ -682,6 +682,14 @@ export async function listOwnCommunityActivity(input: {
       upcomingReservations: [],
     };
   }
+  const { readLegacyCommunityEventId } = await import("@life-community-os/types");
+  const { backfillCommunityEventsToExperiences } = await import(
+    "@/lib/community/community-event-backfill"
+  );
+  await backfillCommunityEventsToExperiences({
+    tenantId: input.tenantId,
+    scope: input.scope,
+  });
   const experiences = (
     await listExperiencesServer(input.tenantId, input.scope, { territoryId })
   ).filter(
@@ -690,10 +698,17 @@ export async function listOwnCommunityActivity(input: {
       item.status !== "cancelled" &&
       item.status !== "archived",
   );
+  const eventExperiences = experiences.filter((item) => item.kind === "event");
+  const migratedLegacyIds = new Set(
+    eventExperiences
+      .map((item) => readLegacyCommunityEventId(item.metadata))
+      .filter((id): id is string => Boolean(id)),
+  );
   const events = (await listCommunityEvents(input.tenantId, input.scope)).filter(
     (item) =>
       (item.territoryId ?? territoryId) === territoryId &&
-      item.authorPersonId === personId,
+      item.authorPersonId === personId &&
+      !migratedLegacyIds.has(item.id),
   );
   const help = (await listHelpRequestsServer(input.tenantId, input.scope)).filter(
     (item) =>
@@ -710,20 +725,31 @@ export async function listOwnCommunityActivity(input: {
       (item.territoryId ?? territoryId) === territoryId,
   );
   return {
-    experiencesCreated: experiences.map((item) => ({
-      id: item.id,
-      title: item.title,
-      href: entityHrefForParticipation("experience", item.id),
-      startsAt: item.startsAt,
-      status: item.status,
-    })),
-    upcomingEvents: events.map((item) => ({
-      id: item.id,
-      title: item.title,
-      href: entityHrefForParticipation("event", item.id),
-      startsAt: item.startsAt,
-      status: item.status,
-    })),
+    experiencesCreated: experiences
+      .filter((item) => item.kind !== "event")
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        href: entityHrefForParticipation("experience", item.id),
+        startsAt: item.startsAt,
+        status: item.status,
+      })),
+    upcomingEvents: [
+      ...eventExperiences.map((item) => ({
+        id: item.id,
+        title: item.title,
+        href: entityHrefForParticipation("experience", item.id),
+        startsAt: item.startsAt,
+        status: item.status,
+      })),
+      ...events.map((item) => ({
+        id: item.id,
+        title: item.title,
+        href: entityHrefForParticipation("event", item.id),
+        startsAt: item.startsAt,
+        status: item.status,
+      })),
+    ],
     helpOffered: help.map((item) => ({
       id: item.id,
       title: item.title,
