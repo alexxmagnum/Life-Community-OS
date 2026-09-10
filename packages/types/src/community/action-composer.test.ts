@@ -90,9 +90,37 @@ describe("Action Composer contract", () => {
       locationName: "Piscina",
     });
     assert.equal(href.includes("locationId=loc-pool"), true);
+    assert.equal(href.includes("kind=experience"), true);
     assert.equal(/territoryId=/.test(href), false);
     assert.equal(/createdBy=/.test(href), false);
     assert.equal(/source=/.test(href), false);
+  });
+
+  it("routes plan / experience / event create to the same composer with kind", () => {
+    const plan = COMMUNITY_CREATION_ACTIONS.find(
+      (item) => item.type === "plan_create",
+    );
+    const experience = COMMUNITY_CREATION_ACTIONS.find(
+      (item) => item.type === "experience_create",
+    );
+    const event = COMMUNITY_CREATION_ACTIONS.find(
+      (item) => item.type === "event_create",
+    );
+    assert.ok(plan && experience && event);
+    assert.equal(plan.route, "/experiences/create");
+    assert.equal(experience.route, "/experiences/create");
+    assert.equal(event.route, "/experiences/create");
+    assert.equal(communityCreationRoute(plan), "/experiences/create?kind=plan");
+    assert.equal(
+      communityCreationRoute(experience),
+      "/experiences/create?kind=experience",
+    );
+    assert.equal(
+      communityCreationRoute(event),
+      "/experiences/create?kind=event",
+    );
+    assert.equal(plan.requiredCapability, CAPABILITIES.experienceCreate);
+    assert.equal(event.requiredCapability, CAPABILITIES.experienceCreate);
   });
 
   it("routes help offer and local service without inventing a marketplace type", () => {

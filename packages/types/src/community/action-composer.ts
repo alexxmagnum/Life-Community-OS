@@ -12,6 +12,7 @@ import {
  */
 
 export const COMMUNITY_CREATION_ACTION_TYPES = [
+  "plan_create",
   "experience_create",
   "event_create",
   "announcement_create",
@@ -68,10 +69,20 @@ export type CommunityActionRegistryInput = {
 
 export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
   {
+    id: "plan_create",
+    type: "plan_create",
+    title: "Crear plan",
+    description: "Algo sencillo que quieres hacer con otras personas",
+    icon: "🏃",
+    requiredCapability: CAPABILITIES.experienceCreate,
+    route: "/experiences/create",
+    territoryRequired: true,
+  },
+  {
     id: "experience_create",
     type: "experience_create",
     title: "Crear experiencia",
-    description: "Organiza una actividad que reúna vecinos",
+    description: "Organiza una actividad con más contexto",
     icon: "✨",
     requiredCapability: CAPABILITIES.experienceCreate,
     route: "/experiences/create",
@@ -81,10 +92,10 @@ export const COMMUNITY_CREATION_ACTIONS: readonly CommunityCreationAction[] = [
     id: "event_create",
     type: "event_create",
     title: "Organizar evento",
-    description: "Convoca a quienes viven cerca",
+    description: "Algo organizado que va a suceder",
     icon: "📅",
-    requiredCapability: CAPABILITIES.contentCreate,
-    route: "/community/events/create",
+    requiredCapability: CAPABILITIES.experienceCreate,
+    route: "/experiences/create",
     territoryRequired: true,
   },
   {
@@ -221,6 +232,7 @@ export function magicPlusSectionIdForActionType(
   type: CommunityCreationActionType,
 ): string {
   switch (type) {
+    case "plan_create":
     case "experience_create":
     case "event_create":
       return "experience";
@@ -248,9 +260,10 @@ function productKeyForCreation(
   type: CommunityCreationActionType,
 ): ProductCapabilityKey | null {
   switch (type) {
+    case "plan_create":
     case "experience_create":
-      return "experiences";
     case "event_create":
+      return "experiences";
     case "announcement_create":
     case "group_create":
       return "community";
@@ -285,8 +298,18 @@ export function communityCreationRoute(
   if (action.type === "offer_service") {
     parts.push("intent=service");
   }
+  if (action.type === "plan_create") {
+    parts.push("kind=plan");
+  }
+  if (action.type === "experience_create") {
+    parts.push("kind=experience");
+  }
+  if (action.type === "event_create") {
+    parts.push("kind=event");
+  }
   if (
-    (action.type === "experience_create" ||
+    (action.type === "plan_create" ||
+      action.type === "experience_create" ||
       action.type === "event_create" ||
       action.type === "announcement_create" ||
       action.type === "offer_service") &&
@@ -294,14 +317,15 @@ export function communityCreationRoute(
   ) {
     parts.push(`locationId=${encodeURIComponent(locationId)}`);
   }
-  if (action.type === "experience_create" && locationName) {
-    parts.push(`locationName=${encodeURIComponent(locationName)}`);
-  }
   if (
-    (action.type === "event_create" ||
-      action.type === "announcement_create") &&
+    (action.type === "plan_create" ||
+      action.type === "experience_create" ||
+      action.type === "event_create") &&
     locationName
   ) {
+    parts.push(`locationName=${encodeURIComponent(locationName)}`);
+  }
+  if (action.type === "announcement_create" && locationName) {
     parts.push(`location=${encodeURIComponent(locationName)}`);
   }
   return parts.length > 0 ? `${action.route}?${parts.join("&")}` : action.route;

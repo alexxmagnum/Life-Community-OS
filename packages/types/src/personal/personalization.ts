@@ -114,12 +114,12 @@ const ADULT_NIGHT_KEYWORDS = [
 const COMPOSER_INTEREST: Partial<
   Record<PersonalInterestId, readonly string[]>
 > = {
-  golf: ["experience_create"],
-  pool: ["experience_create"],
-  sports: ["experience_create", "event_create"],
-  family: ["event_create", "experience_create"],
+  golf: ["plan_create", "experience_create"],
+  pool: ["plan_create", "experience_create"],
+  sports: ["plan_create", "experience_create", "event_create"],
+  family: ["event_create", "plan_create", "experience_create"],
   help: ["help_request", "help_offer", "offer_service"],
-  restaurants: ["business_create", "experience_create", "offer_service"],
+  restaurants: ["business_create", "plan_create", "experience_create", "offer_service"],
 };
 
 function normalize(value: string): string {

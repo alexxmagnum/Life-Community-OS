@@ -84,6 +84,28 @@ export {
   magicPlusSectionIdForActionType,
 } from "./community/action-composer";
 
+/** Experience Composer — single create surface by Experience.kind. */
+export type {
+  ExperienceComposerFieldId,
+  ExperienceComposerKindConfig,
+  ExperienceComposerAudience,
+  ExperienceComposerWhenPreset,
+  ExperienceComposerFormState,
+  ExperienceComposerInitialValues,
+} from "./community/experience-composer";
+export {
+  EXPERIENCE_COMPOSER_FIELD_IDS,
+  EXPERIENCE_COMPOSER_COMPATIBLE_FIELDS,
+  EXPERIENCE_COMPOSER_AUDIENCE_OPTIONS,
+  EXPERIENCE_COMPOSER_CATEGORY_OPTIONS,
+  experienceComposerConfigForKind,
+  listExperienceComposerKindOptions,
+  dateFromWhenPreset,
+  parseExperienceComposerKindParam,
+  experienceKindForCreationAction,
+  validateExperienceComposer,
+} from "./community/experience-composer";
+
 /** Community Operations — daily territorial projection, not a life domain. */
 export type {
   CommunityOperationActionKind,

@@ -4,7 +4,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { listExplorerActivityHubs } from "@life-community-os/tenant-life-panoramica";
 import {
+  dateFromWhenPreset,
+  experienceComposerConfigForKind,
+  EXPERIENCE_COMPOSER_AUDIENCE_OPTIONS,
+  EXPERIENCE_COMPOSER_CATEGORY_OPTIONS,
+  listExperienceComposerKindOptions,
+  parseExperienceComposerKindParam,
+  validateExperienceComposer,
+  type ExperienceComposerAudience,
+  type ExperienceComposerWhenPreset,
+  type ExperienceKind,
+  type ExperienceLifecycleStatus,
+} from "@life-community-os/types";
+import {
   EmptyState,
+  FilterChipRow,
   FlowScreenHeader,
   MobileScreen,
   ScreenPrimaryAction,
@@ -23,13 +37,24 @@ function toDateInputValue(d = new Date()): string {
 }
 
 function combineLocalDateTime(date: string, time: string): string {
-  const iso = new Date(`${date}T${time}:00`);
-  return iso.toISOString();
+  return new Date(`${date}T${time}:00`).toISOString();
 }
 
+const WHEN_PRESETS: readonly {
+  id: ExperienceComposerWhenPreset;
+  label: string;
+}[] = [
+  { id: "today", label: "Hoy" },
+  { id: "tomorrow", label: "Mañana" },
+  { id: "weekend", label: "Este fin de semana" },
+  { id: "custom", label: "Elegir fecha" },
+];
+
+const KIND_OPTIONS = listExperienceComposerKindOptions();
+
 /**
- * Resident create-experience flow — Experience Domain.
- * Location may be preselected from Life Place / Life Map. Territory is server-stamped.
+ * Unified Experience composer — one route, one form shell, kind-driven fields.
+ * Accepts `?kind=` and optional initialValues via query (title, date, time, …).
  */
 export function CreateExperienceScreen() {
   const router = useRouter();
@@ -39,23 +64,53 @@ export function CreateExperienceScreen() {
   const { resources } = useReservations();
 
   const hubs = listExplorerActivityHubs();
-  const initialActivity = searchParams.get("activity") ?? "";
   const locationId = searchParams.get("locationId")?.trim() ?? "";
   const locationNameParam = searchParams.get("locationName")?.trim() ?? "";
+  const initialActivity = searchParams.get("activity")?.trim() ?? "";
+  const initialKind = parseExperienceComposerKindParam(
+    searchParams.get("kind"),
+  );
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [kind, setKind] = useState<ExperienceKind>(initialKind);
+  const [title, setTitle] = useState(searchParams.get("title")?.trim() ?? "");
+  const [description, setDescription] = useState(
+    searchParams.get("description")?.trim() ?? "",
+  );
+  const [category, setCategory] = useState(
+    searchParams.get("category")?.trim() ?? "",
+  );
   const [activitySlug, setActivitySlug] = useState(
     hubs.some((h) => h.slug === initialActivity) ? initialActivity : "",
   );
-  const [date, setDate] = useState(toDateInputValue());
-  const [startTime, setStartTime] = useState("10:00");
-  const [endTime, setEndTime] = useState("");
+  const [format, setFormat] = useState(searchParams.get("format")?.trim() ?? "");
+  const [whenPreset, setWhenPreset] =
+    useState<ExperienceComposerWhenPreset>("custom");
+  const [date, setDate] = useState(
+    searchParams.get("date")?.trim() || toDateInputValue(),
+  );
+  const [startTime, setStartTime] = useState(
+    searchParams.get("time")?.trim() || "10:00",
+  );
+  const [endTime, setEndTime] = useState(
+    searchParams.get("endTime")?.trim() ?? "",
+  );
   const [location, setLocation] = useState(locationNameParam);
   const [resourceId, setResourceId] = useState("");
-  const [capacity, setCapacity] = useState("8");
+  const [capacity, setCapacity] = useState(
+    searchParams.get("capacity")?.trim() || "4",
+  );
+  const [audience, setAudience] = useState<ExperienceComposerAudience>(
+    "territory",
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const config = experienceComposerConfigForKind(kind);
+  const actorLabel =
+    currentUser.displayName?.trim() ||
+    currentUser.email?.split("@")[0] ||
+    "Vecino";
 
   const linkedResources = useMemo(() => {
     const rows = resources.filter((item) => item.category !== "activity");
@@ -63,6 +118,11 @@ export function CreateExperienceScreen() {
     const atPlace = rows.filter((item) => item.locationId === locationId);
     return atPlace.length > 0 ? atPlace : rows;
   }, [resources, locationId]);
+
+  useEffect(() => {
+    const next = parseExperienceComposerKindParam(searchParams.get("kind"));
+    setKind(next);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!locationId) return;
@@ -74,6 +134,109 @@ export function CreateExperienceScreen() {
       if (!location.trim()) setLocation(match.location);
     }
   }, [locationId, tenantSlug, linkedResources, location, resourceId]);
+
+  const syncKindToUrl = (next: ExperienceKind) => {
+    setKind(next);
+    setError(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("kind", next);
+    router.replace(`/experiences/create?${params.toString()}`, {
+      scroll: false,
+    });
+  };
+
+  const formState = {
+    title,
+    description,
+    category,
+    activitySlug,
+    format,
+    date,
+    time: startTime,
+    endTime,
+    location,
+    resourceId,
+    capacity,
+    audience,
+  };
+
+  const shows = (id: string) =>
+    (config.visible as readonly string[]).includes(id) ||
+    (detailsOpen && (config.optionalDetails as readonly string[]).includes(id));
+
+  const inOptional = (id: string) =>
+    (config.optionalDetails as readonly string[]).includes(id);
+
+  const submit = (mode: "publish" | "draft") => {
+    setError(null);
+    const validation = validateExperienceComposer(config, formState, mode);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim() || trimmedTitle;
+    const trimmedLocation = location.trim();
+    const cap = Number(capacity);
+    const dateValue =
+      date.trim() ||
+      (mode === "draft" ? dateFromWhenPreset("tomorrow") : date.trim());
+    const timeValue = startTime.trim() || "10:00";
+    const startsAt = combineLocalDateTime(dateValue, timeValue);
+    if (Number.isNaN(new Date(startsAt).getTime())) {
+      setError("La fecha u hora no es válida.");
+      return;
+    }
+
+    let endsAt: string | undefined;
+    if (endTime.trim()) {
+      endsAt = combineLocalDateTime(dateValue, endTime.trim());
+    }
+
+    const categoryValue =
+      activitySlug.trim() ||
+      category.trim() ||
+      (format.trim() ? "custom" : undefined);
+
+    const status: ExperienceLifecycleStatus =
+      mode === "draft" ? "draft" : "published";
+
+    setSubmitting(true);
+    void (async () => {
+      const result = await createExperienceRequest({
+        tenantId: tenantSlug,
+        title: trimmedTitle,
+        description: trimmedDescription,
+        kind,
+        category: categoryValue,
+        status,
+        startsAt,
+        endsAt,
+        location: trimmedLocation || undefined,
+        resourceId: resourceId || undefined,
+        capacity: Number.isFinite(cap) && cap >= 2 ? cap : config.minCapacity,
+        publishToCommunity: mode === "publish",
+        metadata: {
+          ...(format.trim() ? { format: format.trim() } : {}),
+          ...(audience ? { audience } : {}),
+          ...(category.trim() && activitySlug.trim()
+            ? { typeCategory: category.trim() }
+            : {}),
+        },
+      });
+      if ("error" in result) {
+        setError(
+          result.error === "forbidden"
+            ? "No tienes permiso para crear."
+            : "No se pudo guardar. Inténtalo de nuevo.",
+        );
+        setSubmitting(false);
+        return;
+      }
+      router.push(`/experiences/${result.experience.id}`);
+    })();
+  };
 
   if (!isFeatureEnabled("experiences")) {
     return (
@@ -90,174 +253,144 @@ export function CreateExperienceScreen() {
     return (
       <EmptyState
         title="Sin permiso para crear"
-        description="Tu cuenta no puede crear experiencias ahora mismo."
+        description="Tu cuenta no puede crear ahora mismo."
         actionLabel="Ver experiencias"
         onAction={() => router.push("/experiences")}
       />
     );
   }
 
-  const onSubmit = () => {
-    setError(null);
-    const trimmedTitle = title.trim();
-    const trimmedDescription = description.trim();
-    const trimmedLocation = location.trim();
-    const cap = Number(capacity);
-
-    if (!trimmedTitle) {
-      setError("Pon un título para tu experiencia.");
-      return;
-    }
-    if (!trimmedDescription) {
-      setError("Cuenta un poco más: qué vais a hacer.");
-      return;
-    }
-    if (!date || !startTime) {
-      setError("Elige fecha y hora de inicio.");
-      return;
-    }
-    if (!trimmedLocation) {
-      setError("Indica dónde os encontráis.");
-      return;
-    }
-    if (!Number.isFinite(cap) || cap < 2) {
-      setError("La capacidad debe ser al menos 2 personas.");
-      return;
-    }
-
-    const startsAt = combineLocalDateTime(date, startTime);
-    if (Number.isNaN(new Date(startsAt).getTime())) {
-      setError("La fecha u hora no es válida.");
-      return;
-    }
-
-    let endsAt: string | undefined;
-    if (endTime) {
-      endsAt = combineLocalDateTime(date, endTime);
-      if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
-        setError("La hora de fin debe ser posterior al inicio.");
-        return;
-      }
-    }
-
-    const hub = activitySlug
-      ? hubs.find((item) => item.slug === activitySlug)
-      : undefined;
-
-    setSubmitting(true);
-    void (async () => {
-      const result = await createExperienceRequest({
-        tenantId: tenantSlug,
-        title: trimmedTitle,
-        description: trimmedDescription,
-        category: hub?.slug || activitySlug || undefined,
-        startsAt,
-        endsAt,
-        location: trimmedLocation,
-        resourceId: resourceId || undefined,
-        capacity: cap,
-        publishToCommunity: true,
-      });
-      if ("error" in result) {
-        setError(
-          result.error === "forbidden"
-            ? "No tienes permiso para crear esta experiencia."
-            : "No se pudo crear la experiencia. Inténtalo de nuevo.",
-        );
-        setSubmitting(false);
-        return;
-      }
-      router.push(`/experiences/${result.experience.id}`);
-    })();
-  };
-
   const fieldClass =
     "min-h-[48px] w-full rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-glass)] px-3.5 text-[15px] text-[var(--color-text-primary)] outline-none focus:border-[var(--color-action-primary)] focus:ring-2 focus:ring-[var(--color-action-primary-subtle)]";
 
-  return (
-    <MobileScreen>
-      <FlowScreenHeader
-        title="Crear experiencia"
-        subtitle="Tienes una idea: invita a tus vecinos a un momento concreto."
-        onBack={() => router.push("/experiences")}
-        onExit={() => router.push("/")}
-      />
+  const contextLabel = locationNameParam.trim() || location.trim();
 
-      <section className="space-y-4">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Información básica
-        </h2>
-        <label className="block space-y-1.5">
-          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Título
-          </span>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ej. Partida de pádel el viernes"
-            className={fieldClass}
-          />
-        </label>
-        <label className="block space-y-1.5">
-          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Descripción
-          </span>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Qué vais a hacer, para quién es, qué hay que traer…"
-            rows={4}
-            className={`${fieldClass} min-h-[120px] resize-none py-3`}
-          />
-        </label>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Actividad relacionada
-        </h2>
-        <p className="text-[15px] text-[var(--color-text-tertiary)]">
-          Opcional — ayuda a que la gente la encuentre en el hub correcto.
-        </p>
-        <label className="block space-y-1.5">
-          <span className="sr-only">Actividad</span>
-          <select
-            value={activitySlug}
-            onChange={(e) => {
-              setActivitySlug(e.target.value);
-              setResourceId("");
-            }}
-            className={fieldClass}
-          >
-            <option value="">Sin actividad concreta</option>
-            {hubs.map((hub) => (
-              <option key={hub.slug} value={hub.slug}>
-                {hub.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Fecha y hora
-        </h2>
-        <label className="block space-y-1.5">
-          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Fecha
-          </span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className={fieldClass}
-          />
-        </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-1.5">
+  const renderField = (id: string) => {
+    if (!shows(id)) return null;
+    switch (id) {
+      case "title":
+        return (
+          <label key="title" className="block space-y-2">
+            <span className="block font-[family-name:var(--font-display)] text-[22px] font-semibold text-[var(--color-text-primary)]">
+              {config.question}
+            </span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder={config.titlePlaceholder}
+              className={`${fieldClass} min-h-[56px] text-[17px] font-semibold`}
+            />
+          </label>
+        );
+      case "description":
+        return (
+          <label key="description" className="block space-y-1.5">
             <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-              Inicio
+              Descripción
+            </span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Qué vais a hacer, para quién es…"
+              rows={3}
+              className={`${fieldClass} min-h-[100px] resize-none py-3`}
+            />
+          </label>
+        );
+      case "category":
+        return (
+          <label key="category" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Tipo
+            </span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={fieldClass}
+            >
+              <option value="">Elegir</option>
+              {EXPERIENCE_COMPOSER_CATEGORY_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            {kind === "plan" ? (
+              <span className="mt-3 block space-y-1.5">
+                <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+                  Actividad
+                </span>
+                <select
+                  value={activitySlug}
+                  onChange={(e) => setActivitySlug(e.target.value)}
+                  className={fieldClass}
+                >
+                  <option value="">Elegir</option>
+                  {hubs.map((hub) => (
+                    <option key={hub.slug} value={hub.slug}>
+                      {hub.label}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            ) : null}
+          </label>
+        );
+      case "format":
+        return (
+          <label key="format" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Formato
+            </span>
+            <input
+              value={format}
+              onChange={(e) => setFormat(e.target.value)}
+              placeholder="Ej. Música en directo"
+              className={fieldClass}
+            />
+          </label>
+        );
+      case "whenPreset":
+        return (
+          <div key="whenPreset" className="space-y-2">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Cuándo
+            </span>
+            <FilterChipRow
+              items={WHEN_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+              activeId={whenPreset}
+              onChange={(id) => {
+                const preset = id as ExperienceComposerWhenPreset;
+                setWhenPreset(preset);
+                if (preset !== "custom") {
+                  setDate(dateFromWhenPreset(preset));
+                }
+              }}
+            />
+          </div>
+        );
+      case "date":
+        return (
+          <label key="date" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Fecha
+            </span>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setWhenPreset("custom");
+              }}
+              className={fieldClass}
+            />
+          </label>
+        );
+      case "time":
+        return (
+          <label key="time" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Hora
             </span>
             <input
               type="time"
@@ -266,9 +399,12 @@ export function CreateExperienceScreen() {
               className={fieldClass}
             />
           </label>
-          <label className="block space-y-1.5">
+        );
+      case "endTime":
+        return (
+          <label key="endTime" className="block space-y-1.5">
             <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-              Fin (opcional)
+              Hora de fin
             </span>
             <input
               type="time"
@@ -277,28 +413,26 @@ export function CreateExperienceScreen() {
               className={fieldClass}
             />
           </label>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Lugar
-        </h2>
-        <label className="block space-y-1.5">
-          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Punto de encuentro
-          </span>
-          <input
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Ej. Entrada del camino de pinos"
-            className={fieldClass}
-          />
-        </label>
-        {linkedResources.length > 0 ? (
-          <label className="block space-y-1.5">
+        );
+      case "location":
+        return (
+          <label key="location" className="block space-y-1.5">
             <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-              Recurso relacionado (opcional)
+              {kind === "event" ? "Lugar" : "Dónde"}
+            </span>
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Punto de encuentro"
+              className={fieldClass}
+            />
+          </label>
+        );
+      case "resource":
+        return linkedResources.length > 0 ? (
+          <label key="resource" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              Recurso
             </span>
             <select
               value={resourceId}
@@ -318,38 +452,110 @@ export function CreateExperienceScreen() {
               ))}
             </select>
           </label>
+        ) : null;
+      case "capacity":
+        return (
+          <label key="capacity" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              {kind === "event" ? "Participación" : "Cuántas personas"}
+            </span>
+            <input
+              type="number"
+              min={config.minCapacity}
+              max={200}
+              value={capacity}
+              onChange={(e) => setCapacity(e.target.value)}
+              className={fieldClass}
+            />
+          </label>
+        );
+      case "audience":
+        return (
+          <label key="audience" className="block space-y-1.5">
+            <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
+              {kind === "event" ? "Quién puede verlo" : "Quién puede unirse"}
+            </span>
+            <select
+              value={audience}
+              onChange={(e) =>
+                setAudience(e.target.value as ExperienceComposerAudience)
+              }
+              className={fieldClass}
+            >
+              {EXPERIENCE_COMPOSER_AUDIENCE_OPTIONS.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const primaryFields = config.visible.filter((id) => id !== "title");
+  const optionalFields = config.optionalDetails;
+
+  return (
+    <MobileScreen>
+      <FlowScreenHeader
+        title="Crear"
+        subtitle="Haz que pase."
+        onBack={() => router.back()}
+        onExit={() => router.push("/")}
+      />
+
+      <section className="space-y-3">
+        <FilterChipRow
+          items={KIND_OPTIONS.map((opt) => ({
+            id: opt.id,
+            label: opt.label,
+          }))}
+          activeId={kind}
+          onChange={(id) => syncKindToUrl(id as ExperienceKind)}
+        />
+        <p className="text-[14px] text-[var(--color-text-secondary)]">
+          Creando como ·{" "}
+          <span className="font-semibold text-[var(--color-text-primary)]">
+            {actorLabel}
+          </span>
+        </p>
+        {contextLabel ? (
+          <p className="text-[14px] text-[var(--color-text-secondary)]">
+            Creando en ·{" "}
+            <span className="font-semibold text-[var(--color-text-primary)]">
+              {contextLabel}
+            </span>
+          </p>
         ) : null}
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-[15px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Capacidad
-        </h2>
-        <label className="block space-y-1.5">
-          <span className="text-[15px] font-semibold text-[var(--color-text-secondary)]">
-            Máximo de participantes
-          </span>
-          <input
-            type="number"
-            min={2}
-            max={200}
-            value={capacity}
-            onChange={(e) => setCapacity(e.target.value)}
-            className={fieldClass}
-          />
-        </label>
+        {renderField("title")}
+        {primaryFields.map((id) => renderField(id))}
       </section>
 
-      <section className="rounded-[var(--radius-lg)] bg-[var(--color-surface-elevated)] px-4 py-3.5 shadow-[var(--shadow-elev-1)]">
-        <p className="text-[14px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-          Organizador
-        </p>
-        <p className="mt-1 text-[16px] font-semibold text-[var(--color-text-primary)]">
-          Organizado por {currentUser.displayName || currentUser.email?.split("@")[0] || "Vecino"}
-        </p>
-        <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
-          Como vecino de la comunidad — no hace falta ser administrador.
-        </p>
+      <section className="space-y-3">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((open) => !open)}
+          className="flex min-h-[48px] w-full items-center justify-between rounded-[14px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 text-left text-[15px] font-semibold text-[var(--color-text-primary)]"
+          aria-expanded={detailsOpen}
+        >
+          Detalles opcionales
+          <span aria-hidden className="text-[var(--color-text-tertiary)]">
+            {detailsOpen ? "▴" : "▾"}
+          </span>
+        </button>
+        {detailsOpen ? (
+          <div className="space-y-4">
+            {optionalFields.map((id) =>
+              inOptional(id) ? renderField(id) : null,
+            )}
+          </div>
+        ) : null}
       </section>
 
       {error ? (
@@ -358,11 +564,21 @@ export function CreateExperienceScreen() {
         </p>
       ) : null}
 
-      <ScreenPrimaryAction
-        label={submitting ? "Creando…" : "Publicar experiencia"}
-        onClick={onSubmit}
-        disabled={submitting}
-      />
+      <div className="space-y-3 pb-6">
+        <ScreenPrimaryAction
+          label={submitting ? "Guardando…" : config.primaryCta}
+          onClick={() => submit("publish")}
+          disabled={submitting}
+        />
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={() => submit("draft")}
+          className="flex min-h-[56px] w-full items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-action-primary)] bg-transparent text-[16px] font-semibold text-[var(--color-action-primary)] transition-transform active:scale-[0.99] disabled:opacity-50"
+        >
+          {config.draftCta}
+        </button>
+      </div>
     </MobileScreen>
   );
 }

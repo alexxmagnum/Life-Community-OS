@@ -6,6 +6,7 @@
 import { getAsset } from "@life-community-os/assets";
 
 export const COMPOSER_GLYPH_BY_ACTION: Record<string, string> = {
+  plan_create: getAsset("sports.sports.card").path,
   experience_create: getAsset("sports.sports.card").path,
   event_create: getAsset("community.recommendations.card").path,
   announcement_create: getAsset("community.recommendations.card").path,
