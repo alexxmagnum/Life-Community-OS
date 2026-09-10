@@ -41,6 +41,7 @@ export type TerritoryRow = {
 
 export type PersonRow = {
   id: string;
+  username: string | null;
   first_name: string | null;
   last_name: string | null;
   display_name: string | null;
@@ -123,6 +124,7 @@ export type Database = {
         Row: TenantRow;
         Insert: {
           id?: string;
+          username?: string | null;
           public_slug: string;
           display_name: string;
           configuration?: Record<string, unknown>;

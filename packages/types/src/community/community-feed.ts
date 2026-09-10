@@ -1,4 +1,6 @@
 import type { DomainId, IsoDateTimeString } from "../domain/ids";
+import type { ExperienceKind } from "../domain/experience";
+import { normalizeExperienceKind } from "../domain/experience";
 import type { MediaReference } from "../platform/files";
 import { CAPABILITIES } from "../platform/capabilities";
 import {
@@ -56,6 +58,8 @@ export type CommunityFeedItemMetadata = {
   occupied?: number;
   organizerPersonId?: string;
   trustLabel?: string;
+  /** Experience product kind when domain is experience. */
+  experienceKind?: ExperienceKind;
 };
 
 export type CommunityFeedItem = {
@@ -422,6 +426,7 @@ export type ProjectExperienceFeedInput = {
   title: string;
   description: string;
   status: string;
+  kind?: string;
   startsAt?: string;
   endsAt?: string;
   location?: string;
@@ -445,6 +450,7 @@ export function projectExperienceToFeedItem(
   const available =
     total !== undefined ? Math.max(0, total - occupied) : undefined;
   const locationLabel = input.location?.trim();
+  const experienceKind = normalizeExperienceKind(input.kind);
   return {
     id: `experience:${input.id}`,
     tenantId,
@@ -463,6 +469,7 @@ export function projectExperienceToFeedItem(
     actions: { primary: "join" },
     metadata: {
       domain: "experience",
+      experienceKind,
       locationLabel,
       imageUrl: input.imageUrl,
       href: `/experiences/${encodeURIComponent(input.id)}`,
@@ -487,6 +494,8 @@ export type ProjectEventFeedInput = {
   locationId?: string;
   occupied?: number;
   ownerPersonId?: string;
+  /** When backfilled, prefer Experience detail deep link. */
+  experienceId?: string;
 };
 
 export function projectEventToFeedItem(
@@ -496,6 +505,10 @@ export function projectEventToFeedItem(
   const tenantId = input.tenantId.trim();
   const territoryId = input.territoryId.trim();
   if (!tenantId || !territoryId) return null;
+  const experienceId = input.experienceId?.trim();
+  const href = experienceId
+    ? `/experiences/${encodeURIComponent(experienceId)}`
+    : `/community/events/${encodeURIComponent(input.id)}`;
   return {
     id: `event:${input.id}`,
     tenantId,
@@ -510,11 +523,13 @@ export function projectEventToFeedItem(
     metadata: {
       domain: "event",
       locationLabel: input.locationLabel,
-      href: "/community",
+      href,
       occupied: input.occupied ?? 0,
       ...(input.ownerPersonId?.trim()
         ? { organizerPersonId: input.ownerPersonId.trim() }
         : {}),
+      ...(experienceId ? { experienceId } : {}),
+      experienceKind: "event",
     },
   };
 }

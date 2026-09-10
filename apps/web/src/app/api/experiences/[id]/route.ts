@@ -118,6 +118,8 @@ export async function PATCH(request: Request, { params }: Params) {
   let body: {
     title?: string;
     description?: string;
+    kind?: string;
+    type?: string;
     category?: string;
     status?: string;
     resourceId?: string | null;
@@ -136,6 +138,13 @@ export async function PATCH(request: Request, { params }: Params) {
   if (body.status && !isExperienceLifecycleStatus(body.status)) {
     return NextResponse.json({ error: "invalid_status" }, { status: 400 });
   }
+  const kindRaw = body.kind?.trim() || body.type?.trim();
+  if (
+    kindRaw &&
+    !["plan", "experience", "event", "meeting"].includes(kindRaw.toLowerCase())
+  ) {
+    return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
+  }
 
   try {
     const experience = await updateExperienceServer({
@@ -149,6 +158,7 @@ export async function PATCH(request: Request, { params }: Params) {
       patch: {
         title: body.title,
         description: body.description,
+        kind: kindRaw,
         category: body.category,
         status: body.status as ExperienceLifecycleStatus | undefined,
         resourceId: body.resourceId,

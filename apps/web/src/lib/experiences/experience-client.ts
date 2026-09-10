@@ -12,7 +12,11 @@ export async function createExperienceRequest(input: {
   resourceId?: string;
   capacity?: number;
   category?: string;
+  /** Product kind: plan | experience | event (meeting normalizes to plan). */
+  kind?: string;
+  status?: string;
   publishToCommunity?: boolean;
+  metadata?: Record<string, unknown>;
 }): Promise<{ experience: ExperienceRecord } | { error: string }> {
   const res = await fetch("/api/experiences", {
     method: "POST",
@@ -30,7 +34,10 @@ export async function createExperienceRequest(input: {
       resourceId: input.resourceId,
       capacity: input.capacity,
       category: input.category,
+      kind: input.kind,
+      status: input.status,
       publishToCommunity: input.publishToCommunity === true,
+      metadata: input.metadata,
     }),
   });
   if (!res.ok) {

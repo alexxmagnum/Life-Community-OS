@@ -104,8 +104,36 @@ describe("experience domain isolation", () => {
     assert.equal(created.createdBy, "person-alex");
     assert.equal(created.territoryId, LIFE_PANORAMICA_TERRITORY_UUID);
     assert.equal(created.status, "published");
+    assert.equal(created.kind, "experience");
+    const plan = await createExperienceServer({
+      tenantId: PANO,
+      ownerPersonId: owner.personId!,
+      title: "Pádel abierto",
+      description: "Partido entre vecinos.",
+      kind: "plan",
+      category: "sport",
+      startsAt: "2026-09-06T18:00:00.000Z",
+    });
+    assert.equal(plan.kind, "plan");
+    const event = await createExperienceServer({
+      tenantId: PANO,
+      ownerPersonId: owner.personId!,
+      title: "Noche de música",
+      description: "Directo en el territorio.",
+      kind: "event",
+      category: "social",
+      startsAt: "2026-09-07T20:00:00.000Z",
+      status: "draft",
+    });
+    assert.equal(event.kind, "event");
+    assert.equal(event.status, "draft");
     const listed = await listExperiencesServer(PANO);
     assert.equal(listed.some((item) => item.id === created.id), true);
+    const plansOnly = await listExperiencesServer(PANO, undefined, {
+      kind: "plan",
+    });
+    assert.equal(plansOnly.every((item) => item.kind === "plan"), true);
+    assert.equal(plansOnly.some((item) => item.id === plan.id), true);
   });
 
   it("denies create and join without membership", () => {

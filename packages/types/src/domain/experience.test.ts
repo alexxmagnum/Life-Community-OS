@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   createExperienceRecord,
+  experienceKindProductLabel,
   isExperienceLifecycleStatus,
+  normalizeExperienceKind,
   participationOccupiesSeat,
 } from "./experience";
 import { experienceBelongsToTerritory } from "./territory-ownership";
@@ -27,12 +29,57 @@ describe("Experience domain contract", () => {
     assert.equal(record.ownerPersonId, "person-alex");
     assert.equal(record.createdBy, "person-alex");
     assert.equal(record.status, "published");
+    assert.equal(record.kind, "experience");
     assert.equal(isExperienceLifecycleStatus(record.status), true);
     assert.equal(
       experienceBelongsToTerritory(record, PANO_TERRITORY, "life-panoramica"),
       true,
     );
     assert.equal(experienceBelongsToTerritory(record, VALLEY_TERRITORY), false);
+  });
+
+  it("persists product kind plan | experience | event", () => {
+    const plan = createExperienceRecord({
+      tenantId: "life-panoramica",
+      territoryId: PANO_TERRITORY,
+      ownerPersonId: "person-alex",
+      createdBy: "person-alex",
+      title: "Pádel",
+      description: "Partido abierto.",
+      kind: "plan",
+      startsAt: "2026-09-05T09:00:00.000Z",
+    });
+    assert.equal(plan.kind, "plan");
+    assert.equal(experienceKindProductLabel(plan.kind), "Plan");
+
+    const event = createExperienceRecord({
+      tenantId: "life-panoramica",
+      territoryId: PANO_TERRITORY,
+      ownerPersonId: "person-alex",
+      createdBy: "person-alex",
+      title: "Noche de música",
+      description: "Directo en IKON.",
+      kind: "event",
+      startsAt: "2026-09-05T21:00:00.000Z",
+    });
+    assert.equal(event.kind, "event");
+    assert.equal(experienceKindProductLabel(event.kind), "Evento");
+  });
+
+  it("normalizes legacy meeting to plan", () => {
+    assert.equal(normalizeExperienceKind("meeting"), "plan");
+    assert.equal(normalizeExperienceKind("MEETING"), "plan");
+    const fromMeeting = createExperienceRecord({
+      tenantId: "life-panoramica",
+      territoryId: PANO_TERRITORY,
+      ownerPersonId: "person-alex",
+      createdBy: "person-alex",
+      title: "Reunión",
+      description: "Encuentro vecinal.",
+      kind: "meeting",
+      startsAt: "2026-09-05T09:00:00.000Z",
+    });
+    assert.equal(fromMeeting.kind, "plan");
   });
 
   it("rejects an Experience without Territory", () => {

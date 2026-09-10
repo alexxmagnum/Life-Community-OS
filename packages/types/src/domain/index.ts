@@ -238,6 +238,7 @@ export {
 } from "./reservation-context";
 export type {
   Experience,
+  ExperienceKind,
   ExperienceType,
   ExperienceStatus,
   ExperienceLifecycleStatus,
@@ -251,9 +252,13 @@ export type {
   ExperienceViewerState,
 } from "./experience";
 export {
+  EXPERIENCE_KINDS,
   EXPERIENCE_LIFECYCLE_STATUSES,
   EXPERIENCE_CATEGORIES,
   EXPERIENCE_PARTICIPANT_ROLES,
+  isExperienceKind,
+  normalizeExperienceKind,
+  experienceKindProductLabel,
   isExperienceLifecycleStatus,
   isExperienceParticipantRole,
   isExperienceCategory,

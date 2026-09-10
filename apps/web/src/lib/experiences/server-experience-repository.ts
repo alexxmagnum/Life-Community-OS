@@ -13,11 +13,13 @@ import {
   createExperienceParticipationRecord,
   createExperienceRecord,
   isExperienceLifecycleStatus,
+  normalizeExperienceKind,
   participationOccupiesSeat,
   hhmmToMinutes,
   minutesToHhmm,
   recordMatchesTerritoryScope,
   splitIsoToDateTime,
+  type ExperienceKind,
   type ExperienceLifecycleStatus,
   type ExperienceParticipation,
   type ExperienceRecord,
@@ -115,7 +117,9 @@ async function readFileStore(
     const raw = await fs.readFile(filePath(tenantSlug), "utf8");
     const parsed = JSON.parse(raw) as ExperienceFixtureStore;
     return {
-      experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
+      experiences: Array.isArray(parsed.experiences)
+        ? parsed.experiences.map((item) => coerceExperienceRecord(item))
+        : [],
       participants: Array.isArray(parsed.participants) ? parsed.participants : [],
     };
   } catch {
@@ -144,6 +148,7 @@ type ExperienceRow = {
   title: string;
   description: string;
   category: string;
+  kind?: string | null;
   status: ExperienceLifecycleStatus;
   capacity: number;
   schedule_starts_at: string;
@@ -177,6 +182,13 @@ function rowToExperience(
   row: ExperienceRow,
   tenantSlug: string,
 ): ExperienceRecord {
+  const metadata = parseMetadata(row.metadata);
+  const kindFromMeta =
+    typeof metadata.kind === "string"
+      ? metadata.kind
+      : typeof metadata.type === "string"
+        ? metadata.type
+        : undefined;
   return {
     id: row.id,
     tenantId: tenantSlug,
@@ -184,6 +196,7 @@ function rowToExperience(
     title: row.title,
     description: row.description,
     category: row.category,
+    kind: normalizeExperienceKind(row.kind ?? kindFromMeta),
     status: row.status,
     ownerPersonId: row.owner_person_id,
     createdBy: row.created_by,
@@ -192,9 +205,28 @@ function rowToExperience(
     ...(row.schedule_ends_at ? { endsAt: row.schedule_ends_at } : {}),
     location: row.location_label ?? "",
     capacity: row.capacity,
-    metadata: parseMetadata(row.metadata),
+    metadata,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+/** Normalize fixture / legacy JSON rows that predate `kind`. */
+function coerceExperienceRecord(
+  raw: ExperienceRecord & { kind?: string; type?: string },
+): ExperienceRecord {
+  return {
+    ...raw,
+    kind: normalizeExperienceKind(
+      raw.kind ??
+        (typeof raw.metadata?.kind === "string"
+          ? raw.metadata.kind
+          : typeof raw.metadata?.type === "string"
+            ? raw.metadata.type
+            : typeof raw.type === "string"
+              ? raw.type
+              : undefined),
+    ),
   };
 }
 
@@ -283,6 +315,7 @@ async function persistStore(
         title: item.title,
         description: item.description,
         category: item.category,
+        kind: item.kind,
         status: item.status,
         capacity: item.capacity,
         schedule_starts_at: item.startsAt,
@@ -387,16 +420,23 @@ async function notifyExperiencePublished(input: {
 export async function listExperiencesServer(
   tenantId: string,
   scope?: ExperienceWriteScope,
-  query?: { territoryId?: string | null },
+  query?: { territoryId?: string | null; kind?: string | null },
 ): Promise<ExperienceRecord[]> {
   const slug = resolveTenantPublicId(tenantId);
   const store = await loadStore(slug, scope);
-  const rows = store.experiences.filter((item) => item.tenantId === slug);
+  let rows = store.experiences.filter((item) => item.tenantId === slug);
   const territoryId = query?.territoryId?.trim();
-  if (!territoryId) return rows;
-  return rows.filter((item) =>
-    recordMatchesTerritoryScope(item.territoryId, territoryId),
-  );
+  if (territoryId) {
+    rows = rows.filter((item) =>
+      recordMatchesTerritoryScope(item.territoryId, territoryId),
+    );
+  }
+  const kindFilter = query?.kind?.trim();
+  if (kindFilter) {
+    const kind = normalizeExperienceKind(kindFilter);
+    rows = rows.filter((item) => item.kind === kind);
+  }
+  return rows;
 }
 
 export async function getExperienceServer(
@@ -433,6 +473,7 @@ export async function createExperienceServer(input: {
   ownerPersonId: string;
   title: string;
   description: string;
+  kind?: ExperienceKind | string;
   category?: string;
   status?: ExperienceLifecycleStatus;
   resourceId?: string;
@@ -440,10 +481,14 @@ export async function createExperienceServer(input: {
   endsAt?: string;
   location?: string;
   capacity?: number;
+  metadata?: Record<string, unknown>;
   territoryId?: string;
   publishToCommunity?: boolean;
   authorDisplayName?: string;
   ownerPersonIdFromClient?: string | null;
+  /** Stable id for idempotent migration (e.g. ex-ce-{legacyEventId}). */
+  experienceId?: string;
+  createdByOverride?: string;
   scope?: ExperienceWriteScope;
 }): Promise<ExperienceRecord> {
   void input.ownerPersonIdFromClient;
@@ -462,13 +507,24 @@ export async function createExperienceServer(input: {
     resourceId: input.resourceId,
     scope: input.scope,
   });
+  if (input.experienceId?.trim()) {
+    const existing = await getExperienceServer(
+      slug,
+      input.experienceId.trim(),
+      input.scope,
+    );
+    if (existing) return existing;
+  }
+  const createdBy =
+    input.createdByOverride?.trim() || input.ownerPersonId;
   const experience = createExperienceRecord({
     tenantId: slug,
     territoryId,
     ownerPersonId: input.ownerPersonId,
-    createdBy: input.ownerPersonId,
+    createdBy,
     title: input.title,
     description: input.description,
+    kind: input.kind,
     category: input.category,
     status: input.status,
     resourceId: input.resourceId,
@@ -476,12 +532,16 @@ export async function createExperienceServer(input: {
     endsAt: input.endsAt,
     location: input.location,
     capacity: input.capacity,
+    metadata: input.metadata,
+    ...(input.experienceId?.trim()
+      ? { id: input.experienceId.trim() }
+      : {}),
   });
   const creator = createExperienceParticipationRecord({
     tenantId: slug,
     experienceId: experience.id,
     personId: input.ownerPersonId,
-    createdBy: input.ownerPersonId,
+    createdBy,
     role: "creator",
   });
   const store = await loadStore(slug, input.scope);
@@ -521,6 +581,7 @@ export async function updateExperienceServer(input: {
   patch: {
     title?: string;
     description?: string;
+    kind?: ExperienceKind | string;
     category?: string;
     status?: ExperienceLifecycleStatus;
     resourceId?: string | null;
@@ -562,6 +623,7 @@ export async function updateExperienceServer(input: {
     ...current,
     title: input.patch.title ?? current.title,
     description: input.patch.description ?? current.description,
+    kind: input.patch.kind ?? current.kind,
     category: input.patch.category ?? current.category,
     status: input.patch.status ?? current.status,
     resourceId: nextResourceId,

@@ -3,15 +3,26 @@ import type { DiffusionPolicy } from "./diffusion";
 import type { CommunityResource } from "./resource";
 
 /**
- * Community Experience — participatory activity / event / meeting (ADR-027).
- * Product UI may label this an “Activity” via i18n. Do not create a parallel Activity type.
+ * Community Experience — Territory-owned aggregate for Plan / Experience / Event (ADR-027).
+ * Product UI labels kinds clearly (Plan · Experiencia · Evento). Do not create parallel
+ * Plan / Activity entities or a `plans` table.
  *
  * Phase 17D: Experience is a Territory-owned domain entity (not a catalog, card, or pack seed).
  * Stored lifecycle status is draft | published | cancelled | completed | archived.
  * Viewer statuses (registration_open, full, expired) remain derived, not persisted.
+ *
+ * `kind` is first-class (persist + API + feed). Legacy `meeting` normalizes to `plan`.
  */
 
-export type ExperienceType = "experience" | "event" | "meeting";
+export const EXPERIENCE_KINDS = ["plan", "experience", "event"] as const;
+
+export type ExperienceKind = (typeof EXPERIENCE_KINDS)[number];
+
+/**
+ * @deprecated Use {@link ExperienceKind}. Legacy `meeting` is accepted only for
+ * read/normalization and maps to `plan` via {@link normalizeExperienceKind}.
+ */
+export type ExperienceType = ExperienceKind | "meeting";
 
 export type ExperienceStatus =
   | "draft"
@@ -120,7 +131,12 @@ export type Experience = {
   participantCount: number;
   participants?: ExperienceParticipant[];
   status: ExperienceStatus;
-  type: ExperienceType;
+  /** Product discriminator — Plan / Experiencia / Evento. */
+  kind: ExperienceKind;
+  /**
+   * @deprecated Prefer {@link Experience.kind}. Kept for transitional display catalogs.
+   */
+  type?: ExperienceType;
   /** Prepared diffusion policy — engine not required in Phase 1a/1b. */
   diffusion?: DiffusionPolicy;
   createdAt?: IsoDateTimeString;
@@ -138,6 +154,8 @@ export type ExperienceRecord = {
   title: string;
   description: string;
   category: string;
+  /** Product discriminator: plan | experience | event. */
+  kind: ExperienceKind;
   status: ExperienceLifecycleStatus;
   ownerPersonId: DomainId;
   createdBy: DomainId;
@@ -158,6 +176,8 @@ export type CreateExperienceRecordInput = {
   createdBy: DomainId;
   title: string;
   description: string;
+  /** Defaults to `experience` when omitted. */
+  kind?: ExperienceKind | ExperienceType | string;
   category?: string;
   status?: ExperienceLifecycleStatus;
   resourceId?: DomainId;
@@ -181,6 +201,37 @@ export type ExperienceViewerState =
 const LIFECYCLE_SET: ReadonlySet<string> = new Set(EXPERIENCE_LIFECYCLE_STATUSES);
 const ROLE_SET: ReadonlySet<string> = new Set(EXPERIENCE_PARTICIPANT_ROLES);
 const CATEGORY_SET: ReadonlySet<string> = new Set(EXPERIENCE_CATEGORIES);
+const KIND_SET: ReadonlySet<string> = new Set(EXPERIENCE_KINDS);
+
+export function isExperienceKind(value: string): value is ExperienceKind {
+  return KIND_SET.has(value);
+}
+
+/**
+ * Canonicalize product kind. Legacy `meeting` → `plan`.
+ * Unknown / empty → `experience` (safe default for existing rows).
+ */
+export function normalizeExperienceKind(
+  value: string | null | undefined,
+): ExperienceKind {
+  const raw = value?.trim().toLowerCase() ?? "";
+  if (raw === "event") return "event";
+  if (raw === "plan" || raw === "meeting") return "plan";
+  if (raw === "experience") return "experience";
+  return "experience";
+}
+
+/** Spanish product labels — UI copy, not domain names. */
+export function experienceKindProductLabel(kind: ExperienceKind): string {
+  switch (kind) {
+    case "plan":
+      return "Plan";
+    case "event":
+      return "Evento";
+    case "experience":
+      return "Experiencia";
+  }
+}
 
 export function isExperienceLifecycleStatus(
   value: string,
@@ -272,6 +323,7 @@ export function experienceFromResource(
     capacity,
     participantCount,
     status,
+    kind: "experience",
     type: "experience",
     createdAt: resource.createdAt,
     updatedAt: resource.updatedAt,
@@ -324,6 +376,7 @@ export function createExperienceRecord(
       : 8;
   const startsAt = input.startsAt.trim();
   if (!startsAt) throw new Error("Invalid Experience: missing_schedule");
+  const kind = normalizeExperienceKind(input.kind);
   return {
     id: input.id?.trim() || `ex-${cryptoRandomId()}`,
     tenantId,
@@ -331,6 +384,7 @@ export function createExperienceRecord(
     title,
     description,
     category: categoryRaw,
+    kind,
     status,
     ownerPersonId,
     createdBy,

@@ -345,3 +345,52 @@ Rejected. SaaS billing remains Tenant-organization subscriptions (ADR-024).
 ## Decision Rule
 
 Until superseded, community engagement activities must be implemented as the Experiences & Events capability inside Community: typed experiences/events/meetings with RBAC organizers, Membership-based participation, capacity/waitlists/reminders, Core Files galleries and Core Notifications, Territory/Area scope, and Tenant as security boundary — never as a tenant-specific fork or parallel media/notification/auth stack.
+
+---
+
+## Addendum — Experience.kind (2026-09-10)
+
+Status: Accepted  
+Type: Clarifying addendum (does not replace ADR-027)
+
+### Decision
+
+**Experience** remains the **single technical aggregate** for resident participatory time-bound activities.
+
+Product kinds are first-class and persisted as:
+
+```text
+kind: "plan" | "experience" | "event"
+```
+
+| Kind | Product language | Intent |
+|------|------------------|--------|
+| `plan` | Plan | Simple peer meetup (pádel, correr, tomar algo) |
+| `experience` | Experiencia | Richer experience semantics |
+| `event` | Evento | Organized event |
+
+### Explicit non-goals
+
+- No `Plan` entity / table / domain.
+- No `Activity` entity (UI may still say “actividad” via i18n).
+- No per-tenant forks (`if tenant === panoramica`).
+- No three independent create stacks long-term.
+
+### Legacy `meeting`
+
+ADR-027 originally listed `meeting` as a type. It is **deprecated**.
+
+- Runtime normalization: `meeting` → `plan`.
+- Do not introduce a fourth permanent kind.
+
+### CommunityEvent
+
+`CommunityEvent` (Community Core) remains a **transitional** write path during migration.
+
+Target: `Experience(kind=event)` absorbs organized events.
+
+This addendum does **not** delete `community_events` or complete that migration. Future phase: single Action Composer `[Plan | Experiencia | Evento]` → one create path over Experience.
+
+### SaaS rule
+
+Kinds, compositor behaviour, feed projection of `kind`, and permissions belong to **Core Life**. Tenants supply content and entitlements — not alternate aggregates.

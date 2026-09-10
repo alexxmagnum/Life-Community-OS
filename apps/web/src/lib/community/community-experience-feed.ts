@@ -118,6 +118,7 @@ async function projectExperiences(input: {
       title: experience.title,
       description: experience.description,
       status: experience.status,
+      kind: experience.kind,
       startsAt: experience.startsAt,
       endsAt: experience.endsAt,
       location: experience.location,
@@ -143,10 +144,21 @@ async function projectEvents(input: {
   if (!feedSourceEnabled("event", input.product, input.permissions)) {
     return [];
   }
+  const { backfillCommunityEventsToExperiences } = await import(
+    "@/lib/community/community-event-backfill"
+  );
+  const backfill = await backfillCommunityEventsToExperiences({
+    tenantId: input.tenantId,
+    scope: input.scope,
+  });
+  const migrated = new Set(Object.keys(backfill.experienceIdsByLegacyEventId));
   const events = await listCommunityEvents(input.tenantId, input.scope);
   return events.flatMap((event) => {
+    // Migrated rows appear as Experience(kind=event) — never dual-project.
+    if (migrated.has(event.id)) return [];
     if (input.skipEventIds.has(event.id)) return [];
     if (!inTerritory(event.territoryId, input.territoryId)) return [];
+    const experienceId = backfill.experienceIdsByLegacyEventId[event.id];
     const projected = projectEventToFeedItem({
       id: event.id,
       tenantId: event.tenantId,
@@ -158,6 +170,7 @@ async function projectEvents(input: {
       endsAt: event.endsAt,
       locationLabel: event.locationLabel,
       ownerPersonId: event.authorPersonId,
+      experienceId,
     });
     return projected ? [projected] : [];
   });

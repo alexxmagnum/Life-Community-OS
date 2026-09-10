@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   isExperienceLifecycleStatus,
+  normalizeExperienceKind,
   type ExperienceLifecycleStatus,
 } from "@life-community-os/types";
 import {
@@ -68,8 +69,10 @@ export async function GET(request: Request) {
     "@/lib/data/database-access"
   );
   const scope = persistenceScopeFromRequest(request, actor.personId);
+  const kindParam = url.searchParams.get("kind")?.trim();
   const all = await listExperiencesServer(bound.tenantId, scope, {
     territoryId: territory.context.territoryId,
+    kind: kindParam,
   });
   const status = url.searchParams.get("status")?.trim();
   const category = url.searchParams.get("category")?.trim().toLowerCase();
@@ -101,6 +104,8 @@ export async function POST(request: Request) {
     tenantId?: string;
     title?: string;
     description?: string;
+    kind?: string;
+    type?: string;
     category?: string;
     status?: string;
     resourceId?: string;
@@ -109,6 +114,7 @@ export async function POST(request: Request) {
     location?: string;
     capacity?: number;
     publishToCommunity?: boolean;
+    metadata?: Record<string, unknown>;
     ownerId?: string;
     ownerPersonId?: string;
     createdBy?: string;
@@ -127,6 +133,13 @@ export async function POST(request: Request) {
   }
   if (body.status && !isExperienceLifecycleStatus(body.status)) {
     return NextResponse.json({ error: "invalid_status" }, { status: 400 });
+  }
+  const kindRaw = body.kind?.trim() || body.type?.trim();
+  if (
+    kindRaw &&
+    !["plan", "experience", "event", "meeting"].includes(kindRaw.toLowerCase())
+  ) {
+    return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
   }
 
   const bound = resolveWriteTenantId({
@@ -150,6 +163,7 @@ export async function POST(request: Request) {
       ownerPersonId: gated.actor.personId,
       title,
       description,
+      kind: kindRaw ? normalizeExperienceKind(kindRaw) : undefined,
       category: body.category,
       status: body.status as ExperienceLifecycleStatus | undefined,
       resourceId: body.resourceId,
@@ -157,6 +171,10 @@ export async function POST(request: Request) {
       endsAt: body.endsAt,
       location: body.location,
       capacity: body.capacity,
+      metadata:
+        body.metadata && typeof body.metadata === "object"
+          ? body.metadata
+          : undefined,
       territoryId: resolveStampTerritoryId({
         tenantId: bound.tenantId,
         explicit: territory.context.territoryId,

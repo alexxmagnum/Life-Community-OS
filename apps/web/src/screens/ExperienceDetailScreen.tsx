@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   formatExperienceWhen,
 } from "@life-community-os/tenant-life-panoramica";
-import { spotsLeft } from "@life-community-os/types";
+import { spotsLeft, experienceKindProductLabel } from "@life-community-os/types";
 import {
   Button,
   EmptyState,
@@ -187,6 +187,9 @@ export function ExperienceDetailScreen({
       />
 
       <div className="flex flex-wrap items-center gap-3">
+        <span className="rounded-full bg-[var(--color-action-primary-subtle)] px-3 py-1 text-[13px] font-semibold text-[var(--color-action-primary)]">
+          {experienceKindProductLabel(experience.kind)}
+        </span>
         <ParticipationStatus status={viewer} />
       </div>
 

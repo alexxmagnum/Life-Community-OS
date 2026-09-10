@@ -48,6 +48,32 @@ describe("Community Experience Feed contract", () => {
     assert.equal(projected, null);
   });
 
+  it("projects experienceKind on feed metadata", () => {
+    const projected = projectExperienceToFeedItem({
+      id: "exp-plan",
+      tenantId: PANO,
+      territoryId: PANO_TERRITORY,
+      title: "Pádel",
+      description: "Partido abierto.",
+      status: "published",
+      kind: "plan",
+      startsAt: "2026-08-31T16:00:00.000Z",
+    });
+    assert.ok(projected);
+    assert.equal(projected?.metadata?.experienceKind, "plan");
+    const fromMeeting = projectExperienceToFeedItem({
+      id: "exp-meet",
+      tenantId: PANO,
+      territoryId: PANO_TERRITORY,
+      title: "Reunión",
+      description: "Vecinos.",
+      status: "published",
+      kind: "meeting",
+      startsAt: "2026-08-31T16:00:00.000Z",
+    });
+    assert.equal(fromMeeting?.metadata?.experienceKind, "plan");
+  });
+
   it("projects a published Experience with join as the primary action", () => {
     const projected = projectExperienceToFeedItem({
       id: "exp-2",
