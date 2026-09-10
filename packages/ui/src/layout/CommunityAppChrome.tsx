@@ -28,6 +28,11 @@ export type CommunityAppHeaderProps = {
    * 44px touch targets, no solid bar.
    */
   heroOverlay?: boolean;
+  /**
+   * Home chrome — Life ● + territory ▾ left; search / bell / hamburger right.
+   * No weather, no avatar (Profile lives in BottomNavigation), no tenant logo mark.
+   */
+  homeChrome?: boolean;
   /** Current temperature, already formatted by the caller (e.g. “24°”). */
   weatherTemperature?: string;
   /** Short sky condition shown under the temperature. */
@@ -36,12 +41,22 @@ export type CommunityAppHeaderProps = {
   placeLabel?: string;
   onBrandClick?: () => void;
   brandLabel?: string;
+  /** Opens the general app menu / drawer — never territory. */
   onMenuOpen?: () => void;
   menuLabel?: string;
+  /**
+   * Territory selector only. Must NOT open the general menu.
+   * When omitted on Home chrome, territory remains visual (no fake menu).
+   */
+  onTerritoryClick?: () => void;
+  territoryLabel?: string;
+  /** Home chrome search control. */
+  onSearch?: () => void;
+  searchLabel?: string;
   notificationCount?: number;
   onNotifications?: () => void;
   notificationsLabel?: string;
-  /** Optional profile entry — identity only, no weather/territory. */
+  /** Optional profile entry — identity only, no weather/territory. Not used on homeChrome. */
   profileImageUrl?: string;
   profileName?: string;
   onProfileClick?: () => void;
@@ -74,11 +89,42 @@ function WeatherGlyph() {
   );
 }
 
+function ChromeIconButton({
+  label,
+  onClick,
+  children,
+  className,
+  size = "md",
+}: {
+  label: string;
+  onClick?: () => void;
+  children: ReactNode;
+  className?: string;
+  /** `lg` — Home TARGET glass controls (~48px) with proportional icons. */
+  size?: "md" | "lg";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={cn(
+        "relative flex shrink-0 items-center justify-center rounded-full border border-white/[0.18] bg-[rgba(5,7,8,0.34)] text-white shadow-[0_6px_18px_rgba(0,0,0,0.22)] backdrop-blur-[16px] backdrop-saturate-[140%] transition-transform active:scale-[0.96]",
+        size === "lg" ? "h-12 w-12" : "h-11 w-11",
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function CommunityAppHeader({
   brandName,
   brandSubName,
   transparent = false,
   heroOverlay = false,
+  homeChrome = false,
   brandLogoUrl,
   weatherTemperature,
   weatherCondition,
@@ -87,6 +133,10 @@ export function CommunityAppHeader({
   brandLabel = "Ir al inicio",
   onMenuOpen,
   menuLabel = "Explorar comunidad",
+  onTerritoryClick,
+  territoryLabel: territoryLabelProp,
+  onSearch,
+  searchLabel = "Buscar",
   notificationCount = 0,
   onNotifications,
   notificationsLabel = "Notificaciones",
@@ -101,15 +151,149 @@ export function CommunityAppHeader({
   const [atTop, setAtTop] = useState(true);
 
   useEffect(() => {
-    if (!transparent || heroOverlay) return;
+    if (!transparent || heroOverlay || homeChrome) return;
     const onScroll = () => setAtTop(window.scrollY < 24);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [transparent, heroOverlay]);
+  }, [transparent, heroOverlay, homeChrome]);
 
-  const floating = heroOverlay || (transparent && atTop);
-  const overHero = heroOverlay || floating;
+  const floating = homeChrome || heroOverlay || (transparent && atTop);
+  const overHero = homeChrome || heroOverlay || floating;
+
+  if (homeChrome) {
+    const territoryLabel = (
+      territoryLabelProp ||
+      brandSubName ||
+      brandName
+    ).trim();
+    const territoryMark = (
+      <>
+        <span className="truncate font-sans text-[14px] font-semibold uppercase tracking-[0.14em] text-white">
+          {territoryLabel}
+        </span>
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden
+          className="shrink-0 text-white/85"
+        >
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </>
+    );
+    return (
+      <header
+        className={cn(
+          "life-hero__header fixed inset-x-0 top-0 z-40 border-0 bg-transparent shadow-none md:hidden",
+          className,
+        )}
+      >
+        <div className="px-5 pb-1 pt-[calc(env(safe-area-inset-top)+12px)] max-[390px]:px-4">
+          <div className="mx-auto flex min-h-[64px] w-full max-w-none items-start justify-between gap-3">
+            <div className="relative z-10 min-w-0 pt-0.5">
+              <button
+                type="button"
+                onClick={() => onBrandClick?.()}
+                className="flex items-center gap-2 text-left active:opacity-80"
+                aria-label={brandLabel}
+              >
+                <span className="font-sans text-[36px] font-bold leading-none tracking-[-0.035em] text-white">
+                  Life
+                </span>
+                <span
+                  className="mt-[4px] h-2.5 w-2.5 rounded-full bg-[var(--color-accent-cyan)] shadow-[0_0_14px_color-mix(in_srgb,var(--color-accent-cyan)_65%,transparent)]"
+                  aria-hidden
+                />
+              </button>
+              {onTerritoryClick ? (
+                <button
+                  type="button"
+                  onClick={() => onTerritoryClick()}
+                  className="mt-1.5 flex max-w-[240px] items-center gap-1 text-left active:opacity-80"
+                  aria-label={territoryLabelProp || "Cambiar territorio"}
+                >
+                  {territoryMark}
+                </button>
+              ) : (
+                <div
+                  className="mt-1.5 flex max-w-[240px] items-center gap-1"
+                  aria-label={territoryLabel}
+                >
+                  {territoryMark}
+                </div>
+              )}
+            </div>
+
+            <div className="relative z-10 flex shrink-0 items-center gap-2.5">
+              {onSearch ? (
+                <ChromeIconButton size="lg" label={searchLabel} onClick={onSearch}>
+                  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="11" cy="11" r="6.6" stroke="currentColor" strokeWidth="1.85" />
+                    <path
+                      d="M16.2 16.2L20.2 20.2"
+                      stroke="currentColor"
+                      strokeWidth="1.85"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </ChromeIconButton>
+              ) : null}
+              {onNotifications ? (
+                <ChromeIconButton
+                  size="lg"
+                  label={notificationsLabel}
+                  onClick={onNotifications}
+                >
+                  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M6 9a6 6 0 1 1 12 0c0 7 3 7 3 7H3s3 0 3-7"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 19a2 2 0 0 0 4 0"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  {notificationCount > 0 ? (
+                    <span
+                      className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[var(--color-accent-lime)]"
+                      aria-hidden
+                    />
+                  ) : null}
+                </ChromeIconButton>
+              ) : null}
+              {onMenuOpen ? (
+                <ChromeIconButton size="lg" label={menuLabel} onClick={onMenuOpen}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M5 7.5h14M5 12h14M5 16.5h14"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </ChromeIconButton>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header

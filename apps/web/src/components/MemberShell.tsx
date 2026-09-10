@@ -168,8 +168,16 @@ export function MemberShell({ children }: { children: ReactNode }) {
   const wordmarkPrimary = theme.identity?.wordmarkPrimary ?? theme.logoText;
   const territoryDisplayName =
     activeTerritory.territoryName?.trim() ||
-    theme.identity?.wordmarkSecondary;
-  const wordmarkSecondary = territoryDisplayName;
+    theme.identity?.wordmarkSecondary ||
+    theme.shortName ||
+    theme.logoText;
+  const wordmarkSecondary = (
+    theme.identity?.wordmarkSecondary ||
+    theme.shortName ||
+    territoryDisplayName
+  )
+    ?.replace(/\s+Golf$/i, "")
+    .trim();
   const isHome = pathname === "/";
 
   /** The most severe live advisory rides inside the floating tab bar. */
@@ -263,20 +271,15 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   /**
    * Magic Plus — universal creation router for active members.
-   * Pending users see a join preview; visitors never see the FAB.
+   * Guests and pending users see a join preview; the FAB stays visible
+   * so Home chrome matches the approved five-slot bottom nav.
    */
   const magicPlusMode = useMemo(() => {
     if (currentUser.hasMembership) return "active" as const;
-    if (
-      accessScope.scope === "pending" ||
-      accessScope.scope === "registered"
-    ) {
-      return "preview" as const;
-    }
-    return "hidden" as const;
-  }, [accessScope.scope, currentUser.hasMembership]);
+    return "preview" as const;
+  }, [currentUser.hasMembership]);
 
-  const canShowMagicPlusFab = magicPlusMode !== "hidden";
+  const canShowMagicPlusFab = true;
 
   /**
    * Magic Plus — intention sections routing to existing domains.
@@ -447,7 +450,9 @@ export function MemberShell({ children }: { children: ReactNode }) {
           magicPlusMode === "preview" ? "Unirse para crear" : "Crear"
         }
         navNotice={
-          navAlert ? (
+          isHome
+            ? null
+            : navAlert ? (
             <button
               type="button"
               onClick={() => {
@@ -476,32 +481,50 @@ export function MemberShell({ children }: { children: ReactNode }) {
             brandName={wordmarkPrimary}
             brandSubName={wordmarkSecondary}
             transparent
-            heroOverlay
-            brandLogoUrl={brandLogoUrl}
-            weatherTemperature={theme.identity?.weatherTemperature}
-            weatherCondition={theme.identity?.weatherCondition}
+            heroOverlay={!isHome}
+            homeChrome={isHome}
+            brandLogoUrl={isHome ? undefined : brandLogoUrl}
+            weatherTemperature={
+              isHome ? undefined : theme.identity?.weatherTemperature
+            }
+            weatherCondition={
+              isHome ? undefined : theme.identity?.weatherCondition
+            }
             placeLabel={
-              activeTerritory.territoryName || theme.identity?.municipalityName
+              isHome
+                ? undefined
+                : activeTerritory.territoryName ||
+                  theme.identity?.municipalityName
             }
             onBrandClick={() => router.push("/")}
             onMenuOpen={() => setMenuOpen(true)}
             menuLabel="Menú"
+            // Territory selector UI not shipped yet — keep visual mark only.
+            // Never wire territory to the general menu (cross-trigger bug).
+            onTerritoryClick={undefined}
+            territoryLabel={wordmarkSecondary || territoryDisplayName}
+            onSearch={isHome ? () => router.push("/discover") : undefined}
+            searchLabel="Buscar"
             notificationCount={unreadCount}
             onNotifications={() => router.push("/notifications")}
             notificationsLabel="Notificaciones"
-            profileImageUrl={undefined}
             profileName={
-              currentUser.displayName || currentUser.email?.split("@")[0] || "Mi perfil"
+              isHome
+                ? undefined
+                : currentUser.displayName ||
+                  currentUser.email?.split("@")[0] ||
+                  "Mi perfil"
             }
             profileLabel="Mi perfil"
-            onProfileClick={() => router.push("/me")}
+            onProfileClick={isHome ? undefined : () => router.push("/me")}
           />
         }
       >
         {sessionReady &&
         currentUser.authenticated &&
         accessScope.scope === "registered" &&
-        pathname !== "/me" ? (
+        pathname !== "/me" &&
+        !isHome ? (
           <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
             Tu cuenta está lista. Ahora forma parte de una comunidad.{" "}
             <button
@@ -516,7 +539,8 @@ export function MemberShell({ children }: { children: ReactNode }) {
         {sessionReady &&
         currentUser.authenticated &&
         accessScope.scope === "pending" &&
-        pathname !== "/me" ? (
+        pathname !== "/me" &&
+        !isHome ? (
           <div className="mx-4 mb-4 rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
             Solicitud enviada. Mientras tanto puedes explorar el territorio.{" "}
             <button

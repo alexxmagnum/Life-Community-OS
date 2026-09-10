@@ -1,50 +1,52 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   homeHeroIndexForHour,
-  homeSkyMood,
   listHomeHeroSlideUrls,
+  type CommunityContent,
 } from "@life-community-os/tenant-life-panoramica";
-import {
-  communityFeedLivingLabel,
-  communityFeedPrimaryLabel,
-  communityFeedTimeLabel,
-  HOME_ANNOUNCEMENTS_EMPTY,
-  HOME_ANNOUNCEMENTS_CTA,
-  HOME_HELP_CTA,
-  HOME_SERVICES_EMPTY_CTA,
-  HOME_SERVICES_EMPTY_TITLE,
-  isLivingMomentFeedItem,
-  LIVING_EMPTY_CTA,
-  LIVING_EMPTY_DESCRIPTION,
-  LIVING_EMPTY_TITLE,
-  lifeMapHrefForFeedItem,
-  partitionLivingCommunityFeed,
-  territoryHomeQuery,
-  type CommunityFeedItem,
-  type CommunityInsight,
-  type TerritoryAnnouncement,
-  type TerritoryDailyPulse,
+import type {
+  CommunityCommentRecord,
+  CommunityPost,
+  CommunityReaction,
 } from "@life-community-os/types";
 import {
-  EmptyState,
+  communityFeedItemHref,
+  communityFeedPrimaryLabel,
+  communityFeedTimeLabel,
+  experienceKindProductLabel,
+  isLivingMomentFeedItem,
+  normalizeExperienceKind,
+  territoryHomeQuery,
+  type CommunityFeedItem,
+} from "@life-community-os/types";
+import {
+  HomeDiscoverCard,
   HomeHeroStage,
-  HomeMomentCard,
-  HomeMoveCard,
-  HomeNearbyCard,
+  HomeMakeItHappen,
+  HomeParticipateCard,
   HomeRail,
   HomeSectionHead,
-  staggerItemProps,
-  type HomeHeroPill,
+  HomeTodayFeaturedCard,
+  HomeTodaySideCard,
+  HomeTodayTabs,
   type HomeHeroSlide,
+  type HomeMakeItHappenAction,
+  type HomeTodayTabId,
 } from "@life-community-os/ui";
-import { getCommunityExperienceFeed, fetchCommunityHome } from "@/lib/community/community-client";
+import {
+  fetchCommunityFeed,
+  fetchCommunityHome,
+  getCommunityExperienceFeed,
+} from "@/lib/community/community-client";
+import { postToHubContent } from "@/lib/community/map-to-ui";
 import { fetchTerritoryAnnouncements } from "@/lib/community/community-operations-client";
-import { openActionComposerWithIntent } from "@/lib/community/action-composer-client";
-import { CommunityActivationPanel } from "@/components/community/CommunityActivationPanel";
-import { COMMUNITY_EMPTY_GLYPH, LIVING_EMPTY_GLYPH } from "@/lib/community/composer-glyphs";
+import {
+  openActionComposer,
+  openActionComposerWithIntent,
+} from "@/lib/community/action-composer-client";
 import { locationCardImageUrl, communityFeedCardImageUrl } from "@/lib/location/location-card-asset";
 import { LifePlaceHost } from "@/components/life-place/LifePlaceHost";
 import { useTenantLocations } from "@/lib/location";
@@ -52,40 +54,9 @@ import { preferEntityMediaUrl } from "@/lib/media/media-policy";
 import { CAPABILITIES, useTenant } from "@/providers/TenantProvider";
 import { useCurrentUser } from "@/providers/CurrentUserProvider";
 import { useTerritory } from "@/providers/TerritoryProvider";
-import {
-  VISITOR_HOME_DESCRIPTION,
-  VISITOR_HOME_EMPTY_DESCRIPTION,
-  VISITOR_HOME_EMPTY_TITLE,
-  VISITOR_HOME_EXPLORE_LABEL,
-  VISITOR_HOME_SERVICES_LABEL,
-  VISITOR_JOIN_HEADLINE,
-  VISITOR_VALUE_PROPOSITION,
-  visitorConversionHref,
-} from "@/lib/membership/visitor-experience";
 
 function resolveCopyTemplate(template: string, territoryName: string) {
   return template.replaceAll("{territory}", territoryName);
-}
-
-function belongingGreeting(name: string, hour: number): string {
-  const salutation =
-    hour < 12 ? "Buenos días" : hour < 20 ? "Buenas tardes" : "Buenas noches";
-  return `${salutation}, ${name}`;
-}
-
-function feedMomentToAnnouncement(
-  item: CommunityFeedItem,
-  tenantId: string,
-  territoryId: string,
-): TerritoryAnnouncement {
-  return {
-    id: item.id,
-    tenantId,
-    territoryId,
-    title: item.title,
-    body: item.description ?? "",
-    createdAt: item.startsAt ?? new Date().toISOString(),
-  };
 }
 
 function madridHour(nowMs = Date.now()): number {
@@ -97,20 +68,72 @@ function madridHour(nowMs = Date.now()): number {
   return Number(hourStr);
 }
 
-const MOMENT_LIMIT = 6;
+function salutationForHour(hour: number): string {
+  if (hour < 12) return "Buenos días,";
+  if (hour < 20) return "Buenas tardes,";
+  return "Buenas noches,";
+}
+
+function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+function itemInPeriod(
+  item: CommunityFeedItem,
+  period: HomeTodayTabId,
+  nowMs: number,
+): boolean {
+  if (!item.startsAt) return period === "today";
+  const starts = new Date(item.startsAt).getTime();
+  if (Number.isNaN(starts)) return false;
+  const today = startOfLocalDay(new Date(nowMs)).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  if (period === "today") {
+    return starts >= today && starts < today + dayMs;
+  }
+  if (period === "week") {
+    return starts >= today && starts < today + 7 * dayMs;
+  }
+  return starts >= today && starts < today + 31 * dayMs;
+}
+
+function feedBadge(item: CommunityFeedItem): string {
+  const kind = item.metadata?.experienceKind
+    ? normalizeExperienceKind(item.metadata.experienceKind)
+    : item.type === "event"
+      ? "event"
+      : item.type === "experience"
+        ? "experience"
+        : null;
+  if (kind) return experienceKindProductLabel(kind).toUpperCase();
+  const loc = item.metadata?.locationLabel?.trim();
+  if (loc) return loc.slice(0, 18).toUpperCase();
+  return "HOY";
+}
+
+function peopleLabelFor(item: CommunityFeedItem): string | undefined {
+  if (!item.capacity) return undefined;
+  const occupied = item.metadata?.occupied ?? 0;
+  const total = item.capacity.total;
+  if (typeof total === "number" && total > 0) {
+    return `${occupied}/${total}`;
+  }
+  if (typeof item.capacity.available === "number") {
+    return `${item.capacity.available} libres`;
+  }
+  return undefined;
+}
 
 /**
- * Home = the place where Panorámica lives today.
- * One dense mobile stage: what is happening, who is moving, what to do,
- * what is near. Participation, decisions and official information live in
- * Comunidad.
+ * Home V2 — single Life Home surface.
+ * Hero → Hoy → Haz que pase → Participa → Descubre.
+ * Consumes Experience.kind via Community Experience Feed. No fake content.
  */
 export function HomeScreen() {
   const router = useRouter();
   const {
     theme,
     isFeatureEnabled,
-    isModuleEnabled,
     hasCapability,
     configuration,
     authenticated,
@@ -123,123 +146,102 @@ export function HomeScreen() {
     activeTerritory.territoryId,
   );
   const homeQuery = territoryHomeQuery(activeTerritory);
+
   const [feedItems, setFeedItems] = useState<CommunityFeedItem[]>([]);
   const [feedReady, setFeedReady] = useState(false);
+  const [proposals, setProposals] = useState<CommunityContent[]>([]);
+  const [debates, setDebates] = useState<CommunityContent[]>([]);
   const [placeLocationId, setPlaceLocationId] = useState<string | null>(null);
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [personalizationEnabled, setPersonalizationEnabled] = useState(false);
-  const [favoriteLocations, setFavoriteLocations] = useState<string[]>([]);
-  const [insights, setInsights] = useState<CommunityInsight[]>([]);
-  const [pulse, setPulse] = useState<TerritoryDailyPulse | null>(null);
-  const [announcements, setAnnouncements] = useState<TerritoryAnnouncement[]>([]);
-
-  const [hour, setHour] = useState(18);
-  const [greeting, setGreeting] = useState(
-    () => `Hola, ${currentUser.displayName || currentUser.email?.split("@")[0] || "vecino"}`,
-  );
-  const todaySectionRef = useRef<HTMLDivElement | null>(null);
+  const [todayTab, setTodayTab] = useState<HomeTodayTabId>("today");
+  const [hour, setHour] = useState(() => madridHour());
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const territoryName =
     activeTerritory.territoryName ??
     theme.identity?.territoryName ??
     theme.logoText;
   const placeName = theme.shortName || territoryName;
-
-  useEffect(() => {
-    const current = madridHour();
-    setHour(current);
-    const isVisitor = !currentUser.authenticated || !currentUser.hasMembership;
-    const displayName =
-      currentUser.displayName || currentUser.email?.split("@")[0] || "vecino";
-    setGreeting(
-      isVisitor
-        ? `Bienvenido a ${placeName}`
-        : belongingGreeting(displayName, current),
-    );
-  }, [
-    currentUser.authenticated,
-    currentUser.displayName,
-    currentUser.email,
-    currentUser.hasMembership,
-    placeName,
-  ]);
-
-  const todayTitle = resolveCopyTemplate(
-    theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
-    placeName,
-  );
-
   const canLocal =
     isFeatureEnabled("localLife") && hasCapability(CAPABILITIES.localView);
-  const canExperiences =
-    isFeatureEnabled("experiences") &&
-    hasCapability(CAPABILITIES.experienceView) &&
-    homeQuery.sources.includes("experience");
-  const isVisitor = !authenticated || !hasMembership;
-  const canCreateExperience =
-    canExperiences && hasCapability(CAPABILITIES.experienceCreate);
+
+  useEffect(() => {
+    setHour(madridHour());
+    setNowMs(Date.now());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const territoryId = homeQuery.territoryId;
     if (!sessionReady) return;
     setFeedReady(false);
+    setProposals([]);
+    setDebates([]);
+
+    // Visitors resolve Home without waiting on member feed APIs.
+    if (!authenticated || !hasMembership) {
+      setFeedItems([]);
+      setFeedReady(true);
+      if (territoryId) {
+        void fetchTerritoryAnnouncements({
+          tenantId: configuration.tenantId,
+          territoryId,
+        });
+        void fetchCommunityHome({
+          tenantId: configuration.tenantId,
+          territoryId,
+        }).then((home) => {
+          if (cancelled || !home) return;
+          setFeedItems([
+            ...home.moments,
+            ...home.currentActivities,
+            ...home.upcomingActivities,
+          ]);
+        });
+      }
+      return;
+    }
+
+    const applyParticipateFromFeed = async () => {
+      if (!territoryId) return;
+      const data = await fetchCommunityFeed(configuration.tenantId, {
+        territoryId,
+      });
+      if (cancelled) return;
+      const posts = (data.posts ?? []) as CommunityPost[];
+      const comments = (data.comments ?? []) as CommunityCommentRecord[];
+      const reactions = (data.reactions ?? []) as CommunityReaction[];
+      const mapped = posts
+        .filter((post) => post.status === "published")
+        .map((post) => postToHubContent(post, comments, reactions));
+      setProposals(
+        mapped
+          .filter((item) => item.type === "proposal")
+          .slice(0, 4),
+      );
+      setDebates(
+        mapped
+          .filter((item) => item.type === "discussion")
+          .slice(0, 4),
+      );
+    };
+
     void fetchCommunityHome({
       tenantId: configuration.tenantId,
       territoryId,
     }).then((home) => {
       if (cancelled) return;
       if (home) {
-        const items = [
+        setFeedItems([
           ...home.moments,
           ...home.currentActivities,
           ...home.upcomingActivities,
-        ];
-        setFeedItems(items);
-        const importantMoments = home.moments
-          .slice(0, 3)
-          .map((item) =>
-            feedMomentToAnnouncement(
-              item,
-              configuration.tenantId,
-              territoryId ?? "",
-            ),
-          );
-        setPulse({
-          tenantId: configuration.tenantId,
-          territoryId: territoryId ?? "",
-          now: home.currentActivities,
-          next: home.upcomingActivities,
-          important: importantMoments,
-          community: items,
-        });
-        setAnnouncements(importantMoments);
-        setInsights(
-          (home.forYouToday ?? []).map((row) => ({
-            id: row.id,
-            title: row.title,
-            body: row.reason,
-            reason: row.reason,
-            href: row.href,
-          })),
-        );
-        setPersonalizationEnabled(home.membershipScope === "active");
+        ]);
         setFeedReady(true);
+        void applyParticipateFromFeed();
         return;
       }
-      if ((!authenticated || !hasMembership) && territoryId) {
-        void fetchTerritoryAnnouncements({
-          tenantId: configuration.tenantId,
-          territoryId,
-        }).then((rows) => {
-          if (cancelled) return;
-          if (rows.length > 0) setAnnouncements(rows.slice(0, 3));
-        });
-      }
-      if (!authenticated || !hasMembership || !territoryId) {
+      if (!territoryId) {
         setFeedItems([]);
-        setReasons({});
-        setPersonalizationEnabled(false);
         setFeedReady(true);
         return;
       }
@@ -249,10 +251,13 @@ export function HomeScreen() {
       }).then((data) => {
         if (cancelled) return;
         setFeedItems(data.items);
-        setReasons(data.reasons);
-        setPersonalizationEnabled(data.personalizationEnabled);
         setFeedReady(true);
       });
+      void applyParticipateFromFeed();
+    }).catch(() => {
+      if (cancelled) return;
+      setFeedItems([]);
+      setFeedReady(true);
     });
     return () => {
       cancelled = true;
@@ -265,100 +270,35 @@ export function HomeScreen() {
     homeQuery.territoryId,
   ]);
 
-  const living = useMemo(
-    () => partitionLivingCommunityFeed(feedItems),
-    [feedItems],
-  );
-
-  /** Open moments — Territory feed projection of existing domains. */
-  const moments = useMemo(() => {
-    if (!feedReady) return [];
-    const source =
-      pulse?.now && pulse.now.length > 0
-        ? pulse.now
-        : personalizationEnabled && living.now.length > 0
-          ? living.now
-          : feedItems.filter(isLivingMomentFeedItem);
-    return source.slice(0, MOMENT_LIMIT).map((item) => ({
-      item,
-      presentation: {
-        tone: "open" as const,
-        glyph: "people" as const,
-        whereLabel:
-          item.metadata?.locationLabel || item.description || placeName,
-        statusLabel:
-          reasons[item.id] ||
-          communityFeedLivingLabel(item) ||
-          (item.capacity
-            ? `${item.capacity.available} plazas disponibles`
-            : "Abierto"),
-        ctaLabel: communityFeedPrimaryLabel(item),
-        badgeLabel: communityFeedTimeLabel(item) || "Hoy",
-      },
-    }));
-  }, [
-    feedReady,
-    feedItems,
-    living.now,
-    pulse,
-    personalizationEnabled,
+  const todayTitle = resolveCopyTemplate(
+    theme.identity?.pulseTitleTemplate ?? "Hoy en {territory}",
     placeName,
-    reasons,
-  ]);
-
-  const upcomingMoments = useMemo(() => {
-    if (!feedReady) return [];
-    if (pulse?.next && pulse.next.length > 0) {
-      return pulse.next.slice(0, MOMENT_LIMIT);
-    }
-    return living.upcoming.slice(0, MOMENT_LIMIT);
-  }, [feedReady, living.upcoming, pulse]);
-
-  const favoritePlaces = useMemo(() => {
-    if (favoriteLocations.length === 0) return [];
-    return allLocations.filter((loc) => favoriteLocations.includes(loc.id));
-  }, [allLocations, favoriteLocations]);
-
-  const moves = useMemo(
-    () =>
-      feedItems
-        .filter(
-          (item) =>
-            item.type === "community" || item.type === "business_activity",
-        )
-        .slice(0, 6)
-        .map((item) => ({
-          id: item.id,
-          tone: "default" as const,
-          glyph: "people" as const,
-          headline: item.title,
-          meta: item.description || communityFeedPrimaryLabel(item),
-          quote: undefined as string | undefined,
-          personName: undefined as string | undefined,
-          personAvatarUrl: undefined as string | undefined,
-          href: lifeMapHrefForFeedItem(item),
-        })),
-    [feedItems],
   );
-  const nearby = useMemo(() => {
-    if (!canLocal) return [];
-    return allLocations
-      .filter((loc) => loc.visibility !== "private")
-      .slice(0, 8)
-      .map((loc) => ({
-        id: loc.id,
-        name: loc.name,
-        imageUrl:
-          preferEntityMediaUrl(undefined, loc.imageUrl) ||
-          locationCardImageUrl(loc),
-        distanceLabel: loc.areaLabel ?? configuration.branding.name,
-        statusLabel: loc.category,
-        ratingLabel: undefined as string | undefined,
-        ratingCountLabel: undefined as string | undefined,
-        badgeLabel: undefined as string | undefined,
-        href: `/map?focus=${encodeURIComponent(loc.id)}`,
-      }));
-  }, [canLocal, allLocations, configuration.branding.name]);
+
+  const salutation = salutationForHour(hour);
+  // Never use territory as personName. Salutation alone if no real person name.
+  const heroPersonName =
+    currentUser.displayName?.trim() ||
+    (authenticated
+      ? currentUser.email?.split("@")[0]?.trim() || undefined
+      : undefined);
+
+  // Dev-only visual harness for Hero geometry vs TARGET. Never production.
+  // Applied after mount (SSR-safe). Capture scripts wait for "Alex".
+  const [heroVisualHarness, setHeroVisualHarness] = useState(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    try {
+      setHeroVisualHarness(
+        new URLSearchParams(window.location.search).get("heroVisual") === "alex",
+      );
+    } catch {
+      setHeroVisualHarness(false);
+    }
+  }, []);
+
+  const heroGreeting = heroVisualHarness ? "Buenas tardes," : salutation;
+  const heroName = heroVisualHarness ? "Alex" : heroPersonName;
 
   const heroSlides = useMemo((): HomeHeroSlide[] => {
     const sources = listHomeHeroSlideUrls(theme.imagery);
@@ -369,436 +309,371 @@ export function HomeScreen() {
     }));
   }, [territoryName, theme.imagery]);
 
-  const heroInitialIndex = homeHeroIndexForHour(hour);
+  const livingMoments = useMemo(() => {
+    if (!feedReady) return [];
+    return feedItems.filter(
+      (item) =>
+        item.type === "experience" ||
+        item.type === "event" ||
+        isLivingMomentFeedItem(item),
+    );
+  }, [feedReady, feedItems]);
 
-  /** Sky reading first, then how much life is open around you. */
-  const heroPills = useMemo((): HomeHeroPill[] => {
-    const sky = homeSkyMood(hour);
-    const happening = moments.length + moves.length;
-    return [
+  const periodItems = useMemo(() => {
+    // Strict temporal window — no fallthrough into other periods.
+    return livingMoments.filter((item) =>
+      itemInPeriod(item, todayTab, nowMs),
+    );
+  }, [livingMoments, todayTab, nowMs]);
+
+  const featured = periodItems[0];
+  const sideCards = periodItems.slice(1, 3);
+
+  // Dev-only visual density for Hoy geometry (not product DEMO / not DB).
+  const [todayVisualHarness, setTodayVisualHarness] = useState(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    try {
+      const q = new URLSearchParams(window.location.search);
+      setTodayVisualHarness(
+        q.get("todayVisual") === "1" || q.get("homeVisual") === "hoy",
+      );
+    } catch {
+      setTodayVisualHarness(false);
+    }
+  }, []);
+
+  const openFeedItem = (item: CommunityFeedItem) => {
+    router.push(communityFeedItemHref(item));
+  };
+
+  const discoverPlaces = useMemo(() => {
+    if (!canLocal) return [];
+    return allLocations
+      .filter((loc) => loc.visibility !== "private")
+      .slice(0, 4)
+      .map((loc) => ({
+        id: loc.id,
+        name: loc.name,
+        imageUrl:
+          preferEntityMediaUrl(undefined, loc.imageUrl) ||
+          locationCardImageUrl(loc),
+        category: loc.category,
+        areaLabel: loc.areaLabel,
+      }));
+  }, [canLocal, allLocations]);
+
+  const makeActions = useMemo((): HomeMakeItHappenAction[] => {
+    const actions: HomeMakeItHappenAction[] = [
       {
-        id: "sky",
-        label: `${sky.title} ${sky.subtitle}`,
-        icon: "sun",
+        id: "plan",
+        label: "Crear plan",
+        tone: "plan",
+        onClick: () =>
+          openActionComposerWithIntent("plan_create", { source: "home" }),
       },
       {
-        id: "happening",
-        label: `${happening} cosas sucediendo cerca`,
-        icon: "spark",
+        id: "experience",
+        label: "Crear experiencia",
+        tone: "experience",
         onClick: () =>
-          todaySectionRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
+          openActionComposerWithIntent("experience_create", { source: "home" }),
+      },
+      {
+        id: "event",
+        label: "Crear evento",
+        tone: "event",
+        onClick: () =>
+          openActionComposerWithIntent("event_create", { source: "home" }),
+      },
+      {
+        id: "announce",
+        label: "Publicar aviso",
+        tone: "announce",
+        onClick: () =>
+          openActionComposerWithIntent("announcement_create", {
+            source: "home",
           }),
       },
+      {
+        id: "market",
+        label: "Vender algo",
+        tone: "market",
+        onClick: () =>
+          openActionComposerWithIntent("marketplace_listing", {
+            source: "home",
+          }),
+      },
+      {
+        id: "more",
+        label: "Más acciones",
+        tone: "more",
+        onClick: () => openActionComposer({ source: "home" }),
+      },
     ];
-  }, [hour, moments.length, moves.length]);
+    return actions;
+  }, []);
 
-  /** Territory name + what is happening today — place is context, not the actor. */
-  const tagline = isVisitor
-    ? `${placeName}\ntiene vida cerca de ti.`
-    : moments.length > 0
-      ? `${placeName}\ntiene actividad hoy.`
-      : `${placeName}\nestá tranquila hoy.`;
-
-  const heroDescription = isVisitor
-    ? VISITOR_HOME_DESCRIPTION
-    : "Descubre, participa y disfruta de lo que ocurre cerca de ti.";
+  const makeHeroImage =
+    heroSlides[1]?.imageUrl ?? heroSlides[0]?.imageUrl ?? undefined;
 
   return (
-    <div className="life-home overflow-x-hidden bg-[var(--life-bg,var(--color-surface-app))] pb-1">
+    <div className="relative bg-[var(--life-bg,#050708)] pb-8">
       <HomeHeroStage
         slides={heroSlides}
-        initialIndex={heroInitialIndex}
-        greeting={greeting}
-        tagline={tagline}
-        description={heroDescription}
-        pills={heroPills}
-        underChrome={false}
+        greeting={heroGreeting}
+        personName={heroName}
+        initialIndex={homeHeroIndexForHour(hour)}
+        underChrome
       />
 
-      <div className="space-y-7 px-4 md:px-0">
-      {isVisitor ? (
-        <section className="rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 shadow-[var(--shadow-elev-1)]">
-          <p className="text-[14px] leading-snug text-[var(--color-text-secondary)]">
-            {VISITOR_VALUE_PROPOSITION}
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push(visitorConversionHref(authenticated))}
-            className="ui-press ui-lift mt-4 w-full rounded-[16px] bg-[var(--color-action-primary)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)]"
+      {/* HOY */}
+      <section className="mt-4 px-5 max-[390px]:px-4" aria-labelledby="home-today-heading">
+        <HomeSectionHead
+          accent
+          title={todayTitle}
+          actionLabel="Ver todo"
+          onAction={() => router.push("/experiences")}
+        />
+        <span id="home-today-heading" className="sr-only">
+          {todayTitle}
+        </span>
+        <HomeTodayTabs activeId={todayTab} onChange={setTodayTab} />
+
+        {!feedReady ? (
+          <div
+            className="grid h-[214px] gap-2.5"
+            style={{ gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)" }}
           >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-on-action)]">
-              {VISITOR_JOIN_HEADLINE}
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-on-action)]/85">
-              {authenticated
-                ? "Completa tu pertenencia para participar."
-                : "Crea tu cuenta y forma parte de la comunidad."}
-            </span>
-          </button>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => router.push("/discover")}
-              className="ui-press min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-            >
-              {VISITOR_HOME_EXPLORE_LABEL}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/services")}
-              className="ui-press min-h-[44px] rounded-full bg-[var(--color-surface-muted)] px-3 text-[13px] font-semibold text-[var(--color-text-secondary)]"
-            >
-              {VISITOR_HOME_SERVICES_LABEL}
-            </button>
+            <HomeTodayFeaturedCard devPlaceholder />
+            <div className="flex min-h-0 min-w-0 flex-col gap-2">
+              <HomeTodaySideCard devPlaceholder />
+              <HomeTodaySideCard devPlaceholder />
+            </div>
           </div>
-        </section>
-      ) : null}
-      {/* ── HOY — Territory first, then the life happening in it ── */}
-      <section ref={todaySectionRef} className="scroll-mt-[64px]">
-        <HomeSectionHead title={todayTitle} sparkle />
-        {announcements.length > 0 ? (
-          <div className="mb-4 space-y-2">
-            {announcements.slice(0, 3).map((item) => (
-              <p
-                key={item.id}
-                className="rounded-[16px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-[14px] text-[var(--color-text-primary)]"
-              >
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-tertiary)]">
-                  Información importante
-                </span>
-                <span className="mt-1 block font-semibold">{item.title}</span>
-                <span className="mt-0.5 block text-[13px] text-[var(--color-text-secondary)]">
-                  {item.body}
-                </span>
-              </p>
-            ))}
+        ) : todayVisualHarness ? (
+          /* Dev visual harness — density fixture only. Not product / not DEMO. */
+          <div
+            className="grid h-[214px] gap-2.5"
+            style={{ gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)" }}
+            data-today-visual-harness="1"
+          >
+            <HomeTodayFeaturedCard
+              badgeLabel="PLAN"
+              title="Fixture visual DEV"
+              locationLabel="Geometría de composición"
+              peopleLabel="Cupo · fixture DEV"
+              timeLabel="Fixture · densificación"
+              ctaLabel="Ver"
+              imageUrl="/tenants/life-panoramica/hero/hero-afternoon.png"
+            />
+            <div className="flex min-h-0 min-w-0 flex-col gap-2">
+              <HomeTodaySideCard
+                badgeLabel="DEV"
+                title="Slot visual A"
+                timeLabel="Fixture · tarde"
+                imageUrl="/tenants/life-panoramica/intents/bg-dining.png"
+              />
+              <HomeTodaySideCard
+                badgeLabel="DEV"
+                title="Slot visual B"
+                timeLabel="Fixture · noche"
+                imageUrl="/tenants/life-panoramica/hero/hero-evening.png"
+              />
+            </div>
           </div>
         ) : (
-          <p className="mb-4 rounded-[16px] border border-dashed border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)]/60 px-4 py-3 text-[14px] text-[var(--color-text-secondary)]">
-            {HOME_ANNOUNCEMENTS_EMPTY}
-            {hasMembership && canCreateExperience ? (
-              <button
-                type="button"
-                onClick={() =>
-                  openActionComposerWithIntent("announcement_create", {
-                    source: "home",
-                  })
+          <div
+            className="grid h-[214px] gap-2.5"
+            style={{ gridTemplateColumns: "minmax(0, 1.4fr) minmax(0, 1fr)" }}
+          >
+            {featured ? (
+              <HomeTodayFeaturedCard
+                badgeLabel={feedBadge(featured)}
+                title={featured.title}
+                locationLabel={
+                  featured.metadata?.locationLabel || undefined
                 }
-                className="ui-press mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]"
-              >
-                {HOME_ANNOUNCEMENTS_CTA}
-              </button>
-            ) : null}
-          </p>
-        )}
-        <p className="mb-3 text-[14px] text-white/55">Ahora mismo</p>
-        {moments.length === 0 ? (
-          <div>
-            {isVisitor ? (
-              <EmptyState
-                title={VISITOR_HOME_EMPTY_TITLE}
-                description={VISITOR_HOME_EMPTY_DESCRIPTION}
-                imageUrl={COMMUNITY_EMPTY_GLYPH}
-                actionLabel={VISITOR_HOME_EXPLORE_LABEL}
-                onAction={() => router.push("/discover")}
+                peopleLabel={peopleLabelFor(featured)}
+                timeLabel={communityFeedTimeLabel(featured) || undefined}
+                imageUrl={communityFeedCardImageUrl(featured) || undefined}
+                ctaLabel={communityFeedPrimaryLabel(featured)}
+                onClick={() => openFeedItem(featured)}
+                onCta={() => openFeedItem(featured)}
               />
             ) : (
-              <EmptyState
-                title={LIVING_EMPTY_TITLE}
-                description={LIVING_EMPTY_DESCRIPTION}
-                imageUrl={LIVING_EMPTY_GLYPH}
-                actionLabel={
-                  canCreateExperience ? LIVING_EMPTY_CTA : undefined
-                }
-                onAction={
-                  canCreateExperience
-                    ? () =>
-                        openActionComposerWithIntent("experience_create", {
-                          source: "home",
-                        })
-                    : undefined
-                }
-              />
+              <HomeTodayFeaturedCard devPlaceholder />
             )}
+            <div className="flex min-h-0 min-w-0 flex-col gap-2">
+              {[0, 1].map((slot) => {
+                const item = sideCards[slot];
+                if (item) {
+                  return (
+                    <HomeTodaySideCard
+                      key={item.id}
+                      badgeLabel={feedBadge(item)}
+                      title={item.title}
+                      timeLabel={communityFeedTimeLabel(item) || undefined}
+                      imageUrl={
+                        communityFeedCardImageUrl(item) || undefined
+                      }
+                      onClick={() => openFeedItem(item)}
+                    />
+                  );
+                }
+                return (
+                  <HomeTodaySideCard
+                    key={`hoy-dev-side-${slot}`}
+                    devPlaceholder
+                  />
+                );
+              })}
+            </div>
           </div>
+        )}
+      </section>
+
+      {/* HAZ QUE PASE */}
+      <section className="mt-10 px-4" aria-labelledby="home-make-heading">
+        <HomeSectionHead
+          accent
+          title="Haz que pase"
+          actionLabel="Ver todas las acciones"
+          onAction={() => openActionComposer({ source: "home" })}
+        />
+        <span id="home-make-heading" className="sr-only">
+          Haz que pase
+        </span>
+        <HomeMakeItHappen
+          imageUrl={makeHeroImage}
+          onCreate={() =>
+            openActionComposerWithIntent("plan_create", { source: "home" })
+          }
+          actions={makeActions}
+        />
+      </section>
+
+      {/* PARTICIPA */}
+      <section className="mt-10 px-4" aria-labelledby="home-participate-heading">
+        <HomeSectionHead
+          accent
+          title="Participa"
+          actionLabel="Ver todo"
+          onAction={() => router.push("/community?tab=propuestas")}
+        />
+        <span id="home-participate-heading" className="sr-only">
+          Participa
+        </span>
+        {proposals.length === 0 && debates.length === 0 ? (
+          <p className="rounded-[18px] border border-dashed border-white/12 bg-white/[0.03] px-4 py-5 text-[14px] text-white/55">
+            Todavía no hay propuestas ni debates abiertos en {placeName}.
+          </p>
         ) : (
           <HomeRail>
-            {moments.map(({ item, presentation }, index) => {
-              const stagger = staggerItemProps(index);
+            {proposals.map((item) => {
+              const supports =
+                (item.reactionCounts.support ?? 0) +
+                (item.reactionCounts.acknowledge ?? 0);
               return (
-              <HomeMomentCard
-                key={item.id}
-                className={stagger.className}
-                tone="open"
-                badgeLabel={presentation.badgeLabel}
-                glyph={presentation.glyph}
-                title={item.title}
-                where={presentation.whereLabel}
-                imageUrl={
-                  item.metadata?.imageUrl?.trim() ||
-                  communityFeedCardImageUrl(item)
-                }
-                peopleLabel={communityFeedLivingLabel(item)}
-                statusLabel={presentation.statusLabel}
-                ctaLabel={presentation.ctaLabel}
-                onClick={() => {
-                  if (item.locationId) {
-                    setPlaceLocationId(item.locationId);
-                    return;
+                <HomeParticipateCard
+                  key={item.id}
+                  kind="proposal"
+                  title={item.title}
+                  metaLabel={
+                    supports > 0 ? `${supports} apoyos` : undefined
                   }
-                  router.push(lifeMapHrefForFeedItem(item));
-                }}
-                onCta={() => router.push(lifeMapHrefForFeedItem(item))}
-              />
+                  statusLabel={
+                    item.decisionStatus === "closing_soon"
+                      ? "Cierra pronto"
+                      : item.decisionStatus === "open"
+                        ? undefined
+                        : item.decisionStatus === "closed"
+                          ? "Cerrada"
+                          : undefined
+                  }
+                  ctaLabel="Apoyar"
+                  onClick={() =>
+                    router.push(`/community/content/${item.id}`)
+                  }
+                />
               );
             })}
+            {debates.map((item) => (
+              <HomeParticipateCard
+                key={item.id}
+                kind="debate"
+                title={item.title}
+                statusLabel={
+                  item.status === "archived" ? "CERRADO" : "ABIERTO"
+                }
+                ctaLabel="Participar"
+                onClick={() => router.push(`/community/content/${item.id}`)}
+              />
+            ))}
           </HomeRail>
         )}
       </section>
 
-      {insights.length > 0 ? (
-        <section className="space-y-2">
-          {insights.map((insight) => (
-            <button
-              key={insight.id}
-              type="button"
-              onClick={() => insight.href && router.push(insight.href)}
-              className="ui-press w-full rounded-[18px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-3 text-left shadow-[var(--shadow-elev-1)]"
-            >
-              <span className="block text-[15px] font-semibold text-[var(--color-text-primary)]">
-                {insight.title}
-              </span>
-              <span className="mt-1 block text-[13px] text-[var(--color-text-secondary)]">
-                {insight.body}
-              </span>
-              <span className="mt-1 block text-[12px] text-[var(--color-text-tertiary)]">
-                Porque: {insight.reason}
-              </span>
-            </button>
-          ))}
-        </section>
-      ) : null}
-
-      {authenticated && hasMembership && moments.length === 0 ? (
-        <section>
-          <CommunityActivationPanel
-            variant="member"
-            onCreateExperience={() =>
-              openActionComposerWithIntent("experience_create", {
-                source: "home",
-              })
-            }
-            onCreateAnnouncement={() =>
-              openActionComposerWithIntent("announcement_create", {
-                source: "home",
-              })
-            }
-            onAddBusiness={() =>
-              openActionComposerWithIntent("business_create", {
-                source: "home",
-              })
-            }
-            onInviteNeighbors={() => router.push("/me")}
-          />
-        </section>
-      ) : null}
-
-      {isModuleEnabled("community") ? (
-        <section>
-          <HomeSectionHead title="Necesito ayuda" />
-          <button
-            type="button"
-            onClick={() =>
-              hasMembership
-                ? openActionComposerWithIntent("help_request", { source: "home" })
-                : router.push("/community")
-            }
-            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
-          >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              Ayuda entre vecinos
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              Vecinos ayudando vecinos — pide o ofrece colaboración.
-            </span>
-            {hasMembership ? (
-              <span className="mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]">
-                {HOME_HELP_CTA}
-              </span>
-            ) : null}
-          </button>
-        </section>
-      ) : null}
-
-      {isModuleEnabled("services") ? (
-        <section>
-          <HomeSectionHead title="Necesito un profesional" />
-          <button
-            type="button"
-            onClick={() => router.push("/services")}
-            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
-          >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              {HOME_SERVICES_EMPTY_TITLE}
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              Profesionales y negocios cerca.
-            </span>
-            <span className="mt-2 block text-[14px] font-semibold text-[var(--color-action-primary)]">
-              {HOME_SERVICES_EMPTY_CTA}
-            </span>
-          </button>
-        </section>
-      ) : null}
-
-      {isModuleEnabled("marketplace") && isFeatureEnabled("marketplace") ? (
-        <section>
-          <HomeSectionHead title="Comprar algo" />
-          <button
-            type="button"
-            onClick={() => router.push("/marketplace")}
-            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
-          >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              Compra y venta
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              Compra, vende o regala entre vecinos.
-            </span>
-          </button>
-        </section>
-      ) : null}
-
-      {upcomingMoments.length > 0 ? (
-        <section>
-          <HomeSectionHead title="Próximamente" />
-          <HomeRail>
-            {upcomingMoments.map((item) => (
-              <HomeMomentCard
-                key={item.id}
-                tone="soon"
-                badgeLabel={communityFeedTimeLabel(item) || "Pronto"}
-                glyph="calendar"
-                title={item.title}
-                where={item.metadata?.locationLabel || placeName}
-                imageUrl={
-                  item.metadata?.imageUrl?.trim() ||
-                  communityFeedCardImageUrl(item)
-                }
-                peopleLabel={communityFeedLivingLabel(item)}
-                statusLabel={reasons[item.id]}
-                ctaLabel={communityFeedPrimaryLabel(item)}
-                onClick={() => {
-                  if (item.locationId) setPlaceLocationId(item.locationId);
-                  else router.push(lifeMapHrefForFeedItem(item));
-                }}
-                onCta={() => router.push(lifeMapHrefForFeedItem(item))}
-              />
-            ))}
-          </HomeRail>
-        </section>
-      ) : null}
-
-      {authenticated && hasMembership && favoritePlaces.length > 0 ? (
-        <section>
-          <HomeSectionHead title="Mis lugares" actionLabel="Mapa" actionGlyph="map" onAction={() => router.push("/map")} />
-          <HomeRail>
-            {favoritePlaces.map((place) => (
-              <HomeNearbyCard
-                key={place.id}
-                name={place.name}
-                imageUrl={
-                  preferEntityMediaUrl(undefined, place.imageUrl) ||
-                  locationCardImageUrl(place)
-                }
-                distanceLabel={place.areaLabel ?? configuration.branding.name}
-                statusLabel="Favorito"
-                onClick={() => setPlaceLocationId(place.id)}
-              />
-            ))}
-          </HomeRail>
-        </section>
-      ) : null}
-
-      {authenticated && hasMembership ? (
-        <section>
-          <HomeSectionHead title="Cómo puedo aportar" />
-          <button
-            type="button"
-            onClick={() =>
-              openActionComposerWithIntent("experience_create", { source: "home" })
-            }
-            className="ui-press ui-lift w-full rounded-[20px] border border-[var(--color-border-glass)] bg-[var(--color-surface-elevated)] px-4 py-4 text-left shadow-[var(--shadow-elev-1)]"
-          >
-            <span className="block font-[family-name:var(--font-display)] text-[18px] font-semibold text-[var(--color-text-primary)]">
-              Crear para hoy
-            </span>
-            <span className="mt-1 block text-[14px] text-[var(--color-text-tertiary)]">
-              {LIVING_EMPTY_CTA}
-            </span>
-          </button>
-        </section>
-      ) : null}
-
-      {moves.length > 0 ? (
-      <section>
+      {/* DESCUBRE */}
+      <section className="mt-10 px-4" aria-labelledby="home-discover-heading">
         <HomeSectionHead
-          title="La comunidad"
-          actionLabel="Ver más"
-          onAction={() => router.push("/community")}
+          accent
+          title="Descubre"
+          actionLabel="Ver todo"
+          onAction={() => router.push("/discover")}
         />
-        <HomeRail>
-          {moves.map((move) => (
-            <HomeMoveCard
-              key={move.id}
-              tone={move.tone}
-              glyph={move.glyph}
-              headline={move.headline}
-              meta={move.meta}
-              quote={move.quote}
-              personName={move.personName}
-              personAvatarUrl={move.personAvatarUrl}
-              onClick={() => router.push(move.href)}
-            />
-          ))}
-        </HomeRail>
-      </section>
-      ) : null}
-
-      {canLocal && nearby.length > 0 ? (
-        <section>
-          <HomeSectionHead
-            title="Cerca de ti"
-            actionLabel="Ver mapa"
-            actionGlyph="map"
-            onAction={() => router.push("/map")}
-          />
-          <HomeRail>
-            {nearby.map((place) => (
-              <HomeNearbyCard
+        <span id="home-discover-heading" className="sr-only">
+          Descubre
+        </span>
+        {discoverPlaces.length === 0 ? (
+          <p className="rounded-[18px] border border-dashed border-white/12 bg-white/[0.03] px-4 py-5 text-[14px] text-white/55">
+            Explora el territorio cuando haya lugares publicados.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {discoverPlaces.slice(0, 1).map((place) => (
+              <HomeDiscoverCard
                 key={place.id}
-                name={place.name}
+                badgeLabel={place.category?.toUpperCase()}
+                title={place.name}
+                subtitle={
+                  place.areaLabel
+                    ? `${place.areaLabel} · Desde ${placeName}`
+                    : placeName
+                }
                 imageUrl={place.imageUrl}
-                distanceLabel={place.distanceLabel}
-                statusLabel={place.statusLabel}
-                ratingLabel={place.ratingLabel}
-                ratingCountLabel={place.ratingCountLabel}
-                badgeLabel={place.badgeLabel}
-                onClick={() => setPlaceLocationId(place.id)}
+                ctaLabel="Ver lugar"
+                onClick={() => {
+                  setPlaceLocationId(place.id);
+                }}
               />
             ))}
-          </HomeRail>
-        </section>
-      ) : null}
-      </div>
+            {discoverPlaces.length > 1 ? (
+              <div className="flex justify-center gap-1.5 pt-1" aria-hidden>
+                {discoverPlaces.slice(0, 4).map((place, index) => (
+                  <span
+                    key={place.id}
+                    className={cnDot(index === 0)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </section>
+
       <LifePlaceHost
         tenantId={configuration.tenantId}
+        territoryId={homeQuery.territoryId}
         locationId={placeLocationId}
-        territoryId={activeTerritory.territoryId}
         onClose={() => setPlaceLocationId(null)}
       />
     </div>
   );
+}
+
+function cnDot(active: boolean): string {
+  return active
+    ? "h-1.5 w-1.5 rounded-full bg-[var(--color-accent-cyan)]"
+    : "h-1.5 w-1.5 rounded-full bg-white/25";
 }

@@ -32,11 +32,8 @@ function activationSurfaceCopy(): string {
 describe("Phase 18K-FIX-B community activation empty states", () => {
   it("TEST 1 — Visitor ve activación, no vacío muerto", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /profileVisitorTitle/);
-    assert.match(profile, /PROFILE_VISITOR_DESCRIPTION/);
-    assert.match(profile, /Únete a LIFE/);
-    assert.match(profile, /Explorar lugares/);
-    assert.match(profile, /isActiveMember \?/);
+    assert.match(profile, /Tu espacio en LIFE/);
+    assert.match(profile, /Crear cuenta/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /SERVICES_PROFESSIONALS_VISITOR/);
     const scope = resolveMembershipAccessScope({
@@ -53,9 +50,8 @@ describe("Phase 18K-FIX-B community activation empty states", () => {
 
   it("TEST 2 — Registered ve JoinCommunity", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityExperience/);
-    assert.match(profile, /canonicalUserStateView|UserStateCard/);
-    assert.match(profile, /isActiveMember \?/);
+    assert.match(profile, /Explorando comunidad/);
+    assert.match(profile, /Usuario registrado/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,

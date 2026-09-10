@@ -258,6 +258,8 @@ function HeroPillGlyph({ kind }: { kind?: HomeHeroPillIcon }) {
 export type HomeHeroStageProps = {
   slides: ReadonlyArray<HomeHeroSlide>;
   greeting: string;
+  /** Large name line under greeting (Home V2). */
+  personName?: string;
   /** Emotional second line (tenant-supplied). */
   tagline?: string;
   /** Invitation line under the tagline. */
@@ -282,6 +284,7 @@ export type HomeHeroStageProps = {
 export function HomeHeroStage({
   slides,
   greeting,
+  personName,
   tagline,
   description,
   pills = [],
@@ -293,7 +296,8 @@ export function HomeHeroStage({
   const safeInitial =
     count === 0 ? 0 : ((initialIndex % count) + count) % count;
   const [index, setIndex] = useState(safeInitial);
-  const [entered, setEntered] = useState(false);
+  // Home under-chrome: show greeting immediately (no empty/faded first paint).
+  const [entered, setEntered] = useState(underChrome);
 
   useEffect(() => {
     setIndex(safeInitial);
@@ -321,11 +325,16 @@ export function HomeHeroStage({
 
   if (count === 0) return null;
 
+  const hasName = Boolean(personName?.trim());
+
   return (
     <section
       className={cn(
-        "life-hero relative isolate w-full overflow-hidden rounded-b-[24px] bg-[var(--life-bg,#000000)]",
-        "min-h-[clamp(320px,40svh,380px)]",
+        "life-hero relative isolate w-full overflow-hidden rounded-b-[18px] bg-[var(--life-bg,#050708)]",
+        // Micro-trim vs TARGET: slightly shorter so Hoy starts earlier.
+        hasName
+          ? "min-h-[clamp(352px,calc(20.25rem+3.5vw),372px)]"
+          : "min-h-[clamp(312px,calc(17.5rem+3.5vw),332px)]",
         className,
       )}
       style={{
@@ -341,7 +350,7 @@ export function HomeHeroStage({
             src={slide.imageUrl}
             alt={slideIndex === index ? (slide.alt ?? "") : ""}
             className={cn(
-              "absolute inset-0 h-full w-full object-cover object-[50%_40%] transition-[opacity,transform] duration-[700ms] ease-out",
+              "absolute inset-0 h-full w-full object-cover object-[50%_36%] transition-[opacity,transform] duration-[700ms] ease-out",
               slideIndex === index ? "opacity-100" : "opacity-0",
               slideIndex === index && entered ? "scale-100" : "scale-[1.03]",
             )}
@@ -353,20 +362,22 @@ export function HomeHeroStage({
       <div
         className="life-hero__overlay pointer-events-none absolute inset-0 z-[1]"
         style={{
+          // Whisper gradients only — legibility prefers text-shadow over black mass.
           background: `
             linear-gradient(
-              90deg,
-              rgba(0, 10, 15, 0.68) 0%,
-              rgba(0, 12, 18, 0.36) 36%,
-              rgba(0, 12, 18, 0.06) 70%,
-              transparent 100%
+              180deg,
+              rgba(5, 7, 8, 0.24) 0%,
+              rgba(5, 7, 8, 0.03) 16%,
+              transparent 30%,
+              transparent 78%,
+              rgba(5, 7, 8, 0.12) 90%,
+              rgba(5, 7, 8, 0.32) 100%
             ),
             linear-gradient(
-              180deg,
-              rgba(0, 10, 15, 0.28) 0%,
-              rgba(0, 12, 18, 0.02) 40%,
-              rgba(0, 12, 18, 0.28) 78%,
-              var(--life-bg, #000000) 100%
+              90deg,
+              rgba(5, 7, 8, 0.16) 0%,
+              rgba(5, 7, 8, 0.04) 26%,
+              transparent 48%
             )
           `,
         }}
@@ -374,21 +385,32 @@ export function HomeHeroStage({
 
       <div
         className={cn(
-          "life-hero__content relative z-[5] flex min-h-[inherit] flex-col justify-end px-4 pb-11 max-[375px]:px-3.5",
-          "pt-[calc(env(safe-area-inset-top)+72px)]",
+          "life-hero__content relative z-[5] flex min-h-[inherit] flex-col justify-end px-5 max-[390px]:px-4",
+          // Air below greeting block (TARGET): not pinned to the photo edge.
+          hasName ? "pb-11" : "pb-9",
+          "pt-[calc(env(safe-area-inset-top)+92px)]",
           "transition-[opacity,transform] duration-[600ms] ease-out",
           entered ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
         )}
       >
         <p
-          className="mb-1.5 text-[14px] font-normal leading-[1.3] text-[rgba(247,250,250,0.92)]"
+          className="mb-1 text-[24px] font-normal leading-[1.15] tracking-[-0.015em] text-white"
+          style={{ textShadow: "0 1px 16px rgba(0,0,0,0.5), 0 0 1px rgba(0,0,0,0.35)" }}
           suppressHydrationWarning
         >
           {greeting}
         </p>
-        {tagline ? (
+        {hasName ? (
           <h1
-            className="max-w-[16ch] whitespace-pre-line font-sans text-[clamp(22px,5.6vw,26px)] font-medium leading-[1.12] tracking-[-0.02em] text-[var(--color-text-inverse)]"
+            className="max-w-[11ch] font-sans text-[clamp(46px,12.5vw,56px)] font-bold leading-[0.95] tracking-[-0.04em] text-white"
+            style={{ textShadow: "0 2px 20px rgba(0,0,0,0.48), 0 0 1px rgba(0,0,0,0.3)" }}
+            suppressHydrationWarning
+          >
+            {personName}
+          </h1>
+        ) : tagline ? (
+          <h1
+            className="max-w-[16ch] whitespace-pre-line font-sans text-[clamp(26px,6.5vw,34px)] font-semibold leading-[1.08] tracking-[-0.02em] text-white"
             style={{ textShadow: "0 1px 12px rgba(0,0,0,0.25)" }}
           >
             {tagline}
@@ -445,7 +467,7 @@ export function HomeHeroStage({
         ) : null}
       </div>
 
-      {count > 1 ? (
+      {count > 1 && !underChrome ? (
         <div className="life-hero__pagination absolute bottom-3.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5">
           {slides.map((slide, slideIndex) => (
             <button

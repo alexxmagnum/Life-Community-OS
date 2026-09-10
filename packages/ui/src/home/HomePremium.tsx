@@ -310,6 +310,8 @@ export type HomeSectionHeadProps = {
   title: string;
   /** Lime sparkle after the title, as in the reference. */
   sparkle?: boolean;
+  /** Cyan accent bar above the title (Home V2). */
+  accent?: boolean;
   actionLabel?: string;
   actionGlyph?: HomeGlyphName;
   onAction?: () => void;
@@ -318,38 +320,47 @@ export type HomeSectionHeadProps = {
 export function HomeSectionHead({
   title,
   sparkle = false,
+  accent = false,
   actionLabel,
   actionGlyph,
   onAction,
 }: HomeSectionHeadProps) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-3">
-      <h2 className="flex items-center gap-1.5 font-sans text-[20px] font-semibold leading-[1.2] tracking-[-0.02em] text-white">
-        {title}
-        {sparkle ? (
-          <HomeGlyph
-            name="spark"
-            size={14}
-            className="text-[var(--color-accent-lime)]"
-          />
-        ) : null}
-      </h2>
-      {actionLabel && onAction ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-white/55 active:opacity-70"
-        >
-          {actionLabel}
-          {actionGlyph ? (
-            <HomeGlyph name={actionGlyph} size={12} />
-          ) : (
-            <span aria-hidden className="text-[15px] leading-none">
-              ›
-            </span>
-          )}
-        </button>
+    <div className="mb-4">
+      {accent ? (
+        <span
+          className="mb-2 block h-[3px] w-9 rounded-full bg-[linear-gradient(90deg,var(--color-accent-cyan),var(--color-accent-turquoise))]"
+          aria-hidden
+        />
       ) : null}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="flex min-w-0 items-center gap-1.5 font-sans text-[23px] font-bold leading-[1.15] tracking-[-0.02em] text-white">
+          <span className="truncate">{title}</span>
+          {sparkle ? (
+            <HomeGlyph
+              name="spark"
+              size={15}
+              className="shrink-0 text-[var(--color-accent-lime)]"
+            />
+          ) : null}
+        </h2>
+        {actionLabel && onAction ? (
+          <button
+            type="button"
+            onClick={onAction}
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 text-[16px] font-semibold text-[var(--color-accent-cyan)] active:opacity-70"
+          >
+            {actionLabel}
+            {actionGlyph ? (
+              <HomeGlyph name={actionGlyph} size={16} />
+            ) : (
+              <span aria-hidden className="text-[19px] leading-none">
+                →
+              </span>
+            )}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -832,6 +843,585 @@ export function HomeNearbyCard({
               {ratingCountLabel}
             </span>
           ) : null}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Home V2 — Hoy / Haz que pase / Participa / Descubre surfaces               */
+/* -------------------------------------------------------------------------- */
+
+export type HomeTodayTabId = "today" | "week" | "month";
+
+export type HomeTodayTabsProps = {
+  activeId: HomeTodayTabId;
+  onChange: (id: HomeTodayTabId) => void;
+  labels?: Partial<Record<HomeTodayTabId, string>>;
+};
+
+export function HomeTodayTabs({
+  activeId,
+  onChange,
+  labels,
+}: HomeTodayTabsProps) {
+  const items: { id: HomeTodayTabId; label: string }[] = [
+    { id: "today", label: labels?.today ?? "Hoy" },
+    { id: "week", label: labels?.week ?? "Esta semana" },
+    { id: "month", label: labels?.month ?? "Este mes" },
+  ];
+  return (
+    <div
+      className="mb-3.5 flex w-full overflow-hidden rounded-full border border-white/[0.12] bg-[rgba(10,14,16,0.92)] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      role="tablist"
+      aria-label="Periodo"
+    >
+      {items.map((item, index) => {
+        const active = item.id === activeId;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.id)}
+            className={cn(
+              "relative min-h-[48px] flex-1 px-2 text-[16px] font-semibold transition-colors",
+              active
+                ? "rounded-full bg-[linear-gradient(90deg,var(--color-accent-cyan),var(--color-accent-turquoise))] text-[var(--color-text-on-action)] shadow-[0_4px_14px_rgba(0,200,220,0.22)]"
+                : "text-white/82",
+              !active && index > 0
+                ? "before:absolute before:left-0 before:top-1/2 before:h-4 before:w-px before:-translate-y-1/2 before:bg-white/12 before:content-['']"
+                : null,
+            )}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export type HomeTodayFeaturedCardProps = {
+  badgeLabel?: string;
+  title?: string;
+  locationLabel?: string;
+  peopleLabel?: string;
+  timeLabel?: string;
+  imageUrl?: string;
+  ctaLabel?: string;
+  onClick?: () => void;
+  onCta?: () => void;
+  className?: string;
+  /** Geometric DEV slot — not product content. */
+  devPlaceholder?: boolean;
+};
+
+/** Protagonist card for Hoy — photo-led, taller than side cards. */
+export function HomeTodayFeaturedCard({
+  badgeLabel,
+  title,
+  locationLabel,
+  peopleLabel,
+  timeLabel,
+  imageUrl,
+  ctaLabel,
+  onClick,
+  onCta,
+  className,
+  devPlaceholder = false,
+}: HomeTodayFeaturedCardProps) {
+  if (devPlaceholder) {
+    return (
+      <article
+        aria-hidden
+        data-dev-placeholder="hoy-primary"
+        className={cn(
+          "relative flex h-full min-h-[214px] w-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-dashed border-white/14 bg-[rgba(12,16,18,0.92)]",
+          className,
+        )}
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.04),transparent_55%)]" />
+        <div className="relative z-[1] mt-auto space-y-2 p-3">
+          <div className="h-5 w-16 rounded-full bg-white/[0.08]" />
+          <div className="h-5 w-[78%] rounded-md bg-white/[0.1]" />
+          <div className="h-3.5 w-[62%] rounded-md bg-white/[0.06]" />
+          <div className="h-3.5 w-[48%] rounded-md bg-white/[0.06]" />
+          <div className="mt-0.5 h-10 w-full rounded-full border border-white/10 bg-white/[0.04]" />
+        </div>
+      </article>
+    );
+  }
+
+  const hasMedia = Boolean(imageUrl?.trim());
+  return (
+    <article
+      className={cn(
+        "relative flex h-full min-h-[214px] w-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-white/[0.12] shadow-[0_12px_32px_rgba(0,0,0,0.45)]",
+        !hasMedia ? "bg-[rgba(12,16,18,0.96)]" : null,
+        className,
+      )}
+    >
+      {hasMedia ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(255,255,255,0.05),transparent_50%)]" />
+      )}
+      <span
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: hasMedia
+            ? "linear-gradient(180deg, rgba(5,7,8,0.05) 0%, rgba(5,7,8,0.02) 42%, rgba(5,7,8,0.38) 70%, rgba(5,7,8,0.72) 100%)"
+            : undefined,
+        }}
+      />
+      {badgeLabel ? (
+        <span className="absolute left-3 top-2.5 z-[2] rounded-full bg-[rgba(0,216,232,0.2)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-accent-cyan)] backdrop-blur-sm">
+          {badgeLabel}
+        </span>
+      ) : null}
+      <div className="relative z-[2] mt-auto flex flex-col gap-1.5 px-3 pb-3 pt-8">
+        {title ? (
+          onClick ? (
+            <button type="button" onClick={onClick} className="text-left">
+              <span
+                className="line-clamp-2 block font-sans text-[19px] font-bold leading-[1.15] tracking-[-0.02em] text-white"
+                style={{ textShadow: hasMedia ? "0 1px 12px rgba(0,0,0,0.45)" : undefined }}
+              >
+                {title}
+              </span>
+            </button>
+          ) : (
+            <span
+              className="line-clamp-2 block font-sans text-[19px] font-bold leading-[1.15] tracking-[-0.02em] text-white"
+              style={{ textShadow: hasMedia ? "0 1px 12px rgba(0,0,0,0.45)" : undefined }}
+            >
+              {title}
+            </span>
+          )
+        ) : null}
+        <div className="space-y-1 text-[14px] leading-[1.25] text-white/85">
+          {locationLabel ? (
+            <p className="flex items-center gap-2">
+              <HomeGlyph
+                name="map"
+                size={17}
+                className="shrink-0 text-[var(--color-accent-coral,#ff7a6a)]"
+              />
+              <span className="truncate">{locationLabel}</span>
+            </p>
+          ) : null}
+          {peopleLabel ? (
+            <p className="flex items-center gap-2">
+              <HomeGlyph
+                name="people"
+                size={17}
+                className="shrink-0 text-[var(--color-accent-lime)]"
+              />
+              <span className="truncate">{peopleLabel}</span>
+            </p>
+          ) : null}
+          {timeLabel ? (
+            <p className="flex items-center gap-2">
+              <HomeGlyph
+                name="calendar"
+                size={17}
+                className="shrink-0 text-[var(--color-accent-turquoise)]"
+              />
+              <span className="truncate">{timeLabel}</span>
+            </p>
+          ) : null}
+        </div>
+        {ctaLabel ? (
+          onCta || onClick ? (
+            <button
+              type="button"
+              onClick={onCta ?? onClick}
+              className="mt-0.5 flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-accent-cyan)_55%,white)] bg-[rgba(0,216,232,0.12)] text-[15px] font-semibold text-white backdrop-blur-md transition-transform active:scale-[0.98]"
+            >
+              {ctaLabel}
+              <span aria-hidden className="text-[17px] leading-none">
+                →
+              </span>
+            </button>
+          ) : (
+            <div
+              aria-hidden
+              className="mt-0.5 flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-accent-cyan)_55%,white)] bg-[rgba(0,216,232,0.12)] text-[15px] font-semibold text-white backdrop-blur-md"
+            >
+              {ctaLabel}
+              <span aria-hidden className="text-[17px] leading-none">
+                →
+              </span>
+            </div>
+          )
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+export type HomeTodaySideCardProps = {
+  badgeLabel?: string;
+  title?: string;
+  timeLabel?: string;
+  imageUrl?: string;
+  onClick?: () => void;
+  className?: string;
+  /** Geometric DEV slot — not product content. */
+  devPlaceholder?: boolean;
+};
+
+export function HomeTodaySideCard({
+  badgeLabel,
+  title,
+  timeLabel,
+  imageUrl,
+  onClick,
+  className,
+  devPlaceholder = false,
+}: HomeTodaySideCardProps) {
+  if (devPlaceholder) {
+    return (
+      <div
+        aria-hidden
+        data-dev-placeholder="hoy-secondary"
+        className={cn(
+          "flex h-full min-h-[103px] flex-1 items-center gap-2 overflow-hidden rounded-[16px] border border-dashed border-white/14 bg-[rgba(12,16,18,0.92)] p-1.5",
+          className,
+        )}
+      >
+        <span className="h-[82px] w-[54px] shrink-0 rounded-[11px] bg-white/[0.06]" />
+        <span className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-0.5">
+          <span className="h-3.5 w-11 rounded-full bg-white/[0.08]" />
+          <span className="h-3.5 w-[90%] rounded-md bg-white/[0.1]" />
+          <span className="h-3 w-16 rounded-md bg-white/[0.06]" />
+        </span>
+        <span className="h-7 w-7 shrink-0 rounded-full border border-white/10 bg-white/[0.04]" />
+      </div>
+    );
+  }
+
+  const hasMedia = Boolean(imageUrl?.trim());
+  const body = (
+    <>
+      <span className="relative h-[82px] w-[54px] shrink-0 overflow-hidden rounded-[11px] bg-white/[0.05]">
+        {hasMedia ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
+        {badgeLabel ? (
+          <span className="w-fit rounded-full bg-white/8 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white/75">
+            {badgeLabel}
+          </span>
+        ) : null}
+        {title ? (
+          <span className="mt-1 line-clamp-2 font-sans text-[14px] font-semibold leading-[1.2] text-white">
+            {title}
+          </span>
+        ) : null}
+        {timeLabel ? (
+          <span className="mt-1 text-[13px] leading-4 text-white/60">
+            {timeLabel}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/80"
+        aria-hidden
+      >
+        <HomeGlyph name="arrow" size={14} />
+      </span>
+    </>
+  );
+
+  if (!onClick) {
+    return (
+      <div
+        aria-hidden
+        data-dev-fixture="hoy-secondary"
+        className={cn(
+          "flex h-full min-h-[103px] flex-1 items-center gap-2 overflow-hidden rounded-[16px] border border-white/[0.1] bg-[rgba(12,16,18,0.92)] p-1.5 text-left shadow-[0_8px_20px_rgba(0,0,0,0.35)]",
+          className,
+        )}
+      >
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex h-full min-h-[103px] flex-1 items-center gap-2 overflow-hidden rounded-[16px] border border-white/[0.1] bg-[rgba(12,16,18,0.92)] p-1.5 text-left shadow-[0_8px_20px_rgba(0,0,0,0.35)] transition-transform active:scale-[0.98]",
+        className,
+      )}
+    >
+      {body}
+    </button>
+  );
+}
+
+export type HomeMakeItHappenAction = {
+  id: string;
+  label: string;
+  tone: "plan" | "experience" | "event" | "announce" | "market" | "more";
+  onClick: () => void;
+};
+
+const MAKE_TONE: Record<
+  HomeMakeItHappenAction["tone"],
+  { icon: string; glyph: HomeGlyphName }
+> = {
+  plan: { icon: "text-[#9AF05A]", glyph: "people" },
+  experience: { icon: "text-[#C078E8]", glyph: "spark" },
+  event: { icon: "text-[#5AD8F0]", glyph: "calendar" },
+  announce: { icon: "text-[#FF8A5C]", glyph: "camera" },
+  market: { icon: "text-[#B7F22A]", glyph: "star" },
+  more: { icon: "text-[var(--color-accent-cyan)]", glyph: "compass" },
+};
+
+export type HomeMakeItHappenProps = {
+  title?: string;
+  body?: string;
+  createLabel?: string;
+  imageUrl?: string;
+  onCreate: () => void;
+  actions: readonly HomeMakeItHappenAction[];
+};
+
+export function HomeMakeItHappen({
+  title = "¿Qué te apetece hacer?",
+  body = "Haz un plan, crea una experiencia, organiza un evento o empieza por lo que necesitas.",
+  createLabel = "Crear",
+  imageUrl,
+  onCreate,
+  actions,
+}: HomeMakeItHappenProps) {
+  return (
+    <div className="grid grid-cols-[1.05fr_0.95fr] items-stretch gap-2.5">
+      <div className="relative flex min-h-[220px] flex-col justify-end overflow-hidden rounded-[22px] border border-white/[0.1]">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-center"
+          />
+        ) : (
+          <span className="absolute inset-0 bg-[linear-gradient(135deg,#0a1012_0%,#12181c_55%,#080c0e_100%)]" />
+        )}
+        <span
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(5,7,8,0.25) 0%, rgba(5,7,8,0.55) 45%, rgba(5,7,8,0.88) 100%)",
+          }}
+        />
+        <div className="relative z-[1] flex flex-col gap-3 px-4 py-4">
+          <div className="max-w-[34ch]">
+            <h3 className="font-sans text-[22px] font-semibold leading-[1.15] tracking-[-0.02em] text-white">
+              {title}
+            </h3>
+            <p className="mt-2 text-[14px] leading-[1.4] text-white/75">{body}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCreate}
+            className="flex min-h-[48px] shrink-0 items-center gap-2 self-start rounded-full bg-[linear-gradient(90deg,var(--color-accent-cyan),var(--color-accent-turquoise))] px-4 text-[15px] font-semibold text-[var(--color-text-on-action)] shadow-[0_8px_24px_rgba(0,200,220,0.25)] transition-transform active:scale-[0.98]"
+          >
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(5,7,8,0.35)] text-[18px] leading-none"
+              aria-hidden
+            >
+              +
+            </span>
+            {createLabel}
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 grid-rows-3 gap-2">
+        {actions.map((action) => {
+          const tone = MAKE_TONE[action.tone];
+          return (
+            <button
+              key={action.id}
+              type="button"
+              onClick={action.onClick}
+              className="flex min-h-[72px] flex-col items-center justify-center gap-1.5 rounded-[16px] border border-white/[0.08] bg-[rgba(10,14,16,0.92)] px-2 py-2.5 text-center transition-transform active:scale-[0.97]"
+            >
+              <span
+                className={cn(
+                  "flex h-9 w-9 items-center justify-center rounded-[12px] bg-white/[0.04]",
+                  tone.icon,
+                )}
+              >
+                <HomeGlyph name={tone.glyph} size={20} />
+              </span>
+              <span className="text-[11px] font-semibold leading-[1.2] text-white/90">
+                {action.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export type HomeParticipateKind = "proposal" | "debate";
+
+export type HomeParticipateCardProps = {
+  kind: HomeParticipateKind;
+  title: string;
+  metaLabel?: string;
+  statusLabel?: string;
+  ctaLabel: string;
+  onClick: () => void;
+  className?: string;
+};
+
+const PARTICIPATE_STYLE: Record<
+  HomeParticipateKind,
+  { badge: string; iconWrap: string; glyph: HomeGlyphName; kindLabel: string }
+> = {
+  proposal: {
+    badge: "text-[#9AF05A]",
+    iconWrap: "bg-[rgba(154,240,90,0.12)] text-[#9AF05A]",
+    glyph: "spark",
+    kindLabel: "Propuesta",
+  },
+  debate: {
+    badge: "text-[#FF8A5C]",
+    iconWrap: "bg-[rgba(255,138,92,0.12)] text-[#FF8A5C]",
+    glyph: "people",
+    kindLabel: "Debate",
+  },
+};
+
+export function HomeParticipateCard({
+  kind,
+  title,
+  metaLabel,
+  statusLabel,
+  ctaLabel,
+  onClick,
+  className,
+}: HomeParticipateCardProps) {
+  const style = PARTICIPATE_STYLE[kind];
+  return (
+    <article
+      className={cn(
+        "flex w-[168px] shrink-0 flex-col rounded-[18px] border border-white/[0.1] bg-[rgba(10,14,16,0.94)] p-3.5 shadow-[0_8px_22px_rgba(0,0,0,0.35)]",
+        className,
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-[12px]",
+          style.iconWrap,
+        )}
+      >
+        <HomeGlyph name={style.glyph} size={20} />
+      </span>
+      <span
+        className={cn(
+          "mt-3 text-[10px] font-bold uppercase tracking-wide",
+          style.badge,
+        )}
+      >
+        {style.kindLabel}
+      </span>
+      <h3 className="mt-1.5 line-clamp-3 min-h-[3.6em] font-sans text-[15px] font-semibold leading-[1.25] text-white">
+        {title}
+      </h3>
+      <div className="mt-auto flex flex-col gap-2 pt-3">
+        {metaLabel ? (
+          <p className="text-[12px] text-white/55">{metaLabel}</p>
+        ) : null}
+        {statusLabel ? (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-white/60">
+            {statusLabel}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          onClick={onClick}
+          className="flex min-h-[40px] w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[13px] font-semibold text-white transition-transform active:scale-[0.98]"
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+export type HomeDiscoverCardProps = {
+  badgeLabel?: string;
+  title: string;
+  subtitle?: string;
+  imageUrl: string;
+  ctaLabel: string;
+  onClick?: () => void;
+  className?: string;
+};
+
+export function HomeDiscoverCard({
+  badgeLabel,
+  title,
+  subtitle,
+  imageUrl,
+  ctaLabel,
+  onClick,
+  className,
+}: HomeDiscoverCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative flex min-h-[240px] w-full overflow-hidden rounded-[22px] border border-white/[0.1] text-left shadow-[0_12px_28px_rgba(0,0,0,0.4)] transition-transform active:scale-[0.99]",
+        className,
+      )}
+    >
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
+      <span
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(5,7,8,0.78) 0%, rgba(5,7,8,0.35) 50%, rgba(5,7,8,0.2) 100%), linear-gradient(180deg, transparent 40%, rgba(5,7,8,0.55) 100%)",
+        }}
+      />
+      <span className="relative z-[1] flex w-full flex-col justify-end p-4">
+        {badgeLabel ? (
+          <span className="mb-2 w-fit rounded-full bg-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white/85 backdrop-blur-sm">
+            {badgeLabel}
+          </span>
+        ) : null}
+        <span className="font-sans text-[22px] font-semibold leading-[1.15] tracking-[-0.02em] text-white">
+          {title}
+        </span>
+        {subtitle ? (
+          <span className="mt-1 text-[13px] text-white/70">{subtitle}</span>
+        ) : null}
+        <span className="mt-3 inline-flex min-h-[40px] w-fit items-center rounded-full border border-white/20 bg-[rgba(5,7,8,0.45)] px-3.5 text-[13px] font-semibold text-white backdrop-blur-md">
+          {ctaLabel}
         </span>
       </span>
     </button>

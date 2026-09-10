@@ -35,10 +35,10 @@ describe("community activation density isolation", () => {
   it("TEST 1 — empty community shows activation guidance", () => {
     const home = readWeb("screens/HomeScreen.tsx");
     const community = readWeb("screens/CommunityScreen.tsx");
-    assert.match(home, /CommunityActivationPanel/);
     assert.match(community, /CommunityActivationPanel/);
     assert.match(home, /LIVING_EMPTY_TITLE/);
     assert.match(home, /LIVING_EMPTY_DESCRIPTION/);
+    assert.match(home, /Haz que pase/);
   });
 
   it("TEST 2 — no fake content generated", () => {
@@ -62,7 +62,9 @@ describe("community activation density isolation", () => {
 
   it("TEST 4 — member can create first experience via focused Magic Plus", () => {
     const home = readWeb("screens/HomeScreen.tsx");
+    assert.match(home, /openActionComposerWithIntent\("plan_create"/);
     assert.match(home, /openActionComposerWithIntent\("experience_create"/);
+    assert.match(home, /openActionComposerWithIntent\("event_create"/);
     assert.doesNotMatch(home, /router\.push\("\/experiences\/create"\)/);
     assert.equal(
       magicPlusSectionIdForActionType("experience_create"),

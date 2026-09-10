@@ -491,18 +491,29 @@ describe("Premium Experience Polish isolation", () => {
     );
   });
 
-  it("TEST 10 — existing create routes remain unchanged", () => {
-    const routes = CommunityActionRegistry.list({
+  it("TEST 10 — create routes converge on Experience composer for plans/events", () => {
+    const listed = CommunityActionRegistry.list({
       hasMembership: true,
       capabilities: permissionsForRole("member", PANO),
       productCapabilities: getTenantPack(PANO)?.productCapabilities,
       territoryId: LIFE_PANORAMICA_TERRITORY_UUID,
-    }).map((item) => item.route);
+    });
+    const routes = listed.map((item) => item.route);
     assert.equal(routes.includes("/experiences/create"), true);
-    assert.equal(routes.includes("/community/events/create"), true);
     assert.equal(routes.includes("/help/create"), true);
     assert.equal(routes.includes("/marketplace/create"), true);
     assert.equal(routes.includes("/community/groups/create"), true);
     assert.equal(routes.includes("/business/register"), true);
+    const event = listed.find((item) => item.type === "event_create");
+    const plan = listed.find((item) => item.type === "plan_create");
+    assert.ok(event);
+    assert.ok(plan);
+    assert.equal(event.route, "/experiences/create");
+    assert.equal(plan.route, "/experiences/create");
+    assert.equal(
+      communityCreationRoute(event).includes("kind=event"),
+      true,
+    );
+    assert.equal(communityCreationRoute(plan).includes("kind=plan"), true);
   });
 });

@@ -28,101 +28,129 @@ export type BottomNavigationProps = {
   items: NavItem[];
   activeId: NavItemId;
   onNavigate: (item: NavItem) => void;
+  /** Central Magic Plus — rendered as the elevated FAB between tabs. */
+  onCreate?: () => void;
+  createLabel?: string;
   /** Live community notice carried inside the floating bar. */
   notice?: ReactNode;
   className?: string;
 };
 
 /**
- * Floating glass tab bar. The bar detaches from the screen edge and, when the
- * community has something urgent to say, carries it as a first row.
+ * Edge-to-edge glass tab bar — Inicio · Comunidad · + · Servicios · Perfil.
  */
 export function BottomNavigation({
   items,
   activeId,
   onNavigate,
+  onCreate,
+  createLabel = "Crear",
   notice,
   className,
 }: BottomNavigationProps) {
+  const linkItems = items.filter((item) => item.id !== "create");
+  const mid = Math.ceil(linkItems.length / 2);
+  const left = linkItems.slice(0, mid);
+  const right = linkItems.slice(mid);
+
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 px-2 pb-[calc(env(safe-area-inset-bottom)+6px)] md:hidden",
+        "fixed inset-x-0 bottom-0 z-40 md:hidden",
         className,
       )}
       aria-label="Principal"
     >
-      <div className="overflow-visible rounded-[22px] border border-[var(--color-border-glass)] bg-[var(--color-chrome-surface)] shadow-[var(--shadow-elev-2)] backdrop-blur-2xl">
+      <div className="overflow-visible rounded-t-[28px] border border-b-0 border-white/[0.1] bg-[rgba(5,7,8,0.94)] shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
         {notice ? (
-          <div className="border-b border-[var(--color-border-glass)] px-3 py-1.5">
+          <div className="border-b border-white/[0.08] px-3 py-1.5">
             {notice}
           </div>
         ) : null}
-        <ul className="flex w-full items-end justify-between gap-0.5 px-1.5 pb-1 pt-1.5">
-          {items.map((item) => {
-            const active = item.id === activeId;
-            const isCreate = item.id === "create";
+        <ul className="flex w-full items-end justify-between gap-0.5 px-2 pb-[calc(env(safe-area-inset-bottom)+8px)] pt-2">
+          {left.map((item) => (
+            <BottomNavLink
+              key={item.id}
+              item={item}
+              active={item.id === activeId}
+              onNavigate={onNavigate}
+            />
+          ))}
 
-            if (isCreate) {
-              return (
-                <li key={item.id} className="flex flex-1 justify-center">
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(item)}
-                    className="-mt-6 flex h-[46px] w-[46px] items-center justify-center rounded-full bg-[image:var(--gradient-brand)] text-[24px] leading-none text-[var(--color-text-on-action)] shadow-[0_0_24px_rgba(0,212,229,0.55),0_8px_20px_rgba(0,0,0,0.45)] ring-[3px] ring-[var(--color-surface-app)]/70 transition-transform active:scale-95"
-                    aria-label={item.label}
-                  >
-                    <span aria-hidden>+</span>
-                  </button>
-                </li>
-              );
-            }
+          {onCreate ? (
+            <li className="flex flex-1 justify-center pb-1">
+              <button
+                type="button"
+                onClick={onCreate}
+                className="-mt-7 flex h-[58px] w-[58px] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--color-accent-cyan)_0%,var(--color-accent-turquoise)_55%,var(--color-accent-lime)_100%)] text-[30px] font-light leading-none text-[#050708] shadow-[0_8px_28px_rgba(0,212,229,0.45),0_4px_14px_rgba(0,0,0,0.4)] ring-[4px] ring-[rgba(5,7,8,0.92)] transition-transform active:scale-95"
+                aria-label={createLabel}
+              >
+                <span aria-hidden>+</span>
+              </button>
+            </li>
+          ) : null}
 
-            return (
-              <li key={item.id} className="flex-1">
-                <a
-                  href={item.href}
-                  onClick={(e) => {
-                    if (
-                      e.defaultPrevented ||
-                      e.button !== 0 ||
-                      e.metaKey ||
-                      e.altKey ||
-                      e.ctrlKey ||
-                      e.shiftKey
-                    ) {
-                      return;
-                    }
-                    e.preventDefault();
-                    onNavigate(item);
-                  }}
-                  className={cn(
-                    "flex w-full flex-col items-center justify-center gap-[3px] py-0.5 text-[9.5px] font-semibold",
-                    active
-                      ? "text-[var(--color-accent-cyan)]"
-                      : "text-[var(--color-text-tertiary)]",
-                  )}
-                  aria-current={active ? "page" : undefined}
-                >
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-[10px] transition-colors [&_svg]:h-[17px] [&_svg]:w-[17px]",
-                      active
-                        ? "bg-[image:var(--gradient-brand)] text-[var(--color-text-on-action)]"
-                        : "text-[var(--color-text-tertiary)]",
-                    )}
-                    aria-hidden
-                  >
-                    {item.icon}
-                  </span>
-                  <span className="truncate px-0.5">{item.label}</span>
-                </a>
-              </li>
-            );
-          })}
+          {right.map((item) => (
+            <BottomNavLink
+              key={item.id}
+              item={item}
+              active={item.id === activeId}
+              onNavigate={onNavigate}
+            />
+          ))}
         </ul>
       </div>
     </nav>
+  );
+}
+
+function BottomNavLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavigate: (item: NavItem) => void;
+}) {
+  return (
+    <li className="flex-1">
+      <a
+        href={item.href}
+        onClick={(e) => {
+          if (
+            e.defaultPrevented ||
+            e.button !== 0 ||
+            e.metaKey ||
+            e.altKey ||
+            e.ctrlKey ||
+            e.shiftKey
+          ) {
+            return;
+          }
+          e.preventDefault();
+          onNavigate(item);
+        }}
+        className={cn(
+          "flex w-full flex-col items-center justify-center gap-1 py-1 text-[11px] font-semibold",
+          active
+            ? "text-[var(--color-accent-cyan)]"
+            : "text-white/55",
+        )}
+        aria-current={active ? "page" : undefined}
+      >
+        <span
+          className={cn(
+            "flex h-8 w-8 items-center justify-center transition-colors [&_svg]:h-[20px] [&_svg]:w-[20px]",
+            active ? "text-[var(--color-accent-cyan)]" : "text-white/55",
+          )}
+          aria-hidden
+        >
+          {item.icon}
+        </span>
+        <span className="truncate px-0.5">{item.label}</span>
+      </a>
+    </li>
   );
 }
 

@@ -18,7 +18,7 @@ const MAGIC_PLUS_SECTION_DEFS: readonly {
   {
     id: "experience",
     title: "Experiencia",
-    actionTypes: ["experience_create", "event_create"],
+    actionTypes: ["plan_create", "experience_create", "event_create"],
   },
   {
     id: "announcement",
