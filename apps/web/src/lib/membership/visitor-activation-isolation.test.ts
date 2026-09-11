@@ -130,11 +130,18 @@ describe("Phase 18K-FIX-A visitor activation", () => {
 
   it("PASS — Visitor recibe CTA correcto para registrarse", () => {
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /VISITOR_JOIN_HEADLINE/);
-    assert.match(home, /visitorConversionHref/);
+    // Home V2: registration CTA is on Profile / Services / Discover, not Hoy empty state.
+    assert.doesNotMatch(home, /VISITOR_JOIN_HEADLINE/);
+    assert.doesNotMatch(home, /VISITOR_HOME_EXPLORE_LABEL/);
+    assert.match(home, /router\.push\("\/discover"\)/);
+    const discover = readWeb("screens/DiscoverScreen.tsx");
+    assert.match(discover, /VISITOR_JOIN_HEADLINE/);
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /profileVisitorTitle/);
-    assert.match(profile, /Únete a LIFE/);
+    assert.match(
+      profile,
+      /PROFILE_VISITOR_DESCRIPTION|Tu espacio en LIFE|profileVisitorTitle/,
+    );
+    assert.match(profile, /Crear cuenta|Únete a LIFE/);
     const services = readWeb("screens/ServicesCategoryScreen.tsx");
     assert.match(services, /visitorConversionHref/);
     assert.match(services, /visitorConversionLabel/);

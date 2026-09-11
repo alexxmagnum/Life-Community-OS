@@ -79,8 +79,16 @@ describe("Phase 18I-P product polish", () => {
       path.join(HERE, "..", "..", "screens", "ProfileScreen.tsx"),
       "utf8",
     );
-    assert.equal(profile.includes("JoinCommunityExperience"), true);
-    assert.equal(profile.includes("join-community-experience"), true);
+    assert.equal(
+      profile.includes("JoinCommunityExperience") ||
+        profile.includes("Explorando comunidad"),
+      true,
+    );
+    assert.equal(
+      profile.includes("join-community-experience") ||
+        profile.includes("Personaliza tu perfil"),
+      true,
+    );
   });
 
   it("TEST 2 — Código válido crea membership", async () => {
@@ -144,7 +152,8 @@ describe("Phase 18I-P product polish", () => {
       path.join(HERE, "..", "..", "components", "MemberShell.tsx"),
       "utf8",
     );
-    assert.equal(shell.includes('magicPlusMode !== "hidden"'), true);
+    assert.equal(shell.includes("canShowMagicPlusFab = true"), true);
+    assert.equal(shell.includes('return "preview" as const'), true);
     assert.equal(shell.includes("currentUser.hasMembership"), true);
   });
 

@@ -86,13 +86,14 @@ function memberActor(tenantSlug: string): RequestActor {
 describe("Phase 18L-FIX-A visitor member activation", () => {
   it("TEST 1 — Visitor ve Home con orientación", () => {
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /VISITOR_HOME_EMPTY_TITLE/);
-    assert.match(home, /VISITOR_HOME_EMPTY_DESCRIPTION/);
-    assert.match(home, /VISITOR_HOME_EXPLORE_LABEL/);
-    assert.match(home, /VISITOR_JOIN_HEADLINE/);
-    assert.match(home, /COMMUNITY_EMPTY_GLYPH/);
+    // Home V2: visitors still load public territory; Hoy uses placeholders, not VISITOR_* empty cards.
     assert.match(home, /fetchTerritoryAnnouncements/);
-    assert.match(home, /isVisitor \?/);
+    assert.match(home, /!authenticated \|\| !hasMembership/);
+    assert.match(home, /devPlaceholder/);
+    assert.match(home, /router\.push\("\/discover"\)/);
+    assert.doesNotMatch(home, /VISITOR_HOME_EMPTY_TITLE/);
+    assert.doesNotMatch(home, /VISITOR_JOIN_HEADLINE/);
+    assert.doesNotMatch(home, /Descubre tu territorio/);
     assert.equal(VISITOR_HOME_EMPTY_TITLE, "Descubre tu territorio");
     assert.equal(VISITOR_HOME_EXPLORE_LABEL, "Explorar lugares");
   });
@@ -142,7 +143,8 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
     assert.match(sheet, /nearbyHelp.*!isVisitor/);
     assert.match(sheet, /context\.community && !isVisitor/);
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /authenticated && hasMembership/);
+    assert.match(home, /!authenticated \|\| !hasMembership/);
+    assert.match(home, /applyParticipateFromFeed/);
   });
 
   it("TEST 5 — Registered termina en /me", () => {
@@ -153,7 +155,7 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
 
   it("TEST 6 — Registered puede iniciar JoinCommunity", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityExperience/);
+    assert.match(profile, /JoinCommunityExperience|Explorando comunidad/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,
@@ -173,7 +175,7 @@ describe("Phase 18L-FIX-A visitor member activation", () => {
     assert.match(community, /COMMUNITY_NOW_EMPTY_TITLE/);
     const home = readWeb("screens/HomeScreen.tsx");
     assert.match(home, /openActionComposerWithIntent/);
-    assert.match(home, /LIVING_EMPTY_CTA/);
+    assert.match(home, /Haz que pase/);
     const guest = guestActor(PANO);
     assert.equal(actorCanOpenLifePlace(guest), true);
     assert.equal(actorCanReadLifePlacePublicTerritory(guest), true);

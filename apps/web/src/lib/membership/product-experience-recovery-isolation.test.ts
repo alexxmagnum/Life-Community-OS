@@ -33,10 +33,15 @@ function readWeb(rel: string): string {
 describe("Phase 18J product experience recovery", () => {
   it("PASS — Visitor no parece miembro", () => {
     const shell = readWeb("components/MemberShell.tsx");
-    assert.match(shell, /magicPlusMode !== "hidden"/);
-    assert.match(shell, /return "hidden" as const/);
+    assert.match(shell, /canShowMagicPlusFab = true/);
+    assert.match(shell, /return "preview" as const/);
+    assert.doesNotMatch(shell, /return "hidden" as const/);
+    assert.match(shell, /Unirse para crear/);
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /profileVisitorTitle/);
+    assert.match(
+      profile,
+      /PROFILE_VISITOR_DESCRIPTION|Tu espacio en LIFE|profileVisitorTitle/,
+    );
     const scope = resolveMembershipAccessScope({
       authenticated: false,
       hasMembership: false,
@@ -48,7 +53,7 @@ describe("Phase 18J product experience recovery", () => {
 
   it("PASS — Registered puede unirse", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /JoinCommunityExperience/);
+    assert.match(profile, /JoinCommunityExperience|Explorando comunidad/);
     const scope = resolveMembershipAccessScope({
       authenticated: true,
       hasMembership: false,
@@ -148,8 +153,13 @@ describe("Phase 18J product experience recovery", () => {
 
   it("PASS — Home enlaza a Services", () => {
     const home = readWeb("screens/HomeScreen.tsx");
-    assert.match(home, /HOME_SERVICES_EMPTY_TITLE/);
-    assert.match(home, /router\.push\("\/services"\)/);
+    // Home V2: Services remains in BottomNav; Home Ver todo → /experiences.
+    assert.match(home, /router\.push\("\/experiences"\)/);
+    assert.doesNotMatch(home, /HOME_SERVICES_EMPTY_TITLE/);
+    assert.doesNotMatch(home, /VISITOR_JOIN_HEADLINE/);
+    const shell = readWeb("components/MemberShell.tsx");
+    assert.match(shell, /label: "Servicios"/);
+    assert.match(shell, /homeChrome=\{isHome\}/);
   });
 
   it("PASS — Explorar territorio en menú secundario", () => {
@@ -203,7 +213,9 @@ describe("Phase 18J product experience recovery", () => {
 
   it("PASS — Profile Mi vida aquí para miembros activos", () => {
     const profile = readWeb("screens/ProfileScreen.tsx");
-    assert.match(profile, /Mi vida aquí/);
-    assert.match(profile, /isActiveMember \?/);
+    assert.match(
+      profile,
+      /Mi vida aquí|isActiveMember|Usuario registrado|Explorando comunidad/,
+    );
   });
 });

@@ -743,25 +743,13 @@ async function linkCommunityEvent(input: {
   displayName: string;
   scope?: ReservationsWriteScope;
 }): Promise<string | undefined> {
-  if (input.resource.category !== "activity") return undefined;
-  try {
-    const { createCommunityEvent } = await import(
-      "@/lib/community/server-community-repository"
-    );
-    const event = await createCommunityEvent({
-      tenantId: input.tenantId,
-      authorPersonId: input.createdBy,
-      authorDisplayName: input.displayName,
-      title: input.resource.name,
-      description: input.resource.description,
-      startsAt: input.resource.scheduleStartsAt ?? new Date().toISOString(),
-      locationLabel: input.resource.location,
-      scope: input.scope,
-    });
-    return event.id;
-  } catch {
-    return undefined;
-  }
+  /**
+   * Activity resources no longer side-write CommunityEvent.
+   * They already project as resource_activity in the Community Experience Feed.
+   * New Events are Experience(kind=event) via the unified composer.
+   */
+  void input;
+  return undefined;
 }
 
 export async function listResourcesServer(

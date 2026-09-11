@@ -36,8 +36,9 @@ describe("community activation density isolation", () => {
     const home = readWeb("screens/HomeScreen.tsx");
     const community = readWeb("screens/CommunityScreen.tsx");
     assert.match(community, /CommunityActivationPanel/);
-    assert.match(home, /LIVING_EMPTY_TITLE/);
-    assert.match(home, /LIVING_EMPTY_DESCRIPTION/);
+    // Home V2: empty Hoy uses geometric DEV placeholders, not LIVING_EMPTY_* copy.
+    assert.match(home, /devPlaceholder/);
+    assert.match(home, /HomeTodayFeaturedCard/);
     assert.match(home, /Haz que pase/);
   });
 
